@@ -4,7 +4,6 @@
 <@rowBox>
     <@boxHeader i18nTitleKey="identitystore.manage_attributekeys.title">
         <@headerButtons>
-
         
         <form class="form-inline pull-right" method="post" name="manage_attributekeys" action="jsp/admin/plugins/identitystore/ManageAttributeKeys.jsp">
             <@actionButtons button1Name="view_appRightAttributes" icon1="fa fa-eye" i18nValue1Key="identitystore.manage_attributekeys.buttonViewAppRight" />
@@ -12,7 +11,7 @@
             <@actionButtons button1Name="view_createAttributeKey" icon1="icon-plus icon-white" i18nValue1Key="identitystore.manage_attributekeys.buttonAdd" />
         </form>
         
-    </@headerButtons>
+        </@headerButtons>
     </@boxHeader>
     <@boxBody>    
     <@messages infos=infos />
@@ -26,6 +25,8 @@
             <th>#i18n{identitystore.manage_attributekeys.columnKeyName}</th>
             <th>#i18n{identitystore.manage_attributekeys.columnDescription}</th>
             <th>#i18n{identitystore.manage_attributekeys.columnKeyType}</th>
+            <th>#i18n{identitystore.manage_attributekeys.columnPivot}</th>
+            <th>#i18n{identitystore.manage_attributekeys.columnCertifiable}</th>
             <th>#i18n{portal.util.labelActions}</th>
         </tr>
         <@tableHeadBodySeparator />
@@ -49,6 +50,20 @@
             </td>
             <td>
                 ${attributekey.keyType.defaultLabel!''}
+            </td>
+            <td>
+                <#if attributekey.pivot = true>
+                    <i class="fas fa-check" aria-hidden="true"></i>
+                <#else>
+                    <i class="fas fa-times" aria-hidden="true"></i>
+                </#if>
+            </td>
+            <td>
+                <#if attributekey.certifiable = true>
+                    <i class="fas fa-check" aria-hidden="true"></i>
+                <#else>
+                    <i class="fas fa-times" aria-hidden="true"></i>
+                </#if>
             </td>
         <td>
             <a href="jsp/admin/plugins/identitystore/ManageAttributeKeys.jsp?view=modifyAttributeKey&id=${attributekey.id}"

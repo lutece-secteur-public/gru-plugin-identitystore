@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2018, Mairie de Paris
+ * Copyright (c) 2002-2023, City of Paris
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,11 +34,11 @@
 package fr.paris.lutece.plugins.identitystore.v2.business;
 
 import fr.paris.lutece.plugins.identitystore.IdentityStoreTestContext;
-import fr.paris.lutece.plugins.identitystore.business.AttributeKey;
-import fr.paris.lutece.plugins.identitystore.business.Identity;
-import fr.paris.lutece.plugins.identitystore.business.IdentityAttribute;
-import fr.paris.lutece.plugins.identitystore.business.IdentityAttributeHome;
-import fr.paris.lutece.plugins.identitystore.business.IdentityHome;
+import fr.paris.lutece.plugins.identitystore.business.attribute.AttributeKey;
+import fr.paris.lutece.plugins.identitystore.business.identity.Identity;
+import fr.paris.lutece.plugins.identitystore.business.identity.IdentityAttribute;
+import fr.paris.lutece.plugins.identitystore.business.identity.IdentityAttributeHome;
+import fr.paris.lutece.plugins.identitystore.business.identity.IdentityHome;
 import fr.paris.lutece.test.LuteceTestCase;
 
 public class IdentityAttributeBusinessTest extends LuteceTestCase
@@ -65,8 +65,8 @@ public class IdentityAttributeBusinessTest extends LuteceTestCase
         // Create test
         IdentityAttributeHome.create( identityAttribute );
 
-        IdentityAttribute identityAttributeStored = IdentityAttributeHome.findByPrimaryKey( identityAttribute.getIdIdentity( ), identityAttribute
-                .getAttributeKey( ).getId( ) );
+        IdentityAttribute identityAttributeStored = IdentityAttributeHome.findByPrimaryKey( identityAttribute.getIdIdentity( ),
+                identityAttribute.getAttributeKey( ).getId( ) );
         assertEquals( identityAttribute.getIdIdentity( ), identityAttributeStored.getIdIdentity( ) );
         assertEquals( identityAttribute.getAttributeKey( ).getId( ), identityAttributeStored.getAttributeKey( ).getId( ) );
         assertEquals( identityAttribute.getValue( ), identityAttributeStored.getValue( ) );

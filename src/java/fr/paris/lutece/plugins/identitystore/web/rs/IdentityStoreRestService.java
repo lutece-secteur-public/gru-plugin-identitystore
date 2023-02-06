@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2018, Mairie de Paris
+ * Copyright (c) 2002-2023, City of Paris
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -64,6 +64,18 @@ import fr.paris.lutece.portal.service.util.AppPropertiesService;
 @Path( RestConstants.BASE_PATH + Constants.PLUGIN_PATH + Constants.IDENTITY_PATH )
 public final class IdentityStoreRestService
 {
+    public static final String PARAM_BIRTH_NAME = "birth_name";
+    public static final String PARAM_USAGE_NAME = "usage_name";
+    public static final String PARAM_FIRST_NAMES = "first_names";
+    public static final String PARAM_GENDER = "gender";
+    public static final String PARAM_BIRTH_DATE = "birth_date";
+    public static final String PARAM_BIRTH_PLACE_LABEL = "birth_place_label";
+    public static final String PARAM_BIRTH_PLACE_INSEE_CODE = "birth_place_insee_code";
+    public static final String PARAM_BIRTH_ZIP_CODE = "birth_zip_code";
+    public static final String PARAM_BIRTH_COUNTRY_LABEL = "birth_coutry_label";
+    public static final String PARAM_BIRTH_COUNTRY_INSEE_CODE = "birth_country_insee_code";
+    public static final String PARAM_EMAIL = "email";
+    public static final String PARAM_MOBILE = "mobile";
     private static Logger _logger = Logger.getLogger( IdentityStoreRestService.class );
 
     private static final String SLASH = "/";
@@ -73,6 +85,8 @@ public final class IdentityStoreRestService
     private fr.paris.lutece.plugins.identitystore.v1.web.rs.IdentityStoreRestService _identityStoreRestServiceV1;
     @Inject
     private fr.paris.lutece.plugins.identitystore.v2.web.rs.IdentityStoreRestService _identityStoreRestServiceV2;
+    @Inject
+    private fr.paris.lutece.plugins.identitystore.v3.web.rs.IdentityStoreRestService _identityStoreRestServiceV3;
 
     /**
      * private constructor
@@ -90,11 +104,7 @@ public final class IdentityStoreRestService
     /**
      * Gives Identity from a connectionId or customerID either connectionId or customerId must be provided if connectionId AND customerId are provided, they
      * must be consistent otherwise an AppException is thrown
-     *
-     * @param strConnectionId
-     *            connection ID
-     * @param strCustomerId
-     *            customerID
+     * 
      * @param strHeaderClientAppCode
      *            client code
      * @param strQueryClientAppCode
@@ -296,6 +306,31 @@ public final class IdentityStoreRestService
                 return _identityStoreRestServiceV2.getApplicationRights( strClientAppCode );
             }
         String strError = "IdentityStoreRestService - Error IdentityStoreRestService.getApplicationRights : No default version found, please check configuration ";
+        _logger.error( strError );
+        return Response.noContent( ).build( );
+    }
+
+    /**
+     * Searches Identities from a list of values for a series of attributes
+     *
+     * @param strHeaderClientAppCode
+     *            client code
+     * @param strQueryClientAppCode
+     *            client code, will be removed, use Header parameter instead
+     * @return the identities
+     */
+    @POST
+    @Path( Constants.SEARCH_IDENTITIES_PATH )
+    @Consumes( MediaType.APPLICATION_JSON )
+    @Produces( MediaType.APPLICATION_JSON )
+    public Response searchIdentities( String strJsonAttributeValues, @HeaderParam( Constants.PARAM_CLIENT_CODE ) String strHeaderClientAppCode,
+            @QueryParam( Constants.PARAM_CLIENT_CODE ) String strQueryClientAppCode )
+    {
+        if ( _version.equalsIgnoreCase( Constants.VERSION_PATH_V2 ) )
+        {
+            return _identityStoreRestServiceV2.searchIdentities( strJsonAttributeValues, strHeaderClientAppCode, strQueryClientAppCode );
+        }
+        String strError = "IdentityStoreRestService - Error IdentityStoreRestService.searchIdentities : No default version found, please check configuration ";
         _logger.error( strError );
         return Response.noContent( ).build( );
     }

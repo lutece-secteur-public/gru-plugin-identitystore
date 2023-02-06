@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2020, Mairie de Paris
+ * Copyright (c) 2002-2023, City of Paris
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,8 +34,11 @@
 package fr.paris.lutece.plugins.identitystore.service.search;
 
 import fr.paris.lutece.plugins.identitystore.v2.web.rs.dto.IdentityDto;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.search.QualifiedIdentity;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.search.SearchAttributeDto;
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
 import fr.paris.lutece.portal.service.util.AppException;
+
 import java.util.List;
 import java.util.Map;
 
@@ -52,18 +55,28 @@ public interface ISearchIdentityService
      *            application code who requested identities
      * @return identity filled according to application rights for user identified by connection id
      */
-    List<IdentityDto> getIdentities( Map<String, List<String>> mapAttributeValues, List<String> listAttributeKeyNames, String strClientApplicationCode ) throws IdentityStoreException;
+    List<IdentityDto> getIdentities( Map<String, List<String>> mapAttributeValues, List<String> listAttributeKeyNames, String strClientApplicationCode )
+            throws IdentityStoreException;
+
+    /**
+     * returns a list of qualified identities from combination of attributes
+     *
+     * @param attributes
+     *            list of values to search for some attributes with strict or fuzzy mode
+     * @return identity filled according to application rights for user identified by connection id
+     */
+    List<QualifiedIdentity> getQualifiedIdentities( final List<SearchAttributeDto> attributes );
 
     /**
      * check attached files are present in identity Dto and that attributes to update exist and are writable (or not writable AND unchanged)
      *
      * @param mapAttributeValues
      *            map of attached files
-     * @param strClientAppCode
-     *            application code to check right
+     * @param nServiceContractId
+     *            service contract to check right
      * @throws AppException
      *             thrown if provided attributes are not valid
-     * @throws IdentityStoreException 
+     * @throws IdentityStoreException
      */
-    void checkSearchAttributes( Map<String, List<String>> mapAttributeValues, String strClientAppCode ) throws IdentityStoreException;
+    void checkSearchAttributes( Map<String, List<String>> mapAttributeValues, int nServiceContractId ) throws IdentityStoreException;
 }

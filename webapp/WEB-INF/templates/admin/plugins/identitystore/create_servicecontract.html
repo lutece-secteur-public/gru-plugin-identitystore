@@ -1,0 +1,155 @@
+<#include "adminidentities_tabs.html" />
+<@tabs tab="servicecontract" />
+<@box>
+	<@boxHeader title='#i18n{identitystore.create_servicecontract.title}' />
+	<@boxBody>
+    <@tform name='create_servicecontract' action='jsp/admin/plugins/identitystore/ManageServiceContracts.jsp' >
+
+        <@messages errors=errors />
+        <@input type="hidden" id="id" name="id"/>
+        <@input type="hidden" value="${token}" name="token" />
+
+		<@formGroup labelFor='name' labelKey='#i18n{identitystore.modify_servicecontract.labelName}' mandatory=true>
+			<@input type='text' id='name' name='name'  maxlength=50 value='${servicecontract.name!\'\'}' tabIndex='0' />
+		</@formGroup>
+		<@formGroup labelFor='parent_application_id' labelKey='#i18n{identitystore.modify_servicecontract.labelApplicationCode}' mandatory=true>
+			<@select id='parent_application_id' name='parent_application_id'>
+				<#if availaible_client_applications_list?? && availaible_client_applications_list?has_content>
+					<#list availaible_client_applications_list as app>
+						<option value="${app.id!}" <#if app.id == id_client_app> selected="selected"</#if> >${app.code!} - ${app.name!}</option>
+					</#list>
+				</#if>
+			</@select>
+		</@formGroup>
+		<@formGroup labelFor='organizational_entity' labelKey='#i18n{identitystore.modify_servicecontract.labelOrganizationalEntity}' mandatory=true>
+			<@input type='text' id='organizational_entity' name='organizational_entity'  maxlength=50 value='${servicecontract.organizationalEntity!\'\'}' tabIndex='2' />
+		</@formGroup>
+		<@formGroup labelFor='responsible_name' labelKey='#i18n{identitystore.modify_servicecontract.labelResponsibleName}' mandatory=true>
+			<@input type='text' id='responsible_name' name='responsible_name'  maxlength=50 value='${servicecontract.responsibleName!\'\'}' tabIndex='3' />
+		</@formGroup>
+		<@formGroup labelFor='contact_name' labelKey='#i18n{identitystore.modify_servicecontract.labelContactName}' mandatory=true>
+			<@input type='text' id='contact_name' name='contact_name'  maxlength=50 value='${servicecontract.contactName!\'\'}' tabIndex='4' />
+		</@formGroup>
+		<@formGroup labelFor='service_type' labelKey='#i18n{identitystore.modify_servicecontract.labelServiceType}' mandatory=true>
+			<!--<@input type='text' id='service_type' name='service_type'  maxlength=50 value='${servicecontract.serviceType!\'\'}' tabIndex='5' />-->
+			<@select id='service_type' name='service_type'>
+				<option value="FO Lutèce" selected="selected" >FO Lutèce</option>
+				<option value="BO Lutèce">BO Lutèce</option>
+				<option value="FO Métier">FO Métier</option>
+				<option value="BO Métier">BO Métier</option>
+			</@select>
+		</@formGroup>
+		<@formGroup labelFor='starting_date' labelKey='#i18n{identitystore.modify_servicecontract.labelStartingDate}' mandatory=true>
+			<@input type='date' name='starting_date' id='starting_date' value='${servicecontract.startingDate!\'\'}' />
+		</@formGroup>
+		<@formGroup labelFor='ending_date' labelKey='#i18n{identitystore.modify_servicecontract.labelEndingDate}'>
+			<@input type='date' name='ending_date' id='ending_date' value='${servicecontract.endingDate!\'\'}' />
+		</@formGroup>
+		<@formGroup labelFor='authorized_merge' labelKey='#i18n{identitystore.modify_servicecontract.labelAuthorizedMerge}'>
+			<@checkBox id="authorized_merge" name="authorized_merge"  value="1" checked=servicecontract.authorizedMerge!'false' tabIndex='6' />
+		</@formGroup>
+		<@formGroup labelFor='authorized_deletion' labelKey='#i18n{identitystore.modify_servicecontract.labelAuthorizedDeletion}'>
+          	<@checkBox id="authorized_deletion" name="authorized_deletion"  value="1" checked=servicecontract.authorizedDeletion!'false' tabIndex='7' />
+		</@formGroup>
+		<@formGroup labelFor='authorized_import' labelKey='#i18n{identitystore.modify_servicecontract.labelAuthorizedImport}'>
+          	<@checkBox id="authorized_import" name="authorized_import"  value="1" checked=servicecontract.authorizedImport!'false' tabIndex='9' />
+		</@formGroup>
+		<@formGroup labelFor='authorized_export' labelKey='#i18n{identitystore.modify_servicecontract.labelAuthorizedExport}'>
+          	<@checkBox id="authorized_export" name="authorized_export"  value="1" checked=servicecontract.authorizedExport!'false' tabIndex='10' />
+		</@formGroup>
+		<@fieldInputCheckBox i18nLabelKey="identitystore.create_servicecontract.labelIsAuthorizedDeleteValue" inputName="isAuthorizedDeleteValue" value="1" checked=false i18nHelpBlockKey="identitystore.create_clientapplication.labelIsAuthorizedDeleteValue.help" />
+		<@fieldInputCheckBox i18nLabelKey="identitystore.create_servicecontract.labelIsAuthorizedDeleteCertificate" inputName="isAuthorizedDeleteCertificate" value="1" checked=false i18nHelpBlockKey="identitystore.create_clientapplication.labelIsAuthorizedDeleteCertificate.help" />
+
+		<@table>
+		<tr>
+			<th>#i18n{identitystore.modify_clientapplication.labelAttributeName}</th>
+			<th>#i18n{identitystore.modify_clientapplication.labelSearchable}</th>
+			<th>#i18n{identitystore.modify_clientapplication.labelReadable}</th>
+			<th>#i18n{identitystore.modify_refattributecertificationprocessus.labelLevel}</th>
+			<th>#i18n{identitystore.modify_clientapplication.labelWritable}</th>
+			<th>#i18n{identitystore.modify_refattributecertificationprocessus.labelLabel}</th>
+		</tr>
+
+		<#if servicecontract_attribute_list?? && servicecontract_attribute_list?has_content>
+		<#list servicecontract_attribute_list as attribute>
+		<tr>
+			<td>
+				${attribute.attributeKey.name!}
+			</td>
+			<td>
+				<label for="${attribute.attributeKey.id}-searchable">
+					<input id="${attribute.attributeKey.id}-searchable" type="checkbox" name="searchable" value="${attribute.attributeKey.id}" <#if attribute.attributeRight.searchable> checked</#if> />
+				#i18n{identitystore.modify_clientapplication.labelSearchable}
+				</label>
+			</td>
+			<td>
+				<label for="${attribute.attributeKey.id}-readable">
+					<input id="${attribute.attributeKey.id}-readable" class="observed-requirement" data-attribute="${attribute.attributeKey.id!}" type="checkbox" name="readable" value="${attribute.attributeKey.id}" <#if attribute.attributeRight.readable> checked</#if> />
+				#i18n{identitystore.modify_clientapplication.labelReadable}
+				</label>
+			</td>
+			<td class="requirement">
+				<@select id='certification_level' name='certification_level' params='data-attribute=${attribute.attributeKey.id!}'>
+					<option value="${attribute.attributeKey.id!},-1" <#if attribute.refCertificationLevel.id == -1> selected="selected"</#if> >AUCUN</option>
+					<#if availaible_certification_levels_list?? && availaible_certification_levels_list?has_content>
+						<#list availaible_certification_levels_list as level>
+							<option value="${attribute.attributeKey.id!},${level.id!}" <#if attribute.refCertificationLevel.id == level.id> selected="selected"</#if> >${level.level!}</option>
+						</#list>
+					</#if>
+				</@select>
+			</td>
+			<td>
+				<label for="${attribute.attributeKey.id}-writable">
+					<input id="${attribute.attributeKey.id}-writable" class="observed-processus" data-attribute="${attribute.attributeKey.id!}" type="checkbox" name="writable" value="${attribute.attributeKey.id}" <#if attribute.attributeRight.writable> checked</#if> />
+				#i18n{identitystore.modify_clientapplication.labelWritable}
+				</label>
+			</td>
+			<td class="processus">
+				<#if attribute.compatibleProcessus?? && attribute.compatibleProcessus?has_content>
+					<#list attribute.compatibleProcessus as processus>
+						<@formGroup labelFor='${attribute.attributeKey.id!}-${processus.label!}'>
+							<@checkBox id="${attribute.attributeKey.id!}-${processus.label!}" name="certification_processus" labelKey="${processus.label!}" value="${attribute.attributeKey.id!},${processus.id!}" checked=attribute.refAttributeCertificationProcessus?seq_contains(processus) tabIndex='9' params='data-attribute=${attribute.attributeKey.id!}'/>
+						</@formGroup>
+					</#list>
+				<#else>
+					<span>#i18n{identitystore.modify_servicecontract.noCompatibleProcessus}</span>
+				</#if>
+			</td>
+		</tr>
+		</#list>
+		</#if>
+		</@table>
+
+		<@actionButtons button1Name="action_createServiceContract" button2Name="view_manageServiceContract"/>
+    </@tform>
+	</@boxBody>
+</@box>
+<script>
+	$(document).ready(function() {
+		registerObserver("processus", "input");
+		registerObserver("requirement", "select");
+	});
+
+	function registerObserver(observedClassName, observedType) {
+		$(".observed-" + observedClassName).each(function () {
+			const attributeId = $(this).data("attribute");
+			if ($(this).prop('checked')) {
+				$("." + observedClassName + " " + observedType + "[data-attribute='" + attributeId + "']").prop("disabled", false);
+			} else {
+				$("." + observedClassName + " " + observedType + "[data-attribute='" + attributeId + "']").prop("disabled", true);
+			}
+		});
+
+		$(".observed-" + observedClassName).click(function () {
+			const attributeId = $(this).data("attribute");
+			console.log("observedClassName: " + observedClassName);
+			console.log("observedType: " + observedType);
+			console.log("attributeId: " + attributeId);
+			if ($(this).prop('checked')) {
+				$("." + observedClassName + " " + observedType + "[data-attribute='" + attributeId + "']").prop("disabled", false);
+			} else {
+				$("." + observedClassName + " " + observedType + "[data-attribute='" + attributeId + "']").prop("disabled", true);
+			}
+		});
+	}
+</script>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2018, Mairie de Paris
+ * Copyright (c) 2002-2023, City of Paris
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,10 +38,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
 import fr.paris.lutece.plugins.identitystore.IdentityStoreTestContext;
-import fr.paris.lutece.plugins.identitystore.business.IdentityAttribute;
+import fr.paris.lutece.plugins.identitystore.business.identity.IdentityAttribute;
 import fr.paris.lutece.plugins.identitystore.service.IdentityStoreService;
+import fr.paris.lutece.plugins.identitystore.v2.web.rs.AuthorType;
 import fr.paris.lutece.plugins.identitystore.v2.web.rs.dto.IdentityChangeDto;
-import fr.paris.lutece.plugins.identitystore.v2.web.service.AuthorType;
 import fr.paris.lutece.test.LuteceTestCase;
 
 /**

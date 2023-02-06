@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2018, Mairie de Paris
+ * Copyright (c) 2002-2023, City of Paris
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -39,7 +39,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 
-import fr.paris.lutece.plugins.identitystore.business.AttributeCertificate;
+import fr.paris.lutece.plugins.identitystore.business.attribute.AttributeCertificate;
 
 /**
  *
@@ -55,8 +55,7 @@ public abstract class AbstractCertifier
     private String _strIconUrl;
     private int _nExpirationDelay;
     private List<String> _listCertifiableAttributes;
-    private HashMap<String,IGenerateAutomaticCertifierAttribute>  _mapGenerateAutomaticCertifierAttribute;
-    
+    private HashMap<String, IGenerateAutomaticCertifierAttribute> _mapGenerateAutomaticCertifierAttribute;
 
     /**
      * constructor with code for registration
@@ -231,21 +230,24 @@ public abstract class AbstractCertifier
         return certificate;
     }
 
-	/**
-	 * Gets the generate automatic certifier attribute.
-	 *
-	 * @return the generate automatic certifier attribute
-	 */
-	public HashMap<String,IGenerateAutomaticCertifierAttribute> getGenerateAutomaticCertifierAttribute() {
-		return _mapGenerateAutomaticCertifierAttribute;
-	}
+    /**
+     * Gets the generate automatic certifier attribute.
+     *
+     * @return the generate automatic certifier attribute
+     */
+    public HashMap<String, IGenerateAutomaticCertifierAttribute> getGenerateAutomaticCertifierAttribute( )
+    {
+        return _mapGenerateAutomaticCertifierAttribute;
+    }
 
-	/**
-	 * Sets the generate automatic certifier attribute.
-	 *
-	 * @param _mapGenerateAutomaticCertifierAttribute the map generate automatic certifier attribute
-	 */
-	public void setGenerateAutomaticCertifierAttribute(HashMap<String,IGenerateAutomaticCertifierAttribute> _mapGenerateAutomaticCertifierAttribute) {
-		this._mapGenerateAutomaticCertifierAttribute = _mapGenerateAutomaticCertifierAttribute;
-	}
+    /**
+     * Sets the generate automatic certifier attribute.
+     *
+     * @param _mapGenerateAutomaticCertifierAttribute
+     *            the map generate automatic certifier attribute
+     */
+    public void setGenerateAutomaticCertifierAttribute( HashMap<String, IGenerateAutomaticCertifierAttribute> _mapGenerateAutomaticCertifierAttribute )
+    {
+        this._mapGenerateAutomaticCertifierAttribute = _mapGenerateAutomaticCertifierAttribute;
+    }
 }

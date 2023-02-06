@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2018, Mairie de Paris
+ * Copyright (c) 2002-2023, City of Paris
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,20 +33,19 @@
  */
 package fr.paris.lutece.plugins.identitystore.v2.web.rs;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import fr.paris.lutece.plugins.identitystore.business.attribute.AttributeKey;
+import fr.paris.lutece.plugins.identitystore.business.attribute.AttributeKeyHome;
+import fr.paris.lutece.plugins.identitystore.business.attribute.KeyType;
+import fr.paris.lutece.plugins.identitystore.business.contract.AttributeRight;
+import fr.paris.lutece.plugins.identitystore.business.contract.ServiceContract;
+import fr.paris.lutece.plugins.identitystore.business.contract.ServiceContractHome;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 
-import fr.paris.lutece.plugins.identitystore.business.AttributeKey;
-import fr.paris.lutece.plugins.identitystore.business.AttributeKeyHome;
-import fr.paris.lutece.plugins.identitystore.business.AttributeRight;
-import fr.paris.lutece.plugins.identitystore.business.ClientApplication;
-import fr.paris.lutece.plugins.identitystore.business.ClientApplicationHome;
-import fr.paris.lutece.plugins.identitystore.business.IdentityAttribute;
-import fr.paris.lutece.plugins.identitystore.business.KeyType;
-import fr.paris.lutece.plugins.identitystore.service.IdentityStoreService;
 import fr.paris.lutece.plugins.identitystore.service.certifier.AbstractCertifier;
 import fr.paris.lutece.plugins.identitystore.service.certifier.CertifierNotFoundException;
 import fr.paris.lutece.plugins.identitystore.service.certifier.CertifierRegistry;
@@ -131,7 +130,8 @@ public final class IdentityRequestValidator
     {
         if ( StringUtils.isBlank( strConnectionId ) && ( StringUtils.isBlank( strCustomerId ) ) )
         {
-            throw new IdentityStoreException( Constants.PARAM_ID_CONNECTION + " AND " + Constants.PARAM_ID_CUSTOMER + " are missing, at least one must be provided" );
+            throw new IdentityStoreException(
+                    Constants.PARAM_ID_CONNECTION + " AND " + Constants.PARAM_ID_CUSTOMER + " are missing, at least one must be provided" );
         }
     }
 
@@ -186,14 +186,14 @@ public final class IdentityRequestValidator
      *
      * @param identityDto
      *            identityDto with list of attributes
-     * @param strClientAppCode
-     *            application code to check right
+     * @param nServiceContractId
+     *            service contract to check right
      * @param mapAttachedFiles
      *            map of attached files
      * @throws AppException
      *             thrown if provided attributes are not valid
      */
-    public void checkAttributes( IdentityDto identityDto, String strClientAppCode, Map<String, File> mapAttachedFiles ) throws IdentityStoreException
+    public void checkAttributes( IdentityDto identityDto, int nServiceContractId, Map<String, File> mapAttachedFiles ) throws IdentityStoreException
     {
         if ( ( mapAttachedFiles != null ) && !mapAttachedFiles.isEmpty( ) )
         {
@@ -230,16 +230,8 @@ public final class IdentityRequestValidator
 
         if ( identityDto.getAttributes( ) != null )
         {
-            List<AttributeRight> listRights = null;
-            ClientApplication clientApp = ClientApplicationHome.findByCode( strClientAppCode );
-            if ( clientApp != null )
-            {
-                listRights = ClientApplicationHome.selectApplicationRights( clientApp );
-            }
-            else
-            {
-                throw new IdentityStoreException( "The client application " + strClientAppCode + " is unknown " );
-            }
+            List<AttributeRight> listRights = ServiceContractHome.findByPrimaryKey( nServiceContractId ).map( ServiceContractHome::selectApplicationRights )
+                    .orElseThrow( ( ) -> new AppException( "Service Contract with the id " + nServiceContractId + " doesn't exist" ) );
 
             // check that all file attribute type provided with filename in dto have
             // matching attachements
@@ -252,24 +244,15 @@ public final class IdentityRequestValidator
                     throw new IdentityStoreException( Constants.PARAM_ATTRIBUTE_KEY + " " + attributeDto.getKey( ) + " is provided but does not exist" );
                 }
 
-                for ( AttributeRight attRight : listRights )
-                {
-                    if ( attRight.getAttributeKey( ).getId( ) == attributeKey.getId( ) )
-                    {
-                        IdentityAttribute attribute = IdentityStoreService.getAttribute( identityDto.getConnectionId( ), attRight.getAttributeKey( )
-                                .getKeyName( ), strClientAppCode );
-
-                        // if provided attribute is writable, or if no change => ok
-                        if ( attRight.isWritable( ) || ( ( attribute != null ) && attributeDto.getValue( ).equals( attribute.getValue( ) ) ) )
-                        {
-                            break;
-                        }
-                        else
-                        {
-                            throw new IdentityStoreException( Constants.PARAM_ATTRIBUTE_KEY + " " + attributeKey.getKeyName( ) + " is provided but is not writable" );
-                        }
-                    }
-                }
+                /*
+                 * for ( AttributeRight attRight : listRights ) { if ( attRight.getAttributeKey( ).getId( ) == attributeKey.getId( ) ) { IdentityAttribute
+                 * attribute = IdentityStoreService.getAttribute( identityDto.getConnectionId( ), attRight.getAttributeKey( ) .getKeyName( ), strClientAppCode
+                 * );
+                 * 
+                 * // TODO if provided attribute is writable, or if no change => ok if ( attRight.isWritable( ) || ( ( attribute != null ) &&
+                 * attributeDto.getValue( ).equals( attribute.getValue( ) ) ) ) { break; } else { throw new IdentityStoreException(
+                 * Constants.PARAM_ATTRIBUTE_KEY + " " + attributeKey.getKeyName( ) + " is provided but is not writable" ); } } }
+                 */
 
                 if ( attributeKey.getKeyType( ).equals( KeyType.FILE ) && StringUtils.isNotBlank( attributeDto.getValue( ) )
                         && ( ( mapAttachedFiles == null ) || ( mapAttachedFiles.get( attributeDto.getValue( ) ) == null ) ) )
@@ -286,15 +269,17 @@ public final class IdentityRequestValidator
      *
      * @param mapAttributeValues
      *            map of attached files
-     * @param strClientAppCode
-     *            application code to check right
+     * @param nServiceContractId
+     *            service contract to check right
      * @throws AppException
      *             thrown if provided attributes are not valid
      */
-    public void checkSearchAttributes( Map<String, List<String>> mapAttributeValues, String strClientAppCode ) throws IdentityStoreException
+    public void checkSearchAttributes( Map<String, List<String>> mapAttributeValues, int nServiceContractId ) throws IdentityStoreException
     {
-        ClientApplication clientApp = IdentityStoreService.fetchClientApplication( strClientAppCode );
-        List<AttributeRight> listAttributeRight = ClientApplicationHome.selectApplicationRights( clientApp );
+        ServiceContract serviceContract = ServiceContractHome.findByPrimaryKey( nServiceContractId )
+                .orElseThrow( ( ) -> new AppException( "Service Contract with the id " + nServiceContractId + " doesn't exist" ) );
+        String strClientAppCode = ""; // TODO serviceContract.getClientApplication().getCode();
+        List<AttributeRight> listAttributeRight = ServiceContractHome.selectApplicationRights( serviceContract );
 
         if ( ( mapAttributeValues != null ) && !mapAttributeValues.isEmpty( ) )
         {
@@ -306,7 +291,8 @@ public final class IdentityRequestValidator
                     {
                         if ( !attributeRight.isSearchable( ) )
                         {
-                            throw new IdentityStoreException( "The attribute " + strAttributeKeyName + " is provided but not searchable for " + strClientAppCode );
+                            throw new IdentityStoreException(
+                                    "The attribute " + strAttributeKeyName + " is provided but not searchable for " + strClientAppCode );
                         }
                     }
                 }
@@ -320,21 +306,25 @@ public final class IdentityRequestValidator
      * 
      * @param identityDto
      *            the identity to check
-     * @param strClientAppCode
-     *            application code to check right
+     * @param nServiceContractId
+     *            service contract to check right
      * @throws AppException
      *             thrown if one of this rule is not ok
      * @throws CertifierNotFoundException
      */
-    public void checkCertification( IdentityDto identityDto, String strClientAppCode ) throws AppException
+    public void checkCertification( IdentityDto identityDto, int nServiceContractId ) throws AppException
     {
         if ( MapUtils.isEmpty( identityDto.getAttributes( ) ) )
         {
             throw new AppException( "No attributes given for certification " );
         }
-        ClientApplication clientApp = ClientApplicationHome.findByCode( strClientAppCode );
-        List<AttributeRight> listRights = ClientApplicationHome.selectApplicationRights( clientApp );
-        List<AbstractCertifier> listCertifier = ClientApplicationHome.getCertifiers( clientApp );
+        ServiceContract serviceContract = ServiceContractHome.findByPrimaryKey( nServiceContractId )
+                .orElseThrow( ( ) -> new AppException( "Service Contract with the id " + nServiceContractId + " doesn't exist" ) );
+        String strClientAppCode = ""; // TODO serviceContract.getClientApplication().getCode();
+        List<AttributeRight> listRights = ServiceContractHome.selectApplicationRights( serviceContract );
+        // TODO search certifier on the service contract
+        List<AbstractCertifier> listCertifier = Collections.emptyList( );
+        // List<AbstractCertifier> listCertifier = ClientApplicationHome.getCertifiers( clientApp );
 
         // for each attribute retrieve certifier to control rights
         for ( String strAttributeKey : identityDto.getAttributes( ).keySet( ) )
@@ -366,7 +356,8 @@ public final class IdentityRequestValidator
             }
             if ( !bCertifierOk )
             {
-                throw new AppException( "ClientApplication [" + strClientAppCode + "] has no right to use certifier [" + strCertifierCode + "]" );
+                throw new AppException( "ClientApplication [" + strClientAppCode + "] with the ServiceContract [" + nServiceContractId
+                        + "] has no right to use certifier [" + strCertifierCode + "]" );
             }
 
             // rule 2 application and certifier allow on attribute
@@ -378,10 +369,11 @@ public final class IdentityRequestValidator
             {
                 for ( AttributeRight attributeRight : listRights )
                 {
-                    if ( attributeRight.getAttributeKey( ).getKeyName( ).equals( strAttributeKey ) && !attributeRight.isCertifiable( ) )
-                    {
-                        throw new AppException( "ClientApplication [" + strClientAppCode + "] has no right to certify [" + strAttributeKey + "]" );
-                    }
+                    // TODO change to find if certifiable on service contract
+                    /*
+                     * if ( attributeRight.getAttributeKey( ).getKeyName( ).equals( strAttributeKey ) && !attributeRight.isCertifiable( ) ) { throw new
+                     * AppException( "ClientApplication [" + strClientAppCode + "] has no right to certify [" + strAttributeKey + "]" ); }
+                     */
                 }
             }
         }

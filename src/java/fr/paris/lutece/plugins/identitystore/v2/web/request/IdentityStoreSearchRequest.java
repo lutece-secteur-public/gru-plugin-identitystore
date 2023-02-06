@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2020, Mairie de Paris
+ * Copyright (c) 2002-2023, City of Paris
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -56,6 +56,7 @@ public class IdentityStoreSearchRequest extends IdentityStoreRequest
     private final Map<String, List<String>> _mapAttributeValues;
     private final List<String> _listAttributeKeyNames;
     private final String _strClientAppCode;
+    private final int _nServiceContractId;
     private final ObjectMapper _objectMapper;
 
     /**
@@ -63,18 +64,20 @@ public class IdentityStoreSearchRequest extends IdentityStoreRequest
      * 
      * @param mapAttributeValues
      *            the map that associates list of values to search for some attributes
-     * @param listAttributeKey
+     * @param listAttributeKeyNames
      *            the list of attributes to retrieve in identities
-     * @param strClientAppCode
-     *            the applicationCode
+     * @param nServiceContractId
+     *            the service contract id
      * @param objectMapper
      *            for json transformation
      */
-    public IdentityStoreSearchRequest( Map<String, List<String>> mapAttributeValues, List<String> listAttributeKeyNames, String strClientAppCode, ObjectMapper objectMapper )
+    public IdentityStoreSearchRequest( Map<String, List<String>> mapAttributeValues, List<String> listAttributeKeyNames, int nServiceContractId,
+            String strClientAppCode, ObjectMapper objectMapper )
     {
         super( );
         this._mapAttributeValues = mapAttributeValues;
         this._listAttributeKeyNames = listAttributeKeyNames;
+        this._nServiceContractId = nServiceContractId;
         this._strClientAppCode = strClientAppCode;
         this._objectMapper = objectMapper;
     }
@@ -88,7 +91,7 @@ public class IdentityStoreSearchRequest extends IdentityStoreRequest
     @Override
     protected void validRequest( ) throws IdentityStoreException
     {
-        _searchIdentityService.checkSearchAttributes( _mapAttributeValues, _strClientAppCode );
+        _searchIdentityService.checkSearchAttributes( _mapAttributeValues, _nServiceContractId );
         IdentityRequestValidator.instance( ).checkClientApplication( _strClientAppCode );
     }
 
@@ -101,7 +104,7 @@ public class IdentityStoreSearchRequest extends IdentityStoreRequest
     @Override
     protected String doSpecificRequest( ) throws IdentityStoreException
     {
-        List<IdentityDto> listIdentityDto = _searchIdentityService.getIdentities(_mapAttributeValues, _listAttributeKeyNames, _strClientAppCode );
+        List<IdentityDto> listIdentityDto = _searchIdentityService.getIdentities( _mapAttributeValues, _listAttributeKeyNames, _strClientAppCode );
 
         try
         {

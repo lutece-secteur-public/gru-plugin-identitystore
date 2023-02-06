@@ -1,0 +1,25 @@
+#Caches status file
+#Sun Mar 27 03:06:48 CEST 2011
+SiteMapService.enabled=1
+MyPortalWidgetService.enabled=1
+PortalMenuService.enabled=1
+PageCacheService.enabled=1
+PortletCacheService.enabled=0
+MyPortalWidgetContentService.enabled=1
+PageCachingFilter.enabled=0
+StaticFilesCachingFilter.enabled=1
+StaticFilesCachingFilter.timeToLiveSeconds=604800
+MailAttachmentCacheService.enabled=1
+MailAttachmentCacheService.maxElementsInMemory=10
+MailAttachmentCacheService.overflowToDisk=true
+MailAttachmentCacheService.diskPersistent=true
+MailAttachmentCacheService.timeToLiveSeconds=7200
+BaseUserPreferencesCacheService.enabled=1
+BaseUserPreferencesCacheService.maxElementsInMemory=1000
+LuteceUserCacheService.enabled=1
+LuteceUserCacheService.maxElementsInMemory=1000
+pathCacheService.enabled=1
+LinksIncludeCacheService.enabled=1
+identitystore.activeServiceContractCache.enabled=1
+identitystore.identityAttributeCache.enabled=1
+identitystore.refAttributeCertificationDefinitionCache.enabled=1

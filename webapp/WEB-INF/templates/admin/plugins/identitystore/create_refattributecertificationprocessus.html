@@ -1,0 +1,50 @@
+<#include "manageprocessusref_tabs.html" />
+<@tabs2 tab="refattributecertificationprocessus" />
+<@box>
+	<@boxHeader title='#i18n{identitystore.create_refattributecertificationprocessus.title}' />
+	<@boxBody>
+    <@tform name='create_refattributecertificationprocessus' action='jsp/admin/plugins/identitystore/ManageRefAttributeCertificationProcessuss.jsp' >
+
+        <@messages errors=errors />
+        <@input type="hidden" id="id" name="id"/>
+        <@input type="hidden" id="id" name="id"/>
+        <@input type="hidden" value="${token}" name="token" />
+
+        <@formGroup labelFor='label' labelKey='#i18n{identitystore.create_refattributecertificationprocessus.labelLabel}' mandatory=true>
+            <@input type='text' id='label' name='label'  maxlength=50 value='${refattributecertificationprocessus.label!\'\'}' tabIndex='0' />
+        </@formGroup>
+
+        <@formGroup labelFor='code' labelKey='#i18n{identitystore.create_refattributecertificationprocessus.labelCode}' mandatory=true>
+            <@input type='text' id='code' name='code'  maxlength=50 value='${refattributecertificationprocessus.code!\'\'}' tabIndex='0' />
+        </@formGroup>
+
+        <@table>
+        <tr>
+            <th>#i18n{identitystore.modify_clientapplication.labelAttributeName}</th>
+            <th>#i18n{identitystore.modify_refattributecertificationprocessus.labelLevel}</th>
+        </tr>
+
+        <#if refattributecertificationlevels_attribute_list?? && refattributecertificationlevels_attribute_list?has_content>
+        <#list refattributecertificationlevels_attribute_list as attributeLevel>
+        <tr>
+            <td>
+                ${attributeLevel.attributeKey.name!}
+            </td>
+            <td>
+                <@select id='certification_level' name='certification_level'>
+                    <option value="${attributeLevel.attributeKey.id!},-1" <#if attributeLevel.refCertificationLevel.id == -1> selected="selected"</#if> >AUCUN</option>
+                    <#if availaible_certification_levels_list?? && availaible_certification_levels_list?has_content>
+                    <#list availaible_certification_levels_list as level>
+                        <option value="${attributeLevel.attributeKey.id!},${level.id!}" <#if attributeLevel.refCertificationLevel.id == level.id> selected="selected"</#if> >${level.level!}</option>
+                    </#list>
+                    </#if>
+                </@select>
+            </td>
+        </#list>
+        </#if>
+        </@table>
+
+		<@actionButtons button1Name="action_createRefAttributeCertificationProcessus" button2Name="view_manageRefAttributeCertificationProcessus"/>
+    </@tform>
+	</@boxBody>
+</@box>

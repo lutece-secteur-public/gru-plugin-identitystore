@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2018, Mairie de Paris
+ * Copyright (c) 2002-2023, City of Paris
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -48,7 +48,7 @@ public abstract class IdentityStoreRequest
      * 
      * @throws AppException
      *             if request not valid
-     * @throws IdentityStoreException 
+     * @throws IdentityStoreException
      */
     protected abstract void validRequest( ) throws IdentityStoreException;
 

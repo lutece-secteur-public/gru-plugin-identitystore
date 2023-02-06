@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2018, Mairie de Paris
+ * Copyright (c) 2002-2023, City of Paris
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,11 +33,10 @@
  */
 package fr.paris.lutece.plugins.identitystore.web;
 
-import fr.paris.lutece.plugins.identitystore.business.AttributeApplicationsRight;
-import fr.paris.lutece.plugins.identitystore.business.AttributeKey;
-import fr.paris.lutece.plugins.identitystore.business.AttributeKeyHome;
-import fr.paris.lutece.plugins.identitystore.business.ClientApplicationHome;
-import fr.paris.lutece.plugins.identitystore.business.KeyType;
+import fr.paris.lutece.plugins.identitystore.business.attribute.AttributeKey;
+import fr.paris.lutece.plugins.identitystore.business.attribute.AttributeKeyHome;
+import fr.paris.lutece.plugins.identitystore.business.attribute.KeyType;
+import fr.paris.lutece.plugins.identitystore.service.identity.IdentityService;
 import fr.paris.lutece.portal.service.admin.AdminUserService;
 import fr.paris.lutece.portal.service.message.AdminMessage;
 import fr.paris.lutece.portal.service.message.AdminMessageService;
@@ -179,7 +178,7 @@ public class AttributeKeyJspBean extends AdminIdentitiesJspBean
             return redirectView( request, VIEW_CREATE_ATTRIBUTEKEY );
         }
 
-        AttributeKeyHome.create( _attributekey );
+        IdentityService.instance( ).createAttributeKey( _attributekey );
         addInfo( INFO_ATTRIBUTEKEY_CREATED, getLocale( ) );
 
         return redirectView( request, VIEW_MANAGE_ATTRIBUTEKEYS );
@@ -221,11 +220,12 @@ public class AttributeKeyJspBean extends AdminIdentitiesJspBean
     public String doRemoveAttributeKey( HttpServletRequest request )
     {
         int nId = Integer.parseInt( request.getParameter( PARAMETER_ID_ATTRIBUTEKEY ) );
-        if ( AttributeKeyHome.checkAttributeId( nId ) )
+        final AttributeKey attributeKey = AttributeKeyHome.findByPrimaryKey( nId );
+        if ( attributeKey == null )
         {
             return redirect( request, AdminMessageService.getMessageUrl( request, MESSAGE_CANNOT_REMOVE_REFERENCE_ATTRIBUTE_EXISTS, AdminMessage.TYPE_ERROR ) );
         }
-        AttributeKeyHome.remove( nId );
+        IdentityService.instance( ).deleteAttributeKey( attributeKey );
         addInfo( INFO_ATTRIBUTEKEY_REMOVED, getLocale( ) );
 
         return redirectView( request, VIEW_MANAGE_ATTRIBUTEKEYS );
@@ -274,7 +274,7 @@ public class AttributeKeyJspBean extends AdminIdentitiesJspBean
             return redirect( request, VIEW_MODIFY_ATTRIBUTEKEY, PARAMETER_ID_ATTRIBUTEKEY, _attributekey.getId( ) );
         }
 
-        AttributeKeyHome.update( _attributekey );
+        IdentityService.instance( ).updateAttributeKey( _attributekey );
         addInfo( INFO_ATTRIBUTEKEY_UPDATED, getLocale( ) );
 
         return redirectView( request, VIEW_MANAGE_ATTRIBUTEKEYS );
@@ -305,11 +305,12 @@ public class AttributeKeyJspBean extends AdminIdentitiesJspBean
     public String getApplicationRight( HttpServletRequest request )
     {
         List<AttributeKey> listAttributeKeys = AttributeKeyHome.getAttributeKeysList( );
-        Map<String, Object> model = getPaginatedListModel( request, MARK_ATTRIBUTEKEY_LIST, listAttributeKeys, JSP_MANAGE_ATTRIBUTEKEYS + "?view="
-                + VIEW_APP_RIGHT_ATTRIBUTES );
+        Map<String, Object> model = getPaginatedListModel( request, MARK_ATTRIBUTEKEY_LIST, listAttributeKeys,
+                JSP_MANAGE_ATTRIBUTEKEYS + "?view=" + VIEW_APP_RIGHT_ATTRIBUTES );
 
-        Map<String, AttributeApplicationsRight> mapAttributeApplicationsRight = ClientApplicationHome.getAttributeApplicationsRight( );
-        model.put( MARK_ATTRIBUTE_APPS_RIGHT_MAP, mapAttributeApplicationsRight );
+        // TODO
+        // Map<String, AttributeApplicationsRight> mapAttributeApplicationsRight = ClientApplicationHome.getAttributeApplicationsRight( );
+        // model.put( MARK_ATTRIBUTE_APPS_RIGHT_MAP, mapAttributeApplicationsRight );
 
         return getPage( PROPERTY_PAGE_TITLE_APP_RIGHT_ATTRIBUTES, TEMPLATE_APP_RIGHT_ATTRIBUTES, model );
     }

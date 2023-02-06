@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2016, Mairie de Paris
+ * Copyright (c) 2002-2023, City of Paris
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -48,7 +48,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 
@@ -65,7 +64,7 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
-import fr.paris.lutece.plugins.identitystore.business.IdentityAttribute;
+import fr.paris.lutece.plugins.identitystore.business.identity.IdentityAttribute;
 import fr.paris.lutece.plugins.identitystore.service.IdentityStoreService;
 import fr.paris.lutece.plugins.identitystore.service.certifier.AbstractCertifier;
 import fr.paris.lutece.plugins.identitystore.service.certifier.CertifierRegistry;
@@ -162,8 +161,8 @@ public final class IdentityStoreRestService
             Map<String, File> mapAttachedFiles = fetchAttachedFiles( formParams );
 
             // Use the trusted application code for identitystore update request processing
-            String strApplicationCode = IdentityStoreService.getTrustedApplicationCode( strHeaderApplicationCode, identityChangeDto.getAuthor( )
-                    .getApplicationCode( ) );
+            String strApplicationCode = IdentityStoreService.getTrustedApplicationCode( strHeaderApplicationCode,
+                    identityChangeDto.getAuthor( ).getApplicationCode( ) );
             identityChangeDto.getAuthor( ).setApplicationCode( strApplicationCode );
 
             IdentityStoreUpdateRequest identityStoreRequest = new IdentityStoreUpdateRequest( identityChangeDto, mapAttachedFiles, _objectMapper );
@@ -195,8 +194,8 @@ public final class IdentityStoreRestService
             AbstractCertifier certifier = CertifierRegistry.instance( ).getCertifier( strCertifierCode );
 
             // Use the trusted application code for identitystore update request processing
-            String strApplicationCode = IdentityStoreService.getTrustedApplicationCode( strHeaderApplicationCode, identityChangeDto.getAuthor( )
-                    .getApplicationCode( ) );
+            String strApplicationCode = IdentityStoreService.getTrustedApplicationCode( strHeaderApplicationCode,
+                    identityChangeDto.getAuthor( ).getApplicationCode( ) );
             identityChangeDto.getAuthor( ).setApplicationCode( strApplicationCode );
 
             IdentityStoreCertifyRequest identityStoreRequest = new IdentityStoreCertifyRequest(
@@ -237,8 +236,8 @@ public final class IdentityStoreRestService
             Map<String, File> mapAttachedFiles = fetchAttachedFiles( formParams );
 
             // Use the trusted application code for identitystore update request processing
-            String strApplicationCode = IdentityStoreService.getTrustedApplicationCode( strHeaderApplicationCode, identityChangeDto.getAuthor( )
-                    .getApplicationCode( ) );
+            String strApplicationCode = IdentityStoreService.getTrustedApplicationCode( strHeaderApplicationCode,
+                    identityChangeDto.getAuthor( ).getApplicationCode( ) );
             identityChangeDto.getAuthor( ).setApplicationCode( strApplicationCode );
 
             IdentityStoreCreateRequest identityStoreRequest = new IdentityStoreCreateRequest( identityChangeDto, mapAttachedFiles, _objectMapper );
@@ -339,11 +338,11 @@ public final class IdentityStoreRestService
                 // content-body of request
                 strBody = IOUtils.toString( inputStream, StandardCharsets.UTF_8.toString( ) );
 
-                try 
+                try
                 {
-                	identityChangeDto = getIdentityChangeFromJson( strBody );
+                    identityChangeDto = getIdentityChangeFromJson( strBody );
                 }
-                catch ( IOException e )
+                catch( IOException e )
                 {
                     throw new AppException( "Error parsing json request " + strBody );
                 }

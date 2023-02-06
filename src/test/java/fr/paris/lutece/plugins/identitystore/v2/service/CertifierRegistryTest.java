@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2018, Mairie de Paris
+ * Copyright (c) 2002-2023, City of Paris
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,7 +34,7 @@
 package fr.paris.lutece.plugins.identitystore.v2.service;
 
 import fr.paris.lutece.plugins.identitystore.IdentityStoreTestContext;
-import fr.paris.lutece.plugins.identitystore.business.AttributeCertificate;
+import fr.paris.lutece.plugins.identitystore.business.attribute.AttributeCertificate;
 import fr.paris.lutece.plugins.identitystore.service.certifier.AbstractCertifier;
 import fr.paris.lutece.plugins.identitystore.service.certifier.CertifierNotFoundException;
 import fr.paris.lutece.plugins.identitystore.service.certifier.CertifierRegistry;

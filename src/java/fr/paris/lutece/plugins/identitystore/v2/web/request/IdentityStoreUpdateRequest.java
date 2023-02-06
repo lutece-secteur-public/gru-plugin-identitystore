@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2018, Mairie de Paris
+ * Copyright (c) 2002-2023, City of Paris
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -61,7 +61,6 @@ public class IdentityStoreUpdateRequest extends IdentityStoreRequest
      * 
      * @param identityChangeDto
      *            the dto of identity's change
-     * @param strHeaderApplicationCode
      * @param mapAttachedFiles
      *            list of attached files for attributes
      * @param objectMapper
@@ -78,7 +77,7 @@ public class IdentityStoreUpdateRequest extends IdentityStoreRequest
     /**
      * Valid the update request
      * 
-     * @throws AppException
+     * @throws IdentityStoreException
      *             if there is an exception during the treatment
      */
     @Override
@@ -88,15 +87,15 @@ public class IdentityStoreUpdateRequest extends IdentityStoreRequest
         IdentityRequestValidator.instance( ).checkIdentity( _identityChangeDto.getIdentity( ).getConnectionId( ),
                 _identityChangeDto.getIdentity( ).getCustomerId( ) );
         IdentityRequestValidator.instance( ).checkClientApplication( _identityChangeDto.getAuthor( ).getApplicationCode( ) );
-        IdentityRequestValidator.instance( ).checkAttributes( _identityChangeDto.getIdentity( ), _identityChangeDto.getAuthor( ).getApplicationCode( ),
-                _mapAttachedFiles );
-        IdentityRequestValidator.instance( ).checkCertification( _identityChangeDto.getIdentity( ), _identityChangeDto.getAuthor( ).getApplicationCode( ) );
+        // TODO change to pass the real service contract id
+        IdentityRequestValidator.instance( ).checkAttributes( _identityChangeDto.getIdentity( ), 0, _mapAttachedFiles );
+        IdentityRequestValidator.instance( ).checkCertification( _identityChangeDto.getIdentity( ), 0 );
     }
 
     /**
      * update the identity
      * 
-     * @throws AppException
+     * @throws IdentityStoreException
      *             if there is an exception during the treatment
      */
     @Override

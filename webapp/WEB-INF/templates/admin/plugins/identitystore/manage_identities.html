@@ -49,24 +49,10 @@
                 ${identity.connectionId!''}
             </td>
         <td>
-            <#if modifyIdentityRole>
-            <a href="jsp/admin/plugins/identitystore/ManageIdentities.jsp?view=modifyIdentity&id=${identity.id}"
-               class="btn btn-primary btn-sm" title="#i18n{portal.util.labelModify}" >
-                <i class="fa fa-pencil"></i>
-            </a>
-            </#if>
-            <#if viewIdentityRole>
             <a href="jsp/admin/plugins/identitystore/ManageIdentities.jsp?view=viewIdentity&id=${identity.id}"
                class="btn btn-primary btn-sm" title="#i18n{identitystore.manage_identities.buttonView}">
                 <i class="fa fa-user"></i>
             </a>
-            </#if>
-            <#if deleteIdentityRole>
-            <a href="jsp/admin/plugins/identitystore/ManageIdentities.jsp?action=confirmRemoveIdentity&id=${identity.id}"
-               class="btn btn-danger btn-sm" title="#i18n{portal.util.labelDelete}" >
-                <i class="fa fa-trash"></i>
-            </a>
-            </#if>
         </td>
         </tr>
         </#list>

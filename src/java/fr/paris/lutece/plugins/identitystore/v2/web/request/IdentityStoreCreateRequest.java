@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2018, Mairie de Paris
+ * Copyright (c) 2002-2023, City of Paris
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -79,7 +79,7 @@ public class IdentityStoreCreateRequest extends IdentityStoreRequest
     /**
      * Valid the create request
      * 
-     * @throws AppException
+     * @throws IdentityStoreException
      *             if there is an exception during the treatment
      */
     @Override
@@ -98,14 +98,14 @@ public class IdentityStoreCreateRequest extends IdentityStoreRequest
             }
 
         IdentityRequestValidator.instance( ).checkClientApplication( _identityChangeDto.getAuthor( ).getApplicationCode( ) );
-        IdentityRequestValidator.instance( ).checkAttributes( _identityChangeDto.getIdentity( ), _identityChangeDto.getAuthor( ).getApplicationCode( ),
-                _mapAttachedFiles );
+        // TODO change to pass the real service contract id
+        IdentityRequestValidator.instance( ).checkAttributes( _identityChangeDto.getIdentity( ), 0, _mapAttachedFiles );
     }
 
     /**
      * create the identity
      * 
-     * @throws AppException
+     * @throws IdentityStoreException
      *             if there is an exception during the treatment
      */
     @Override

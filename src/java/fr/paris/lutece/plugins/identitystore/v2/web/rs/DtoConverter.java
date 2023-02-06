@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2018, Mairie de Paris
+ * Copyright (c) 2002-2023, City of Paris
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,12 +33,12 @@
  */
 package fr.paris.lutece.plugins.identitystore.v2.web.rs;
 
-import fr.paris.lutece.plugins.identitystore.business.AttributeCertificate;
-import fr.paris.lutece.plugins.identitystore.business.AttributeKey;
-import fr.paris.lutece.plugins.identitystore.business.AttributeRight;
-import fr.paris.lutece.plugins.identitystore.business.ClientApplicationHome;
-import fr.paris.lutece.plugins.identitystore.business.Identity;
-import fr.paris.lutece.plugins.identitystore.business.IdentityAttribute;
+import fr.paris.lutece.plugins.identitystore.business.attribute.AttributeCertificate;
+import fr.paris.lutece.plugins.identitystore.business.attribute.AttributeKey;
+import fr.paris.lutece.plugins.identitystore.business.contract.AttributeRight;
+import fr.paris.lutece.plugins.identitystore.business.contract.ServiceContract;
+import fr.paris.lutece.plugins.identitystore.business.identity.Identity;
+import fr.paris.lutece.plugins.identitystore.business.identity.IdentityAttribute;
 import fr.paris.lutece.plugins.identitystore.service.ChangeAuthor;
 import fr.paris.lutece.plugins.identitystore.service.certifier.AbstractCertifier;
 import fr.paris.lutece.plugins.identitystore.service.certifier.CertifierNotFoundException;
@@ -47,15 +47,12 @@ import fr.paris.lutece.plugins.identitystore.v2.web.rs.dto.AttributeDto;
 import fr.paris.lutece.plugins.identitystore.v2.web.rs.dto.AuthorDto;
 import fr.paris.lutece.plugins.identitystore.v2.web.rs.dto.CertificateDto;
 import fr.paris.lutece.plugins.identitystore.v2.web.rs.dto.IdentityDto;
-import fr.paris.lutece.plugins.identitystore.v2.web.rs.AuthorType;
 import fr.paris.lutece.portal.service.util.AppException;
-
 import org.apache.commons.lang3.StringUtils;
 
 import java.sql.Timestamp;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -77,11 +74,11 @@ public final class DtoConverter
      *
      * @param identity
      *            business identity to convert
-     * @param strClientAppCode
-     *            client app code
+     * @param serviceContract
+     *            service contract
      * @return identityDto initialized from provided identity
      */
-    public static IdentityDto convertToDto( Identity identity, String strClientAppCode )
+    public static IdentityDto convertToDto( Identity identity, ServiceContract serviceContract )
     {
         IdentityDto identityDto = new IdentityDto( );
         identityDto.setConnectionId( identity.getConnectionId( ) );
@@ -90,7 +87,6 @@ public final class DtoConverter
         if ( identity.getAttributes( ) != null )
         {
             Map<String, AttributeDto> mapAttributeDto = new HashMap<String, AttributeDto>( );
-            List<AttributeRight> lstRights = ClientApplicationHome.selectApplicationRights( ClientApplicationHome.findByCode( strClientAppCode ) );
 
             for ( IdentityAttribute attribute : identity.getAttributes( ).values( ) )
             {
@@ -104,17 +100,17 @@ public final class DtoConverter
                 attrDto.setLastUpdateDate( attribute.getLastUpdateDate( ) );
                 attrDto.setStatus( attribute.getStatus( ) );
 
-                for ( AttributeRight attRight : lstRights )
+                for ( AttributeRight attRight : serviceContract.getAttributeRights( ) )
                 {
                     if ( attRight.getAttributeKey( ).getKeyName( ).equals( attributeKey.getKeyName( ) ) )
                     {
                         attrDto.setCertified( attribute.getCertificate( ) != null );
-                        attrDto.setWritable( attRight.isWritable( ) );
 
                         break;
                     }
                 }
 
+                // TODO gérer la suppression des certifiers ?
                 if ( attribute.getCertificate( ) != null )
                 {
                     CertificateDto certifDto = new CertificateDto( );

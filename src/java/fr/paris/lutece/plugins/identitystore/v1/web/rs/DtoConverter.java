@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2016, Mairie de Paris
+ * Copyright (c) 2002-2023, City of Paris
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,12 +33,12 @@
  */
 package fr.paris.lutece.plugins.identitystore.v1.web.rs;
 
-import fr.paris.lutece.plugins.identitystore.business.AttributeCertificate;
-import fr.paris.lutece.plugins.identitystore.business.AttributeKey;
-import fr.paris.lutece.plugins.identitystore.business.AttributeRight;
-import fr.paris.lutece.plugins.identitystore.business.ClientApplicationHome;
-import fr.paris.lutece.plugins.identitystore.business.Identity;
-import fr.paris.lutece.plugins.identitystore.business.IdentityAttribute;
+import fr.paris.lutece.plugins.identitystore.business.attribute.AttributeCertificate;
+import fr.paris.lutece.plugins.identitystore.business.attribute.AttributeKey;
+import fr.paris.lutece.plugins.identitystore.business.contract.AttributeRight;
+import fr.paris.lutece.plugins.identitystore.business.contract.ServiceContractHome;
+import fr.paris.lutece.plugins.identitystore.business.identity.Identity;
+import fr.paris.lutece.plugins.identitystore.business.identity.IdentityAttribute;
 import fr.paris.lutece.plugins.identitystore.service.ChangeAuthor;
 import fr.paris.lutece.plugins.identitystore.service.certifier.AbstractCertifier;
 import fr.paris.lutece.plugins.identitystore.service.certifier.CertifierNotFoundException;
@@ -82,11 +82,11 @@ public final class DtoConverter
      *
      * @param identity
      *            business identity to convert
-     * @param strClientAppCode
-     *            client app code
+     * @param nServiceContractId
+     *            service contract id
      * @return identityDto initialized from provided identity
      */
-    public static IdentityDto convertToDto( Identity identity, String strClientAppCode )
+    public static IdentityDto convertToDto( Identity identity, int nServiceContractId )
     {
         IdentityDto identityDto = new IdentityDto( );
         identityDto.setConnectionId( identity.getConnectionId( ) );
@@ -95,7 +95,8 @@ public final class DtoConverter
         if ( identity.getAttributes( ) != null )
         {
             Map<String, AttributeDto> mapAttributeDto = new HashMap<String, AttributeDto>( );
-            List<AttributeRight> lstRights = ClientApplicationHome.selectApplicationRights( ClientApplicationHome.findByCode( strClientAppCode ) );
+            List<AttributeRight> lstRights = ServiceContractHome.findByPrimaryKey( nServiceContractId ).map( ServiceContractHome::selectApplicationRights )
+                    .orElseThrow( ( ) -> new AppException( "Service Contract with the id " + nServiceContractId + " doesn't exist" ) );
 
             for ( IdentityAttribute attribute : identity.getAttributes( ).values( ) )
             {
@@ -301,7 +302,8 @@ public final class DtoConverter
      * @param certificateDtoOldVersion
      * @return certificateDto from package v2
      */
-    public static CertificateDto convertToCertificateDtoNewVersion( fr.paris.lutece.plugins.identitystore.v1.web.rs.dto.CertificateDto certificateDtoOldVersion )
+    public static CertificateDto convertToCertificateDtoNewVersion(
+            fr.paris.lutece.plugins.identitystore.v1.web.rs.dto.CertificateDto certificateDtoOldVersion )
     {
 
         CertificateDto certificateDto = new CertificateDto( );

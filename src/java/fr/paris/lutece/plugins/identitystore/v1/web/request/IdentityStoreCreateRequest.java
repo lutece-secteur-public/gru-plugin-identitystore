@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2016, Mairie de Paris
+ * Copyright (c) 2002-2023, City of Paris
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -99,9 +99,11 @@ public class IdentityStoreCreateRequest extends IdentityStoreRequest
                 IdentityRequestValidator.instance( ).checkIdentity( _identityChangeDto.getIdentity( ).getConnectionId( ), Constants.NO_CUSTOMER_ID );
             }
 
+        // TODO change to pass service contract id
+        int nServiceContractId = 1;
         IdentityRequestValidator.instance( ).checkClientApplication( _identityChangeDto.getAuthor( ).getApplicationCode( ) );
         IdentityRequestValidator.instance( ).checkAttributes( _identityChangeDto.getIdentity( ), _identityChangeDto.getAuthor( ).getApplicationCode( ),
-                _mapAttachedFiles );
+                nServiceContractId, _mapAttachedFiles );
     }
 
     /**
@@ -109,13 +111,13 @@ public class IdentityStoreCreateRequest extends IdentityStoreRequest
      * 
      * @throws AppException
      *             if there is an exception during the treatment
-     * @throws IdentityStoreException 
+     * @throws IdentityStoreException
      */
     @Override
     protected String doSpecificRequest( ) throws IdentityStoreException
     {
-        fr.paris.lutece.plugins.identitystore.v2.web.rs.dto.IdentityDto identityDto = IdentityStoreService.getOrCreateIdentity(
-                DtoConverter.convertToIdentityChangeDtoNewVersion( _identityChangeDto ), _mapAttachedFiles );
+        fr.paris.lutece.plugins.identitystore.v2.web.rs.dto.IdentityDto identityDto = IdentityStoreService
+                .getOrCreateIdentity( DtoConverter.convertToIdentityChangeDtoNewVersion( _identityChangeDto ), _mapAttachedFiles );
         IdentityDto identityDtoOldVersion = DtoConverter.convertToIdentityDtoOldVersion( identityDto );
 
         try

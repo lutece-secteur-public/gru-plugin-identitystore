@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2018, Mairie de Paris
+ * Copyright (c) 2002-2023, City of Paris
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,49 +33,27 @@
  */
 package fr.paris.lutece.plugins.identitystore.service;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
-import org.apache.commons.collections.MapUtils;
-import org.apache.commons.lang3.StringUtils;
-
-import fr.paris.lutece.plugins.identitystore.business.AttributeCertificate;
-import fr.paris.lutece.plugins.identitystore.business.AttributeCertificateHome;
-import fr.paris.lutece.plugins.identitystore.business.AttributeKey;
-import fr.paris.lutece.plugins.identitystore.business.AttributeKeyHome;
-import fr.paris.lutece.plugins.identitystore.business.AttributeRight;
-import fr.paris.lutece.plugins.identitystore.business.ClientApplication;
-import fr.paris.lutece.plugins.identitystore.business.ClientApplicationHome;
-import fr.paris.lutece.plugins.identitystore.business.Identity;
-import fr.paris.lutece.plugins.identitystore.business.IdentityAttribute;
-import fr.paris.lutece.plugins.identitystore.business.IdentityAttributeHome;
-import fr.paris.lutece.plugins.identitystore.business.IdentityConstants;
-import fr.paris.lutece.plugins.identitystore.business.IdentityHome;
-import fr.paris.lutece.plugins.identitystore.business.KeyType;
+import fr.paris.lutece.plugins.identitystore.business.application.ClientApplication;
+import fr.paris.lutece.plugins.identitystore.business.application.ClientApplicationHome;
+import fr.paris.lutece.plugins.identitystore.business.attribute.*;
+import fr.paris.lutece.plugins.identitystore.business.contract.AttributeRight;
+import fr.paris.lutece.plugins.identitystore.business.contract.ServiceContract;
+import fr.paris.lutece.plugins.identitystore.business.contract.ServiceContractHome;
+import fr.paris.lutece.plugins.identitystore.business.identity.*;
 import fr.paris.lutece.plugins.identitystore.business.security.SecureMode;
 import fr.paris.lutece.plugins.identitystore.service.certifier.AbstractCertifier;
 import fr.paris.lutece.plugins.identitystore.service.certifier.CertifierNotFoundException;
 import fr.paris.lutece.plugins.identitystore.service.certifier.CertifierRegistry;
 import fr.paris.lutece.plugins.identitystore.service.certifier.IGenerateAutomaticCertifierAttribute;
+import fr.paris.lutece.plugins.identitystore.service.contract.ServiceContractNotFoundException;
 import fr.paris.lutece.plugins.identitystore.service.encryption.IdentityEncryptionService;
 import fr.paris.lutece.plugins.identitystore.service.external.IdentityInfoExternalService;
-import fr.paris.lutece.plugins.identitystore.service.listeners.IdentityStoreNotifyListenerService;
 import fr.paris.lutece.plugins.identitystore.v2.web.rs.AuthorType;
 import fr.paris.lutece.plugins.identitystore.v2.web.rs.DtoConverter;
 import fr.paris.lutece.plugins.identitystore.v2.web.rs.IdentityRequestValidator;
-import fr.paris.lutece.plugins.identitystore.v2.web.rs.dto.AppRightDto;
-import fr.paris.lutece.plugins.identitystore.v2.web.rs.dto.ApplicationRightsDto;
-import fr.paris.lutece.plugins.identitystore.v2.web.rs.dto.AttributeDto;
-import fr.paris.lutece.plugins.identitystore.v2.web.rs.dto.AttributeStatusDto;
-import fr.paris.lutece.plugins.identitystore.v2.web.rs.dto.AuthorDto;
-import fr.paris.lutece.plugins.identitystore.v2.web.rs.dto.CertificateDto;
-import fr.paris.lutece.plugins.identitystore.v2.web.rs.dto.IdentityChangeDto;
-import fr.paris.lutece.plugins.identitystore.v2.web.rs.dto.IdentityDto;
+import fr.paris.lutece.plugins.identitystore.v2.web.rs.dto.*;
 import fr.paris.lutece.plugins.identitystore.v2.web.rs.util.Constants;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.search.QualifiedIdentity;
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityDeletedException;
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityNotFoundException;
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
@@ -86,6 +64,10 @@ import fr.paris.lutece.portal.service.util.AppException;
 import fr.paris.lutece.portal.service.util.AppLogService;
 import fr.paris.lutece.portal.service.util.AppPropertiesService;
 import fr.paris.lutece.util.jwt.service.JWTUtil;
+import org.apache.commons.collections4.MapUtils;
+import org.apache.commons.lang3.StringUtils;
+
+import java.util.*;
 
 /*
  * Copyright (c) 2002-2016, Mairie de Paris
@@ -150,7 +132,7 @@ public final class IdentityStoreService
      * @param mapAttachedFiles
      *            the files to create
      * @return the created identity
-     * @throws IdentityStoreException 
+     * @throws IdentityStoreException
      */
     public static IdentityDto getOrCreateIdentity( IdentityChangeDto identityChangeDto, Map<String, File> mapAttachedFiles ) throws IdentityStoreException
     {
@@ -190,8 +172,7 @@ public final class IdentityStoreService
                 {
                     identity = createIdentity( strConnectionId, strClientAppCode );
                     bIdentityCreated = true;
-                    identity = completeIdentity( identity, identityChangeDto, mapAttachedFiles, clientApplication.getCode( ),
-                            clientApplication.getIsAuthorizedDeleteValue( ) );
+                    identity = completeIdentity( identity, identityChangeDto, mapAttachedFiles, clientApplication.getCode( ) );
                 }
 
             }
@@ -200,8 +181,7 @@ public final class IdentityStoreService
                 identity = new Identity( );
                 identity = IdentityHome.create( identity );
                 bIdentityCreated = true;
-                identity = completeIdentity( identity, identityChangeDto, mapAttachedFiles, clientApplication.getCode( ),
-                        clientApplication.getIsAuthorizedDeleteValue( ) );
+                identity = completeIdentity( identity, identityChangeDto, mapAttachedFiles, clientApplication.getCode( ) );
             }
         }
 
@@ -210,10 +190,11 @@ public final class IdentityStoreService
             IdentityChange identityChange = new IdentityChange( );
             identityChange.setIdentity( identity );
             identityChange.setChangeType( IdentityChangeType.CREATE );
-            IdentityStoreNotifyListenerService.instance( ).notifyListenersIdentityChange( identityChange );
+            // TODO compat IdentityStoreNotifyListenerService.instance( ).notifyListenersIdentityChange( identityChange );
         }
 
-        identityDtoDecrypted = DtoConverter.convertToDto( identity, strClientAppCode );
+        identityDtoDecrypted = DtoConverter.convertToDto( identity,
+                ClientApplicationHome.selectActiveServiceContract( clientApplication.getCode( ) ).get( 0 ) );
 
         return _identityEncryptionService.encrypt( identityDtoDecrypted, clientApplication );
     }
@@ -365,7 +346,8 @@ public final class IdentityStoreService
      *            application code who requested identities
      * @return identity filled according to application rights for user identified by connection id
      */
-    public static List<IdentityDto> getIdentities( Map<String, List<String>> mapAttributeValues, List<String> listAttributeKeyNames, String strClientApplicationCode )
+    public static List<IdentityDto> getIdentities( Map<String, List<String>> mapAttributeValues, List<String> listAttributeKeyNames,
+            String strClientApplicationCode )
     {
         List<IdentityDto> listIdentityDto = new ArrayList<>( );
 
@@ -375,7 +357,8 @@ public final class IdentityStoreService
             return listIdentityDto;
         }
 
-        List<IdentityAttribute> listIdentityAttribute = IdentityAttributeHome.getAttributesByIdentityList(listIdentity, listAttributeKeyNames, strClientApplicationCode );
+        List<IdentityAttribute> listIdentityAttribute = IdentityAttributeHome.getAttributesByIdentityList( listIdentity, listAttributeKeyNames,
+                strClientApplicationCode );
 
         for ( Identity identity : listIdentity )
         {
@@ -383,9 +366,9 @@ public final class IdentityStoreService
             {
                 if ( identity.getId( ) == identityAttribute.getIdIdentity( ) )
                 {
-                    Map<String,IdentityAttribute> mapIdentityAttributes = identity.getAttributes( );
+                    Map<String, IdentityAttribute> mapIdentityAttributes = identity.getAttributes( );
 
-                    if ( mapIdentityAttributes == null)
+                    if ( mapIdentityAttributes == null )
                     {
                         mapIdentityAttributes = new HashMap<>( );
                     }
@@ -395,10 +378,47 @@ public final class IdentityStoreService
                 }
             }
 
-            listIdentityDto.add( DtoConverter.convertToDto( identity, strClientApplicationCode ) );
+            listIdentityDto.add( fr.paris.lutece.plugins.identitystore.v2.web.rs.DtoConverter.convertToDto( identity,
+                    ClientApplicationHome.selectActiveServiceContract( strClientApplicationCode ).get( 0 ) ) );
         }
 
         return listIdentityDto;
+    }
+
+    public static List<QualifiedIdentity> getQualifiedIdentities( final Map<String, List<String>> mapAttributeValues )
+    {
+        final List<QualifiedIdentity> qualifiedIdentities = new ArrayList<>( );
+
+        final List<Identity> listIdentity = IdentityHome.findByAttributesValueForApiSearch( mapAttributeValues );
+        if ( listIdentity == null || listIdentity.isEmpty( ) )
+        {
+            return qualifiedIdentities;
+        }
+
+        final List<IdentityAttribute> listIdentityAttribute = IdentityAttributeHome.getAttributesByIdentityListFullAttributes( listIdentity );
+
+        for ( final Identity identity : listIdentity )
+        {
+            for ( final IdentityAttribute identityAttribute : listIdentityAttribute )
+            {
+                if ( identity.getId( ) == identityAttribute.getIdIdentity( ) )
+                {
+                    Map<String, IdentityAttribute> mapIdentityAttributes = identity.getAttributes( );
+
+                    if ( mapIdentityAttributes == null )
+                    {
+                        mapIdentityAttributes = new HashMap<>( );
+                    }
+
+                    mapIdentityAttributes.put( identityAttribute.getAttributeKey( ).getKeyName( ), identityAttribute );
+                    identity.setAttributes( mapIdentityAttributes );
+                }
+            }
+
+            qualifiedIdentities.add( fr.paris.lutece.plugins.identitystore.v3.web.rs.DtoConverter.convertToDto( identity ) );
+        }
+
+        return qualifiedIdentities;
     }
 
     /**
@@ -409,7 +429,7 @@ public final class IdentityStoreService
      * @param strClientAppCode
      *            , the application code chich requires creation
      * @return the initialized identity
-     * @throws IdentityStoreException 
+     * @throws IdentityStoreException
      */
     private static Identity createIdentity( String strConnectionId, String strClientAppCode ) throws IdentityStoreException
     {
@@ -424,7 +444,7 @@ public final class IdentityStoreService
         {
             // Update has to be done only if external info has something, elsewhere ERROR_NO_IDENTITY_PROVIDED will be thrown by update
             // IdentityInfoExternalService impl HAVE TO throw an IDENTITY_NOT_FOUND in case of identity doesn't exist
-            identity = completeIdentity( identity, identityChangeDtoInitialized, new HashMap<String, File>( ), strClientAppCode, true );
+            identity = completeIdentity( identity, identityChangeDtoInitialized, new HashMap<String, File>( ), strClientAppCode );
         }
 
         if ( AppLogService.isDebugEnabled( ) )
@@ -444,7 +464,7 @@ public final class IdentityStoreService
      * @param mapAttachedFiles
      *            the files to create
      * @return the updated identity with status on attribute
-     * @throws IdentityStoreException 
+     * @throws IdentityStoreException
      */
     public static IdentityDto updateIdentity( IdentityChangeDto identityChangeDto, Map<String, File> mapAttachedFiles ) throws IdentityStoreException
     {
@@ -462,23 +482,25 @@ public final class IdentityStoreService
         if ( ( mapAttributes != null ) && !mapAttributes.isEmpty( ) )
         {
             IdentityRequestValidator.instance( ).checkIdentityChange( identityChangeDto );
-            IdentityRequestValidator.instance( ).checkAttributes( identityDtoDecrypted, strClientAppCode, mapAttachedFiles );
-            IdentityRequestValidator.instance( ).checkCertification( identityDtoDecrypted, strClientAppCode );
-            //add automatically certification attribute 
-            addAutomaticalyCertificationAttributes(identityDtoDecrypted);
-            
-            updateAttributes( identity, identityDtoDecrypted, authorDto, mapAttachedFiles, clientApplication.getCode( ),
-                    clientApplication.getIsAuthorizedDeleteValue( ),clientApplication.getIsAuthorizedDeleteCertificate( ) );
+            // TODO change to pass the real service contract id
+            IdentityRequestValidator.instance( ).checkAttributes( identityDtoDecrypted, 0, mapAttachedFiles );
+            IdentityRequestValidator.instance( ).checkCertification( identityDtoDecrypted, 0 );
+            // add automatically certification attribute
+            addAutomaticalyCertificationAttributes( identityDtoDecrypted );
+
+            updateAttributes( identity, identityDtoDecrypted, authorDto, mapAttachedFiles, clientApplication.getCode( ) );
         }
 
         // listener
         IdentityChange identityChange = new IdentityChange( );
         identityChange.setIdentity( identity );
         identityChange.setChangeType( IdentityChangeType.valueOf( IdentityChangeType.UPDATE.getValue( ) ) );
-        IdentityStoreNotifyListenerService.instance( ).notifyListenersIdentityChange( identityChange );
+        // TODO voir compat IdentityStoreNotifyListenerService.instance( ).notifyListenersIdentityChange( identityChange );
 
         // return
-        identityDtoDecrypted = DtoConverter.convertToDto( identity, strClientAppCode );
+        // TODO change to pass the real service contract id
+        identityDtoDecrypted = DtoConverter.convertToDto( identity,
+                ClientApplicationHome.selectActiveServiceContract( clientApplication.getCode( ) ).get( 0 ) );
         return _identityEncryptionService.encrypt( identityDtoDecrypted, clientApplication );
     }
 
@@ -491,15 +513,13 @@ public final class IdentityStoreService
      *            the object {@code IdentityChangeDto} containing the information to perform the creation
      * @param mapAttachedFiles
      *            the files to create
-     * @param bAppCanDelete
-     *            true if application can delete a non certified attribute
      * @param strClientAppCode
      *            client application code
      * @return the updated identity
-     * @throws IdentityStoreException 
+     * @throws IdentityStoreException
      */
     private static Identity completeIdentity( Identity identity, IdentityChangeDto identityChangeDto, Map<String, File> mapAttachedFiles,
-            String strClientAppCode, boolean bAppCanDelete ) throws IdentityStoreException
+            String strClientAppCode ) throws IdentityStoreException
     {
         IdentityDto identityDto = identityChangeDto.getIdentity( );
         AuthorDto authorDto = identityChangeDto.getAuthor( );
@@ -508,7 +528,7 @@ public final class IdentityStoreService
         if ( ( mapAttributes != null ) && !mapAttributes.isEmpty( ) )
         {
             IdentityRequestValidator.instance( ).checkIdentityChange( identityChangeDto );
-            IdentityRequestValidator.instance( ).checkAttributes( identityDto, authorDto.getApplicationCode( ), mapAttachedFiles );
+            IdentityRequestValidator.instance( ).checkAttributes( identityDto, 0, mapAttachedFiles );
 
             createAttributes( identity, identityDto, authorDto, mapAttachedFiles, strClientAppCode );
         }
@@ -550,7 +570,7 @@ public final class IdentityStoreService
             newAttribute.setValue( attributeDto.getValue( ) );
             newAttribute.setCertificate( null );
 
-            AttributeStatusDto attrStatus = setAttribute( identity, newAttribute, file, author, strClientAppCode, true , false);
+            AttributeStatusDto attrStatus = setAttribute( identity, newAttribute, file, author, strClientAppCode );
             sb.append( attributeDto.getKey( ) + "[" + attrStatus.getStatusCode( ) + "], " );
         }
 
@@ -570,11 +590,9 @@ public final class IdentityStoreService
      *            map containing File matching key attribute name
      * @param strClientAppCode
      *            client application code
-     * @param bAppCanDelete
-     *            true if application can delete a non certified attribute
      */
     private static void updateAttributes( Identity identity, IdentityDto identityDto, AuthorDto authorDto, Map<String, File> mapAttachedFiles,
-            String strClientAppCode, boolean bAppCanDelete,boolean bAppCanDeleteCertificate )
+            String strClientAppCode )
     {
         StringBuilder sb = new StringBuilder( "Fields update result : " );
         ChangeAuthor author = DtoConverter.getAuthor( authorDto );
@@ -598,8 +616,8 @@ public final class IdentityStoreService
             catch( Exception e )
             {
                 // Unable to get the certificate from the Dto; set the updateAttribute with empty certificate
-                AppLogService
-                        .debug( "Unable to retrieve certificate for attribute [" + attributeDto.getKey( ) + "] of identity [" + identity.getId( ) + "]", e );
+                AppLogService.debug( "Unable to retrieve certificate for attribute [" + attributeDto.getKey( ) + "] of identity [" + identity.getId( ) + "]",
+                        e );
             }
 
             IdentityAttribute updateAttribute = new IdentityAttribute( );
@@ -607,8 +625,8 @@ public final class IdentityStoreService
             updateAttribute.setValue( attributeDto.getValue( ) );
             updateAttribute.setCertificate( certificate );
 
-            AttributeStatusDto attrStatus = setAttribute( identity, updateAttribute, file, author, strClientAppCode, bAppCanDelete, bAppCanDeleteCertificate );
-            sb.append( attributeDto.getKey( ) + "[" + attrStatus.getStatusCode( ) + "], " );
+            AttributeStatusDto attrStatus = setAttribute( identity, updateAttribute, file, author, strClientAppCode );
+            sb.append( attributeDto.getKey( ) ).append( "[" ).append( attrStatus.getStatusCode( ) ).append( "], " );
         }
 
         AppLogService.debug( sb.toString( ) );
@@ -621,7 +639,7 @@ public final class IdentityStoreService
      *            the connection id
      * @param strClientApplicationCode
      *            the application code
-     * @throws IdentityStoreException 
+     * @throws IdentityStoreException
      */
     public static void removeIdentity( String strConnectionId, String strClientApplicationCode ) throws IdentityStoreException
     {
@@ -654,46 +672,36 @@ public final class IdentityStoreService
             IdentityChange identityChange = new IdentityChange( );
             identityChange.setIdentity( identity );
             identityChange.setChangeType( IdentityChangeType.valueOf( IdentityChangeType.DELETE.getValue( ) ) );
-            IdentityStoreNotifyListenerService.instance( ).notifyListenersIdentityChange( identityChange );
+            // TODO voir compat IdentityStoreNotifyListenerService.instance( ).notifyListenersIdentityChange( identityChange );
         }
     }
 
     /**
      * generate the ApplicationRightsDto of a given application
      * 
-     * @param strClientAppCode
-     *            the code application
+     * @param nServiceContractId
+     *            the service contract id
      * @return ApplicationRightsDto filled
      */
-    public static ApplicationRightsDto getApplicationRights( String strClientAppCode )
+    public static ApplicationRightsDto getApplicationRights( int nServiceContractId ) throws ServiceContractNotFoundException
     {
-        ClientApplication clientApp = fetchClientApplication( strClientAppCode );
-        List<AttributeRight> listAttributeRight = ClientApplicationHome.selectApplicationRights( clientApp );
+        ServiceContract serviceContract = fetchServiceContract( nServiceContractId );
+        ClientApplication clientApp = null; // TODO serviceContract.getClientApplication();
+
+        List<AttributeRight> listAttributeRight = ServiceContractHome.selectApplicationRights( serviceContract );
+
         List<AbstractCertifier> listCertifier = ClientApplicationHome.getCertifiers( clientApp );
         ApplicationRightsDto appRightsDto = new ApplicationRightsDto( );
         appRightsDto.setApplicationCode( clientApp.getCode( ) );
-        for ( AttributeRight attrRight : listAttributeRight )
-        {
-            if ( attrRight.isReadable( ) || attrRight.isWritable( ) )
-            {
-                AppRightDto appRightDto = new AppRightDto( );
-                appRightDto.setAttributeKey( attrRight.getAttributeKey( ).getKeyName( ) );
-                appRightDto.setReadable( attrRight.isReadable( ) );
-                appRightDto.setWritable( attrRight.isWritable( ) );
-                appRightDto.setMandatory(attrRight.isMandatory());
-                if ( attrRight.isCertifiable( ) )
-                {
-                    for ( AbstractCertifier certifier : listCertifier )
-                    {
-                        if ( certifier.getCertifiableAttributesList( ).contains( attrRight.getAttributeKey( ).getKeyName( ) ) )
-                        {
-                            appRightDto.addCertifier( certifier.getCode( ) );
-                        }
-                    }
-                }
-                appRightsDto.addAppRight( appRightDto );
-            }
-        }
+
+        // TODO
+        /*
+         * for ( AttributeRight attrRight : listAttributeRight ) { if ( attrRight.isReadable( ) || attrRight.isWritable( ) ) { AppRightDto appRightDto = new
+         * AppRightDto( ); appRightDto.setAttributeKey( attrRight.getAttributeKey( ).getKeyName( ) ); appRightDto.setReadable( attrRight.isReadable( ) );
+         * appRightDto.setWritable( attrRight.isWritable( ) ); appRightDto.setMandatory(attrRight.isMandatory()); if ( attrRight.isCertifiable( ) ) { for (
+         * AbstractCertifier certifier : listCertifier ) { if ( certifier.getCertifiableAttributesList( ).contains( attrRight.getAttributeKey( ).getKeyName( ) )
+         * ) { appRightDto.addCertifier( certifier.getCode( ) ); } } } appRightsDto.addAppRight( appRightDto ); } }
+         */
         return appRightsDto;
     }
 
@@ -781,12 +789,10 @@ public final class IdentityStoreService
      *            The author of the change
      * @param strClientAppCode
      *            client application code
-     * @param bAppCanDelete
-     *            true if application can delete a non certified attribute
      * @return AttributStatusDto with statusCode according to the resulted operation
      */
     private static AttributeStatusDto setAttribute( Identity identity, IdentityAttribute requestAttribute, File file, ChangeAuthor author,
-            String strClientAppCode, boolean bAppCanDelete, boolean bAppCanDeleteCertificate )
+            String strClientAppCode )
     {
         String strCorrectValue = ( requestAttribute.getValue( ) == null ) ? StringUtils.EMPTY : requestAttribute.getValue( );
 
@@ -827,29 +833,21 @@ public final class IdentityStoreService
                 attrStatus.setStatusCode( AttributeStatusDto.INFO_NO_CHANGE_REQUEST_CODE );
             }
             else
-                if ( StringUtils.isEmpty( strCorrectValue ) && !bAppCanDelete )
+                if ( StringUtils.isEmpty( strCorrectValue ) )
                 {
                     attrStatus.setStatusCode( AttributeStatusDto.INFO_DELETE_NOT_ALLOW_CODE );
                 }
         }
-        else if( attributeCertifPrev != null && requestAttribute.getCertificate( ) == null )
-        {
-        	attrStatus = new AttributeStatusDto( );
-        	if(bAppCanDeleteCertificate)
-        	{
-        		attrStatus.setStatusCode( AttributeStatusDto.OK_CODE);
-        	    attrStatus.setDeleteCertifier(attributeCertifPrev.getCertifierCode());
-        		
-        	}
-        	else
-        	{
-        		attrStatus.setStatusCode( AttributeStatusDto.INFO_DELETE_NOT_ALLOW_CODE);
-        	}
-        }
         else
-        {
-            attrStatus = buildAttributeStatus( attributeCertifPrev, requestAttribute.getCertificate( ), bValueUnchanged );
-        }
+            if ( attributeCertifPrev != null && requestAttribute.getCertificate( ) == null )
+            {
+                attrStatus = new AttributeStatusDto( );
+                attrStatus.setStatusCode( AttributeStatusDto.INFO_DELETE_NOT_ALLOW_CODE );
+            }
+            else
+            {
+                attrStatus = buildAttributeStatus( attributeCertifPrev, requestAttribute.getCertificate( ), bValueUnchanged );
+            }
 
         if ( AttributeStatusDto.OK_CODE.equals( attrStatus.getStatusCode( ) ) )
         {
@@ -861,12 +859,12 @@ public final class IdentityStoreService
                 dbAttribute.setIdCertificate( requestAttribute.getCertificate( ).getId( ) );
                 dbAttribute.setCertificate( requestAttribute.getCertificate( ) );
             }
-            //delete certificate
-            if (attrStatus.getDeleteCertifier() != null )
+            // delete certificate
+            if ( attrStatus.getDeleteCertifier( ) != null )
             {
-            	 AttributeCertificateHome.remove(dbAttribute.getIdCertificate());
-            	 dbAttribute.setIdCertificate(0);
-            	 dbAttribute.setCertificate(null);
+                AttributeCertificateHome.remove( dbAttribute.getIdCertificate( ) );
+                dbAttribute.setIdCertificate( 0 );
+                dbAttribute.setCertificate( null );
             }
             // update or create attribute
             if ( !bValueUnchanged )
@@ -888,9 +886,9 @@ public final class IdentityStoreService
                 handleFile( dbAttribute, file );
             }
 
-            AttributeChange change = IdentityStoreNotifyListenerService.buildAttributeChange( identity, requestAttribute.getAttributeKey( ).getKeyName( ),
-                    strCorrectValue, strAttrOldValue, author, dbAttribute.getCertificate( ), bCreate );
-            IdentityStoreNotifyListenerService.instance( ).notifyListenersAttributeChange( change );
+            // AttributeChange change = IdentityStoreNotifyListenerService.buildAttributeChange( identity, requestAttribute.getAttributeKey( ).getKeyName( ),
+            // strCorrectValue, author, dbAttribute.getCertificate( ), bCreate );
+            // IdentityStoreNotifyListenerService.instance( ).notifyListenersAttributeChange( change );
         }
         else
             // no change request code in case of certificate non exists or is expired, request certificate doesn't exists and value unchanged
@@ -915,7 +913,8 @@ public final class IdentityStoreService
      *            The certificate generated by certifier, may be null
      * @return AttributStatusDto with statusCode according to certificates
      */
-    private static AttributeStatusDto buildAttributeStatus( AttributeCertificate certificateDB, AttributeCertificate certificateRequest, boolean valueUnchanged )
+    private static AttributeStatusDto buildAttributeStatus( AttributeCertificate certificateDB, AttributeCertificate certificateRequest,
+            boolean valueUnchanged )
     {
         AttributeStatusDto attrStatus = new AttributeStatusDto( );
         attrStatus.setStatusCode( AttributeStatusDto.OK_CODE );
@@ -1037,8 +1036,7 @@ public final class IdentityStoreService
 
     /**
      * handle certificates's update or return attribue status code in terms of certificateDB is expired or not
-     * 
-     * @param certificateDB
+     *
      * @param certificateRequest
      * @param attrStatus
      * @param valueUnchanged
@@ -1153,71 +1151,94 @@ public final class IdentityStoreService
 
         return clientApplication;
     }
-    
-	/**
-	 * Method call for adding automatically attributes associated to the certifier
-	 * used
-	 * 
-	 * @param identityDto the identity dto informations
-	 */
-	private static void addAutomaticalyCertificationAttributes(IdentityDto identityDto) {
 
-		if (identityDto.getAttributes() != null) {
-			Optional<AttributeDto> attributeDTO = identityDto.getAttributes().entrySet().stream()
-					.filter(x -> x.getValue().getCertificate() != null
-							&& x.getValue().getCertificate().getCertifierCode() != null)
-					.map(Map.Entry::getValue).findFirst();
-			//find the first attribute which contains a certifier
-			if (attributeDTO.isPresent()) {
-				try {
-
-					AbstractCertifier certifier = CertifierRegistry.instance()
-							.getCertifier(attributeDTO.get().getCertificate().getCertifierCode());
-					//Test if the certifier contains attributes who must be generated automatically
-					if (certifier.getGenerateAutomaticCertifierAttribute() != null
-							&& certifier.getGenerateAutomaticCertifierAttribute().size() > 0) {
-
-						certifier.getGenerateAutomaticCertifierAttribute().forEach((k, v) -> {
-							//test if the identity DTO contains all informations necessary for adding  attribute
-							if (v.mustBeGenerated(identityDto, certifier.getCode())) {
-								identityDto.getAttributes().put(k,
-										getAutomaticCertificateAttribute(identityDto, certifier.getCode(), k, v));
-							}
-						});
-
-					}
-
-				} catch (CertifierNotFoundException ex) {
-					AppLogService.error("Error getting  certifier"
-							+ attributeDTO.get().getCertificate().getCertifierCode() + ex.getMessage(), ex);
-				}
-
-			}
-		}
-
-	}
-    
-	/**
-	 * return the attribute who must be add automatically to the identity DTO informations 
-	 * @param identityDO the identity dto informations
-	 * @param certifierCode the certifier code 
-	 * @param strAttributeKey the attribute code of the generated attribute
-	 * @param generateAutomaticCertifierAttribute implementation of IGenerateAutomaticCertifierAttribute for getting the attribute value
-	 * @return the attribute who must be add automatically to the identity DTO informations 
-	 */
-    private static AttributeDto getAutomaticCertificateAttribute(IdentityDto identityDto,String certifierCode,String strAttributeKey,IGenerateAutomaticCertifierAttribute generateAutomaticCertifierAttribute)
+    /**
+     * Finds the client application with the specified code
+     *
+     * @param nServiceContractId
+     *            the service contract id
+     * @return the service contract
+     * @throws AppException
+     *             if the service contract cannot be found
+     */
+    public static ServiceContract fetchServiceContract( int nServiceContractId ) throws ServiceContractNotFoundException
     {
-    	
-    	AttributeDto automaticAttribute = new AttributeDto();
-    	automaticAttribute.setKey(strAttributeKey);
-    	automaticAttribute.setValue(generateAutomaticCertifierAttribute.getValue(identityDto));
-    	automaticAttribute.setCertified(true);
-		CertificateDto certificateDto = new CertificateDto();
-	    certificateDto.setCertifierCode(certifierCode);
-	    automaticAttribute.setCertificate(certificateDto);
-		
-		return automaticAttribute;
-    	
+        return ServiceContractHome.findByPrimaryKey( nServiceContractId )
+                .orElseThrow( ( ) -> new ServiceContractNotFoundException( "The service contract " + nServiceContractId + " is unknown " ) );
     }
-    
+
+    /**
+     * Method call for adding automatically attributes associated to the certifier used
+     * 
+     * @param identityDto
+     *            the identity dto informations
+     */
+    private static void addAutomaticalyCertificationAttributes( IdentityDto identityDto )
+    {
+
+        if ( identityDto.getAttributes( ) != null )
+        {
+            Optional<AttributeDto> attributeDTO = identityDto.getAttributes( ).entrySet( ).stream( )
+                    .filter( x -> x.getValue( ).getCertificate( ) != null && x.getValue( ).getCertificate( ).getCertifierCode( ) != null )
+                    .map( Map.Entry::getValue ).findFirst( );
+            // find the first attribute which contains a certifier
+            if ( attributeDTO.isPresent( ) )
+            {
+                try
+                {
+
+                    AbstractCertifier certifier = CertifierRegistry.instance( ).getCertifier( attributeDTO.get( ).getCertificate( ).getCertifierCode( ) );
+                    // Test if the certifier contains attributes who must be generated automatically
+                    if ( certifier.getGenerateAutomaticCertifierAttribute( ) != null && certifier.getGenerateAutomaticCertifierAttribute( ).size( ) > 0 )
+                    {
+
+                        certifier.getGenerateAutomaticCertifierAttribute( ).forEach( ( k, v ) -> {
+                            // test if the identity DTO contains all informations necessary for adding attribute
+                            if ( v.mustBeGenerated( identityDto, certifier.getCode( ) ) )
+                            {
+                                identityDto.getAttributes( ).put( k, getAutomaticCertificateAttribute( identityDto, certifier.getCode( ), k, v ) );
+                            }
+                        } );
+
+                    }
+
+                }
+                catch( CertifierNotFoundException ex )
+                {
+                    AppLogService.error( "Error getting  certifier" + attributeDTO.get( ).getCertificate( ).getCertifierCode( ) + ex.getMessage( ), ex );
+                }
+
+            }
+        }
+
+    }
+
+    /**
+     * return the attribute who must be add automatically to the identity DTO informations
+     * 
+     * @param identityDto
+     *            the identity dto informations
+     * @param certifierCode
+     *            the certifier code
+     * @param strAttributeKey
+     *            the attribute code of the generated attribute
+     * @param generateAutomaticCertifierAttribute
+     *            implementation of IGenerateAutomaticCertifierAttribute for getting the attribute value
+     * @return the attribute who must be add automatically to the identity DTO informations
+     */
+    private static AttributeDto getAutomaticCertificateAttribute( IdentityDto identityDto, String certifierCode, String strAttributeKey,
+            IGenerateAutomaticCertifierAttribute generateAutomaticCertifierAttribute )
+    {
+
+        AttributeDto automaticAttribute = new AttributeDto( );
+        automaticAttribute.setKey( strAttributeKey );
+        automaticAttribute.setValue( generateAutomaticCertifierAttribute.getValue( identityDto ) );
+        automaticAttribute.setCertified( true );
+        CertificateDto certificateDto = new CertificateDto( );
+        certificateDto.setCertifierCode( certifierCode );
+        automaticAttribute.setCertificate( certificateDto );
+
+        return automaticAttribute;
+
+    }
 }

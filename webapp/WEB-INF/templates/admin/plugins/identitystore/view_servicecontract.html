@@ -1,0 +1,190 @@
+<#include "./adminidentities_tabs.html" />
+<@tabs tab="servicecontract" />
+
+<@rowBox>
+    <@boxHeader i18nTitleKey="identitystore.view_servicecontract.pageTitle">
+	<@headerButtons>
+    <a href="jsp/admin/plugins/identitystore/ManageClientApplications.jsp?view=manage_servicecontract"
+       class="btn btn-secondary btn-sm" >
+        #i18n{portal.util.labelBack}
+    </a>
+	</@headerButtons>
+    </@boxHeader>
+    <@boxBody>    
+    <@messages infos=infos />
+    <div class="clearfix"></div>
+    
+    <@table>
+        <thead>
+            <input type="hidden" id="id" name="id"/>
+            <th>#i18n{identitystore.modify_servicecontract.labelName}</th>
+            <th>#i18n{identitystore.modify_servicecontract.labelApplicationCode}</th>
+            <th>#i18n{identitystore.modify_servicecontract.labelOrganizationalEntity}</th>
+            <th>#i18n{identitystore.modify_servicecontract.labelResponsibleName}</th>
+            <th>#i18n{identitystore.modify_servicecontract.labelContactName}</th>
+            <th>#i18n{identitystore.modify_servicecontract.labelServiceType}</th>
+            <th>#i18n{identitystore.modify_servicecontract.labelStartingDate}</th>
+            <th>#i18n{identitystore.modify_servicecontract.labelEndingDate}</th>
+        </thead>
+		<tbody>
+        <tr>
+            <input type="hidden" id="id" name="id"/>
+            <td>
+                ${servicecontract.name}
+            </td>
+            <td>
+                ${id_client_app}
+            </td>
+            <td>
+                ${servicecontract.organizationalEntity}
+            </td>
+            <td>
+                ${servicecontract.responsibleName}
+            </td>
+            <td>
+                ${servicecontract.contactName}
+            </td>
+            <td>
+                ${servicecontract.serviceType}
+            </td>
+            <td>
+                ${servicecontract.startingDate}
+            </td>
+            <td>
+                ${servicecontract.endingDate!}
+            </td>
+        </tr>
+		</tbody>
+    </@table>
+
+    <div class="clearfix"></div>
+
+    <@table>
+    <thead>
+    <input type="hidden" id="id" name="id"/>
+    <th>#i18n{identitystore.modify_servicecontract.labelAuthorizedMerge}</th>
+    <th>#i18n{identitystore.modify_servicecontract.labelAuthorizedDeletion}</th>
+    <th>#i18n{identitystore.modify_servicecontract.labelAuthorizedImport}</th>
+    <th>#i18n{identitystore.modify_servicecontract.labelAuthorizedExport}</th>
+    <th>#i18n{identitystore.modify_servicecontract.labelIsAuthorizedDeleteValue}</th>
+    <th>#i18n{identitystore.modify_servicecontract.labelIsAuthorizedDeleteCertificate}</th>
+    </thead>
+    <tbody>
+    <tr>
+        <input type="hidden" id="id" name="id"/>
+        <td>
+            <#if servicecontract.authorizedMerge = true>
+                <i class="fas fa-check" aria-hidden="true"></i>
+            <#else>
+                <i class="fas fa-times" aria-hidden="true"></i>
+            </#if>
+        </td>
+        <td>
+            <#if servicecontract.authorizedDeletion = true>
+                <i class="fas fa-check" aria-hidden="true"></i>
+                <#else>
+                <i class="fas fa-times" aria-hidden="true"></i>
+            </#if>
+        </td>
+        <td>
+            <#if servicecontract.authorizedImport = true>
+                <i class="fas fa-check" aria-hidden="true"></i>
+                <#else>
+                <i class="fas fa-times" aria-hidden="true"></i>
+            </#if>
+        </td>
+        <td>
+            <#if servicecontract.authorizedExport = true>
+            <i class="fas fa-check" aria-hidden="true"></i>
+            <#else>
+            <i class="fas fa-times" aria-hidden="true"></i>
+        </#if>
+        </td>
+        <td>
+            <#if servicecontract.authorizedDeleteValue = true>
+            <i class="fas fa-check" aria-hidden="true"></i>
+            <#else>
+            <i class="fas fa-times" aria-hidden="true"></i>
+        </#if>
+        </td>
+        <td>
+            <#if servicecontract.authorizedDeleteCertificate = true>
+            <i class="fas fa-check" aria-hidden="true"></i>
+            <#else>
+            <i class="fas fa-times" aria-hidden="true"></i>
+        </#if>
+        </td>
+    </tr>
+    </tbody>
+    </@table>
+
+<div class="clearfix"></div>
+<@table>
+<tr>
+    <th>#i18n{identitystore.modify_clientapplication.labelAttributeName}</th>
+    <th>#i18n{identitystore.modify_clientapplication.labelSearchable}</th>
+    <th>#i18n{identitystore.modify_clientapplication.labelReadable}</th>
+    <th>#i18n{identitystore.modify_refattributecertificationprocessus.labelLevel}</th>
+    <th>#i18n{identitystore.modify_clientapplication.labelWritable}</th>
+    <th>#i18n{identitystore.modify_refattributecertificationprocessus.labelLabel}</th>
+</tr>
+
+<#if servicecontract_attribute_list?? && servicecontract_attribute_list?has_content>
+<#list servicecontract_attribute_list as attribute>
+<tr>
+    <td>
+        ${attribute.attributeKey.name!}
+    </td>
+    <td>
+        <#if attribute.attributeRight.searchable = true>
+        <i class="fas fa-check" aria-hidden="true"></i>
+        <#else>
+        <i class="fas fa-times" aria-hidden="true"></i>
+        </#if>
+    </td>
+    <td>
+        <#if attribute.attributeRight.readable = true>
+            <i class="fas fa-check" aria-hidden="true"></i>
+        <#else>
+            <i class="fas fa-times" aria-hidden="true"></i>
+        </#if>
+    </td>
+    <td>
+
+        <#if attribute.refCertificationLevel?? && attribute.refCertificationLevel.level??>
+            ${attribute.refCertificationLevel.level}
+        </#if>
+    </td>
+    <td>
+        <#if attribute.attributeRight.writable = true>
+            <i class="fas fa-check" aria-hidden="true"></i>
+        <#else>
+            <i class="fas fa-times" aria-hidden="true"></i>
+        </#if>
+    </td>
+    <td>
+        <#if attribute.refAttributeCertificationProcessus?? && attribute.refAttributeCertificationProcessus?has_content>
+            ${attribute.displayProcessus}
+        </#if>
+    </td>
+</tr>
+</#list>
+</#if>
+</@table>
+
+</@boxBody>
+<div class="clearfix"></div>
+<!--<form class="form-inline pull-right" method="post" name="manage_clientapplications" action="jsp/admin/plugins/identitystore/ManageClientApplications.jsp">-->
+<!--    <button class="btn btn-secondary btn-flat" type="submit">-->
+<!--        <i class="fa fa-close"></i>-->
+<!--        #i18n{portal.util.labelBack}-->
+<!--    </button>-->
+<!--</form>-->
+<div class="form-inline pull-right">
+    <a href="jsp/admin/plugins/identitystore/ManageClientApplications.jsp?view=manage_servicecontracts"
+       class="btn btn-secondary btn-sm" >
+        #i18n{portal.util.labelBack}
+    </a>
+</div>
+</@rowBox>
+

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2015, Mairie de Paris
+ * Copyright (c) 2002-2023, City of Paris
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,7 +31,6 @@
  *
  * License 1.0
  */
-
 package fr.paris.lutece.plugins.identitystore.v1.web.request;
 
 import java.util.HashMap;
@@ -86,7 +85,8 @@ public class IdentityStoreCertifyRequest extends IdentityStoreRequest
         IdentityRequestValidator.instance( ).checkIdentity( _identityChangeDto.getIdentity( ).getConnectionId( ),
                 _identityChangeDto.getIdentity( ).getCustomerId( ) );
         IdentityRequestValidator.instance( ).checkClientApplication( _identityChangeDto.getAuthor( ).getApplicationCode( ) );
-        IdentityRequestValidator.instance( ).checkCertification( _identityChangeDto.getIdentity( ), _identityChangeDto.getAuthor( ).getApplicationCode( ) );
+        // TODO change to pass the real service contract id
+        IdentityRequestValidator.instance( ).checkCertification( _identityChangeDto.getIdentity( ), 0 );
     }
 
     /**

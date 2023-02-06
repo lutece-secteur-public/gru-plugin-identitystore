@@ -2,54 +2,111 @@
     <table class="table table-condensed table-striped">
         <tr>
             <th>#i18n{identitystore.view_change_history.attribut}</th>
+            <th>#i18n{identitystore.view_change_history.type}</th>
+            <th>#i18n{identitystore.view_change_history.status}</th>
             <th>#i18n{identitystore.view_change_history.date}</th>
             <th>#i18n{identitystore.view_change_history.value}</th>
             <th>#i18n{identitystore.view_change_history.certificate}</th>
-        </tr>    
+            <th>#i18n{identitystore.view_change_history.certificate.date}</th>
+            <th>#i18n{identitystore.view_change_history.author.type}</th>
+            <th>#i18n{identitystore.view_change_history.author.name}</th>
+        </tr>
         <#if attributes_change_map??  && attributes_change_map?has_content>
-          <tbody>
-            <#list attributes_change_map?keys as key>
-				<#assign list_change=attributes_change_map[key]>
-                <tr>
-                <#if list_change??  && list_change?has_content>
-                    <td rowspan="${list_change?size}">${attributes_current_map[key].attributeKey.name}</td>
-					<#assign onemore=false />
-                    <#list list_change as change>
-                    	<#if onemore>
-                </tr>
-                <tr>
-						<#else>
-					<#assign onemore=true />						
-                    	</#if>
-                    <td>${change.dateChange!}</td>
-                    	<#if change.newValue != change.oldValue>
-                    		<#if change.newValue == attributes_current_map[key].value>
-                    <td><strong>${change.newValue!}</strong></td>
-                    		<#else>
-                    <td>${change.newValue!}</td>
-                    		</#if>
-                    	<#else>
-                	<td>&nbsp;</td>
-                    	</#if>
-                    	<#if change.certifier??>
-                    		<#if certifiers_map?? && certifiers_map?has_content && certifiers_map[change.certifier]??>
-                    <td>${certifiers_map[change.certifier].name}</td>
-                    		<#else>
-                    <td>${change.certifier}</td>                    		
-                    		</#if>
-                    	<#else>
-                    <td>&nbsp;</td>
-                    	</#if>
-                    </#list>
-                <#else>
-                	<td>${attributes_current_map[key].attributeKey.name}</td>
-                	<td>&nbsp;</td>
-                	<td>&nbsp;</td>
-                	<td>&nbsp;</td>
-                </#if>
-				</tr>
-			</#list>
-          </tbody>
+            <tbody>
+                <#list attributes_change_map?keys as key>
+                    <tr>
+                        <#if attributes_change_map[key]?? && attributes_change_map[key]?has_content>
+                            <td rowspan="${attributes_change_map[key]?size}">${key}</td>
+                            <#assign onemore=false />
+                            <#list attributes_change_map[key] as change>
+                                <#if onemore>
+                                    </tr>
+                                    <tr>
+                                <#else>
+                                    <#assign onemore=true />
+                                </#if>
+                                <td>
+                                    <#if change.changeType.name() == "CREATE">
+                                        <span class="badge bg-success"> ${change.changeType.name()!} </span>
+                                    <#elseif change.changeType.name() == "UPDATE">
+                                        <span class="badge bg-warning"> ${change.changeType.name()!} </span>
+                                    <#elseif change.changeType.name() == "DELETE">
+                                        <span class="badge bg-error"> ${change.changeType.name()!} </span>
+                                    <#elseif change.changeType.name() == "MERGE">
+                                        <span class="badge bg-primary"> ${change.changeType.name()!} </span>
+                                    <#else>
+                                        ${change.changeType.name()!}
+                                    </#if>
+
+                                </td>
+                                <td>
+                                    <#if change.changeSatus == "created"
+                                        || change.changeSatus == "updated"
+                                        || change.changeSatus == "merged"
+                                        || change.changeSatus == "deleted">
+                                        <i class="fa fa-check" style="color: green"> </i> ${change.changeSatus!}
+                                    <#else>
+                                        <span class="custom-tooltip"> <i class="fa fa-times" style="color: red"> </i> ${change.changeSatus!}
+                                            <span class="custom-tooltiptext">${change.changeMessage!}</span>
+                                        </span>
+                                    </#if>
+                                </td>
+                                <td>${change.modificationDate!}</td>
+                                <td>${change.attributeValue!}</td>
+                                <td>${change.certificationProcessus!}</td>
+                                <td>${change.certificationDate!}</td>
+                                <td>${change.authorType.name()!}</td>
+                                <td>${change.authorName!}</td>
+                            </#list>
+                        <#else>
+                            <td>${key}</td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </#if>
+                    </tr>
+                </#list>
+            </tbody>
         </#if>
     </table>
 </div>
+
+<style>
+    .custom-tooltip {
+        position: relative;
+        display: inline-block;
+    }
+
+    .custom-tooltip .custom-tooltiptext {
+        visibility: hidden;
+        width: 500px;
+        background-color: #555;
+        color: #fff;
+        text-align: center;
+        border-radius: 6px;
+        padding: 10% 10%;
+        position: absolute;
+        z-index: 1;
+        bottom: 125%;
+        left: 50%;
+        margin-left: -60px;
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+
+    .custom-tooltip .custom-tooltiptext::after {
+        content: "";
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        margin-left: -5px;
+        border-width: 5px;
+        border-style: solid;
+        border-color: #555 transparent transparent transparent;
+    }
+
+    .custom-tooltip:hover .custom-tooltiptext {
+        visibility: visible;
+        opacity: 1;
+    }
+</style>

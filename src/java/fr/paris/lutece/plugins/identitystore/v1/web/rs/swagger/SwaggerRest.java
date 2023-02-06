@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2016, Mairie de Paris
+ * Copyright (c) 2002-2023, City of Paris
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -80,8 +80,8 @@ public class SwaggerRest
     @GET
     @Path( Constants.SWAGGER_PATH )
     @Produces( MediaType.APPLICATION_JSON )
-    public Response getSwagger( @Context HttpServletRequest request, @PathParam( Constants.VERSION ) String strVersion ) throws MalformedURLException,
-            IOException
+    public Response getSwagger( @Context HttpServletRequest request, @PathParam( Constants.VERSION ) String strVersion )
+            throws MalformedURLException, IOException
     {
         File fileJson = new File( getJsonFilePath( strVersion ) );
         if ( fileJson.exists( ) )
@@ -108,7 +108,8 @@ public class SwaggerRest
         }
         _logger.error( Constants.ERROR_NOT_FOUND_RESOURCE );
         return Response.status( Response.Status.NOT_FOUND )
-                .entity( JsonUtil.buildJsonResponse( new ErrorJsonResponse( Response.Status.NOT_FOUND.name( ), Constants.ERROR_NOT_FOUND_RESOURCE ) ) ).build( );
+                .entity( JsonUtil.buildJsonResponse( new ErrorJsonResponse( Response.Status.NOT_FOUND.name( ), Constants.ERROR_NOT_FOUND_RESOURCE ) ) )
+                .build( );
     }
 
     /**
@@ -120,8 +121,8 @@ public class SwaggerRest
      */
     private String getJsonFilePath( String strVersion )
     {
-        return AppPathService.getWebAppPath( ) + Constants.SWAGGER_DIRECTORY_PATH + Constants.API_PATH + Constants.SWAGGER_PATH
-                + Constants.SWAGGER_VERSION_PATH + strVersion + Constants.SWAGGER_JSON;
+        return AppPathService.getWebAppPath( ) + Constants.SWAGGER_DIRECTORY_PATH + Constants.API_PATH + Constants.SWAGGER_PATH + Constants.SWAGGER_VERSION_PATH
+                + strVersion + Constants.SWAGGER_JSON;
     }
 
     /**

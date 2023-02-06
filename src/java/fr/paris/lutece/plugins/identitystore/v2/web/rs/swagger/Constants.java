@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2018, Mairie de Paris
+ * Copyright (c) 2002-2023, City of Paris
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -54,6 +54,28 @@ public final class Constants
     public static final String ERROR_NOT_FOUND_VERSION = "Version not found";
     public static final String ERROR_NOT_FOUND_RESOURCE = "Resource not found";
     public static final String ERROR_BAD_REQUEST_EMPTY_PARAMETER = "Empty parameter";
+
+    public static final String SERVICECONTRACT_PATH = "/servicecontracts";
+    public static final String SERVICECONTRACT_ATTRIBUTE_NAME = "name";
+    public static final String SERVICECONTRACT_ATTRIBUTE_APPLICATION_CODE = "application_code";
+    public static final String SERVICECONTRACT_ATTRIBUTE_ORGANIZATIONAL_ENTITY = "organizational_entity";
+    public static final String SERVICECONTRACT_ATTRIBUTE_RESPONSIBLE_NAME = "responsible_name";
+    public static final String SERVICECONTRACT_ATTRIBUTE_CONTACT_NAME = "contact_name";
+    public static final String SERVICECONTRACT_ATTRIBUTE_SERVICE_TYPE = "service_type";
+    public static final String SERVICECONTRACT_ATTRIBUTE_AUTHORIZED_READ = "authorized_read";
+    public static final String SERVICECONTRACT_ATTRIBUTE_AUTHORIZED_DELETION = "authorized_deletion";
+    public static final String SERVICECONTRACT_ATTRIBUTE_AUTHORIZED_SEARCH = "authorized_search";
+    public static final String SERVICECONTRACT_ATTRIBUTE_AUTHORIZED_IMPORT = "authorized_import";
+    public static final String SERVICECONTRACT_ATTRIBUTE_AUTHORIZED_EXPORT = "authorized_export";
+
+    public static final String REFATTRIBUTECERTIFICATIONLEVEL_PATH = "/refattributecertificationlevels";
+
+    public static final String REFATTRIBUTECERTIFICATIONPROCESSUS_PATH = "/refattributecertificationprocessuss";
+
+    public static final String REFCERTIFICATIONLEVEL_PATH = "/refcertificationlevels";
+    public static final String REFCERTIFICATIONLEVEL_ATTRIBUTE_NAME = "name";
+    public static final String REFCERTIFICATIONLEVEL_ATTRIBUTE_DESCRIPTION = "description";
+    public static final String REFCERTIFICATIONLEVEL_ATTRIBUTE_LEVEL = "level";
 
     /**
      * private constructor
