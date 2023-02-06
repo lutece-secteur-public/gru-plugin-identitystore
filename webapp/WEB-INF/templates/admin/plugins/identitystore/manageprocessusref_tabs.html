@@ -1,0 +1,16 @@
+<#macro tabs2 tab >
+<@tabs>
+	<@tabList>
+<!--			<li <#if tab="refattributecertificationlevel">class="active"</#if>>-->
+<!--				<@aButton href="jsp/admin/plugins/identitystore/ManageRefAttributeCertificationLevels.jsp">#i18n{identitystore.manage_refattributecertificationlevels.pageTitle}</@aButton>-->
+<!--			</li>-->
+			<li <#if tab="refattributecertificationprocessus">class="active"</#if>>
+				<a href="jsp/admin/plugins/identitystore/ManageRefAttributeCertificationProcessuss.jsp">#i18n{identitystore.manage_refattributecertificationprocessuss.pageTitle}</a>
+			</li>
+			<li <#if tab="refcertificationlevel">class="active"</#if>>
+				<a href="jsp/admin/plugins/identitystore/ManageRefCertificationLevels.jsp">#i18n{identitystore.manage_refcertificationlevels.pageTitle}</a>
+			</li>
+	</@tabList>
+</@tabs>
+
+</#macro>

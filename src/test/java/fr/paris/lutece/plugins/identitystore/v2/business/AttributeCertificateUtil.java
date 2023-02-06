@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2018, Mairie de Paris
+ * Copyright (c) 2002-2023, City of Paris
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,8 +37,8 @@ import java.sql.Timestamp;
 import java.util.Calendar;
 
 import fr.paris.lutece.plugins.identitystore.IdentityStoreTestContext;
-import fr.paris.lutece.plugins.identitystore.business.AttributeCertificate;
-import fr.paris.lutece.plugins.identitystore.business.AttributeCertificateHome;
+import fr.paris.lutece.plugins.identitystore.business.attribute.AttributeCertificate;
+import fr.paris.lutece.plugins.identitystore.business.attribute.AttributeCertificateHome;
 import fr.paris.lutece.plugins.identitystore.service.certifier.AbstractCertifier;
 
 public class AttributeCertificateUtil

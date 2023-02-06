@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2018, Mairie de Paris
+ * Copyright (c) 2002-2023, City of Paris
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -39,16 +39,17 @@ import static fr.paris.lutece.plugins.identitystore.v2.business.IdentityAttribut
 import static fr.paris.lutece.plugins.identitystore.v2.business.IdentityUtil.createIdentityInDatabase;
 
 import fr.paris.lutece.plugins.identitystore.IdentityStoreTestContext;
-import fr.paris.lutece.plugins.identitystore.business.AttributeCertificate;
-import fr.paris.lutece.plugins.identitystore.business.AttributeKey;
-import fr.paris.lutece.plugins.identitystore.business.AttributeKeyHome;
-import fr.paris.lutece.plugins.identitystore.business.Identity;
-import fr.paris.lutece.plugins.identitystore.business.IdentityAttribute;
+import fr.paris.lutece.plugins.identitystore.business.attribute.AttributeCertificate;
+import fr.paris.lutece.plugins.identitystore.business.attribute.AttributeKey;
+import fr.paris.lutece.plugins.identitystore.business.attribute.AttributeKeyHome;
+import fr.paris.lutece.plugins.identitystore.business.identity.Identity;
+import fr.paris.lutece.plugins.identitystore.business.identity.IdentityAttribute;
 import fr.paris.lutece.plugins.identitystore.service.IdentityStoreService;
 import fr.paris.lutece.plugins.identitystore.v2.web.rs.dto.IdentityChangeDto;
 import fr.paris.lutece.plugins.identitystore.v2.web.rs.dto.IdentityDto;
-import fr.paris.lutece.plugins.identitystore.business.IdentityHome;
+import fr.paris.lutece.plugins.identitystore.business.identity.IdentityHome;
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityDeletedException;
+import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
 import fr.paris.lutece.plugins.identitystore.web.rs.dto.MockIdentityDto;
 
 import static fr.paris.lutece.plugins.identitystore.web.rs.dto.MockIdentityChangeDto.createIdentityChangeDtoFor;
@@ -105,8 +106,8 @@ public class IdentityStoreServiceGetIdentityTest extends LuteceTestCase
 
     public void testGetIdentityByCustomerId( )
     {
-        Identity identityDB = IdentityStoreService
-                .getIdentityByCustomerId( IdentityStoreTestContext.SAMPLE_CUSTOMERID, IdentityStoreTestContext.SAMPLE_APPCODE );
+        Identity identityDB = IdentityStoreService.getIdentityByCustomerId( IdentityStoreTestContext.SAMPLE_CUSTOMERID,
+                IdentityStoreTestContext.SAMPLE_APPCODE );
 
         assertNotNull( identityDB );
         assertEquals( IdentityStoreTestContext.SAMPLE_CONNECTIONID, identityDB.getConnectionId( ) );
@@ -121,8 +122,8 @@ public class IdentityStoreServiceGetIdentityTest extends LuteceTestCase
     {
         Identity identityReference = createIdentityInDatabase( );
         AttributeKey attributeKey1 = findAttributeKey( IdentityStoreTestContext.ATTRKEY_1 );
-        createIdentityAttributeInDatabase( identityReference, attributeKey1, IdentityStoreTestContext.ATTRKEY_1
-                + "testGetIdentityByCustomerIdWithNoCertificateAttribut" );
+        createIdentityAttributeInDatabase( identityReference, attributeKey1,
+                IdentityStoreTestContext.ATTRKEY_1 + "testGetIdentityByCustomerIdWithNoCertificateAttribut" );
 
         Identity identity = IdentityStoreService.getIdentityByCustomerId( identityReference.getCustomerId( ), IdentityStoreTestContext.SAMPLE_APPCODE );
 
@@ -141,8 +142,8 @@ public class IdentityStoreServiceGetIdentityTest extends LuteceTestCase
         Identity identityReference = createIdentityInDatabase( );
         AttributeCertificate attributeCertificate = createAttributeCertificateInDatabase( IdentityStoreTestContext.CERTIFIER1_CODE );
         AttributeKey attributeKey1 = findAttributeKey( IdentityStoreTestContext.ATTRKEY_1 );
-        createIdentityAttributeInDatabase( identityReference, attributeKey1, IdentityStoreTestContext.ATTRKEY_1
-                + "testGetIdentityByCustomerIdWithCertificateAttributWithLimitedExpirationDate", attributeCertificate );
+        createIdentityAttributeInDatabase( identityReference, attributeKey1,
+                IdentityStoreTestContext.ATTRKEY_1 + "testGetIdentityByCustomerIdWithCertificateAttributWithLimitedExpirationDate", attributeCertificate );
 
         Identity identity = IdentityStoreService.getIdentityByCustomerId( identityReference.getCustomerId( ), IdentityStoreTestContext.SAMPLE_APPCODE );
 
@@ -165,8 +166,8 @@ public class IdentityStoreServiceGetIdentityTest extends LuteceTestCase
         Identity identityReference = createIdentityInDatabase( );
         AttributeCertificate attributeCertificate = createAttributeCertificateInDatabase( IdentityStoreTestContext.CERTIFIER4_CODE );
         AttributeKey attributeKey1 = findAttributeKey( IdentityStoreTestContext.ATTRKEY_1 );
-        createIdentityAttributeInDatabase( identityReference, attributeKey1, IdentityStoreTestContext.ATTRKEY_1
-                + "testGetIdentityByCustomerIdWithCertificateAttributWithUnlimitedExpirationDate", attributeCertificate );
+        createIdentityAttributeInDatabase( identityReference, attributeKey1,
+                IdentityStoreTestContext.ATTRKEY_1 + "testGetIdentityByCustomerIdWithCertificateAttributWithUnlimitedExpirationDate", attributeCertificate );
 
         Identity identity = IdentityStoreService.getIdentityByCustomerId( identityReference.getCustomerId( ), IdentityStoreTestContext.SAMPLE_APPCODE );
 
@@ -189,8 +190,8 @@ public class IdentityStoreServiceGetIdentityTest extends LuteceTestCase
         Identity identityReference = createIdentityInDatabase( );
         AttributeCertificate attributeCertificate = createExpiredAttributeCertificateInDatabase( IdentityStoreTestContext.CERTIFIER1_CODE );
         AttributeKey attributeKey1 = findAttributeKey( IdentityStoreTestContext.ATTRKEY_1 );
-        createIdentityAttributeInDatabase( identityReference, attributeKey1, IdentityStoreTestContext.ATTRKEY_1
-                + "testGetIdentityByCustomerIdWithExpiredCertificateAttribut", attributeCertificate );
+        createIdentityAttributeInDatabase( identityReference, attributeKey1,
+                IdentityStoreTestContext.ATTRKEY_1 + "testGetIdentityByCustomerIdWithExpiredCertificateAttribut", attributeCertificate );
 
         Identity identity = IdentityStoreService.getIdentityByCustomerId( identityReference.getCustomerId( ), IdentityStoreTestContext.SAMPLE_APPCODE );
 
@@ -219,6 +220,10 @@ public class IdentityStoreServiceGetIdentityTest extends LuteceTestCase
         catch( IdentityDeletedException e )
         {
             // Correct behavior
+        }
+        catch( IdentityStoreException e )
+        {
+            throw new RuntimeException( e );
         }
     }
 

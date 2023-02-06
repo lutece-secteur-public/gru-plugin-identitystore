@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2018, Mairie de Paris
+ * Copyright (c) 2002-2023, City of Paris
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,7 +33,7 @@
  */
 package fr.paris.lutece.plugins.identitystore.service.listeners;
 
-import fr.paris.lutece.plugins.identitystore.service.AttributeChange;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.history.AttributeChange;
 import fr.paris.lutece.plugins.identitystore.service.AttributeChangeListener;
 import fr.paris.lutece.portal.service.util.AppPropertiesService;
 
@@ -57,10 +57,11 @@ public class LoggingListener implements AttributeChangeListener
     public void processAttributeChange( AttributeChange change )
     {
         StringBuilder sbLog = new StringBuilder( );
-        sbLog.append( "Change for identity '" ).append( "' [ID:" ).append( change.getIdentityConnectionId( ) ).append( "] " ).append( " by " ).append( " [ID:" )
-                .append( change.getAuthorId( ) ).append( "] " ).append( " via application : '" ).append( change.getAuthorApplication( ) ).append( "' on " )
-                .append( change.getDateChange( ) ).append( " Key changed : '" ).append( change.getChangedKey( ) ).append( "' New value : '" )
-                .append( change.getNewValue( ) ).append( "' Old value : '" ).append( change.getOldValue( ) ).append( "'" );
+        sbLog.append( "Change for identity '" ).append( "' [ID:" ).append( change.getIdIdentity( ) ).append( "] " ).append( " by " ).append( " [ID:" )
+                .append( change.getAuthorName( ) ).append( "] " ).append( " via application : '" ).append( change.getClientCode( ) ).append( "' on " )
+                .append( change.getModificationDate( ) ).append( " Key changed : '" ).append( change.getAttributeKey( ) ).append( "' New value : '" )
+                .append( change.getAttributeValue( ) ).append( "' With status : '" ).append( change.getChangeSatus( ) ).append( " - " )
+                .append( change.getChangeMessage( ) ).append( "'" );
 
         _logger.info( sbLog.toString( ) );
     }

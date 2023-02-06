@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2018, Mairie de Paris
+ * Copyright (c) 2002-2023, City of Paris
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,20 +33,22 @@
  */
 package fr.paris.lutece.plugins.identitystore.service.listeners;
 
+import fr.paris.lutece.plugins.identitystore.business.attribute.AttributeCertificate;
+import fr.paris.lutece.plugins.identitystore.business.identity.Identity;
+import fr.paris.lutece.plugins.identitystore.business.identity.IdentityAttribute;
+import fr.paris.lutece.plugins.identitystore.service.AttributeChangeListener;
+import fr.paris.lutece.plugins.identitystore.service.IdentityChange;
+import fr.paris.lutece.plugins.identitystore.service.IdentityChangeListener;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.AttributeStatus;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.RequestAuthor;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.history.AttributeChange;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.history.AttributeChangeType;
+import fr.paris.lutece.portal.service.spring.SpringContextService;
+import fr.paris.lutece.portal.service.util.AppLogService;
+
 import java.sql.Timestamp;
 import java.util.Date;
 import java.util.List;
-
-import fr.paris.lutece.plugins.identitystore.business.AttributeCertificate;
-import fr.paris.lutece.plugins.identitystore.business.Identity;
-import fr.paris.lutece.plugins.identitystore.service.AttributeChange;
-import fr.paris.lutece.plugins.identitystore.service.AttributeChangeListener;
-import fr.paris.lutece.plugins.identitystore.service.AttributeChangeType;
-import fr.paris.lutece.plugins.identitystore.service.ChangeAuthor;
-import fr.paris.lutece.plugins.identitystore.service.IdentityChange;
-import fr.paris.lutece.plugins.identitystore.service.IdentityChangeListener;
-import fr.paris.lutece.portal.service.spring.SpringContextService;
-import fr.paris.lutece.portal.service.util.AppLogService;
 
 /**
  *
@@ -143,52 +145,40 @@ public final class IdentityStoreNotifyListenerService
 
     /**
      * create and return an AttributeChange from input params
-     *
+     * 
+     * @param changeType
      * @param identity
-     *            modified identity
-     * @param strKey
-     *            attribute key which is modified
-     * @param strValue
-     *            attribute new value
-     * @param strOldValue
-     *            attribute old value
+     * @param attributeStatus
      * @param author
-     *            author of change
-     * @param certificate
-     *            attribute certificate if it s a certification case
-     * @param bIsCreation
-     *            true if attribute is a new one, false if it s an update
+     * @param clientApplicationCode
      * @return AttributeChange from input params
      */
-    public static AttributeChange buildAttributeChange( Identity identity, String strKey, String strValue, String strOldValue, ChangeAuthor author,
-            AttributeCertificate certificate, boolean bIsCreation )
+    public static AttributeChange buildAttributeChange( AttributeChangeType changeType, Identity identity, AttributeStatus attributeStatus,
+            RequestAuthor author, String clientApplicationCode )
     {
-        AttributeChange change = new AttributeChange( );
-        change.setIdentityId( identity.getId( ) );
-        change.setIdentityConnectionId( identity.getConnectionId( ) );
-        change.setCustomerId( identity.getCustomerId( ) );
-        change.setChangedKey( strKey );
-        change.setOldValue( strOldValue );
-        change.setNewValue( strValue );
-        change.setAuthorId( author.getAuthorId( ) );
-        change.setAuthorApplication( author.getApplicationCode( ) );
-        change.setAuthorType( author.getType( ) );
-        change.setDateChange( new Timestamp( ( new Date( ) ).getTime( ) ) );
+        final AttributeChange attributeChange = new AttributeChange( );
 
-        if ( certificate != null )
+        attributeChange.setChangeType( changeType );
+        attributeChange.setChangeSatus( attributeStatus.getStatus( ).getCode( ) );
+        attributeChange.setChangeMessage( attributeStatus.getStatus( ).getMessage( ) );
+        attributeChange.setAuthorType( author.getType( ) );
+        attributeChange.setAuthorName( author.getName( ) );
+        attributeChange.setIdIdentity( identity.getId( ) );
+        attributeChange.setAttributeKey( attributeStatus.getKey( ) );
+        final IdentityAttribute identityAttribute = identity.getAttributes( ).get( attributeStatus.getKey( ) );
+        if ( identityAttribute != null )
         {
-            change.setCertifier( certificate.getCertifierCode( ) );
+            attributeChange.setAttributeValue( identityAttribute.getValue( ) );
+            final AttributeCertificate certificate = identityAttribute.getCertificate( );
+            if ( certificate != null )
+            {
+                attributeChange.setCertificationProcessus( certificate.getCertifierCode( ) );
+                attributeChange.setCertificationDate( certificate.getCertificateDate( ) );
+            }
         }
+        attributeChange.setClientCode( clientApplicationCode );
+        attributeChange.setModificationDate( new Timestamp( new Date( ).getTime( ) ) );
 
-        if ( bIsCreation )
-        {
-            change.setChangeType( AttributeChangeType.CREATE );
-        }
-        else
-        {
-            change.setChangeType( AttributeChangeType.UPDATE );
-        }
-
-        return change;
+        return attributeChange;
     }
 }

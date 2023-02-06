@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2018, Mairie de Paris
+ * Copyright (c) 2002-2023, City of Paris
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -64,7 +64,7 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
-import fr.paris.lutece.plugins.identitystore.business.IdentityAttribute;
+import fr.paris.lutece.plugins.identitystore.business.identity.IdentityAttribute;
 import fr.paris.lutece.plugins.identitystore.service.IdentityStoreService;
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityNotFoundException;
 import fr.paris.lutece.plugins.identitystore.v2.web.request.IdentityStoreAppRightsRequest;
@@ -155,19 +155,20 @@ public final class IdentityStoreRestService
     @Path( Constants.SEARCH_IDENTITIES_PATH )
     @Consumes( MediaType.APPLICATION_JSON )
     @Produces( MediaType.APPLICATION_JSON )
-    public Response searchIdentities( String strJsonAttributeValues, 
-            @HeaderParam( Constants.PARAM_CLIENT_CODE ) String strHeaderClientAppCode,
+    public Response searchIdentities( String strJsonAttributeValues, @HeaderParam( Constants.PARAM_CLIENT_CODE ) String strHeaderClientAppCode,
             @QueryParam( Constants.PARAM_CLIENT_CODE ) String strQueryClientAppCode )
     {
         String strClientAppCode = IdentityStoreService.getTrustedApplicationCode( strHeaderClientAppCode, strQueryClientAppCode );
         try
         {
-            ObjectMapper objectMapper = new ObjectMapper( );
-            SearchDto searchDto = objectMapper.readValue( strJsonAttributeValues, SearchDto.class );
-            Map<String, List<String>> mapAttributeValues = searchDto.getMapAttributeValues( );
-            List<String> listAttributeKeyNames = searchDto.getListAttributeKeyNames( );
+            final ObjectMapper objectMapper = new ObjectMapper( );
+            final SearchDto searchDto = objectMapper.readValue( strJsonAttributeValues, SearchDto.class );
+            final Map<String, List<String>> mapAttributeValues = searchDto.getMapAttributeValues( );
+            final List<String> listAttributeKeyNames = searchDto.getListAttributeKeyNames( );
 
-            IdentityStoreSearchRequest identityStoreRequest = new IdentityStoreSearchRequest( mapAttributeValues, listAttributeKeyNames, strClientAppCode, objectMapper );
+            // TODO change to just pass service contract id
+            IdentityStoreSearchRequest identityStoreRequest = new IdentityStoreSearchRequest( mapAttributeValues, listAttributeKeyNames, 0, strClientAppCode,
+                    objectMapper );
 
             return Response.ok( identityStoreRequest.doRequest( ) ).build( );
         }
@@ -189,7 +190,7 @@ public final class IdentityStoreRestService
     @POST
     @Path( Constants.UPDATE_IDENTITY_PATH )
     @Consumes( MediaType.MULTIPART_FORM_DATA )
-    public Response updateIdentity( FormDataMultiPart formParams,  @HeaderParam( Constants.PARAM_CLIENT_CODE ) String strHeaderApplicationCode )
+    public Response updateIdentity( FormDataMultiPart formParams, @HeaderParam( Constants.PARAM_CLIENT_CODE ) String strHeaderApplicationCode )
     {
         try
         {
@@ -229,7 +230,7 @@ public final class IdentityStoreRestService
     @POST
     @Path( Constants.CREATE_IDENTITY_PATH )
     @Consumes( MediaType.MULTIPART_FORM_DATA )
-    public Response createIdentity( FormDataMultiPart formParams,  @HeaderParam( Constants.PARAM_CLIENT_CODE ) String strHeaderApplicationCode )
+    public Response createIdentity( FormDataMultiPart formParams, @HeaderParam( Constants.PARAM_CLIENT_CODE ) String strHeaderApplicationCode )
     {
         try
         {
@@ -353,7 +354,7 @@ public final class IdentityStoreRestService
     private IdentityChangeDto fetchIdentityChange( FormDataMultiPart formParams ) throws IOException
     {
         IdentityChangeDto identityChangeDto = null;
-        String strBody = StringUtils.EMPTY;
+        String strBody;
 
         for ( BodyPart part : formParams.getBodyParts( ) )
         {
@@ -370,7 +371,7 @@ public final class IdentityStoreRestService
                 {
                     identityChangeDto = getIdentityChangeFromJson( strBody );
                 }
-                catch ( IOException e )
+                catch( IOException e )
                 {
                     throw new AppException( "Error parsing json request " + strBody );
                 }

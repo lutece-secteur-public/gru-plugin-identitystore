@@ -35,7 +35,15 @@
             <feature-level>0</feature-level>
             <feature-url>jsp/admin/plugins/identitystore/ManageClientApplications.jsp</feature-url>
             <feature-icon-url/>
-      </admin-feature>
+        </admin-feature>
+        <admin-feature>
+            <feature-id>IDENTITYSTORE_REF_MANAGEMENT</feature-id>
+            <feature-title></feature-title>
+            <feature-description>identitystore.adminFeature.ManageProcessusRef.name</feature-description>
+            <feature-level>0</feature-level>
+            <feature-url>jsp/admin/plugins/identitystore/ManageProcessusRef.jsp</feature-url>
+            <feature-icon-url/>
+        </admin-feature>
     </admin-features>
     
     <!-- RBAC Resources -->
@@ -46,4 +54,14 @@
             </rbac-resource-type-class>
         </rbac-resource-type>
     </rbac-resource-types>
+
+    <!-- Daemons -->
+    <daemons>
+        <daemon>
+            <daemon-id>indexDaemon</daemon-id>
+            <daemon-name>identitystore.daemon.indexDaemon.name</daemon-name>
+            <daemon-description>identitystore.daemon.indexDaemon.description</daemon-description>
+            <daemon-class>fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.daemon.IndexDaemon</daemon-class>
+        </daemon>
+    </daemons>
 </plug-in>

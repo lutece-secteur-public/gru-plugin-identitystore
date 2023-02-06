@@ -8,39 +8,7 @@
         
         <@fieldInputText i18nLabelKey="identitystore.create_clientapplication.labelName" inputName="name" mandatory=true value="${clientapplication.name!''}" i18nHelpBlockKey="identitystore.create_clientapplication.labelName.help" />
         <@fieldInputText i18nLabelKey="identitystore.create_clientapplication.labelCode" inputName="code" mandatory=true value="${clientapplication.code!''}" i18nHelpBlockKey="identitystore.create_clientapplication.labelCode.help" />
-        <@fieldInputCheckBox i18nLabelKey="identitystore.create_clientapplication.labelIsAuthorizedDeleteValue" inputName="isAuthorizedDeleteValue" value="1" checked=false i18nHelpBlockKey="identitystore.create_clientapplication.labelIsAuthorizedDeleteValue.help" />
-        <@fieldInputCheckBox i18nLabelKey="identitystore.create_clientapplication.labelIsAuthorizedDeleteCertificate" inputName="isAuthorizedDeleteCertificate" value="1" checked=false i18nHelpBlockKey="identitystore.create_clientapplication.labelIsAuthorizedDeleteCertificate.help" />
-       
-        <@table>
-            <tr>
-                <th>#i18n{identitystore.modify_clientapplication.labelAttributeName}</th>
-                <th>#i18n{identitystore.modify_clientapplication.labelReadable}</th>
-                <th>#i18n{identitystore.modify_clientapplication.labelWritable}</th>
-                <th>#i18n{identitystore.modify_clientapplication.labelCertificable}</th>
-                <th>#i18n{identitystore.modify_clientapplication.labelSearchable}</th>
-            </tr>
-    
-            <#if clientapplication_rights_list?? && clientapplication_rights_list?has_content>
-                 <#list clientapplication_rights_list as right>
-                    <tr>
-                        <td>
-                            ${right.attributeKey.name!} 
-                        </td>
-                        <td>
-                            <input type="checkbox" name="readable" value="${right.attributeKey.id}" <#if right.readable> checked</#if> /> 
-                        </td>
-                        <td>
-                            <input type="checkbox" name="writable" value="${right.attributeKey.id}" <#if right.writable> checked</#if> />
-                        </td>
-                        <td>
-                            <input type="checkbox" name="certifiable" value="${right.attributeKey.id}" <#if right.certifiable> checked</#if> />
-                        </td>
-                        <td>
-                            <input type="checkbox" name="searchable" value="${right.attributeKey.id}" <#if right.searchable> checked</#if> />
-                        </td>
-                </#list>
-            </#if>
-        </@table>
+
         <@actionButtons button1Name="action_createClientApplication" button2Name="view_manageClientApplications"/>
     </form>
 </@rowBoxHeader>

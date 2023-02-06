@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2018, Mairie de Paris
+ * Copyright (c) 2002-2023, City of Paris
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -39,9 +39,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import fr.paris.lutece.plugins.identitystore.business.AttributeRight;
-import fr.paris.lutece.plugins.identitystore.business.ClientApplication;
-import fr.paris.lutece.plugins.identitystore.business.ClientApplicationHome;
+import fr.paris.lutece.plugins.identitystore.business.contract.AttributeRight;
+import fr.paris.lutece.plugins.identitystore.business.application.ClientApplication;
+import fr.paris.lutece.plugins.identitystore.business.application.ClientApplicationHome;
+import fr.paris.lutece.plugins.identitystore.business.contract.ServiceContractHome;
 import fr.paris.lutece.plugins.identitystore.service.certifier.AbstractCertifier;
 import fr.paris.lutece.plugins.identitystore.service.certifier.SimpleCertifier;
 
@@ -156,19 +157,19 @@ public class IdentityStoreTestContext
         _mapCertifiers.put( CERTIFIER5_CODE, certif5 );
     }
 
-    private static void updateRightsFor( ClientApplication clientApp )
+    private static void updateRightsFor( ClientApplication clientApp ) // TODO update with service contract
     {
-        List<AttributeRight> listAttrRight = new ArrayList<>( );
-        for ( AttributeRight attributeRight : ClientApplicationHome.selectApplicationRights( clientApp ) )
-        {
-            if ( ATTRKEY_1.equals( attributeRight.getAttributeKey( ).getKeyName( ) ) || ATTRKEY_3.equals( attributeRight.getAttributeKey( ).getKeyName( ) ) )
-            {
-                attributeRight.setCertifiable( true );
-            }
-            listAttrRight.add( attributeRight );
-        }
-        ClientApplicationHome.removeApplicationRights( clientApp );
-        ClientApplicationHome.addAttributeRights( listAttrRight );
+        // List<AttributeRight> listAttrRight = new ArrayList<>( );
+        // for ( AttributeRight attributeRight : ClientApplicationHome.selectApplicationRights( clientApp ) )
+        // {
+        // if ( ATTRKEY_1.equals( attributeRight.getAttributeKey( ).getKeyName( ) ) || ATTRKEY_3.equals( attributeRight.getAttributeKey( ).getKeyName( ) ) )
+        // {
+        // attributeRight.setCertifiable( true );
+        // }
+        // listAttrRight.add( attributeRight );
+        // }
+        // ServiceContractHome.removeAttributeRights( clientApp );
+        // ServiceContractHome.addAttributeRights( listAttrRight );
     }
 
     private static void addCertifiersTo( ClientApplication clientApp )

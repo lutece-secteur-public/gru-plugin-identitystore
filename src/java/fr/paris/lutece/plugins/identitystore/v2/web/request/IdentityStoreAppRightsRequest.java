@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2018, Mairie de Paris
+ * Copyright (c) 2002-2023, City of Paris
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,6 +37,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import fr.paris.lutece.plugins.identitystore.service.IdentityStoreService;
+import fr.paris.lutece.plugins.identitystore.service.contract.ServiceContractNotFoundException;
 import fr.paris.lutece.plugins.identitystore.v2.web.rs.IdentityRequestValidator;
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
 import fr.paris.lutece.portal.service.util.AppException;
@@ -80,9 +81,10 @@ public class IdentityStoreAppRightsRequest extends IdentityStoreRequest
     {
         try
         {
-            return _objectMapper.writeValueAsString( IdentityStoreService.getApplicationRights( _strClientAppCode ) );
+            // TODO change to pass the real service contract id
+            return _objectMapper.writeValueAsString( IdentityStoreService.getApplicationRights( 0 ) );
         }
-        catch( JsonProcessingException e )
+        catch( JsonProcessingException | ServiceContractNotFoundException e )
         {
             throw new AppException( ERROR_JSON_MAPPING, e );
         }

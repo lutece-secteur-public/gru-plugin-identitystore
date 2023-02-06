@@ -4,19 +4,56 @@
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd" >
 
-    <bean id="identitystore.identityStoreRestService"  class="fr.paris.lutece.plugins.identitystore.web.rs.IdentityStoreRestService" />
-    <bean id="identitystore.v1.identityStoreRestService"  class="fr.paris.lutece.plugins.identitystore.v1.web.rs.IdentityStoreRestService" />
-    <bean id="identitystore.v2.identityStoreRestService"  class="fr.paris.lutece.plugins.identitystore.v2.web.rs.IdentityStoreRestService" />
-    <bean id="identitystore.swaggerRest"  class="fr.paris.lutece.plugins.identitystore.v2.web.rs.swagger.SwaggerRest" />
+    <!-- DAO -->
+    <bean id="identitystore.indexActionDAO" class="fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.business.IndexActionDao" />
+    <bean id="identitystore.identityDAO" class="fr.paris.lutece.plugins.identitystore.business.identity.IdentityDAO" />
+    <bean id="identitystore.attributeKeyDAO" class="fr.paris.lutece.plugins.identitystore.business.attribute.AttributeKeyDAO" />
+    <bean id="identitystore.identityAttributeDAO" class="fr.paris.lutece.plugins.identitystore.business.identity.IdentityAttributeDAO" />
+    <bean id="identitystore.attributeCertificateDAO" class="fr.paris.lutece.plugins.identitystore.business.attribute.AttributeCertificateDAO" />
+    <bean id="identitystore.attributeRightDAO" class="fr.paris.lutece.plugins.identitystore.business.contract.AttributeRightDAO" />
+    <bean id="identitystore.clientApplicationDAO" class="fr.paris.lutece.plugins.identitystore.business.application.ClientApplicationDAO" />
+    <bean id="identitystore.serviceContractDAO" class="fr.paris.lutece.plugins.identitystore.business.contract.ServiceContractDAO" />
+    <bean id="identitystore.attributeRequirementDAO" class="fr.paris.lutece.plugins.identitystore.business.contract.AttributeRequirementDAO" />
+    <bean id="identitystore.attributeCertificationDAO" class="fr.paris.lutece.plugins.identitystore.business.contract.AttributeCertificationDAO" />
+    <bean id="identitystore.refCertificationLevelDAO" class="fr.paris.lutece.plugins.identitystore.business.referentiel.RefCertificationLevelDAO" />
+    <bean id="identitystore.refAttributeCertificationLevelDAO" class="fr.paris.lutece.plugins.identitystore.business.referentiel.RefAttributeCertificationLevelDAO" />
+    <bean id="identitystore.refAttributeCertificationProcessusDAO" class="fr.paris.lutece.plugins.identitystore.business.referentiel.RefAttributeCertificationProcessusDAO" />
 
-    <bean id="identitystore.identityDAO" class="fr.paris.lutece.plugins.identitystore.business.IdentityDAO" />  
-    <bean id="identitystore.attributeKeyDAO" class="fr.paris.lutece.plugins.identitystore.business.AttributeKeyDAO" />  
-    <bean id="identitystore.identityAttributeDAO" class="fr.paris.lutece.plugins.identitystore.business.IdentityAttributeDAO" />   
-    <bean id="identitystore.attributeCertificateDAO" class="fr.paris.lutece.plugins.identitystore.business.AttributeCertificateDAO" />  
-    <bean id="identitystore.attributeRightDAO" class="fr.paris.lutece.plugins.identitystore.business.AttributeRightDAO" />  
-    <bean id="identitystore.clientApplicationDAO" class="fr.paris.lutece.plugins.identitystore.business.ClientApplicationDAO" />
+    <!-- Cache -->
+    <bean id="identitystore.activeServiceContractCache"  class="fr.paris.lutece.plugins.identitystore.cache.ActiveServiceContractCache"/>
+    <bean id="identitystore.identityAttributeCache"  class="fr.paris.lutece.plugins.identitystore.cache.IdentityAttributeCache"/>
+    <bean id="identitystore.refAttributeCertificationDefinitionCache"  class="fr.paris.lutece.plugins.identitystore.cache.RefAttributeCertificationDefinitionCache"/>
+
+    <!-- Service -->
+    <bean id="identitystore.identityIndexer" class="fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.service.IdentityIndexer" >
+        <constructor-arg name="strServerUrl" value="http://localhost:9200"/>
+    </bean>
+    <bean id="identitystore.identitySearcher" class="fr.paris.lutece.plugins.identitystore.service.indexer.elastic.search.service.IdentitySearcher" >
+        <constructor-arg name="strServerUrl" value="http://localhost:9200"/>
+    </bean>
+    <bean id="identitystore.searchIdentityService" class="fr.paris.lutece.plugins.identitystore.service.indexer.search.ElasticSearchIdentityService">
+        <constructor-arg name="_identityIndexer" ref="identitystore.identitySearcher"/>
+    </bean>
+    <bean id="identitystore.db.searchIdentityService" class="fr.paris.lutece.plugins.identitystore.service.search.DatabaseSearchIdentityService">
+    </bean>
+    <bean id="identitystore.duplicateService.creation" class="fr.paris.lutece.plugins.identitystore.service.duplicate.DuplicateService" >
+        <constructor-arg name="_searchIdentityService" ref="identitystore.db.searchIdentityService"/>
+        <constructor-arg name="_prefix" value="identitystore.identity.duplicates.creation"/>
+    </bean>
+    <bean id="identitystore.duplicateService.import.certitude" class="fr.paris.lutece.plugins.identitystore.service.duplicate.DuplicateService" >
+        <constructor-arg name="_searchIdentityService" ref="identitystore.searchIdentityService"/>
+        <constructor-arg name="_prefix" value="identitystore.identity.duplicates.import.certitude"/>
+    </bean>
+    <bean id="identitystore.duplicateService.import.suspicion" class="fr.paris.lutece.plugins.identitystore.service.duplicate.DuplicateService" >
+        <constructor-arg name="_searchIdentityService" ref="identitystore.searchIdentityService"/>
+        <constructor-arg name="_prefix" value="identitystore.identity.duplicates.import.suspicion"/>
+    </bean>
+
+    <!-- Logging -->
     <bean id="identitystore.listener.logging" class="fr.paris.lutece.plugins.identitystore.service.listeners.LoggingListener" />
     <bean id="identitystore.listener.databaseLogging" class="fr.paris.lutece.plugins.identitystore.service.listeners.DatabaseLoggingListener" />
+
+    <!-- Listeners & External -->
     <bean id="identitystore.attributes.changelisteners.list" class="java.util.ArrayList">
         <constructor-arg>
             <list>
@@ -31,6 +68,9 @@
             </list>
         </constructor-arg>
     </bean>
+    <bean id="identitystore.identityInfoExternalProvider" class="fr.paris.lutece.plugins.identitystore.service.external.MockIdentityInfoExternalProvider" />
+
+    <!-- Config -->
     <bean id="identitystore.application.code.delete.authorized.list" class="java.util.ArrayList">
         <constructor-arg>
             <list>
@@ -38,9 +78,14 @@
             </list>
         </constructor-arg>
     </bean>
-    
-    <bean id="identitystore.identityInfoExternalProvider" class="fr.paris.lutece.plugins.identitystore.service.external.MockIdentityInfoExternalProvider" />
-    
-    <bean id="identitystore.searchIdentityService" class="fr.paris.lutece.plugins.identitystore.service.search.DefaultSearchIdentityService" />
+
+    <!-- REST -->
+    <bean id="identitystore.customObjectMapper"  class="fr.paris.lutece.plugins.identitystore.v3.web.rs.CustomMapper" />
+    <bean id="identitystore.identityStoreRestService"  class="fr.paris.lutece.plugins.identitystore.web.rs.IdentityStoreRestService" />
+    <bean id="identitystore.v1.identityStoreRestService"  class="fr.paris.lutece.plugins.identitystore.v1.web.rs.IdentityStoreRestService" />
+    <bean id="identitystore.v2.identityStoreRestService"  class="fr.paris.lutece.plugins.identitystore.v2.web.rs.IdentityStoreRestService" />
+    <bean id="identitystore.v3.identityStoreRestService"  class="fr.paris.lutece.plugins.identitystore.v3.web.rs.IdentityStoreRestService" />
+    <bean id="identitystore.swaggerRest"  class="fr.paris.lutece.plugins.identitystore.v2.web.rs.swagger.SwaggerRest" />
+    <bean id="identitystore.serviceContractRest" class="fr.paris.lutece.plugins.identitystore.web.rs.ServiceContractRestService" />
 
 </beans>

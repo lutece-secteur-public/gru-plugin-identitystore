@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2020, Mairie de Paris
+ * Copyright (c) 2002-2023, City of Paris
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,9 +33,11 @@
  */
 package fr.paris.lutece.plugins.identitystore.service.search;
 
-import fr.paris.lutece.plugins.identitystore.service.IdentityStoreService;
 import fr.paris.lutece.plugins.identitystore.v2.web.rs.dto.IdentityDto;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.search.QualifiedIdentity;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.search.SearchAttributeDto;
 import fr.paris.lutece.portal.service.util.AppException;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -57,10 +59,16 @@ public class DefaultSearchIdentityService implements ISearchIdentityService
         return new ArrayList<>( );
     }
 
+    @Override
+    public List<QualifiedIdentity> getQualifiedIdentities( final List<SearchAttributeDto> attributes )
+    {
+        return new ArrayList<>( );
+    }
+
     /**
      * {@inheritDoc }
      */
-    public void checkSearchAttributes( Map<String, List<String>> mapAttributeValues, String strClientAppCode ) throws AppException
+    public void checkSearchAttributes( Map<String, List<String>> mapAttributeValues, int nServiceContractId ) throws AppException
     {
     }
 }

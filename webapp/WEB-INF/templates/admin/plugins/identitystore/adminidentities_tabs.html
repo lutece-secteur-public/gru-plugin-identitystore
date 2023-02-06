@@ -1,9 +1,14 @@
 <#macro tabs tab >
-    <div>
+    <@tabList>
         <ul class="nav nav-tabs">
             <li <#if tab="clientapplication">class="active"</#if>>
                 <a href="jsp/admin/plugins/identitystore/ManageClientApplications.jsp">
                     #i18n{identitystore.manage_clientapplications.pageTitle}
+                </a>
+            </li>
+            <li <#if tab="servicecontracts">class="active"</#if>>
+                <a href="jsp/admin/plugins/identitystore/ManageServiceContracts.jsp">
+                    #i18n{identitystore.manage_servicecontracts.pageTitle}
                 </a>
             </li>
             <li <#if tab="attributecertifier">class="active"</#if>>
@@ -17,5 +22,5 @@
                 </a>
             </li>
         </ul>
-    </div>
+    </@tabList>
 </#macro>

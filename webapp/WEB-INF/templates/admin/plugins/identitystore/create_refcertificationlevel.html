@@ -1,0 +1,25 @@
+<#include "manageprocessusref_tabs.html" />
+<@tabs2 tab="refcertificationlevel" />
+<@box>
+	<@boxHeader title='#i18n{identitystore.create_refcertificationlevel.title}' />
+	<@boxBody>
+    <@tform name='create_refcertificationlevel' action='jsp/admin/plugins/identitystore/ManageRefCertificationLevels.jsp' >
+
+        <@messages errors=errors />
+        <@input type="hidden" id="id" name="id"/>
+        <@input type="hidden" value="${token}" name="token" />
+
+		<@formGroup labelFor='name' labelKey='#i18n{identitystore.modify_refcertificationlevel.labelName}' mandatory=true>
+			<@input type='text' id='name' name='name'  maxlength=255 value='${refcertificationlevel.name!\'\'}' tabIndex='0' />
+		</@formGroup>
+		<@formGroup labelFor='description' labelKey='#i18n{identitystore.modify_refcertificationlevel.labelDescription}' mandatory=true>
+			<@input type='text' id='description' name='description'  maxlength=255 value='${refcertificationlevel.description!\'\'}' tabIndex='1' />
+		</@formGroup>
+		<@formGroup labelFor='level' labelKey='#i18n{identitystore.modify_refcertificationlevel.labelLevel}' mandatory=true>
+			<@input type='text' id='level' name='level'  maxlength=50 value='${refcertificationlevel.level!\'\'}' tabIndex='2' />
+		</@formGroup>
+				
+		<@actionButtons button1Name="action_createRefCertificationLevel" button2Name="view_manageRefCertificationLevel"/>
+    </@tform>
+	</@boxBody>
+</@box>

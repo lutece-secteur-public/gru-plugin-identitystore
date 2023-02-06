@@ -1,0 +1,28 @@
+{
+    "settings" : {
+        "analysis" : {
+            "analyzer" : {
+                "email_analyzer" : {
+                    "tokenizer" : "email_tokenizer"
+                }
+            },
+            "tokenizer" : {
+                "email_tokenizer" : {
+                    "type" : "uax_url_email"
+                }
+            }
+        }
+    },
+    "mappings" : {
+        "properties" : {
+            "attributes.email.value" : {
+                "type" : "text",
+                "analyzer" : "email_analyzer"
+            },
+            "attributes.email_login.value" : {
+                "type" : "text",
+                "analyzer" : "email_analyzer"
+            }
+        }
+    }
+}

@@ -1,0 +1,97 @@
+<#include "adminidentities_tabs.html" />
+<@tabs tab="servicecontracts" />
+
+<@box>
+	<@boxBody>    
+    <@messages infos=infos />
+    <@paginationAdmin paginator=paginator combo=1 />
+    <div class="clearfix"></div>
+    <@table>
+        <tr>
+            <th>Actif</th>
+            <th>#i18n{identitystore.manage_servicecontracts.columnName}</th>
+            <th>#i18n{identitystore.manage_servicecontracts.columnApplicationCode}</th>
+            <th>#i18n{identitystore.manage_servicecontracts.columnOrganizationalEntity}</th>
+            <th>#i18n{identitystore.manage_servicecontracts.columnResponsibleName}</th>
+            <th>#i18n{identitystore.manage_servicecontracts.columnContactName}</th>
+            <th>#i18n{identitystore.manage_servicecontracts.columnServiceType}</th>
+            <th>#i18n{identitystore.manage_servicecontracts.columnAuthorizedMerge}</th>
+            <th>#i18n{identitystore.manage_servicecontracts.columnAuthorizedDeletion}</th>
+            <th>#i18n{identitystore.manage_servicecontracts.columnAuthorizedImport}</th>
+            <th>#i18n{identitystore.manage_servicecontracts.columnAuthorizedExport}</th>
+            <th>#i18n{portal.util.labelActions}</th>
+        </tr>
+        <@tableHeadBodySeparator />
+        <#list servicecontract_list as servicecontract >
+        <tr>
+            <td>
+                <#if servicecontract.key.active>
+                <i class="fas fa-check" aria-hidden="true"></i>
+                <#else>
+                <i class="fas fa-times" aria-hidden="true"></i>
+            </#if>
+            </td>
+            <td>
+				${servicecontract.key.name}
+			</td>
+            <td>
+				${servicecontract.value}
+			</td>
+            <td>
+				${servicecontract.key.organizationalEntity}
+			</td>
+            <td>
+				${servicecontract.key.responsibleName}
+			</td>
+            <td>
+				${servicecontract.key.contactName}
+			</td>
+            <td>
+				${servicecontract.key.serviceType}
+			</td>
+            <td>
+                <#if servicecontract.key.authorizedMerge = true>
+                    <i class="fas fa-check" aria-hidden="true"></i>
+                <#else>
+                    <i class="fas fa-times" aria-hidden="true"></i>
+                </#if>
+            </td>
+            <td>
+                <#if servicecontract.key.authorizedDeletion = true>
+                    <i class="fas fa-check" aria-hidden="true"></i>
+                <#else>
+                    <i class="fas fa-times" aria-hidden="true"></i>
+                </#if>
+			</td>
+            <td>
+                <#if servicecontract.key.authorizedImport = true>
+                    <i class="fas fa-check" aria-hidden="true"></i>
+                <#else>
+                    <i class="fas fa-times" aria-hidden="true"></i>
+                </#if>
+			</td>
+            <td>
+                <#if servicecontract.key.authorizedExport = true>
+                    <i class="fas fa-check" aria-hidden="true"></i>
+                <#else>
+                    <i class="fas fa-times" aria-hidden="true"></i>
+                </#if>
+			</td>
+        	<td>
+				<@aButton href='jsp/admin/plugins/identitystore/ManageServiceContracts.jsp?view=modifyServiceContract&id=${servicecontract.key.id}' title='#i18n{portal.util.labelModify}' hideTitle=['all'] buttonIcon='pencil' />
+						
+				<@aButton href='jsp/admin/plugins/identitystore/ManageServiceContracts.jsp?action=confirmRemoveServiceContract&id=${servicecontract.key.id}' title='#i18n{portal.util.labelDelete}' buttonIcon='trash' hideTitle=['all'] color='btn-danger'  />
+
+                <a href="jsp/admin/plugins/identitystore/ManageServiceContracts.jsp?view=displayServiceContract&id=${servicecontract.key.id}"
+                   class="btn btn-primary btn-sm" title="#i18n{identitystore.manage_servicecontracts.buttonDisplay}" >
+                    <i class="fa fa-eye"></i>
+                </a>
+	        </td>
+        </tr>
+        </#list>
+    </@table>
+
+    <@paginationAdmin paginator=paginator />
+
+  </@boxBody>
+</@box>

@@ -7,78 +7,41 @@
         <input type="hidden" id="id" name="id" value="${clientapplication.id}"/>
         <@fieldInputText i18nLabelKey="identitystore.modify_clientapplication.labelName" inputName="name" mandatory=true value="${clientapplication.name}" i18nHelpBlockKey="identitystore.modify_clientapplication.labelName.help" />
         <@fieldInputText i18nLabelKey="identitystore.modify_clientapplication.labelCode" inputName="code" mandatory=true value="${clientapplication.code}" i18nHelpBlockKey="identitystore.modify_clientapplication.labelCode.help" />
-        <@fieldInputCheckBox i18nLabelKey="identitystore.modify_clientapplication.labelIsAuthorizedDeleteValue" inputName="isAuthorizedDeleteValue" value="1" checked=clientapplication.isAuthorizedDeleteValue i18nHelpBlockKey="identitystore.modify_clientapplication.labelIsAuthorizedDeleteValue.help" />
-        <@fieldInputCheckBox i18nLabelKey="identitystore.modify_clientapplication.labelIsAuthorizedDeleteCertificate" inputName="isAuthorizedDeleteCertificate" value="1" checked=clientapplication.isAuthorizedDeleteCertificate i18nHelpBlockKey="identitystore.modify_clientapplication.labelIsAuthorizedDeleteCertificate.help" />
-       
-       
-        
-        <a href="jsp/admin/plugins/identitystore/ManageClientApplications.jsp?view=manageClientApplicationCertificate&id=${clientapplication.id}"
-           class="btn btn-primary pull-right" title="#i18n{identitystore.modify_clientapplication.buttonManageClientApplicationCertificate}" >
-            <i class="fa fa-pencil"></i>
-            <span>
-            #i18n{identitystore.modify_clientapplication.buttonManageClientApplicationCertificate}
-            </span>
-        </a>
-        <@table>
-			<tr>
-				<th>#i18n{identitystore.modify_clientapplication.labelCertificateur}</th>
-				<th>#i18n{identitystore.modify_clientapplication.labelAction}</th>
-			</tr>
-        	<#if clientapplication_certifs?? && clientapplication_certifs?has_content>
-        	  <#list clientapplication_certifs as certif>
-       	    <tr>
-       	    	<td>
-       	    		${certif.name}
-       	    		<#if certif.iconUrl!='' >
-       	    		<img src="${certif.iconUrl}" width="40" height="40" />
-       	    		</#if>
-       	    	</td>
-       	    	<td>
-		            <a href="jsp/admin/plugins/identitystore/ManageClientApplications.jsp?action=removeClientApplicationCertificate&id=${clientapplication.id}&certif_code=${certif.code}"
-		               class="btn btn-danger btn-sm" title="#i18n{portal.util.labelDelete}" >
-		                <i class="fa fa-trash"></i>
-		            </a>
-       	    	</td>
-       	    </tr>
-        	  </#list>
-        	</#if>
-        </@table>
 
-		<@table>
-			<tr>
-				<th>#i18n{identitystore.modify_clientapplication.labelAttributeName}</th>
-				<th>#i18n{identitystore.modify_clientapplication.labelReadable}</th>
-				<th>#i18n{identitystore.modify_clientapplication.labelWritable}</th>
-				<th>#i18n{identitystore.modify_clientapplication.labelMandatory}</th>
-				<th>#i18n{identitystore.modify_clientapplication.labelCertificable}</th>
-				<th>#i18n{identitystore.modify_clientapplication.labelSearchable}</th>
-				
-			</tr>
-	
-			<#if clientapplication_rights_list?? && clientapplication_rights_list?has_content>
-				 <#list clientapplication_rights_list as right>
-					<tr>
-						<td>
-							${right.attributeKey.name!} 
-						</td>
-						<td>
-							<input type="checkbox" name="readable" value="${right.attributeKey.id}" <#if right.readable> checked</#if> /> 
-						</td>
-						<td>
-							<input type="checkbox" name="writable" value="${right.attributeKey.id}" <#if right.writable> checked</#if> />
-						</td>
-						<td>
-							<input type="checkbox" name="mandatory" value="${right.attributeKey.id}" <#if right.mandatory> checked</#if> />
-						</td>
-						<td>
-							<input type="checkbox" name="certifiable" value="${right.attributeKey.id}" <#if right.certifiable> checked</#if> />
-						</td>
-						<td>
-							<input type="checkbox" name="searchable" value="${right.attributeKey.id}" <#if right.searchable> checked</#if> />
-						</td>
-				</#list>
-			</#if>
-		</@table>
+        
+<!--        <a href="jsp/admin/plugins/identitystore/ManageClientApplications.jsp?view=manageClientApplicationCertificate&id=${clientapplication.id}"-->
+<!--           class="btn btn-primary pull-right" title="#i18n{identitystore.modify_clientapplication.buttonManageClientApplicationCertificate}" >-->
+<!--            <i class="fa fa-pencil"></i>-->
+<!--            <span>-->
+<!--            #i18n{identitystore.modify_clientapplication.buttonManageClientApplicationCertificate}-->
+<!--            </span>-->
+<!--        </a>-->
+<!--        <@table>-->
+<!--			<tr>-->
+<!--				<th>#i18n{identitystore.modify_clientapplication.labelCertificateur}</th>-->
+<!--				<th>#i18n{identitystore.modify_clientapplication.labelAction}</th>-->
+<!--			</tr>-->
+<!--			<#if clientapplication_certifs?? && clientapplication_certifs?has_content>-->
+<!--			<#list clientapplication_certifs as certif>-->
+<!--				<tr>-->
+<!--					<td>-->
+<!--						${certif.name}-->
+<!--						<#if certif.iconUrl!='' >-->
+<!--						<img src="${certif.iconUrl}" width="40" height="40" />-->
+<!--						</#if>-->
+<!--					</td>-->
+<!--					<td>-->
+<!--						<a href="jsp/admin/plugins/identitystore/ManageClientApplications.jsp?action=removeClientApplicationCertificate&id=${clientapplication.id}&certif_code=${certif.code}"-->
+<!--						   class="btn btn-danger btn-sm" title="#i18n{portal.util.labelDelete}" >-->
+<!--							<i class="fa fa-trash"></i>-->
+<!--						</a>-->
+<!--					</td>-->
+<!--				</tr>-->
+<!--			</#list>-->
+<!--			</#if>-->
+<!--        </@table>-->
+
+
         <@actionButtons button1Name="action_modifyClientApplication" button2Name="view_manageClientApplications"/>
     </form>
 </@rowBoxHeader>

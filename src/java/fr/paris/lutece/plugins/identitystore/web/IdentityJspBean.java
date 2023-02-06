@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2018, Mairie de Paris
+ * Copyright (c) 2002-2023, City of Paris
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,24 +33,22 @@
  */
 package fr.paris.lutece.plugins.identitystore.web;
 
-import fr.paris.lutece.plugins.identitystore.business.AttributeKey;
-import fr.paris.lutece.plugins.identitystore.business.AttributeKeyHome;
-import fr.paris.lutece.plugins.identitystore.business.Identity;
-import fr.paris.lutece.plugins.identitystore.business.IdentityAttribute;
-import fr.paris.lutece.plugins.identitystore.business.IdentityAttributeHome;
-import fr.paris.lutece.plugins.identitystore.business.IdentityConstants;
-import fr.paris.lutece.plugins.identitystore.business.IdentityHome;
-import fr.paris.lutece.plugins.identitystore.service.AttributeChange;
+import fr.paris.lutece.plugins.identitystore.business.attribute.AttributeKey;
+import fr.paris.lutece.plugins.identitystore.business.attribute.AttributeKeyHome;
+import fr.paris.lutece.plugins.identitystore.business.identity.*;
 import fr.paris.lutece.plugins.identitystore.service.ChangeAuthor;
 import fr.paris.lutece.plugins.identitystore.service.IdentityChange;
 import fr.paris.lutece.plugins.identitystore.service.IdentityChangeType;
 import fr.paris.lutece.plugins.identitystore.service.IdentityManagementResourceIdService;
-import fr.paris.lutece.plugins.identitystore.service.certifier.CertifierRegistry;
-import fr.paris.lutece.plugins.identitystore.service.listeners.IdentityStoreNotifyListenerService;
+import fr.paris.lutece.plugins.identitystore.service.search.ISearchIdentityService;
 import fr.paris.lutece.plugins.identitystore.v2.web.rs.AuthorType;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.history.AttributeChange;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.search.QualifiedIdentity;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.search.SearchAttributeDto;
 import fr.paris.lutece.portal.service.i18n.I18nService;
 import fr.paris.lutece.portal.service.message.AdminMessage;
 import fr.paris.lutece.portal.service.message.AdminMessageService;
+import fr.paris.lutece.portal.service.spring.SpringContextService;
 import fr.paris.lutece.portal.service.util.AppPropertiesService;
 import fr.paris.lutece.portal.util.mvc.admin.annotations.Controller;
 import fr.paris.lutece.portal.util.mvc.commons.annotations.Action;
@@ -58,18 +56,16 @@ import fr.paris.lutece.portal.util.mvc.commons.annotations.View;
 import fr.paris.lutece.portal.web.constants.Messages;
 import fr.paris.lutece.util.ReferenceList;
 import fr.paris.lutece.util.url.UrlItem;
-
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-
-import javax.servlet.http.HttpServletRequest;
 
 /**
  * This class provides the user interface to manage Identity features ( manage, create, modify, remove )
@@ -78,11 +74,12 @@ import javax.servlet.http.HttpServletRequest;
 public class IdentityJspBean extends ManageIdentitiesJspBean
 {
     /**
-	 * 
-	 */
+     * 
+     */
     private static final long serialVersionUID = 6053504380426222888L;
     // Templates
     private static final String TEMPLATE_MANAGE_IDENTITIES = "/admin/plugins/identitystore/manage_identities.html";
+    private static final String TEMPLATE_SEARCH_IDENTITIES = "/admin/plugins/identitystore/search_identities.html";
     private static final String TEMPLATE_CREATE_IDENTITY = "/admin/plugins/identitystore/create_identity.html";
     private static final String TEMPLATE_MODIFY_IDENTITY = "/admin/plugins/identitystore/modify_identity.html";
     private static final String TEMPLATE_VIEW_IDENTITY = "/admin/plugins/identitystore/view_identity.html";
@@ -145,10 +142,12 @@ public class IdentityJspBean extends ManageIdentitiesJspBean
     private Identity _identity;
     private String _strQuery;
     private String _strQueryFilter;
-    private final AttributeKey _attrKeyFirstName = AttributeKeyHome.findByKey( AppPropertiesService
-            .getProperty( IdentityConstants.PROPERTY_ATTRIBUTE_USER_NAME_GIVEN ) );
-    private final AttributeKey _attrKeyLastName = AttributeKeyHome.findByKey( AppPropertiesService
-            .getProperty( IdentityConstants.PROPERTY_ATTRIBUTE_USER_PREFERRED_NAME ) );
+    private final AttributeKey _attrKeyFirstName = AttributeKeyHome
+            .findByKey( AppPropertiesService.getProperty( IdentityConstants.PROPERTY_ATTRIBUTE_USER_NAME_GIVEN ) );
+    private final AttributeKey _attrKeyLastName = AttributeKeyHome
+            .findByKey( AppPropertiesService.getProperty( IdentityConstants.PROPERTY_ATTRIBUTE_USER_PREFERRED_NAME ) );
+
+    private ISearchIdentityService _searchIdentityService = SpringContextService.getBean( "identitystore.searchIdentityService" );
 
     /**
      * Build the Manage View
@@ -157,55 +156,128 @@ public class IdentityJspBean extends ManageIdentitiesJspBean
      *            The HTTP request
      * @return The page
      */
+    // @View( value = VIEW_MANAGE_IDENTITIES, defaultView = true )
+    // public String getManageIdentitys( HttpServletRequest request )
+    // {
+    // _identity = null;
+    // String strQuery = request.getParameter( PARAMETER_QUERY );
+    // String strQueryFilter = request.getParameter( PARAMETER_QUERY_FILTER );
+    //
+    // if ( strQuery != null )
+    // {
+    // _strQuery = strQuery;
+    // }
+    //
+    // if ( StringUtils.isNotEmpty( strQueryFilter ) )
+    // {
+    // _strQueryFilter = strQueryFilter;
+    // }
+    //
+    // List<Identity> listIdentities;
+    // if ( _strQuery != null )
+    // {
+    // if ( _strQueryFilter != null )
+    // {
+    // switch( _strQueryFilter )
+    // {
+    // case IdentityConstants.GUID_FILTER:
+    // listIdentities = IdentityHome.findAllByConnectionId( _strQuery );
+    // break;
+    // case IdentityConstants.CID_FILTER:
+    // listIdentities = IdentityHome.findAllByCustomerId( _strQuery );
+    // break;
+    // case IdentityConstants.ALL_ATTRIBUTES_FILTER:
+    // listIdentities = IdentityHome.findByAllAttributesValue( _strQuery );
+    // break;
+    // default:
+    // listIdentities = IdentityHome.findByAttributeValue( _strQueryFilter, _strQuery );
+    // break;
+    // }
+    // }
+    // else
+    // {
+    // listIdentities = IdentityHome.findByAllAttributesValue( _strQuery );
+    // }
+    // }
+    // else
+    // {
+    // listIdentities = new ArrayList<Identity>( );
+    // }
+    //
+    // Map<String, Object> model = getPaginatedListModel( request, MARK_IDENTITY_LIST, listIdentities, JSP_MANAGE_IDENTITIES );
+    // model.put( MARK_QUERY, _strQuery );
+    // model.put( MARK_QUERY_FILTER, _strQueryFilter );
+    // model.put( MARK_QUERY_FILTER_REFLIST, buildQueryFilterRefList( ) );
+    // model.put( MARK_HAS_CREATE_ROLE,
+    // IdentityManagementResourceIdService.isAuthorized( IdentityManagementResourceIdService.PERMISSION_CREATE_IDENTITY, getUser( ) ) );
+    // model.put( MARK_HAS_MODIFY_ROLE,
+    // IdentityManagementResourceIdService.isAuthorized( IdentityManagementResourceIdService.PERMISSION_MODIFY_IDENTITY, getUser( ) ) );
+    // model.put( MARK_HAS_DELETE_ROLE,
+    // IdentityManagementResourceIdService.isAuthorized( IdentityManagementResourceIdService.PERMISSION_DELETE_IDENTITY, getUser( ) ) );
+    // model.put( MARK_HAS_VIEW_ROLE,
+    // IdentityManagementResourceIdService.isAuthorized( IdentityManagementResourceIdService.PERMISSION_VIEW_IDENTITY, getUser( ) ) );
+    //
+    // return getPage( PROPERTY_PAGE_TITLE_MANAGE_IDENTITIES, TEMPLATE_MANAGE_IDENTITIES, model );
+    // }
+
     @View( value = VIEW_MANAGE_IDENTITIES, defaultView = true )
     public String getManageIdentitys( HttpServletRequest request )
     {
         _identity = null;
-        String strQuery = request.getParameter( PARAMETER_QUERY );
-        String strQueryFilter = request.getParameter( PARAMETER_QUERY_FILTER );
+        final String email = request.getParameter( "email" );
+        final String gender = request.getParameter( "gender" );
+        final String family_name = request.getParameter( "family_name" );
+        final String preferred_username = request.getParameter( "preferred_username" );
+        final String first_name = request.getParameter( "first_name" );
+        final String birthdate = request.getParameter( "birthdate" );
+        final String insee_birthplace_label = request.getParameter( "insee_birthplace_label" );
+        final String insee_birthcountry_label = request.getParameter( "insee_birthcountry_label" );
+        final String phone = request.getParameter( "phone" );
 
-        if ( strQuery != null )
+        final List<SearchAttributeDto> atttributes = new ArrayList<>( );
+        if ( StringUtils.isNotEmpty( email ) )
         {
-            _strQuery = strQuery;
+            atttributes.add( new SearchAttributeDto( "email_login", email, true ) );
+        }
+        if ( StringUtils.isNotEmpty( gender ) )
+        {
+            atttributes.add( new SearchAttributeDto( "gender", gender, true ) );
+        }
+        if ( StringUtils.isNotEmpty( family_name ) )
+        {
+            atttributes.add( new SearchAttributeDto( "family_name", family_name, false ) );
+        }
+        if ( StringUtils.isNotEmpty( preferred_username ) )
+        {
+            atttributes.add( new SearchAttributeDto( "preferred_username", preferred_username, false ) );
+        }
+        if ( StringUtils.isNotEmpty( first_name ) )
+        {
+            atttributes.add( new SearchAttributeDto( "first_name", first_name, false ) );
+        }
+        if ( StringUtils.isNotEmpty( birthdate ) )
+        {
+            atttributes.add( new SearchAttributeDto( "birthdate", birthdate, true ) );
+        }
+        if ( StringUtils.isNotEmpty( insee_birthplace_label ) )
+        {
+            atttributes.add( new SearchAttributeDto( "insee_birthplace_label", insee_birthplace_label, true ) );
+        }
+        if ( StringUtils.isNotEmpty( insee_birthcountry_label ) )
+        {
+            atttributes.add( new SearchAttributeDto( "insee_birthcountry_label", insee_birthcountry_label, true ) );
+        }
+        if ( StringUtils.isNotEmpty( phone ) )
+        {
+            atttributes.add( new SearchAttributeDto( "phone", phone, true ) );
+        }
+        final List<QualifiedIdentity> qualifiedIdentities = new ArrayList<>( );
+        if ( CollectionUtils.isNotEmpty( atttributes ) )
+        {
+            qualifiedIdentities.addAll( _searchIdentityService.getQualifiedIdentities( atttributes ) );
         }
 
-        if ( StringUtils.isNotEmpty( strQueryFilter ) )
-        {
-            _strQueryFilter = strQueryFilter;
-        }
-
-        List<Identity> listIdentities;
-        if ( _strQuery != null )
-        {
-            if ( _strQueryFilter != null )
-            {
-                switch( _strQueryFilter )
-                {
-                    case IdentityConstants.GUID_FILTER:
-                        listIdentities = IdentityHome.findAllByConnectionId( _strQuery );
-                        break;
-                    case IdentityConstants.CID_FILTER:
-                        listIdentities = IdentityHome.findAllByCustomerId( _strQuery );
-                        break;
-                    case IdentityConstants.ALL_ATTRIBUTES_FILTER:
-                        listIdentities = IdentityHome.findByAllAttributesValue( _strQuery );
-                        break;
-                    default:
-                        listIdentities = IdentityHome.findByAttributeValue( _strQueryFilter, _strQuery );
-                        break;
-                }
-            }
-            else
-            {
-                listIdentities = IdentityHome.findByAllAttributesValue( _strQuery );
-            }
-        }
-        else
-        {
-            listIdentities = new ArrayList<Identity>( );
-        }
-
-        Map<String, Object> model = getPaginatedListModel( request, MARK_IDENTITY_LIST, listIdentities, JSP_MANAGE_IDENTITIES );
+        Map<String, Object> model = getPaginatedListModel( request, MARK_IDENTITY_LIST, qualifiedIdentities, JSP_MANAGE_IDENTITIES );
         model.put( MARK_QUERY, _strQuery );
         model.put( MARK_QUERY_FILTER, _strQueryFilter );
         model.put( MARK_QUERY_FILTER_REFLIST, buildQueryFilterRefList( ) );
@@ -218,7 +290,7 @@ public class IdentityJspBean extends ManageIdentitiesJspBean
         model.put( MARK_HAS_VIEW_ROLE,
                 IdentityManagementResourceIdService.isAuthorized( IdentityManagementResourceIdService.PERMISSION_VIEW_IDENTITY, getUser( ) ) );
 
-        return getPage( PROPERTY_PAGE_TITLE_MANAGE_IDENTITIES, TEMPLATE_MANAGE_IDENTITIES, model );
+        return getPage( PROPERTY_PAGE_TITLE_MANAGE_IDENTITIES, TEMPLATE_SEARCH_IDENTITIES, model );
     }
 
     /**
@@ -291,14 +363,16 @@ public class IdentityJspBean extends ManageIdentitiesJspBean
         IdentityChange identityChange = new IdentityChange( );
         identityChange.setIdentity( _identity );
         identityChange.setChangeType( IdentityChangeType.CREATE );
-        IdentityStoreNotifyListenerService.instance( ).notifyListenersIdentityChange( identityChange );
+        // TODO voir compat IdentityStoreNotifyListenerService.instance( ).notifyListenersIdentityChange( identityChange );
 
-        AttributeChange changeFirstName = IdentityStoreNotifyListenerService.buildAttributeChange( _identity, idAttrFirstName.getAttributeKey( ).getKeyName( ),
-                idAttrFirstName.getValue( ), StringUtils.EMPTY, getAuthor( ), idAttrFirstName.getCertificate( ), true );
-        IdentityStoreNotifyListenerService.instance( ).notifyListenersAttributeChange( changeFirstName );
-        AttributeChange changeLastName = IdentityStoreNotifyListenerService.buildAttributeChange( _identity, idAttrLastName.getAttributeKey( ).getKeyName( ),
-                idAttrLastName.getValue( ), StringUtils.EMPTY, getAuthor( ), idAttrLastName.getCertificate( ), true );
-        IdentityStoreNotifyListenerService.instance( ).notifyListenersAttributeChange( changeLastName );
+        // TODO la création d'identité en IHM sera utilisée ?
+        // AttributeChange changeFirstName = IdentityStoreNotifyListenerService.buildAttributeChange( _identity, idAttrFirstName.getAttributeKey( ).getKeyName(
+        // ),
+        // idAttrFirstName.getValue( ), StringUtils.EMPTY, getAuthor( ), idAttrFirstName.getCertificate( ), true );
+        // IdentityStoreNotifyListenerService.instance( ).notifyListenersAttributeChange( changeFirstName );
+        // AttributeChange changeLastName = IdentityStoreNotifyListenerService.buildAttributeChange( _identity, idAttrLastName.getAttributeKey( ).getKeyName( ),
+        // idAttrLastName.getValue( ), StringUtils.EMPTY, getAuthor( ), idAttrLastName.getCertificate( ), true );
+        // IdentityStoreNotifyListenerService.instance( ).notifyListenersAttributeChange( changeLastName );
 
         return redirectView( request, VIEW_MANAGE_IDENTITIES );
     }
@@ -407,7 +481,7 @@ public class IdentityJspBean extends ManageIdentitiesJspBean
         IdentityChange identityChange = new IdentityChange( );
         identityChange.setIdentity( identity );
         identityChange.setChangeType( IdentityChangeType.DELETE );
-        IdentityStoreNotifyListenerService.instance( ).notifyListenersIdentityChange( identityChange );
+        // TODO voir compat IdentityStoreNotifyListenerService.instance( ).notifyListenersIdentityChange( identityChange );
 
         return redirectView( request, VIEW_MANAGE_IDENTITIES );
     }
@@ -488,21 +562,22 @@ public class IdentityJspBean extends ManageIdentitiesJspBean
         IdentityChange identityChange = new IdentityChange( );
         identityChange.setIdentity( _identity );
         identityChange.setChangeType( IdentityChangeType.UPDATE );
-        IdentityStoreNotifyListenerService.instance( ).notifyListenersIdentityChange( identityChange );
+        // TODO l'update d'identité en IHM sera utilisé ?
+        // IdentityStoreNotifyListenerService.instance( ).notifyListenersIdentityChange( identityChange );
 
-        if ( bUpdateFirstName )
-        {
-            AttributeChange changeFirstName = IdentityStoreNotifyListenerService.buildAttributeChange( _identity, idAttrFirstName.getAttributeKey( )
-                    .getKeyName( ), idAttrFirstName.getValue( ), strCurrentFirstName, getAuthor( ), idAttrFirstName.getCertificate( ), false );
-            IdentityStoreNotifyListenerService.instance( ).notifyListenersAttributeChange( changeFirstName );
-        }
-        if ( bUpdateLastName )
-        {
-            AttributeChange changeLastName = IdentityStoreNotifyListenerService.buildAttributeChange( _identity,
-                    idAttrLastName.getAttributeKey( ).getKeyName( ), idAttrLastName.getValue( ), strCurrentLastName, getAuthor( ),
-                    idAttrLastName.getCertificate( ), false );
-            IdentityStoreNotifyListenerService.instance( ).notifyListenersAttributeChange( changeLastName );
-        }
+        // if ( bUpdateFirstName )
+        // {
+        // AttributeChange changeFirstName = IdentityStoreNotifyListenerService.buildAttributeChange( _identity, idAttrFirstName.getAttributeKey( )
+        // .getKeyName( ), idAttrFirstName.getValue( ), strCurrentFirstName, getAuthor( ), idAttrFirstName.getCertificate( ), false );
+        // IdentityStoreNotifyListenerService.instance( ).notifyListenersAttributeChange( changeFirstName );
+        // }
+        // if ( bUpdateLastName )
+        // {
+        // AttributeChange changeLastName = IdentityStoreNotifyListenerService.buildAttributeChange( _identity,
+        // idAttrLastName.getAttributeKey( ).getKeyName( ), idAttrLastName.getValue( ), strCurrentLastName, getAuthor( ),
+        // idAttrLastName.getCertificate( ), false );
+        // IdentityStoreNotifyListenerService.instance( ).notifyListenersAttributeChange( changeLastName );
+        // }
 
         return redirectView( request, VIEW_MANAGE_IDENTITIES );
     }
@@ -517,13 +592,10 @@ public class IdentityJspBean extends ManageIdentitiesJspBean
     @View( VIEW_IDENTITY )
     public String getViewIdentity( HttpServletRequest request )
     {
-        if ( !IdentityManagementResourceIdService.isAuthorized( IdentityManagementResourceIdService.PERMISSION_VIEW_IDENTITY, getUser( ) ) )
-        {
-            return redirect( request, AdminMessageService.getMessageUrl( request, Messages.USER_ACCESS_DENIED, AdminMessage.TYPE_STOP ) );
-        }
-        int nId = Integer.parseInt( request.getParameter( PARAMETER_ID_IDENTITY ) );
+        // int nId = Integer.parseInt( request.getParameter( PARAMETER_ID_IDENTITY ) );
+        final String nId = request.getParameter( PARAMETER_ID_IDENTITY );
 
-        _identity = IdentityHome.findByPrimaryKey( nId );
+        _identity = IdentityHome.findByCustomerId( nId );
 
         Map<String, Object> model = getModel( );
         model.put( MARK_IDENTITY, _identity );
@@ -543,28 +615,19 @@ public class IdentityJspBean extends ManageIdentitiesJspBean
     @View( value = VIEW_ATTRIBUTE_HISTORY )
     public String getAttributeHistoryView( HttpServletRequest request )
     {
-        if ( !IdentityManagementResourceIdService.isAuthorized( IdentityManagementResourceIdService.PERMISSION_ATTRIBUTS_HISTO, getUser( ) ) )
-        {
-            return redirect( request, AdminMessageService.getMessageUrl( request, Messages.USER_ACCESS_DENIED, AdminMessage.TYPE_STOP ) );
-        }
         // here we use a LinkedHashMap to have same attributs order as in viewIdentity
-        Map<String, List<AttributeChange>> mapAttributesChange = new LinkedHashMap<String, List<AttributeChange>>( );
-        Map<String, IdentityAttribute> mapCurrentAttributes = new HashMap<String, IdentityAttribute>( );
+        final Map<String, List<AttributeChange>> mapAttributesChange = new LinkedHashMap<>( );
 
         if ( _identity != null && MapUtils.isNotEmpty( _identity.getAttributes( ) ) )
         {
             for ( String strAttributeKey : _identity.getAttributes( ).keySet( ) )
             {
-                mapCurrentAttributes.put( strAttributeKey, _identity.getAttributes( ).get( strAttributeKey ) );
-                List<AttributeChange> lstAttributeChange = IdentityAttributeHome.getAttributeChangeHistory( _identity.getId( ), strAttributeKey );
-                mapAttributesChange.put( strAttributeKey, lstAttributeChange );
+                mapAttributesChange.put( strAttributeKey, IdentityAttributeHome.getAttributeChangeHistory( _identity.getId( ), strAttributeKey ) );
             }
         }
 
-        Map<String, Object> model = getModel( );
+        final Map<String, Object> model = getModel( );
         model.put( MARK_ATTRIBUTES_CHANGE_MAP, mapAttributesChange );
-        model.put( MARK_ATTRIBUTES_CURRENT_MAP, mapCurrentAttributes );
-        model.put( MARK_CERTIFIERS_MAP, CertifierRegistry.instance( ).getCertifiers( ) );
 
         return getPage( PROPERTY_PAGE_TITLE_VIEW_CHANGE_HISTORY, TEMPLATE_VIEW_ATTRIBUTE_HISTORY, model );
     }

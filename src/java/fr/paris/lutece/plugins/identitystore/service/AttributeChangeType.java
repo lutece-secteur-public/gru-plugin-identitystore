@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2018, Mairie de Paris
+ * Copyright (c) 2002-2023, City of Paris
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -43,7 +43,9 @@ import java.util.Map;
  */
 public enum AttributeChangeType
 {
-    CREATE( 0 ), UPDATE( 1 ), DELETE( 2 );
+    CREATE( 0 ),
+    UPDATE( 1 ),
+    DELETE( 2 );
 
     private static Map<Integer, AttributeChangeType> _mapTypes = new HashMap<Integer, AttributeChangeType>( );
     private int _nValue;

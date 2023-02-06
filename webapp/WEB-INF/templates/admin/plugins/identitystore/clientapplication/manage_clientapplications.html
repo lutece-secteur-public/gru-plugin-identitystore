@@ -4,14 +4,11 @@
 <@rowBox>
     <@boxHeader i18nTitleKey="identitystore.manage_clientapplications.title">
         <@headerButtons>
-
-        
-        <form class="form-inline pull-right" method="post" name="manage_clientapplications" action="jsp/admin/plugins/identitystore/ManageClientApplications.jsp">
-            <!-- Add pull-right to class1 -->
-            <@actionButtons button1Name="view_createClientApplication" icon1="icon-plus icon-white" i18nValue1Key="identitystore.manage_clientapplications.buttonAdd" />
-        </form>
-        
-    </@headerButtons>
+            <form class="form-inline pull-right" method="post" name="manage_clientapplications" action="jsp/admin/plugins/identitystore/ManageClientApplications.jsp">
+                <!-- Add pull-right to class1 -->
+                <@actionButtons button1Name="view_createClientApplication" icon1="icon-plus icon-white" i18nValue1Key="identitystore.manage_clientapplications.buttonAdd" />
+            </form>
+        </@headerButtons>
     </@boxHeader>
     <@boxBody>    
     <@messages infos=infos />
@@ -36,12 +33,21 @@
         <td>
             <a href="jsp/admin/plugins/identitystore/ManageClientApplications.jsp?view=modifyClientApplication&id=${clientapplication.id}"
                class="btn btn-primary btn-sm" title="#i18n{portal.util.labelModify}">
-                <i class="fa fa-pencil"></i>
+                <i class="fas fa-edit"></i>
             </a>
 
             <a href="jsp/admin/plugins/identitystore/ManageClientApplications.jsp?action=confirmRemoveClientApplication&id=${clientapplication.id}"
                class="btn btn-danger btn-sm" title="#i18n{portal.util.labelDelete}" >
                 <i class="fa fa-trash"></i>
+            </a>
+
+            <a href="jsp/admin/plugins/identitystore/ManageServiceContracts.jsp?view=createServiceContract&id_client_app=${clientapplication.id}"
+               class="btn btn-primary btn-sm" title="#i18n{identitystore.manage_clientapplications.buttonAddContract}" >
+                <i class="fa fa-file-contract"></i>
+            </a>
+            <a href="jsp/admin/plugins/identitystore/ManageClientApplications.jsp?view=displayClientApplication&id=${clientapplication.id}"
+               class="btn btn-primary btn-sm" title="#i18n{identitystore.manage_clientapplications.buttonDisplay}" >
+                <i class="fa fa-eye"></i>
             </a>
         </td>
         </tr>

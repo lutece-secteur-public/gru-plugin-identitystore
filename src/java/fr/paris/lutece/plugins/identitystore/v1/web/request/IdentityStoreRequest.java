@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2016, Mairie de Paris
+ * Copyright (c) 2002-2023, City of Paris
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -57,7 +57,7 @@ public abstract class IdentityStoreRequest
      * @return html/json string response
      * @throws AppException
      *             in case of request fail
-     * @throws IdentityStoreException 
+     * @throws IdentityStoreException
      */
     protected abstract String doSpecificRequest( ) throws IdentityStoreException;
 

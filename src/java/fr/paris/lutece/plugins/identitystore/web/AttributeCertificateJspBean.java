@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2018, Mairie de Paris
+ * Copyright (c) 2002-2023, City of Paris
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,8 +33,8 @@
  */
 package fr.paris.lutece.plugins.identitystore.web;
 
-import fr.paris.lutece.plugins.identitystore.business.AttributeCertificate;
-import fr.paris.lutece.plugins.identitystore.business.AttributeCertificateHome;
+import fr.paris.lutece.plugins.identitystore.business.attribute.AttributeCertificate;
+import fr.paris.lutece.plugins.identitystore.business.attribute.AttributeCertificateHome;
 import fr.paris.lutece.portal.service.message.AdminMessage;
 import fr.paris.lutece.portal.service.message.AdminMessageService;
 import fr.paris.lutece.portal.util.mvc.admin.annotations.Controller;
@@ -109,7 +109,8 @@ public class AttributeCertificateJspBean extends AdminIdentitiesJspBean
         _attributecertificate = null;
 
         List<AttributeCertificate> listAttributeCertificates = AttributeCertificateHome.getAttributeCertificatesList( );
-        Map<String, Object> model = getPaginatedListModel( request, MARK_ATTRIBUTECERTIFICATE_LIST, listAttributeCertificates, JSP_MANAGE_ATTRIBUTECERTIFICATES );
+        Map<String, Object> model = getPaginatedListModel( request, MARK_ATTRIBUTECERTIFICATE_LIST, listAttributeCertificates,
+                JSP_MANAGE_ATTRIBUTECERTIFICATES );
 
         return getPage( PROPERTY_PAGE_TITLE_MANAGE_ATTRIBUTECERTIFICATES, TEMPLATE_MANAGE_ATTRIBUTECERTIFICATES, model );
     }

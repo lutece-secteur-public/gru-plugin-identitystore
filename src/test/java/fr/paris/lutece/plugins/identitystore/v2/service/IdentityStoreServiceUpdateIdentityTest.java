@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2018, Mairie de Paris
+ * Copyright (c) 2002-2023, City of Paris
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,20 +35,21 @@ package fr.paris.lutece.plugins.identitystore.v2.service;
 
 import java.util.HashMap;
 import fr.paris.lutece.plugins.identitystore.IdentityStoreTestContext;
-import fr.paris.lutece.plugins.identitystore.business.AttributeCertificate;
-import fr.paris.lutece.plugins.identitystore.business.AttributeKey;
-import fr.paris.lutece.plugins.identitystore.business.AttributeKeyHome;
-import fr.paris.lutece.plugins.identitystore.business.Identity;
-import fr.paris.lutece.plugins.identitystore.business.IdentityAttribute;
+import fr.paris.lutece.plugins.identitystore.business.attribute.AttributeCertificate;
+import fr.paris.lutece.plugins.identitystore.business.attribute.AttributeKey;
+import fr.paris.lutece.plugins.identitystore.business.attribute.AttributeKeyHome;
+import fr.paris.lutece.plugins.identitystore.business.identity.Identity;
+import fr.paris.lutece.plugins.identitystore.business.identity.IdentityAttribute;
 import fr.paris.lutece.plugins.identitystore.service.IdentityStoreService;
 import fr.paris.lutece.plugins.identitystore.v2.web.rs.dto.AttributeDto;
 import fr.paris.lutece.plugins.identitystore.v2.web.rs.dto.AttributeStatusDto;
 import fr.paris.lutece.plugins.identitystore.v2.web.rs.dto.CertificateDto;
 import fr.paris.lutece.plugins.identitystore.v2.web.rs.dto.IdentityChangeDto;
 import fr.paris.lutece.plugins.identitystore.v2.web.rs.dto.IdentityDto;
-import fr.paris.lutece.plugins.identitystore.business.IdentityHome;
+import fr.paris.lutece.plugins.identitystore.business.identity.IdentityHome;
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityDeletedException;
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityNotFoundException;
+import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
 import fr.paris.lutece.plugins.identitystore.web.rs.dto.MockAttributeDto;
 import fr.paris.lutece.plugins.identitystore.web.rs.dto.MockCertificateDto;
 import fr.paris.lutece.plugins.identitystore.web.rs.dto.MockIdentityDto;
@@ -78,12 +79,12 @@ public class IdentityStoreServiceUpdateIdentityTest extends LuteceTestCase
         IdentityStoreTestContext.initContext( );
     }
 
-    public void testUpdateIdentityWithApplicationNotAllowedToRemoveValue( )
+    public void testUpdateIdentityWithApplicationNotAllowedToRemoveValue( ) throws IdentityStoreException
     {
         Identity identityReference = createIdentityInDatabase( );
         AttributeKey attributeKey1 = findAttributeKey( IdentityStoreTestContext.ATTRKEY_1 );
-        IdentityAttribute identityAttribute1 = createIdentityAttributeInDatabase( identityReference, attributeKey1, IdentityStoreTestContext.ATTRKEY_1
-                + "testUpdateIdentityWithApplicationNotAllowedToRemoveValue" );
+        IdentityAttribute identityAttribute1 = createIdentityAttributeInDatabase( identityReference, attributeKey1,
+                IdentityStoreTestContext.ATTRKEY_1 + "testUpdateIdentityWithApplicationNotAllowedToRemoveValue" );
         IdentityDto identityDto = MockIdentityDto.create( identityReference );
         AttributeDto attr1 = MockAttributeDto.create( identityDto, identityAttribute1 );
         attr1.setValue( null );
@@ -105,12 +106,12 @@ public class IdentityStoreServiceUpdateIdentityTest extends LuteceTestCase
         assertNull( attr1StatusAfter.getNewCertificateExpirationDate( ) );
     }
 
-    public void testUpdateIdentityWithNoAttributeInDatabaseAndNoCertificateInInput( )
+    public void testUpdateIdentityWithNoAttributeInDatabaseAndNoCertificateInInput( ) throws IdentityStoreException
     {
         Identity identityReference = createIdentityInDatabase( );
         IdentityDto identityDto = MockIdentityDto.create( identityReference );
-        MockAttributeDto.create( identityDto, IdentityStoreTestContext.ATTRKEY_1, IdentityStoreTestContext.ATTRKEY_1
-                + "testUpdateIdentityWithNoAttributeInDatabaseAndNoCertificateInInput" );
+        MockAttributeDto.create( identityDto, IdentityStoreTestContext.ATTRKEY_1,
+                IdentityStoreTestContext.ATTRKEY_1 + "testUpdateIdentityWithNoAttributeInDatabaseAndNoCertificateInInput" );
         IdentityChangeDto identityChangeDto = createIdentityChangeDtoFor( identityDto );
 
         IdentityDto identityAfterDto = IdentityStoreService.updateIdentity( identityChangeDto, new HashMap<>( ) );
@@ -126,17 +127,18 @@ public class IdentityStoreServiceUpdateIdentityTest extends LuteceTestCase
         AttributeStatusDto attr1StatusAfter = attr1After.getStatus( );
         assertNotNull( attr1StatusAfter );
         assertEquals( AttributeStatusDto.OK_CODE, attr1StatusAfter.getStatusCode( ) );
-        assertEquals( IdentityStoreTestContext.ATTRKEY_1 + "testUpdateIdentityWithNoAttributeInDatabaseAndNoCertificateInInput", attr1StatusAfter.getNewValue( ) );
+        assertEquals( IdentityStoreTestContext.ATTRKEY_1 + "testUpdateIdentityWithNoAttributeInDatabaseAndNoCertificateInInput",
+                attr1StatusAfter.getNewValue( ) );
         assertNull( attr1StatusAfter.getNewCertifier( ) );
         assertNull( attr1StatusAfter.getNewCertificateExpirationDate( ) );
     }
 
-    public void testUpdateIdentityWithNoAttributeInDatabaseAndCertificateInInput( )
+    public void testUpdateIdentityWithNoAttributeInDatabaseAndCertificateInInput( ) throws IdentityStoreException
     {
         Identity identityReference = createIdentityInDatabase( );
         IdentityDto identityDto = MockIdentityDto.create( identityReference );
-        AttributeDto attr1 = MockAttributeDto.create( identityDto, IdentityStoreTestContext.ATTRKEY_1, IdentityStoreTestContext.ATTRKEY_1
-                + "testUpdateIdentityWithNoAttributeInDatabaseAndCertificateInInput" );
+        AttributeDto attr1 = MockAttributeDto.create( identityDto, IdentityStoreTestContext.ATTRKEY_1,
+                IdentityStoreTestContext.ATTRKEY_1 + "testUpdateIdentityWithNoAttributeInDatabaseAndCertificateInInput" );
         IdentityChangeDto identityChangeDto = createIdentityChangeDtoFor( identityDto );
         CertificateDto certificateDto = MockCertificateDto.create( IdentityStoreTestContext.CERTIFIER1_CODE );
         attr1.setCertificate( certificateDto );
@@ -154,17 +156,18 @@ public class IdentityStoreServiceUpdateIdentityTest extends LuteceTestCase
         AttributeStatusDto attr1StatusAfter = attr1After.getStatus( );
         assertNotNull( attr1StatusAfter );
         assertEquals( AttributeStatusDto.OK_CODE, attr1StatusAfter.getStatusCode( ) );
-        assertEquals( IdentityStoreTestContext.ATTRKEY_1 + "testUpdateIdentityWithNoAttributeInDatabaseAndCertificateInInput", attr1StatusAfter.getNewValue( ) );
+        assertEquals( IdentityStoreTestContext.ATTRKEY_1 + "testUpdateIdentityWithNoAttributeInDatabaseAndCertificateInInput",
+                attr1StatusAfter.getNewValue( ) );
         assertEquals( IdentityStoreTestContext.CERTIFIER1_CODE, attr1StatusAfter.getNewCertifier( ), attr1StatusAfter.getNewCertifier( ) );
         assertNotNull( attr1StatusAfter.getNewCertificateExpirationDate( ) );
     }
 
-    public void testUpdateIdentityWithNoAttributeInDatabaseAndCertificateInInputWithNoExpirationDate( )
+    public void testUpdateIdentityWithNoAttributeInDatabaseAndCertificateInInputWithNoExpirationDate( ) throws IdentityStoreException
     {
         Identity identityReference = createIdentityInDatabase( );
         IdentityDto identityDto = MockIdentityDto.create( identityReference );
-        AttributeDto attr1 = MockAttributeDto.create( identityDto, IdentityStoreTestContext.ATTRKEY_1, IdentityStoreTestContext.ATTRKEY_1
-                + "testUpdateIdentityWithNoAttributeInDatabaseAndCertificateInInputWithNoExpirationDate" );
+        AttributeDto attr1 = MockAttributeDto.create( identityDto, IdentityStoreTestContext.ATTRKEY_1,
+                IdentityStoreTestContext.ATTRKEY_1 + "testUpdateIdentityWithNoAttributeInDatabaseAndCertificateInInputWithNoExpirationDate" );
         IdentityChangeDto identityChangeDto = createIdentityChangeDtoFor( identityDto );
         CertificateDto certificateDto = MockCertificateDto.create( IdentityStoreTestContext.CERTIFIER4_CODE );
         attr1.setCertificate( certificateDto );
@@ -189,13 +192,13 @@ public class IdentityStoreServiceUpdateIdentityTest extends LuteceTestCase
         assertNull( attr1StatusAfter.getNewCertificateExpirationDate( ) );
     }
 
-    public void testUpdateIdentityWithCertificateInDatabaseButNotInInputAndSameValue( )
+    public void testUpdateIdentityWithCertificateInDatabaseButNotInInputAndSameValue( ) throws IdentityStoreException
     {
         Identity identityReference = createIdentityInDatabase( );
         AttributeCertificate attributeCertificate = createAttributeCertificateInDatabase( IdentityStoreTestContext.CERTIFIER1_CODE );
         AttributeKey attributeKey1 = findAttributeKey( IdentityStoreTestContext.ATTRKEY_1 );
-        IdentityAttribute identityAttribute1 = createIdentityAttributeInDatabase( identityReference, attributeKey1, IdentityStoreTestContext.ATTRKEY_1
-                + "testUpdateIdentityWithCertificateInDatabaseButNotInInputAndSameValue", attributeCertificate );
+        IdentityAttribute identityAttribute1 = createIdentityAttributeInDatabase( identityReference, attributeKey1,
+                IdentityStoreTestContext.ATTRKEY_1 + "testUpdateIdentityWithCertificateInDatabaseButNotInInputAndSameValue", attributeCertificate );
         IdentityDto identityDto = MockIdentityDto.create( identityReference );
         AttributeDto attr1 = MockAttributeDto.create( identityDto, identityAttribute1 );
         IdentityChangeDto identityChangeDto = createIdentityChangeDtoFor( identityDto );
@@ -220,13 +223,13 @@ public class IdentityStoreServiceUpdateIdentityTest extends LuteceTestCase
         assertNull( attr1StatusAfter.getNewCertificateExpirationDate( ) );
     }
 
-    public void testUpdateIdentityWithCertificateInDatabaseButNotInInputAndNewValue( )
+    public void testUpdateIdentityWithCertificateInDatabaseButNotInInputAndNewValue( ) throws IdentityStoreException
     {
         Identity identityReference = createIdentityInDatabase( );
         AttributeCertificate attributeCertificate = createAttributeCertificateInDatabase( IdentityStoreTestContext.CERTIFIER1_CODE );
         AttributeKey attributeKey1 = findAttributeKey( IdentityStoreTestContext.ATTRKEY_1 );
-        IdentityAttribute identityAttribute1 = createIdentityAttributeInDatabase( identityReference, attributeKey1, IdentityStoreTestContext.ATTRKEY_1
-                + "testUpdateIdentityWithCertificateInDatabaseButNotInInputAndNewValue", attributeCertificate );
+        IdentityAttribute identityAttribute1 = createIdentityAttributeInDatabase( identityReference, attributeKey1,
+                IdentityStoreTestContext.ATTRKEY_1 + "testUpdateIdentityWithCertificateInDatabaseButNotInInputAndNewValue", attributeCertificate );
         IdentityDto identityDto = MockIdentityDto.create( identityReference );
         AttributeDto attr1 = MockAttributeDto.create( identityDto, identityAttribute1 );
         attr1.setValue( IdentityStoreTestContext.ATTRKEY_1 + "testUpdateIdentityWithNoCertificateInDatabaseNorInInputAndNewValue_newValue" );
@@ -252,13 +255,13 @@ public class IdentityStoreServiceUpdateIdentityTest extends LuteceTestCase
         assertNull( attr1StatusAfter.getNewCertificateExpirationDate( ) );
     }
 
-    public void testUpdateIdentityWithLowerLevelCertificateAndSameValue( )
+    public void testUpdateIdentityWithLowerLevelCertificateAndSameValue( ) throws IdentityStoreException
     {
         Identity identityReference = createIdentityInDatabase( );
         AttributeCertificate attributeCertificate = createAttributeCertificateInDatabase( IdentityStoreTestContext.CERTIFIER2_CODE );
         AttributeKey attributeKey1 = findAttributeKey( IdentityStoreTestContext.ATTRKEY_1 );
-        IdentityAttribute identityAttribute1 = createIdentityAttributeInDatabase( identityReference, attributeKey1, IdentityStoreTestContext.ATTRKEY_1
-                + "testUpdateIdentityWithLowerLevelCertificateAndSameValue", attributeCertificate );
+        IdentityAttribute identityAttribute1 = createIdentityAttributeInDatabase( identityReference, attributeKey1,
+                IdentityStoreTestContext.ATTRKEY_1 + "testUpdateIdentityWithLowerLevelCertificateAndSameValue", attributeCertificate );
         IdentityDto identityDto = MockIdentityDto.create( identityReference );
         AttributeDto attr1 = MockAttributeDto.create( identityDto, identityAttribute1 );
         IdentityChangeDto identityChangeDto = createIdentityChangeDtoFor( identityDto );
@@ -284,13 +287,13 @@ public class IdentityStoreServiceUpdateIdentityTest extends LuteceTestCase
         assertNull( attr1StatusAfter.getNewCertificateExpirationDate( ) );
     }
 
-    public void testUpdateIdentityWithLowerLevelCertificateAndNewValue( )
+    public void testUpdateIdentityWithLowerLevelCertificateAndNewValue( ) throws IdentityStoreException
     {
         Identity identityReference = createIdentityInDatabase( );
         AttributeCertificate attributeCertificate = createAttributeCertificateInDatabase( IdentityStoreTestContext.CERTIFIER2_CODE );
         AttributeKey attributeKey1 = findAttributeKey( IdentityStoreTestContext.ATTRKEY_1 );
-        IdentityAttribute identityAttribute1 = createIdentityAttributeInDatabase( identityReference, attributeKey1, IdentityStoreTestContext.ATTRKEY_1
-                + "testUpdateIdentityWithLowerLevelCertificateAndNewValue", attributeCertificate );
+        IdentityAttribute identityAttribute1 = createIdentityAttributeInDatabase( identityReference, attributeKey1,
+                IdentityStoreTestContext.ATTRKEY_1 + "testUpdateIdentityWithLowerLevelCertificateAndNewValue", attributeCertificate );
         IdentityDto identityDto = MockIdentityDto.create( identityReference );
         AttributeDto attr1 = MockAttributeDto.create( identityDto, identityAttribute1 );
         attr1.setValue( IdentityStoreTestContext.ATTRKEY_1 + "testUpdateIdentityWithLowerLevelCertificateAndNewValue_newValue" );
@@ -317,13 +320,13 @@ public class IdentityStoreServiceUpdateIdentityTest extends LuteceTestCase
         assertNull( attr1StatusAfter.getNewCertificateExpirationDate( ) );
     }
 
-    public void testUpdateIdentityWithHigherLevelCertificateAndSameValue( )
+    public void testUpdateIdentityWithHigherLevelCertificateAndSameValue( ) throws IdentityStoreException
     {
         Identity identityReference = createIdentityInDatabase( );
         AttributeCertificate attributeCertificate = createAttributeCertificateInDatabase( IdentityStoreTestContext.CERTIFIER1_CODE );
         AttributeKey attributeKey1 = findAttributeKey( IdentityStoreTestContext.ATTRKEY_1 );
-        IdentityAttribute identityAttribute1 = createIdentityAttributeInDatabase( identityReference, attributeKey1, IdentityStoreTestContext.ATTRKEY_1
-                + "testUpdateIdentityWithHigherLevelCertificateAndSameValue", attributeCertificate );
+        IdentityAttribute identityAttribute1 = createIdentityAttributeInDatabase( identityReference, attributeKey1,
+                IdentityStoreTestContext.ATTRKEY_1 + "testUpdateIdentityWithHigherLevelCertificateAndSameValue", attributeCertificate );
         IdentityDto identityDto = MockIdentityDto.create( identityReference );
         AttributeDto attr1 = MockAttributeDto.create( identityDto, identityAttribute1 );
         IdentityChangeDto identityChangeDto = createIdentityChangeDtoFor( identityDto );
@@ -349,13 +352,13 @@ public class IdentityStoreServiceUpdateIdentityTest extends LuteceTestCase
         assertNotNull( attr1StatusAfter.getNewCertificateExpirationDate( ) );
     }
 
-    public void testUpdateIdentityWithHigherLevelCertificateAndNewValue( )
+    public void testUpdateIdentityWithHigherLevelCertificateAndNewValue( ) throws IdentityStoreException
     {
         Identity identityReference = createIdentityInDatabase( );
         AttributeCertificate attributeCertificate = createAttributeCertificateInDatabase( IdentityStoreTestContext.CERTIFIER1_CODE );
         AttributeKey attributeKey1 = findAttributeKey( IdentityStoreTestContext.ATTRKEY_1 );
-        IdentityAttribute identityAttribute1 = createIdentityAttributeInDatabase( identityReference, attributeKey1, IdentityStoreTestContext.ATTRKEY_1
-                + "testUpdateIdentityWithHigherLevelCertificateAndNewValue", attributeCertificate );
+        IdentityAttribute identityAttribute1 = createIdentityAttributeInDatabase( identityReference, attributeKey1,
+                IdentityStoreTestContext.ATTRKEY_1 + "testUpdateIdentityWithHigherLevelCertificateAndNewValue", attributeCertificate );
         IdentityDto identityDto = MockIdentityDto.create( identityReference );
         AttributeDto attr1 = MockAttributeDto.create( identityDto, identityAttribute1 );
         attr1.setValue( IdentityStoreTestContext.ATTRKEY_1 + "testUpdateIdentityWithHigherLevelCertificateAndNewValue_newValue" );
@@ -377,18 +380,19 @@ public class IdentityStoreServiceUpdateIdentityTest extends LuteceTestCase
         AttributeStatusDto attr1StatusAfter = attr1After.getStatus( );
         assertNotNull( attr1StatusAfter );
         assertEquals( AttributeStatusDto.OK_CODE, attr1StatusAfter.getStatusCode( ) );
-        assertEquals( IdentityStoreTestContext.ATTRKEY_1 + "testUpdateIdentityWithHigherLevelCertificateAndNewValue_newValue", attr1StatusAfter.getNewValue( ) );
+        assertEquals( IdentityStoreTestContext.ATTRKEY_1 + "testUpdateIdentityWithHigherLevelCertificateAndNewValue_newValue",
+                attr1StatusAfter.getNewValue( ) );
         assertEquals( IdentityStoreTestContext.CERTIFIER2_CODE, attr1StatusAfter.getNewCertifier( ) );
         assertNotNull( attr1StatusAfter.getNewCertificateExpirationDate( ) );
     }
 
-    public void testUpdateIdentityWithSameLevelCertificateAndExpirationDateSoonerAndSameValue( )
+    public void testUpdateIdentityWithSameLevelCertificateAndExpirationDateSoonerAndSameValue( ) throws IdentityStoreException
     {
         Identity identityReference = createIdentityInDatabase( );
         AttributeCertificate attributeCertificate = createAttributeCertificateInDatabase( IdentityStoreTestContext.CERTIFIER2_CODE );
         AttributeKey attributeKey1 = findAttributeKey( IdentityStoreTestContext.ATTRKEY_1 );
-        IdentityAttribute identityAttribute1 = createIdentityAttributeInDatabase( identityReference, attributeKey1, IdentityStoreTestContext.ATTRKEY_1
-                + "testUpdateIdentityWithSameLevelCertificateAndExpirationDateSoonerAndSameValue", attributeCertificate );
+        IdentityAttribute identityAttribute1 = createIdentityAttributeInDatabase( identityReference, attributeKey1,
+                IdentityStoreTestContext.ATTRKEY_1 + "testUpdateIdentityWithSameLevelCertificateAndExpirationDateSoonerAndSameValue", attributeCertificate );
         IdentityDto identityDto = MockIdentityDto.create( identityReference );
         AttributeDto attr1 = MockAttributeDto.create( identityDto, identityAttribute1 );
         IdentityChangeDto identityChangeDto = createIdentityChangeDtoFor( identityDto );
@@ -415,13 +419,13 @@ public class IdentityStoreServiceUpdateIdentityTest extends LuteceTestCase
         assertNull( attr1StatusAfter.getNewCertificateExpirationDate( ) );
     }
 
-    public void testUpdateIdentityWithSameLevelCertificateAndExpirationDateSoonerAndNewValue( )
+    public void testUpdateIdentityWithSameLevelCertificateAndExpirationDateSoonerAndNewValue( ) throws IdentityStoreException
     {
         Identity identityReference = createIdentityInDatabase( );
         AttributeCertificate attributeCertificate = createAttributeCertificateInDatabase( IdentityStoreTestContext.CERTIFIER2_CODE );
         AttributeKey attributeKey1 = findAttributeKey( IdentityStoreTestContext.ATTRKEY_1 );
-        IdentityAttribute identityAttribute1 = createIdentityAttributeInDatabase( identityReference, attributeKey1, IdentityStoreTestContext.ATTRKEY_1
-                + "testUpdateIdentityWithSameLevelCertificateAndExpirationDateSoonerAndNewValue", attributeCertificate );
+        IdentityAttribute identityAttribute1 = createIdentityAttributeInDatabase( identityReference, attributeKey1,
+                IdentityStoreTestContext.ATTRKEY_1 + "testUpdateIdentityWithSameLevelCertificateAndExpirationDateSoonerAndNewValue", attributeCertificate );
         IdentityDto identityDto = MockIdentityDto.create( identityReference );
         AttributeDto attr1 = MockAttributeDto.create( identityDto, identityAttribute1 );
         attr1.setValue( IdentityStoreTestContext.ATTRKEY_1 + "testUpdateIdentityWithSameLevelCertificateAndExpirationDateSoonerAndNewValue_newValue" );
@@ -449,13 +453,13 @@ public class IdentityStoreServiceUpdateIdentityTest extends LuteceTestCase
         assertNull( attr1StatusAfter.getNewCertificateExpirationDate( ) );
     }
 
-    public void testUpdateIdentityWithSameLevelCertificateAndExpirationDateLaterAndSameValue( )
+    public void testUpdateIdentityWithSameLevelCertificateAndExpirationDateLaterAndSameValue( ) throws IdentityStoreException
     {
         Identity identityReference = createIdentityInDatabase( );
         AttributeCertificate attributeCertificate = createAttributeCertificateInDatabase( IdentityStoreTestContext.CERTIFIER3_CODE );
         AttributeKey attributeKey1 = findAttributeKey( IdentityStoreTestContext.ATTRKEY_1 );
-        IdentityAttribute identityAttribute1 = createIdentityAttributeInDatabase( identityReference, attributeKey1, IdentityStoreTestContext.ATTRKEY_1
-                + "testUpdateIdentityWithSameLevelCertificateAndExpirationDateLaterAndSameValue", attributeCertificate );
+        IdentityAttribute identityAttribute1 = createIdentityAttributeInDatabase( identityReference, attributeKey1,
+                IdentityStoreTestContext.ATTRKEY_1 + "testUpdateIdentityWithSameLevelCertificateAndExpirationDateLaterAndSameValue", attributeCertificate );
         IdentityDto identityDto = MockIdentityDto.create( identityReference );
         AttributeDto attr1 = MockAttributeDto.create( identityDto, identityAttribute1 );
         IdentityChangeDto identityChangeDto = createIdentityChangeDtoFor( identityDto );
@@ -482,13 +486,13 @@ public class IdentityStoreServiceUpdateIdentityTest extends LuteceTestCase
         assertNotNull( attr1StatusAfter.getNewCertificateExpirationDate( ) );
     }
 
-    public void testUpdateIdentityWithSameLevelCertificateAndExpirationDateLaterAndNewValue( )
+    public void testUpdateIdentityWithSameLevelCertificateAndExpirationDateLaterAndNewValue( ) throws IdentityStoreException
     {
         Identity identityReference = createIdentityInDatabase( );
         AttributeCertificate attributeCertificate = createAttributeCertificateInDatabase( IdentityStoreTestContext.CERTIFIER3_CODE );
         AttributeKey attributeKey1 = findAttributeKey( IdentityStoreTestContext.ATTRKEY_1 );
-        IdentityAttribute identityAttribute1 = createIdentityAttributeInDatabase( identityReference, attributeKey1, IdentityStoreTestContext.ATTRKEY_1
-                + "testUpdateIdentityWithSameLevelCertificateAndExpirationDateLaterAndNewValue", attributeCertificate );
+        IdentityAttribute identityAttribute1 = createIdentityAttributeInDatabase( identityReference, attributeKey1,
+                IdentityStoreTestContext.ATTRKEY_1 + "testUpdateIdentityWithSameLevelCertificateAndExpirationDateLaterAndNewValue", attributeCertificate );
         IdentityDto identityDto = MockIdentityDto.create( identityReference );
         AttributeDto attr1 = MockAttributeDto.create( identityDto, identityAttribute1 );
         attr1.setValue( IdentityStoreTestContext.ATTRKEY_1 + "testUpdateIdentityWithSameLevelCertificateAndExpirationDateLaterAndNewValue_newValue" );
@@ -517,13 +521,14 @@ public class IdentityStoreServiceUpdateIdentityTest extends LuteceTestCase
         assertNotNull( attr1StatusAfter.getNewCertificateExpirationDate( ) );
     }
 
-    public void testUpdateIdentityWithSameLevelCertificateAndNoExpirationDateInDatabaseAndSameValue( )
+    public void testUpdateIdentityWithSameLevelCertificateAndNoExpirationDateInDatabaseAndSameValue( ) throws IdentityStoreException
     {
         Identity identityReference = createIdentityInDatabase( );
         AttributeCertificate attributeCertificate = createAttributeCertificateInDatabase( IdentityStoreTestContext.CERTIFIER4_CODE );
         AttributeKey attributeKey1 = findAttributeKey( IdentityStoreTestContext.ATTRKEY_1 );
-        IdentityAttribute identityAttribute1 = createIdentityAttributeInDatabase( identityReference, attributeKey1, IdentityStoreTestContext.ATTRKEY_1
-                + "testUpdateIdentityWithSameLevelCertificateAndNoExpirationDateInDatabaseAndSameValue", attributeCertificate );
+        IdentityAttribute identityAttribute1 = createIdentityAttributeInDatabase( identityReference, attributeKey1,
+                IdentityStoreTestContext.ATTRKEY_1 + "testUpdateIdentityWithSameLevelCertificateAndNoExpirationDateInDatabaseAndSameValue",
+                attributeCertificate );
         IdentityDto identityDto = MockIdentityDto.create( identityReference );
         AttributeDto attr1 = MockAttributeDto.create( identityDto, identityAttribute1 );
         IdentityChangeDto identityChangeDto = createIdentityChangeDtoFor( identityDto );
@@ -550,13 +555,14 @@ public class IdentityStoreServiceUpdateIdentityTest extends LuteceTestCase
         assertNull( attr1StatusAfter.getNewCertificateExpirationDate( ) );
     }
 
-    public void testUpdateIdentityWithSameLevelCertificateAndNoExpirationDateInDatabaseAndNewValue( )
+    public void testUpdateIdentityWithSameLevelCertificateAndNoExpirationDateInDatabaseAndNewValue( ) throws IdentityStoreException
     {
         Identity identityReference = createIdentityInDatabase( );
         AttributeCertificate attributeCertificate = createAttributeCertificateInDatabase( IdentityStoreTestContext.CERTIFIER4_CODE );
         AttributeKey attributeKey1 = findAttributeKey( IdentityStoreTestContext.ATTRKEY_1 );
-        IdentityAttribute identityAttribute1 = createIdentityAttributeInDatabase( identityReference, attributeKey1, IdentityStoreTestContext.ATTRKEY_1
-                + "testUpdateIdentityWithSameLevelCertificateAndNoExpirationDateInDatabaseAndNewValue", attributeCertificate );
+        IdentityAttribute identityAttribute1 = createIdentityAttributeInDatabase( identityReference, attributeKey1,
+                IdentityStoreTestContext.ATTRKEY_1 + "testUpdateIdentityWithSameLevelCertificateAndNoExpirationDateInDatabaseAndNewValue",
+                attributeCertificate );
         IdentityDto identityDto = MockIdentityDto.create( identityReference );
         AttributeDto attr1 = MockAttributeDto.create( identityDto, identityAttribute1 );
         attr1.setValue( IdentityStoreTestContext.ATTRKEY_1 + "testUpdateIdentityWithSameLevelCertificateAndNoExpirationDateInDatabaseAndNewValue_newValue" );
@@ -584,13 +590,14 @@ public class IdentityStoreServiceUpdateIdentityTest extends LuteceTestCase
         assertNull( attr1StatusAfter.getNewCertificateExpirationDate( ) );
     }
 
-    public void testUpdateIdentityWithSameLevelCertificateAndNoExpirationDateInRequestAndSameValue( )
+    public void testUpdateIdentityWithSameLevelCertificateAndNoExpirationDateInRequestAndSameValue( ) throws IdentityStoreException
     {
         Identity identityReference = createIdentityInDatabase( );
         AttributeCertificate attributeCertificate = createAttributeCertificateInDatabase( IdentityStoreTestContext.CERTIFIER2_CODE );
         AttributeKey attributeKey1 = findAttributeKey( IdentityStoreTestContext.ATTRKEY_1 );
-        IdentityAttribute identityAttribute1 = createIdentityAttributeInDatabase( identityReference, attributeKey1, IdentityStoreTestContext.ATTRKEY_1
-                + "testUpdateIdentityWithSameLevelCertificateAndNoExpirationDateInRequestAndSameValue", attributeCertificate );
+        IdentityAttribute identityAttribute1 = createIdentityAttributeInDatabase( identityReference, attributeKey1,
+                IdentityStoreTestContext.ATTRKEY_1 + "testUpdateIdentityWithSameLevelCertificateAndNoExpirationDateInRequestAndSameValue",
+                attributeCertificate );
         IdentityDto identityDto = MockIdentityDto.create( identityReference );
         AttributeDto attr1 = MockAttributeDto.create( identityDto, identityAttribute1 );
         IdentityChangeDto identityChangeDto = createIdentityChangeDtoFor( identityDto );
@@ -617,13 +624,13 @@ public class IdentityStoreServiceUpdateIdentityTest extends LuteceTestCase
         assertNull( attr1StatusAfter.getNewCertificateExpirationDate( ) );
     }
 
-    public void testUpdateIdentityWithSameLevelCertificateAndNoExpirationDateInRequestAndNewValue( )
+    public void testUpdateIdentityWithSameLevelCertificateAndNoExpirationDateInRequestAndNewValue( ) throws IdentityStoreException
     {
         Identity identityReference = createIdentityInDatabase( );
         AttributeCertificate attributeCertificate = createAttributeCertificateInDatabase( IdentityStoreTestContext.CERTIFIER2_CODE );
         AttributeKey attributeKey1 = findAttributeKey( IdentityStoreTestContext.ATTRKEY_1 );
-        IdentityAttribute identityAttribute1 = createIdentityAttributeInDatabase( identityReference, attributeKey1, IdentityStoreTestContext.ATTRKEY_1
-                + "testUpdateIdentityWithHigherLevelCertificateAndNewValue", attributeCertificate );
+        IdentityAttribute identityAttribute1 = createIdentityAttributeInDatabase( identityReference, attributeKey1,
+                IdentityStoreTestContext.ATTRKEY_1 + "testUpdateIdentityWithHigherLevelCertificateAndNewValue", attributeCertificate );
         IdentityDto identityDto = MockIdentityDto.create( identityReference );
         AttributeDto attr1 = MockAttributeDto.create( identityDto, identityAttribute1 );
         attr1.setValue( IdentityStoreTestContext.ATTRKEY_1 + "testUpdateIdentityWithSameLevelCertificateAndNoExpirationDateInRequestAndNewValue_newValue" );
@@ -652,13 +659,14 @@ public class IdentityStoreServiceUpdateIdentityTest extends LuteceTestCase
         assertNull( attr1StatusAfter.getNewCertificateExpirationDate( ) );
     }
 
-    public void testUpdateIdentityWithSameLevelCertificateAndNoExpirationDateInDatabaseAndInRequestAndSameValue( )
+    public void testUpdateIdentityWithSameLevelCertificateAndNoExpirationDateInDatabaseAndInRequestAndSameValue( ) throws IdentityStoreException
     {
         Identity identityReference = createIdentityInDatabase( );
         AttributeCertificate attributeCertificate = createAttributeCertificateInDatabase( IdentityStoreTestContext.CERTIFIER4_CODE );
         AttributeKey attributeKey1 = findAttributeKey( IdentityStoreTestContext.ATTRKEY_1 );
-        IdentityAttribute identityAttribute1 = createIdentityAttributeInDatabase( identityReference, attributeKey1, IdentityStoreTestContext.ATTRKEY_1
-                + "testUpdateIdentityWithSameLevelCertificateAndNoExpirationDateInDatabaseAndSameValue", attributeCertificate );
+        IdentityAttribute identityAttribute1 = createIdentityAttributeInDatabase( identityReference, attributeKey1,
+                IdentityStoreTestContext.ATTRKEY_1 + "testUpdateIdentityWithSameLevelCertificateAndNoExpirationDateInDatabaseAndSameValue",
+                attributeCertificate );
         IdentityDto identityDto = MockIdentityDto.create( identityReference );
         AttributeDto attr1 = MockAttributeDto.create( identityDto, identityAttribute1 );
         IdentityChangeDto identityChangeDto = createIdentityChangeDtoFor( identityDto );
@@ -685,13 +693,14 @@ public class IdentityStoreServiceUpdateIdentityTest extends LuteceTestCase
         assertNull( attr1StatusAfter.getNewCertificateExpirationDate( ) );
     }
 
-    public void testUpdateIdentityWithSameLevelCertificateAndNoExpirationDateInDatabaseAndInRequestAndNewValue( )
+    public void testUpdateIdentityWithSameLevelCertificateAndNoExpirationDateInDatabaseAndInRequestAndNewValue( ) throws IdentityStoreException
     {
         Identity identityReference = createIdentityInDatabase( );
         AttributeCertificate attributeCertificate = createAttributeCertificateInDatabase( IdentityStoreTestContext.CERTIFIER4_CODE );
         AttributeKey attributeKey1 = findAttributeKey( IdentityStoreTestContext.ATTRKEY_1 );
-        IdentityAttribute identityAttribute1 = createIdentityAttributeInDatabase( identityReference, attributeKey1, IdentityStoreTestContext.ATTRKEY_1
-                + "testUpdateIdentityWithSameLevelCertificateAndNoExpirationDateInDatabaseAndNewValue", attributeCertificate );
+        IdentityAttribute identityAttribute1 = createIdentityAttributeInDatabase( identityReference, attributeKey1,
+                IdentityStoreTestContext.ATTRKEY_1 + "testUpdateIdentityWithSameLevelCertificateAndNoExpirationDateInDatabaseAndNewValue",
+                attributeCertificate );
         IdentityDto identityDto = MockIdentityDto.create( identityReference );
         AttributeDto attr1 = MockAttributeDto.create( identityDto, identityAttribute1 );
         attr1.setValue( IdentityStoreTestContext.ATTRKEY_1
@@ -707,27 +716,30 @@ public class IdentityStoreServiceUpdateIdentityTest extends LuteceTestCase
         assertEquals( 1, identityAfterDto.getAttributes( ).size( ) );
         AttributeDto attr1After = identityAfterDto.getAttributes( ).get( IdentityStoreTestContext.ATTRKEY_1 );
         assertNotNull( attr1After );
-        assertEquals( IdentityStoreTestContext.ATTRKEY_1
-                + "testUpdateIdentityWithSameLevelCertificateAndNoExpirationDateInDatabaseAndInRequestAndNewValue_newValue", attr1After.getValue( ) );
+        assertEquals(
+                IdentityStoreTestContext.ATTRKEY_1 + "testUpdateIdentityWithSameLevelCertificateAndNoExpirationDateInDatabaseAndInRequestAndNewValue_newValue",
+                attr1After.getValue( ) );
         assertNotNull( attr1After.getCertificate( ) );
         assertTrue( attr1After.isCertified( ) );
         assertEquals( IdentityStoreTestContext.CERTIFIER5_CODE, attr1After.getCertificate( ).getCertifierCode( ) );
         AttributeStatusDto attr1StatusAfter = attr1After.getStatus( );
         assertNotNull( attr1StatusAfter );
         assertEquals( AttributeStatusDto.OK_CODE, attr1StatusAfter.getStatusCode( ) );
-        assertEquals( IdentityStoreTestContext.ATTRKEY_1
-                + "testUpdateIdentityWithSameLevelCertificateAndNoExpirationDateInDatabaseAndInRequestAndNewValue_newValue", attr1StatusAfter.getNewValue( ) );
+        assertEquals(
+                IdentityStoreTestContext.ATTRKEY_1 + "testUpdateIdentityWithSameLevelCertificateAndNoExpirationDateInDatabaseAndInRequestAndNewValue_newValue",
+                attr1StatusAfter.getNewValue( ) );
         assertEquals( IdentityStoreTestContext.CERTIFIER5_CODE, attr1StatusAfter.getNewCertifier( ) );
         assertNull( attr1StatusAfter.getNewCertificateExpirationDate( ) );
     }
 
-    public void testUpdateIdentityWithExpiredCertificateInDatabaseAndNoCertificateInInputAndSameValue( )
+    public void testUpdateIdentityWithExpiredCertificateInDatabaseAndNoCertificateInInputAndSameValue( ) throws IdentityStoreException
     {
         Identity identityReference = createIdentityInDatabase( );
         AttributeCertificate attributeCertificate = createExpiredAttributeCertificateInDatabase( IdentityStoreTestContext.CERTIFIER1_CODE );
         AttributeKey attributeKey1 = findAttributeKey( IdentityStoreTestContext.ATTRKEY_1 );
-        IdentityAttribute identityAttribute1 = createIdentityAttributeInDatabase( identityReference, attributeKey1, IdentityStoreTestContext.ATTRKEY_1
-                + "testUpdateIdentityWithExpiredCertificateInDatabaseAndNoCertificateInInputAndSameValue", attributeCertificate );
+        IdentityAttribute identityAttribute1 = createIdentityAttributeInDatabase( identityReference, attributeKey1,
+                IdentityStoreTestContext.ATTRKEY_1 + "testUpdateIdentityWithExpiredCertificateInDatabaseAndNoCertificateInInputAndSameValue",
+                attributeCertificate );
         IdentityDto identityDto = MockIdentityDto.create( identityReference );
         MockAttributeDto.create( identityDto, identityAttribute1 );
         IdentityChangeDto identityChangeDto = createIdentityChangeDtoFor( identityDto );
@@ -751,13 +763,14 @@ public class IdentityStoreServiceUpdateIdentityTest extends LuteceTestCase
         assertNull( attr1StatusAfter.getNewCertificateExpirationDate( ) );
     }
 
-    public void testUpdateIdentityWithExpiredCertificateInDatabaseAndNoCertificateInInputAndNewValue( )
+    public void testUpdateIdentityWithExpiredCertificateInDatabaseAndNoCertificateInInputAndNewValue( ) throws IdentityStoreException
     {
         Identity identityReference = createIdentityInDatabase( );
         AttributeCertificate attributeCertificate = createExpiredAttributeCertificateInDatabase( IdentityStoreTestContext.CERTIFIER1_CODE );
         AttributeKey attributeKey1 = findAttributeKey( IdentityStoreTestContext.ATTRKEY_1 );
-        IdentityAttribute identityAttribute1 = createIdentityAttributeInDatabase( identityReference, attributeKey1, IdentityStoreTestContext.ATTRKEY_1
-                + "testUpdateIdentityWithExpiredCertificateInDatabaseAndNoCertificateInInputAndNewValue", attributeCertificate );
+        IdentityAttribute identityAttribute1 = createIdentityAttributeInDatabase( identityReference, attributeKey1,
+                IdentityStoreTestContext.ATTRKEY_1 + "testUpdateIdentityWithExpiredCertificateInDatabaseAndNoCertificateInInputAndNewValue",
+                attributeCertificate );
         IdentityDto identityDto = MockIdentityDto.create( identityReference );
         AttributeDto attr1 = MockAttributeDto.create( identityDto, identityAttribute1 );
         attr1.setValue( IdentityStoreTestContext.ATTRKEY_1 + "testUpdateIdentityWithExpiredCertificateInDatabaseAndNoCertificateInInputAndNewValue_newValue" );
@@ -783,13 +796,14 @@ public class IdentityStoreServiceUpdateIdentityTest extends LuteceTestCase
         assertNull( attr1StatusAfter.getNewCertificateExpirationDate( ) );
     }
 
-    public void testUpdateIdentityWithExpiredCertificateInDatabaseAndCertificateInInputAndSameValue( )
+    public void testUpdateIdentityWithExpiredCertificateInDatabaseAndCertificateInInputAndSameValue( ) throws IdentityStoreException
     {
         Identity identityReference = createIdentityInDatabase( );
         AttributeCertificate attributeCertificate = createExpiredAttributeCertificateInDatabase( IdentityStoreTestContext.CERTIFIER2_CODE );
         AttributeKey attributeKey1 = findAttributeKey( IdentityStoreTestContext.ATTRKEY_1 );
-        IdentityAttribute identityAttribute1 = createIdentityAttributeInDatabase( identityReference, attributeKey1, IdentityStoreTestContext.ATTRKEY_1
-                + "testUpdateIdentityWithExpiredCertificateInDatabaseAndCertificateInInputAndSameValue", attributeCertificate );
+        IdentityAttribute identityAttribute1 = createIdentityAttributeInDatabase( identityReference, attributeKey1,
+                IdentityStoreTestContext.ATTRKEY_1 + "testUpdateIdentityWithExpiredCertificateInDatabaseAndCertificateInInputAndSameValue",
+                attributeCertificate );
         IdentityDto identityDto = MockIdentityDto.create( identityReference );
         AttributeDto attr1 = MockAttributeDto.create( identityDto, identityAttribute1 );
         IdentityChangeDto identityChangeDto = createIdentityChangeDtoFor( identityDto );
@@ -815,13 +829,14 @@ public class IdentityStoreServiceUpdateIdentityTest extends LuteceTestCase
         assertNotNull( attr1StatusAfter.getNewCertificateExpirationDate( ) );
     }
 
-    public void testUpdateIdentityWithExpiredCertificateInDatabaseAndCertificateInInputAndNewValue( )
+    public void testUpdateIdentityWithExpiredCertificateInDatabaseAndCertificateInInputAndNewValue( ) throws IdentityStoreException
     {
         Identity identityReference = createIdentityInDatabase( );
         AttributeCertificate attributeCertificate = createExpiredAttributeCertificateInDatabase( IdentityStoreTestContext.CERTIFIER2_CODE );
         AttributeKey attributeKey1 = findAttributeKey( IdentityStoreTestContext.ATTRKEY_1 );
-        IdentityAttribute identityAttribute1 = createIdentityAttributeInDatabase( identityReference, attributeKey1, IdentityStoreTestContext.ATTRKEY_1
-                + "testUpdateIdentityWithExpiredCertificateInDatabaseAndCertificateInInputAndNewValue", attributeCertificate );
+        IdentityAttribute identityAttribute1 = createIdentityAttributeInDatabase( identityReference, attributeKey1,
+                IdentityStoreTestContext.ATTRKEY_1 + "testUpdateIdentityWithExpiredCertificateInDatabaseAndCertificateInInputAndNewValue",
+                attributeCertificate );
         IdentityDto identityDto = MockIdentityDto.create( identityReference );
         AttributeDto attr1 = MockAttributeDto.create( identityDto, identityAttribute1 );
         attr1.setValue( IdentityStoreTestContext.ATTRKEY_1 + "testUpdateIdentityWithExpiredCertificateInDatabaseAndCertificateInInputAndNewValue_newValue" );
@@ -849,12 +864,12 @@ public class IdentityStoreServiceUpdateIdentityTest extends LuteceTestCase
         assertNotNull( attr1StatusAfter.getNewCertificateExpirationDate( ) );
     }
 
-    public void testUpdateIdentityWithNoCertificateInDatabaseNorInInputAndSameValue( )
+    public void testUpdateIdentityWithNoCertificateInDatabaseNorInInputAndSameValue( ) throws IdentityStoreException
     {
         Identity identityReference = createIdentityInDatabase( );
         AttributeKey attributeKey1 = findAttributeKey( IdentityStoreTestContext.ATTRKEY_1 );
-        IdentityAttribute identityAttribute1 = createIdentityAttributeInDatabase( identityReference, attributeKey1, IdentityStoreTestContext.ATTRKEY_1
-                + "testUpdateIdentityWithNoCertificateInDatabaseNorInInputAndSameValue" );
+        IdentityAttribute identityAttribute1 = createIdentityAttributeInDatabase( identityReference, attributeKey1,
+                IdentityStoreTestContext.ATTRKEY_1 + "testUpdateIdentityWithNoCertificateInDatabaseNorInInputAndSameValue" );
         IdentityDto identityDto = MockIdentityDto.create( identityReference );
         MockAttributeDto.create( identityDto, identityAttribute1 );
         IdentityChangeDto identityChangeDto = createIdentityChangeDtoFor( identityDto );
@@ -877,12 +892,12 @@ public class IdentityStoreServiceUpdateIdentityTest extends LuteceTestCase
         assertNull( attr1StatusAfter.getNewCertificateExpirationDate( ) );
     }
 
-    public void testUpdateIdentityWithNoCertificateInDatabaseNorInInputAndNewValue( )
+    public void testUpdateIdentityWithNoCertificateInDatabaseNorInInputAndNewValue( ) throws IdentityStoreException
     {
         Identity identityReference = createIdentityInDatabase( );
         AttributeKey attributeKey1 = findAttributeKey( IdentityStoreTestContext.ATTRKEY_1 );
-        IdentityAttribute identityAttribute1 = createIdentityAttributeInDatabase( identityReference, attributeKey1, IdentityStoreTestContext.ATTRKEY_1
-                + "testUpdateIdentityWithSameValueAndNoCertificateInRequestNorDatabase" );
+        IdentityAttribute identityAttribute1 = createIdentityAttributeInDatabase( identityReference, attributeKey1,
+                IdentityStoreTestContext.ATTRKEY_1 + "testUpdateIdentityWithSameValueAndNoCertificateInRequestNorDatabase" );
         IdentityDto identityDto = MockIdentityDto.create( identityReference );
         AttributeDto attr1 = MockAttributeDto.create( identityDto, identityAttribute1 );
         attr1.setValue( IdentityStoreTestContext.ATTRKEY_1 + "testUpdateIdentityWithNoCertificateInDatabaseNorInInputAndNewValue_newValue" );
@@ -895,7 +910,8 @@ public class IdentityStoreServiceUpdateIdentityTest extends LuteceTestCase
         assertEquals( 1, identityAfterDto.getAttributes( ).size( ) );
         AttributeDto attr1After = identityAfterDto.getAttributes( ).get( IdentityStoreTestContext.ATTRKEY_1 );
         assertNotNull( attr1After );
-        assertEquals( IdentityStoreTestContext.ATTRKEY_1 + "testUpdateIdentityWithNoCertificateInDatabaseNorInInputAndNewValue_newValue", attr1After.getValue( ) );
+        assertEquals( IdentityStoreTestContext.ATTRKEY_1 + "testUpdateIdentityWithNoCertificateInDatabaseNorInInputAndNewValue_newValue",
+                attr1After.getValue( ) );
         assertNull( attr1After.getCertificate( ) );
         assertFalse( attr1After.isCertified( ) );
         AttributeStatusDto attr1StatusAfter = attr1After.getStatus( );
@@ -907,12 +923,12 @@ public class IdentityStoreServiceUpdateIdentityTest extends LuteceTestCase
         assertNull( attr1StatusAfter.getNewCertificateExpirationDate( ) );
     }
 
-    public void testUpdateIdentityWithCertificatetNotInDatabaseButInInputAndSameValue( )
+    public void testUpdateIdentityWithCertificatetNotInDatabaseButInInputAndSameValue( ) throws IdentityStoreException
     {
         Identity identityReference = createIdentityInDatabase( );
         AttributeKey attributeKey1 = findAttributeKey( IdentityStoreTestContext.ATTRKEY_1 );
-        IdentityAttribute identityAttribute1 = createIdentityAttributeInDatabase( identityReference, attributeKey1, IdentityStoreTestContext.ATTRKEY_1
-                + "testUpdateIdentityWithCertificatetNotInDatabaseButInInputAndSameValue" );
+        IdentityAttribute identityAttribute1 = createIdentityAttributeInDatabase( identityReference, attributeKey1,
+                IdentityStoreTestContext.ATTRKEY_1 + "testUpdateIdentityWithCertificatetNotInDatabaseButInInputAndSameValue" );
         IdentityDto identityDto = MockIdentityDto.create( identityReference );
         AttributeDto attr1 = MockAttributeDto.create( identityDto, identityAttribute1 );
         IdentityChangeDto identityChangeDto = createIdentityChangeDtoFor( identityDto );
@@ -938,12 +954,12 @@ public class IdentityStoreServiceUpdateIdentityTest extends LuteceTestCase
         assertNotNull( attr1StatusAfter.getNewCertificateExpirationDate( ) );
     }
 
-    public void testUpdateIdentityWithCertificatetNotInDatabaseButInInputAndNewValue( )
+    public void testUpdateIdentityWithCertificatetNotInDatabaseButInInputAndNewValue( ) throws IdentityStoreException
     {
         Identity identityReference = createIdentityInDatabase( );
         AttributeKey attributeKey1 = findAttributeKey( IdentityStoreTestContext.ATTRKEY_1 );
-        IdentityAttribute identityAttribute1 = createIdentityAttributeInDatabase( identityReference, attributeKey1, IdentityStoreTestContext.ATTRKEY_1
-                + "testUpdateIdentityWithCertificatetNotInDatabaseButInInputAndNewValue" );
+        IdentityAttribute identityAttribute1 = createIdentityAttributeInDatabase( identityReference, attributeKey1,
+                IdentityStoreTestContext.ATTRKEY_1 + "testUpdateIdentityWithCertificatetNotInDatabaseButInInputAndNewValue" );
         IdentityDto identityDto = MockIdentityDto.create( identityReference );
         AttributeDto attr1 = MockAttributeDto.create( identityDto, identityAttribute1 );
         attr1.setValue( IdentityStoreTestContext.ATTRKEY_1 + "testUpdateIdentityWithCertificatetNotInDatabaseButInInputAndNewValue_newValue" );
@@ -984,7 +1000,7 @@ public class IdentityStoreServiceUpdateIdentityTest extends LuteceTestCase
             IdentityStoreService.updateIdentity( identityChangeDto, new HashMap<>( ) );
             fail( "Expected an IdentityNotFoundException to be thrown" );
         }
-        catch( IdentityNotFoundException e )
+        catch( IdentityStoreException e )
         {
             // Correct behavior
         }
@@ -1003,7 +1019,7 @@ public class IdentityStoreServiceUpdateIdentityTest extends LuteceTestCase
             IdentityStoreService.updateIdentity( identityChangeDto, new HashMap<>( ) );
             fail( "Expected an IdentityDeletedException to be thrown" );
         }
-        catch( IdentityDeletedException e )
+        catch( IdentityStoreException e )
         {
             // Correct behavior
         }

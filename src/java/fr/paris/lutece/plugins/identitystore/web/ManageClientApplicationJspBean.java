@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2018, Mairie de Paris
+ * Copyright (c) 2002-2023, City of Paris
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,13 +33,13 @@
  */
 package fr.paris.lutece.plugins.identitystore.web;
 
-import fr.paris.lutece.plugins.identitystore.business.AttributeKeyHome;
-import fr.paris.lutece.plugins.identitystore.business.AttributeRight;
-import fr.paris.lutece.plugins.identitystore.business.ClientApplication;
-import fr.paris.lutece.plugins.identitystore.business.ClientApplicationHome;
+import fr.paris.lutece.plugins.identitystore.business.application.ClientApplication;
+import fr.paris.lutece.plugins.identitystore.business.application.ClientApplicationHome;
+import fr.paris.lutece.plugins.identitystore.business.contract.ServiceContract;
 import fr.paris.lutece.plugins.identitystore.service.certifier.AbstractCertifier;
 import fr.paris.lutece.plugins.identitystore.service.certifier.CertifierNotFoundException;
 import fr.paris.lutece.plugins.identitystore.service.certifier.CertifierRegistry;
+import fr.paris.lutece.plugins.identitystore.service.contract.ServiceContractService;
 import fr.paris.lutece.portal.service.message.AdminMessage;
 import fr.paris.lutece.portal.service.message.AdminMessageService;
 import fr.paris.lutece.portal.service.util.AppLogService;
@@ -48,12 +48,10 @@ import fr.paris.lutece.portal.util.mvc.commons.annotations.Action;
 import fr.paris.lutece.portal.util.mvc.commons.annotations.View;
 import fr.paris.lutece.util.url.UrlItem;
 
-import java.util.ArrayList;
+import javax.servlet.http.HttpServletRequest;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
 
 /**
  * This class provides the user interface to manage ClientApplication management features ( manage, create, modify, remove )
@@ -65,18 +63,14 @@ public class ManageClientApplicationJspBean extends ManageIdentitiesJspBean
 
     // Templates
     private static final String TEMPLATE_MANAGE_CLIENTAPPLICATION = "/admin/plugins/identitystore/clientapplication/manage_clientapplications.html";
+    private static final String TEMPLATE_DISPLAY_CLIENTAPPLICATION = "/admin/plugins/identitystore/clientapplication/view_clientapplication.html";
     private static final String TEMPLATE_CREATE_CLIENTAPPLICATION = "/admin/plugins/identitystore/clientapplication/create_clientapplication.html";
     private static final String TEMPLATE_MODIFY_CLIENTAPPLICATION = "/admin/plugins/identitystore/clientapplication/modify_clientapplication.html";
     private static final String TEMPLATE_MODIFY_CLIENTAPPLICATION_CERTIFICATOR = "/admin/plugins/identitystore/clientapplication/modify_clientapplication_certificator.html";
 
     // Parameters
     private static final String PARAMETER_ID_CLIENTAPPLICATION = "id";
-    private static final String PARAMETER_RIGHT_WRITABLE = "writable";
-    private static final String PARAMETER_RIGHT_READABLE = "readable";
-    private static final String PARAMETER_RIGHT_CERTIFIABLE = "certifiable";
-    private static final String PARAMETER_RIGHT_SEARCHABLE = "searchable";
-    private static final String PARAMETER_RIGHT_MANDATORY = "mandatory";
-    
+
     private static final String PARAMETER_CERTIFIERS_AUTH = "certif_auth";
     private static final String PARAMETER_CERTIFIER_CODE = "certif_code";
 
@@ -89,6 +83,8 @@ public class ManageClientApplicationJspBean extends ManageIdentitiesJspBean
     // Markers
     private static final String MARK_CLIENTAPPLICATION_LIST = "clientapplication_list";
     private static final String MARK_CLIENTAPPLICATION = "clientapplication";
+    private static final String MARK_SERVICECONTRACTS = "servicecontract_list";
+    private static final String MARK_ACTIVECONTRACT = "servicecontract_active";
     private static final String MARK_CLIENTAPPLICATION_CERTIF_LIST = "clientapplication_certifs";
     private static final String MARK_CLIENTAPPLICATION_CERTIF_CODE_MAP = "map_clientapplication_certifs";
     private static final String MARK_CERTIFIERS = "certifiers";
@@ -103,6 +99,7 @@ public class ManageClientApplicationJspBean extends ManageIdentitiesJspBean
 
     // Views
     private static final String VIEW_MANAGE_CLIENTAPPLICATIONS = "manageClientApplications";
+    private static final String VIEW_DISPLAY_CLIENTAPPLICATIONS = "displayClientApplication";
     private static final String VIEW_CREATE_CLIENTAPPLICATION = "createClientApplication";
     private static final String VIEW_MODIFY_CLIENTAPPLICATION = "modifyClientApplication";
     private static final String VIEW_MANAGE_CLIENTAPPLICATION_CERTIFICATOR = "manageClientApplicationCertificate";
@@ -142,6 +139,31 @@ public class ManageClientApplicationJspBean extends ManageIdentitiesJspBean
     }
 
     /**
+     * Build the Manage View
+     *
+     * @param request
+     *            The HTTP request
+     * @return The page
+     */
+    @View( value = VIEW_DISPLAY_CLIENTAPPLICATIONS, defaultView = false )
+    public String getDisplayClientApplications( HttpServletRequest request )
+    {
+        _clientApplication = null;
+
+        int nId = Integer.parseInt( request.getParameter( PARAMETER_ID_CLIENTAPPLICATION ) );
+
+        Map<String, Object> model = getModel( );
+
+        _clientApplication = ClientApplicationHome.findByPrimaryKey( nId );
+        List<ServiceContract> serviceContracts = ClientApplicationHome.selectServiceContracts( _clientApplication );
+        _clientApplication.setServiceContracts( serviceContracts );
+
+        model.put( MARK_CLIENTAPPLICATION, _clientApplication );
+
+        return getPage( PROPERTY_PAGE_TITLE_MANAGE_CLIENTAPPLICATIONS, TEMPLATE_DISPLAY_CLIENTAPPLICATION, model );
+    }
+
+    /**
      * Returns the form to create a clientapplication
      *
      * @param request
@@ -151,11 +173,10 @@ public class ManageClientApplicationJspBean extends ManageIdentitiesJspBean
     @View( VIEW_CREATE_CLIENTAPPLICATION )
     public String getCreateClientApplication( HttpServletRequest request )
     {
-        _clientApplication = ( _clientApplication != null ) ? _clientApplication : new ClientApplication( );
+        _clientApplication = new ClientApplication( );
 
         Map<String, Object> model = getModel( );
         model.put( MARK_CLIENTAPPLICATION, _clientApplication );
-        model.put( MARK_CLIENTAPPLICATION_RIGHT_LIST, ClientApplicationHome.selectApplicationRights( _clientApplication ) );
 
         return getPage( PROPERTY_PAGE_TITLE_CREATE_CLIENTAPPLICATION, TEMPLATE_CREATE_CLIENTAPPLICATION, model );
     }
@@ -179,9 +200,6 @@ public class ManageClientApplicationJspBean extends ManageIdentitiesJspBean
         }
 
         ClientApplicationHome.create( _clientApplication );
-
-        List<AttributeRight> lstAttributeRights = new ArrayList<AttributeRight>( getAttributesRightsFromRequest( request ).values( ) );
-        ClientApplicationHome.addAttributeRights( lstAttributeRights );
 
         addInfo( INFO_CLIENTAPPLICATION_CREATED, getLocale( ) );
 
@@ -219,7 +237,9 @@ public class ManageClientApplicationJspBean extends ManageIdentitiesJspBean
     public String doRemoveClientApplication( HttpServletRequest request )
     {
         int nId = Integer.parseInt( request.getParameter( PARAMETER_ID_CLIENTAPPLICATION ) );
-        ClientApplicationHome.remove( ClientApplicationHome.findByPrimaryKey( nId ) );
+
+        ClientApplication clientApplication = ClientApplicationHome.findByPrimaryKey( nId );
+        ServiceContractService.instance( ).deleteApplication( clientApplication );
         addInfo( INFO_CLIENTAPPLICATION_REMOVED, getLocale( ) );
 
         return redirectView( request, VIEW_MANAGE_CLIENTAPPLICATIONS );
@@ -244,7 +264,8 @@ public class ManageClientApplicationJspBean extends ManageIdentitiesJspBean
 
         Map<String, Object> model = getModel( );
         model.put( MARK_CLIENTAPPLICATION, _clientApplication );
-        model.put( MARK_CLIENTAPPLICATION_RIGHT_LIST, ClientApplicationHome.selectApplicationRights( _clientApplication ) );
+        // TODO attribute rights view on service contract now
+        // model.put( MARK_CLIENTAPPLICATION_RIGHT_LIST, ClientApplicationHome.selectApplicationRights( _clientApplication ) );
         model.put( MARK_CLIENTAPPLICATION_CERTIF_LIST, ClientApplicationHome.getCertifiers( _clientApplication ) );
 
         return getPage( PROPERTY_PAGE_TITLE_MODIFY_CLIENTAPPLICATION, TEMPLATE_MODIFY_CLIENTAPPLICATION, model );
@@ -267,13 +288,6 @@ public class ManageClientApplicationJspBean extends ManageIdentitiesJspBean
         {
             return redirect( request, VIEW_MODIFY_CLIENTAPPLICATION, PARAMETER_ID_CLIENTAPPLICATION, _clientApplication.getId( ) );
         }
-
-        // remove all formers rights
-        ClientApplicationHome.removeApplicationRights( _clientApplication );
-
-        // add new ones
-        List<AttributeRight> lstAttributeRights = new ArrayList<AttributeRight>( getAttributesRightsFromRequest( request ).values( ) );
-        ClientApplicationHome.addAttributeRights( lstAttributeRights );
 
         ClientApplicationHome.update( _clientApplication );
         addInfo( INFO_CLIENTAPPLICATION_UPDATED, getLocale( ) );
@@ -379,108 +393,5 @@ public class ManageClientApplicationJspBean extends ManageIdentitiesJspBean
         }
 
         return redirect( request, VIEW_MODIFY_CLIENTAPPLICATION, PARAMETER_ID_CLIENTAPPLICATION, nId );
-    }
-
-    /**
-     * get AttributeRights to set from httprequest
-     *
-     * @param request
-     *            http request
-     * @return AttributeRights to set from httprequest
-     */
-    private Map<String, AttributeRight> getAttributesRightsFromRequest( HttpServletRequest request )
-    {
-        Map<String, AttributeRight> mapAttributesRights = new HashMap<String, AttributeRight>( );
-        String [ ] tabIdReadbles = request.getParameterValues( PARAMETER_RIGHT_READABLE );
-        String [ ] tabIdWritables = request.getParameterValues( PARAMETER_RIGHT_WRITABLE );
-        String [ ] tabIdCertifiables = request.getParameterValues( PARAMETER_RIGHT_CERTIFIABLE );
-        String [ ] tabIdSearchables = request.getParameterValues( PARAMETER_RIGHT_SEARCHABLE );
-        String [ ] tabIdMandatories = request.getParameterValues( PARAMETER_RIGHT_MANDATORY );
-                
-
-        for ( int nCpt = 0; ( tabIdReadbles != null ) && ( nCpt < tabIdReadbles.length ); nCpt++ )
-        {
-            String strIdAttribute = tabIdReadbles [nCpt];
-            AttributeRight attributeRight = new AttributeRight( );
-            attributeRight.setReadable( true );
-            attributeRight.setClientApplication( _clientApplication );
-            attributeRight.setAttributeKey( AttributeKeyHome.findByPrimaryKey( Integer.parseInt( strIdAttribute ) ) );
-            mapAttributesRights.put( strIdAttribute, attributeRight );
-        }
-
-        for ( int nCpt = 0; ( tabIdWritables != null ) && ( nCpt < tabIdWritables.length ); nCpt++ )
-        {
-            String strIdAttribute = tabIdWritables [nCpt];
-
-            if ( mapAttributesRights.get( strIdAttribute ) != null )
-            {
-                mapAttributesRights.get( strIdAttribute ).setWritable( true );
-            }
-            else
-            {
-                AttributeRight attributeRight = new AttributeRight( );
-                attributeRight.setClientApplication( _clientApplication );
-                attributeRight.setWritable( true );
-                attributeRight.setAttributeKey( AttributeKeyHome.findByPrimaryKey( Integer.parseInt( strIdAttribute ) ) );
-                mapAttributesRights.put( strIdAttribute, attributeRight );
-            }
-        }
-
-        for ( int nCpt = 0; ( tabIdCertifiables != null ) && ( nCpt < tabIdCertifiables.length ); nCpt++ )
-        {
-            String strIdAttribute = tabIdCertifiables [nCpt];
-
-            if ( mapAttributesRights.get( strIdAttribute ) != null )
-            {
-                mapAttributesRights.get( strIdAttribute ).setCertifiable( true );
-            }
-            else
-            {
-                AttributeRight attributeRight = new AttributeRight( );
-                attributeRight.setClientApplication( _clientApplication );
-                attributeRight.setCertifiable( true );
-                attributeRight.setAttributeKey( AttributeKeyHome.findByPrimaryKey( Integer.parseInt( strIdAttribute ) ) );
-                mapAttributesRights.put( strIdAttribute, attributeRight );
-            }
-        }
-
-        for ( int nCpt = 0; ( tabIdSearchables != null ) && ( nCpt < tabIdSearchables.length ); nCpt++ )
-        {
-            String strIdAttribute = tabIdSearchables [nCpt];
-
-            if ( mapAttributesRights.get( strIdAttribute ) != null )
-            {
-                mapAttributesRights.get( strIdAttribute ).setSearchable( true );
-            }
-            else
-            {
-                AttributeRight attributeRight = new AttributeRight( );
-                attributeRight.setClientApplication( _clientApplication );
-                attributeRight.setSearchable( true );
-                attributeRight.setAttributeKey( AttributeKeyHome.findByPrimaryKey( Integer.parseInt( strIdAttribute ) ) );
-                mapAttributesRights.put( strIdAttribute, attributeRight );
-            }
-        }
-        
-        for ( int nCpt = 0; ( tabIdMandatories != null ) && ( nCpt < tabIdMandatories.length ); nCpt++ )
-        {
-            String strIdAttribute = tabIdMandatories [nCpt];
-
-            if ( mapAttributesRights.get( strIdAttribute ) != null )
-            {
-                mapAttributesRights.get( strIdAttribute ).setMandatory( true );
-            }
-            else
-            {
-                AttributeRight attributeRight = new AttributeRight( );
-                attributeRight.setClientApplication( _clientApplication );
-                attributeRight.setMandatory( true );
-                attributeRight.setAttributeKey( AttributeKeyHome.findByPrimaryKey( Integer.parseInt( strIdAttribute ) ) );
-                mapAttributesRights.put( strIdAttribute, attributeRight );
-            }
-        }
-        
-
-        return mapAttributesRights;
     }
 }

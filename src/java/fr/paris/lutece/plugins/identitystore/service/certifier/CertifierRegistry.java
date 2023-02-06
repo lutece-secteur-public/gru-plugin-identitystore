@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2018, Mairie de Paris
+ * Copyright (c) 2002-2023, City of Paris
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -65,7 +65,7 @@ public final class CertifierRegistry
         if ( _singleton == null )
         {
             _singleton = new CertifierRegistry( );
-            _mapCertifiers = new TreeMap<String, AbstractCertifier>( );
+            _mapCertifiers = new TreeMap<>( );
         }
         return _singleton;
     }
@@ -84,7 +84,7 @@ public final class CertifierRegistry
         AbstractCertifier certifier = _mapCertifiers.get( strCertifierCode );
         if ( certifier == null )
         {
-            throw new CertifierNotFoundException( "Unknown certifier : " + strCertifierCode );
+            // TODO voir ce qu'on fait de cette map throw new CertifierNotFoundException( "Unknown certifier : " + strCertifierCode );
         }
         return certifier;
     }

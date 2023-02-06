@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2016, Mairie de Paris
+ * Copyright (c) 2002-2023, City of Paris
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -45,6 +45,7 @@ import fr.paris.lutece.plugins.identitystore.v1.web.rs.dto.IdentityChangeDto;
 import fr.paris.lutece.plugins.identitystore.v1.web.rs.dto.IdentityDto;
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
 import fr.paris.lutece.portal.business.file.File;
+
 /**
  * This class represents an update request for IdentityStoreRestServive
  *
@@ -77,7 +78,7 @@ public class IdentityStoreUpdateRequest extends IdentityStoreRequest
     /**
      * Valid the update request
      * 
-     * @throws AppException
+     * @throws IdentityStoreException
      *             if there is an exception during the treatment
      */
     @Override
@@ -87,14 +88,15 @@ public class IdentityStoreUpdateRequest extends IdentityStoreRequest
         IdentityRequestValidator.instance( ).checkIdentity( _identityChangeDto.getIdentity( ).getConnectionId( ),
                 _identityChangeDto.getIdentity( ).getCustomerId( ) );
         IdentityRequestValidator.instance( ).checkClientApplication( _identityChangeDto.getAuthor( ).getApplicationCode( ) );
-        IdentityRequestValidator.instance( ).checkAttributes( _identityChangeDto.getIdentity( ), _identityChangeDto.getAuthor( ).getApplicationCode( ),
+        // TODO change to pass the real service contract id
+        IdentityRequestValidator.instance( ).checkAttributes( _identityChangeDto.getIdentity( ), _identityChangeDto.getAuthor( ).getApplicationCode( ), 0,
                 _mapAttachedFiles );
     }
 
     /**
      * update the identity
      * 
-     * @throws AppException
+     * @throws IdentityStoreException
      *             if there is an exception during the treatment
      */
     @Override

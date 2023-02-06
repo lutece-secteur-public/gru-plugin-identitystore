@@ -1,0 +1,137 @@
+<@rowBox>
+    <@boxHeader i18nTitleKey="identitystore.manage_identities.title">
+        <#if createIdentityRole>
+    <@headerButtons>
+
+        <form class="form-inline pull-right" method="post" name="manage_identities" action="jsp/admin/plugins/identitystore/ManageIdentities.jsp">
+            <!-- Add pull-right to class1 -->
+            <@actionButtons button1Name="view_createIdentity" icon1="icon-plus icon-white" i18nValue1Key="identitystore.manage_identities.buttonAdd" />
+        </form>
+        
+    </@headerButtons>
+        </#if>
+    </@boxHeader>
+    <@boxBody>    
+    <@messages infos=infos />
+    <form class="form-inline" action="jsp/admin/plugins/identitystore/ManageIdentities.jsp">
+        <div class="input-group">
+            <@table>
+            <tr>
+                <th>Email</th>
+                <th>Civilité</th>
+                <th>Nom de naissance</th>
+                <th>Nom d'usage</th>
+                <th>Prénoms</th>
+                <th>Date de naissance</th>
+                <th>Ville de naissance</th>
+                <th>Pays de naissance</th>
+                <th>Téléphone</th>
+                <th></th>
+            </tr>
+            <@tableHeadBodySeparator />
+            <tr>
+                <td>
+                    <input class="form-control" type="text" name="email" placeholder="Email ou email de login" value="${email!''}" />
+                </td>
+                <td>
+                    <input class="form-control" type="text" name="gender" placeholder="0:Non défini /  1:Homme / 2:Femme" value="${gender!''}" />
+                </td>
+                <td>
+                    <input class="form-control" type="text" name="family_name" placeholder="Nom de famille" value="${family_name!''}" />
+                </td>
+                <td>
+                    <input class="form-control" type="text" name="preferred_username" placeholder="Nom d'usage" value="${preferred_username!''}" />
+                </td>
+                <td>
+                    <input class="form-control" type="text" name="first_name" placeholder="Prénoms usuels" value="${first_name!''}" />
+                </td>
+                <td>
+                    <input class="form-control" type="text" name="birthdate" placeholder="Au format DD/MM/YYYY" value="${birthdate!''}" />
+                </td>
+                <td>
+                    <input class="form-control" type="text" name="insee_birthplace_label" placeholder="Ville de naissance" value="${insee_birthplace_label!''}" />
+                </td>
+                <td>
+                    <input class="form-control" type="text" name="insee_birthcountry_label" placeholder="Pays de naissance" value="${insee_birthcountry_label!''}" />
+                </td>
+                <td>
+                    <input class="form-control" type="text" name="phone" placeholder="Téléphone fixe ou mobile" value="${phone!''}" />
+                </td>
+                <td>
+                    <span class="input-group-btn">
+                        <button class="btn btn-default" type="submit">
+                            <span class="fa fa-search"></span>
+                        </button>
+                    </span>
+                </td>
+            </tr>
+            </@table>
+        </div>
+    </form>
+    
+    <#if identity_list??>
+    <@paginationAdmin paginator=paginator combo=1 />
+    <div class="clearfix"></div>
+    <@table>
+        <tr>
+            <input type="hidden" id="id" name="id"/>
+            <th>Customer ID</th>
+            <th>Email</th>
+            <th>Civilité</th>
+            <th>Nom de naissance</th>
+            <th>Nom d'usage</th>
+            <th>Prénoms</th>
+            <th>Date de naissance</th>
+            <th>Ville de naissance</th>
+            <th>Pays de naissance</th>
+            <th>Téléphone</th>
+            <th>#i18n{portal.util.labelActions}</th>
+        </tr>
+        <@tableHeadBodySeparator />
+            <#list identity_list as identity >
+        <tr>
+            <input type="hidden" id="id" name="id"/>
+            <td>${identity.customerId!}</td>
+            <td>
+                <#list identity.attributes?filter(a -> a.key == "email_login") as attr>${attr.value} </#list>
+            </td>
+            <td>
+                <#list identity.attributes?filter(a -> a.key == "gender") as attr>${attr.value} </#list>
+            </td>
+            <td>
+                <#list identity.attributes?filter(a -> a.key == "family_name") as attr>${attr.value} </#list>
+            </td>
+            <td>
+                <#list identity.attributes?filter(a -> a.key == "preferred_username") as attr>${attr.value} </#list>
+            </td>
+            <td>
+                <#list identity.attributes?filter(a -> a.key == "first_name") as attr>${attr.value} </#list>
+            </td>
+            <td>
+                <#list identity.attributes?filter(a -> a.key == "birthdate") as attr>${attr.value} </#list>
+            </td>
+            <td>
+                <#list identity.attributes?filter(a -> a.key == "insee_birthplace_label") as attr>${attr.value} </#list>
+            </td>
+            <td>
+                <#list identity.attributes?filter(a -> a.key == "insee_birthcountry_label") as attr>${attr.value} </#list>
+            </td>
+            <td>
+                <#list identity.attributes?filter(a -> a.key == "mobile_phone") as attr>${attr.value} </#list>
+            </td>
+        <td>
+            <a href="jsp/admin/plugins/identitystore/ManageIdentities.jsp?view=viewIdentity&id=${identity.customerId}"
+               class="btn btn-primary btn-sm" title="#i18n{identitystore.manage_identities.buttonView}">
+                <i class="fa fa-user"></i>
+            </a>
+        </td>
+        </tr>
+        </#list>
+    </@table>
+
+    <@paginationAdmin paginator=paginator />
+    </#if>
+
+  </@boxBody>
+</@rowBox>
+
