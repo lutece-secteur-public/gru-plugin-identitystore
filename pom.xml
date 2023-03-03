@@ -94,7 +94,7 @@
 		<dependency>
 			<groupId>org.postgresql</groupId>
 			<artifactId>postgresql</artifactId>
-			<version>${postgresql.version}</version>
+			<version>42.5.4</version>
 		</dependency>
 
 	</dependencies>
