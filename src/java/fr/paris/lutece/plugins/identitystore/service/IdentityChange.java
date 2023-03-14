@@ -44,6 +44,16 @@ public class IdentityChange
     private Identity _identity;
     private IdentityChangeType _identityChangeType;
 
+    public IdentityChange( )
+    {
+    }
+
+    public IdentityChange( Identity _identity, IdentityChangeType _identityChangeType )
+    {
+        this._identity = _identity;
+        this._identityChangeType = _identityChangeType;
+    }
+
     /**
      * Returns the Identity
      *

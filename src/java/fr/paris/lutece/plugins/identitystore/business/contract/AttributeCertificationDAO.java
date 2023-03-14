@@ -60,7 +60,7 @@ public final class AttributeCertificationDAO implements IAttributeCertificationD
     private static final String SQL_QUERY_SELECTALL_ID = "SELECT id_attribute_certification FROM identitystore_attribute_certification";
     private static final String SQL_QUERY_SELECTALL_BY_IDS = "SELECT id_attribute_certification, FROM identitystore_attribute_certification WHERE id_attribute_certification IN (  ";
 
-    private static final String SQL_QUERY_SELECTALL_BY_SERVICE_CONTRACT = "SELECT a.id_attribute, a.name, a.key_name, a.description, a.key_type"
+    private static final String SQL_QUERY_SELECTALL_BY_SERVICE_CONTRACT = "SELECT DISTINCT a.id_attribute, a.name, a.key_name, a.description, a.key_type"
             + " FROM identitystore_attribute a"
             + " LEFT JOIN  identitystore_attribute_certification b ON  a.id_attribute = b.id_attribute AND id_service_contract = ?"
             + " LEFT JOIN  identitystore_ref_attribute_certification_processus c ON  c.id_ref_attribute_certification_processus = b.id_ref_attribute_certification_processus";

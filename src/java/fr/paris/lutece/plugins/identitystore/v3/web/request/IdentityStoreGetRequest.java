@@ -98,7 +98,7 @@ public class IdentityStoreGetRequest extends AbstractIdentityStoreRequest
         }
         else
         {
-            final QualifiedIdentity qualifiedIdentity = DtoConverter.convertToDto( identity );
+            final QualifiedIdentity qualifiedIdentity = DtoConverter.convertIdentityToDto( identity );
             IdentityService.instance( ).getQualifiedIdentitiesFilteredForReading( response, _strClientAppCode, Lists.newArrayList( qualifiedIdentity ) );
             response.setStatus( IdentitySearchStatusType.SUCCESS );
         }

@@ -17,14 +17,14 @@
     <@table>
         <thead>
             <input type="hidden" id="id" name="id"/>
-            <th>#i18n{identitystore.modify_servicecontract.labelName}</th>
-            <th>#i18n{identitystore.modify_servicecontract.labelApplicationCode}</th>
-            <th>#i18n{identitystore.modify_servicecontract.labelOrganizationalEntity}</th>
-            <th>#i18n{identitystore.modify_servicecontract.labelResponsibleName}</th>
-            <th>#i18n{identitystore.modify_servicecontract.labelContactName}</th>
-            <th>#i18n{identitystore.modify_servicecontract.labelServiceType}</th>
-            <th>#i18n{identitystore.modify_servicecontract.labelStartingDate}</th>
-            <th>#i18n{identitystore.modify_servicecontract.labelEndingDate}</th>
+            <th>#i18n{identitystore.manage_servicecontracts.columnName}</th>
+            <th>#i18n{identitystore.manage_servicecontracts.columnApplicationCode}</th>
+            <th>#i18n{identitystore.manage_servicecontracts.columnOrganizationalEntity}</th>
+            <th>#i18n{identitystore.manage_servicecontracts.columnResponsibleName}</th>
+            <th>#i18n{identitystore.manage_servicecontracts.columnContactName}</th>
+            <th>#i18n{identitystore.manage_servicecontracts.columnServiceType}</th>
+            <th>#i18n{identitystore.manage_servicecontracts.columnStartingDate}</th>
+            <th>#i18n{identitystore.manage_servicecontracts.columnEndingDate}</th>
         </thead>
 		<tbody>
         <tr>
@@ -62,18 +62,26 @@
     <@table>
     <thead>
     <input type="hidden" id="id" name="id"/>
-    <th>#i18n{identitystore.modify_servicecontract.labelAuthorizedMerge}</th>
-    <th>#i18n{identitystore.modify_servicecontract.labelAuthorizedDeletion}</th>
-    <th>#i18n{identitystore.modify_servicecontract.labelAuthorizedImport}</th>
-    <th>#i18n{identitystore.modify_servicecontract.labelAuthorizedExport}</th>
-    <th>#i18n{identitystore.modify_servicecontract.labelIsAuthorizedDeleteValue}</th>
-    <th>#i18n{identitystore.modify_servicecontract.labelIsAuthorizedDeleteCertificate}</th>
+    <th>#i18n{identitystore.manage_servicecontracts.columnAuthorizedMerge}</th>
+    <th>#i18n{identitystore.manage_servicecontracts.columnAuthorizedAccountUpdate}</th>
+    <th>#i18n{identitystore.manage_servicecontracts.columnAuthorizedDeletion}</th>
+    <th>#i18n{identitystore.manage_servicecontracts.columnAuthorizedImport}</th>
+    <th>#i18n{identitystore.manage_servicecontracts.columnAuthorizedExport}</th>
+    <th>#i18n{identitystore.manage_servicecontracts.columnIsAuthorizedDeleteValue}</th>
+    <th>#i18n{identitystore.manage_servicecontracts.columnIsAuthorizedDeleteCertificate}</th>
     </thead>
     <tbody>
     <tr>
         <input type="hidden" id="id" name="id"/>
         <td>
             <#if servicecontract.authorizedMerge = true>
+                <i class="fas fa-check" aria-hidden="true"></i>
+            <#else>
+                <i class="fas fa-times" aria-hidden="true"></i>
+            </#if>
+        </td>
+        <td>
+            <#if servicecontract.authorizedAccountUpdate = true>
                 <i class="fas fa-check" aria-hidden="true"></i>
             <#else>
                 <i class="fas fa-times" aria-hidden="true"></i>

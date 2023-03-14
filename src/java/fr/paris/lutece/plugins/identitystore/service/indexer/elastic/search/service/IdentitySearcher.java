@@ -49,7 +49,7 @@ public class IdentitySearcher implements IIdentitySearcher
 {
 
     private static Logger logger = Logger.getLogger( IdentitySearcher.class );
-    private static String INDEX = "identities";
+    private static String INDEX = "identities-alias";
     private ElasticClient _elasticClient;
 
     public IdentitySearcher( String strServerUrl, String strLogin, String strPassword )

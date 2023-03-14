@@ -1,0 +1,45 @@
+# identitystore properties file
+
+# identitystore change logger
+identitystore.changelistener.logging.loggerName=lutece.identitystore.changelogger
+
+# Application code used for Identity Store
+# WARNING : DO NOT use this code in production environment
+identitystore.application.code=IdentityStore
+
+identitystore.identity.attribute.user.name.given=first_name
+identitystore.identity.attribute.user.name.preferred-username=family_name
+identitystore.identity.attribute.user.name.family.name=
+identitystore.identity.attribute.user.home-info.online.email=
+identitystore.identity.attribute.user.home-info.telecom.telephone.number=
+identitystore.identity.attribute.user.home-info.telecom.mobile.number=
+identitystore.identity.attribute.user.gender=
+identitystore.identity.attribute.user.bdate=
+identitystore.identity.attribute.user.connection_id=
+#Default version used in IdentityStoreRestService | possible values : v1, v2, v3
+identitystore.version=v3
+
+#let this empty for no security mode; else jwt for JWT security
+# use this if you want to bypass client provided application code; and only use
+# the application code provided in the HTTP header securised JWT
+identitystore.secureMode=
+identitystore.jwt.appCode.claimName=http://wso2.org/claims/applicationnamewritable
+
+identitystore.search.maxNbIdentityReturned=100
+
+## Duplicates rules
+identitystore.identity.duplicates.creation.0=email_login
+identitystore.identity.duplicates.creation.1=family_name,first_name,birthdate,insee_birthplace_code,insee_birthcountry_code,gender
+
+#109 Service "certitude d'identité identique" pour l'update
+identitystore.identity.duplicates.update.0=family_name,first_name,birthdate,insee_birthplace_code,insee_birthcountry_code,gender
+
+#84 Service "certitude d'identité identique" pour l'import
+identitystore.identity.duplicates.import.certitude.0=family_name,first_name,birthdate,insee_birthplace_code,insee_birthcountry_code,gender
+
+#83 Service "suspicion de doublons"
+identitystore.identity.duplicates.import.suspicion.0=family_name,first_name,birthdate
+identitystore.identity.duplicates.import.suspicion.1=family_name:fuzzy,first_name:fuzzy,birthdate
+
+#51 Service de calcul de la qualité
+identitystore.identity.quality.base=70300

@@ -65,4 +65,9 @@ public class IndexActionHome
     {
         return _dao.select( limit, _plugin );
     }
+
+    public static List<IndexAction> selectAll( )
+    {
+        return _dao.selectAll( _plugin );
+    }
 }

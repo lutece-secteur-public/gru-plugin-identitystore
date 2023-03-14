@@ -33,13 +33,13 @@
  */
 package fr.paris.lutece.plugins.identitystore.web.rs.dto;
 
-import java.util.HashMap;
-import java.util.Map;
-
+import fr.paris.lutece.plugins.identitystore.business.identity.Identity;
 import fr.paris.lutece.plugins.identitystore.v2.web.rs.dto.AttributeDto;
 import fr.paris.lutece.plugins.identitystore.v2.web.rs.dto.IdentityDto;
-import fr.paris.lutece.plugins.identitystore.util.IdGenerator;
-import fr.paris.lutece.plugins.identitystore.business.identity.Identity;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 public class MockIdentityDto
 {
@@ -48,8 +48,8 @@ public class MockIdentityDto
         IdentityDto identityDto = new IdentityDto( );
         Map<String, AttributeDto> mapAttributes = new HashMap<>( );
 
-        identityDto.setCustomerId( Integer.toString( IdGenerator.generateId( ) ) );
-        identityDto.setConnectionId( Integer.toString( IdGenerator.generateId( ) ) );
+        identityDto.setCustomerId( UUID.randomUUID( ).toString( ) );
+        identityDto.setConnectionId( UUID.randomUUID( ).toString( ) );
         identityDto.setAttributes( mapAttributes );
 
         return identityDto;
@@ -72,8 +72,8 @@ public class MockIdentityDto
         fr.paris.lutece.plugins.identitystore.v1.web.rs.dto.IdentityDto identityDto = new fr.paris.lutece.plugins.identitystore.v1.web.rs.dto.IdentityDto( );
         Map<String, fr.paris.lutece.plugins.identitystore.v1.web.rs.dto.AttributeDto> mapAttributes = new HashMap<>( );
 
-        identityDto.setCustomerId( Integer.toString( IdGenerator.generateId( ) ) );
-        identityDto.setConnectionId( Integer.toString( IdGenerator.generateId( ) ) );
+        identityDto.setCustomerId( UUID.randomUUID( ).toString( ) );
+        identityDto.setConnectionId( UUID.randomUUID( ).toString( ) );
         identityDto.setAttributes( mapAttributes );
 
         return identityDto;

@@ -46,7 +46,8 @@ public class IndexActionDao implements IIndexActionDao
 
     private static final String SQL_QUERY_INSERT = "INSERT INTO identitystore_index_action ( id_index_action, customer_id, action_type, date_index ) VALUES ( ?, ?, ?, ? ) ";
     private static final String SQL_QUERY_DELETE = "DELETE FROM identitystore_index_action WHERE id_index_action = ? ";
-    private static final String SQL_QUERY_SELECTALL_WITH_LIMIT = "SELECT id_index_action, customer_id, action_type, date_index FROM identitystore_index_action ORDER BY date_index asc LIMIT ?";
+    private static final String SQL_QUERY_SELECTALL = "SELECT id_index_action, customer_id, action_type, date_index FROM identitystore_index_action ORDER BY date_index asc";
+    private static final String SQL_QUERY_SELECTALL_WITH_LIMIT = SQL_QUERY_SELECTALL + " LIMIT ?";
     private static final String SQL_QUERY_NEW_PK = "SELECT max( id_index_action )   FROM identitystore_index_action";
 
     @Override
@@ -80,6 +81,30 @@ public class IndexActionDao implements IIndexActionDao
         final List<IndexAction> actions = new ArrayList<>( );
         final DAOUtil daoUtil = new DAOUtil( SQL_QUERY_SELECTALL_WITH_LIMIT, plugin );
         daoUtil.setInt( 1, limit );
+        daoUtil.executeQuery( );
+
+        while ( daoUtil.next( ) )
+        {
+            final IndexAction indexAction = new IndexAction( );
+            int nIndex = 1;
+
+            indexAction.setId( daoUtil.getInt( nIndex++ ) );
+            indexAction.setCustomerId( daoUtil.getString( nIndex++ ) );
+            indexAction.setActionType( IndexActionType.valueOf( daoUtil.getString( nIndex++ ) ) );
+            indexAction.setDateIndex( daoUtil.getDate( nIndex++ ) );
+            actions.add( indexAction );
+        }
+
+        daoUtil.free( );
+
+        return actions;
+    }
+
+    @Override
+    public List<IndexAction> selectAll( Plugin plugin )
+    {
+        final List<IndexAction> actions = new ArrayList<>( );
+        final DAOUtil daoUtil = new DAOUtil( SQL_QUERY_SELECTALL, plugin );
         daoUtil.executeQuery( );
 
         while ( daoUtil.next( ) )

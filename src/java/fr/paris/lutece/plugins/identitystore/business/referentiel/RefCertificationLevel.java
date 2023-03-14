@@ -34,7 +34,7 @@
 package fr.paris.lutece.plugins.identitystore.business.referentiel;
 
 import javax.validation.constraints.Size;
-import org.hibernate.validator.constraints.NotEmpty;
+import javax.validation.constraints.NotEmpty;
 import java.io.Serializable;
 
 /**

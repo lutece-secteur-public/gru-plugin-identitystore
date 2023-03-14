@@ -55,7 +55,7 @@ public final class ElasticConnexion
      * @param strServerPwd
      *            Password
      */
-    public ElasticConnexion( String strServerLogin, String strServerPwd )
+    public ElasticConnexion( final String strServerLogin, final String strServerPwd )
     {
         _authenticator = getAuthenticator( strServerLogin, strServerPwd );
     }
@@ -75,7 +75,7 @@ public final class ElasticConnexion
      * @return The response
      * @throws HttpAccessException
      */
-    public String GET( String strURI ) throws HttpAccessException
+    public String GET( final String strURI ) throws HttpAccessException
     {
         return _clientHttp.doGet( strURI, _authenticator, null );
     }
@@ -91,7 +91,7 @@ public final class ElasticConnexion
      * @throws HttpAccessException
      *             http access exception
      */
-    public String PUT( String strURI, String strJSON ) throws HttpAccessException
+    public String PUT( final String strURI, final String strJSON ) throws HttpAccessException
     {
         return _clientHttp.doPutJSON( strURI, strJSON, _authenticator, null, null, null );
     }
@@ -107,7 +107,7 @@ public final class ElasticConnexion
      *             http access exception
      * @return the string
      */
-    public String POST( String strURI, String strJSON ) throws HttpAccessException
+    public String POST( final String strURI, final String strJSON ) throws HttpAccessException
     {
         return _clientHttp.doPostJSON( strURI, strJSON, _authenticator, null, null, null );
     }
@@ -121,7 +121,7 @@ public final class ElasticConnexion
      *             http access exception
      * @return the string
      */
-    public String DELETE( String strURI ) throws HttpAccessException
+    public String DELETE( final String strURI ) throws HttpAccessException
     {
         return _clientHttp.doDelete( strURI, _authenticator, null, null, null );
     }
@@ -135,7 +135,7 @@ public final class ElasticConnexion
      *            the str password
      * @return The authenticator
      */
-    private static RequestAuthenticator getAuthenticator( String strLogin, String strPassword )
+    private static RequestAuthenticator getAuthenticator( final String strLogin, final String strPassword )
     {
         return new BasicAuthorizationAuthenticator( strLogin, strPassword );
     }

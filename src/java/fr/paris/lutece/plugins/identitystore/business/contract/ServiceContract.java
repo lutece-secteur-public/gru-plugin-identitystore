@@ -33,8 +33,7 @@
  */
 package fr.paris.lutece.plugins.identitystore.business.contract;
 
-import org.hibernate.validator.constraints.NotEmpty;
-
+import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.Size;
 import java.io.Serializable;
 import java.sql.Date;
@@ -78,6 +77,8 @@ public class ServiceContract implements Serializable
 
     private boolean _bAuthorizedMerge;
 
+    private boolean _bAuthorizedAccountUpdate;
+
     private boolean _bAuthorizedDeletion;
 
     private boolean _bAuthorizedImport;
@@ -97,7 +98,7 @@ public class ServiceContract implements Serializable
     public boolean isActive( )
     {
         final Timestamp actualTimestamp = Timestamp.from( Instant.now( ) );
-        return this.getEndingDate( ) == null || ( this.getStartingDate( ).before( actualTimestamp ) && this.getEndingDate( ).after( actualTimestamp ) );
+        return ( this.getStartingDate( ).before( actualTimestamp ) && ( this.getEndingDate( ) == null || this.getEndingDate( ).after( actualTimestamp ) ) );
     }
 
     /**
@@ -265,6 +266,27 @@ public class ServiceContract implements Serializable
     public void setAuthorizedMerge( boolean bAuthorizedMerge )
     {
         _bAuthorizedMerge = bAuthorizedMerge;
+    }
+
+    /**
+     * Returns the AuthorizedAccountUpdate
+     *
+     * @return The AuthorizedAccountUpdate
+     */
+    public boolean getAuthorizedAccountUpdate( )
+    {
+        return _bAuthorizedAccountUpdate;
+    }
+
+    /**
+     * Sets the AuthorizedMerge
+     *
+     * @param bAuthorizedAccountUpdate
+     *            The AuthorizedAccountUpdate
+     */
+    public void setAuthorizedAccountUpdate( boolean bAuthorizedAccountUpdate )
+    {
+        _bAuthorizedAccountUpdate = bAuthorizedAccountUpdate;
     }
 
     /**

@@ -33,7 +33,9 @@
  */
 package fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.service;
 
+import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.client.ElasticClientException;
 import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.model.IdentityObject;
+import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.model.internal.BulkAction;
 
 import java.util.List;
 
@@ -41,13 +43,30 @@ public interface IIdentityIndexer
 {
     String NAME = "identitystore.identityIndexer";
 
-    void create( IdentityObject identity );
+    String CURRENT_INDEX_ALIAS = "identities-alias";
 
-    void update( IdentityObject identity );
+    /* Documents API */
+    void create( final IdentityObject identity, final String index );
 
-    void delete( String documentId );
+    void bulk( final List<BulkAction> bulkActions, final String index );
 
-    void fullIndex( List<IdentityObject> identities );
+    void update( final IdentityObject identity, final String index );
 
+    void delete( final String documentId, final String index );
+
+    void createOrUpdateAlias( String oldIndex, String newIndex, String alias ) throws ElasticClientException;
+
+    String getIndexBehindAlias( String alias ) throws ElasticClientException;
+
+    /* Cluster API */
     boolean isAlive( );
+
+    /* Index API */
+    boolean indexExists( final String index );
+
+    void initIndex( final String index ) throws ElasticClientException;
+
+    void deleteIndex( String index ) throws ElasticClientException;
+
+    void makeIndexReadOnly( final String index ) throws ElasticClientException;
 }

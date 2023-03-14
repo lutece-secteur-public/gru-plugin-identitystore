@@ -47,12 +47,12 @@ public final class AttributeKeyDAO implements IAttributeKeyDAO
 {
     // Constants
     private static final String SQL_QUERY_NEW_PK = "SELECT max( id_attribute ) FROM identitystore_attribute";
-    private static final String SQL_QUERY_SELECT = "SELECT id_attribute, name, key_name, description, key_type, certifiable, pivot FROM identitystore_attribute WHERE id_attribute = ?";
-    private static final String SQL_QUERY_INSERT = "INSERT INTO identitystore_attribute ( id_attribute, name, key_name, description, key_type, certifiable, pivot ) VALUES ( ?, ?, ?, ?, ?, ?, ? ) ";
+    private static final String SQL_QUERY_SELECT = "SELECT id_attribute, name, key_name, description, key_type, certifiable, pivot, key_weight FROM identitystore_attribute WHERE id_attribute = ?";
+    private static final String SQL_QUERY_INSERT = "INSERT INTO identitystore_attribute ( id_attribute, name, key_name, description, key_type, certifiable, pivot, key_weight ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ? ) ";
     private static final String SQL_QUERY_DELETE = "DELETE FROM identitystore_attribute WHERE id_attribute = ? ";
-    private static final String SQL_QUERY_UPDATE = "UPDATE identitystore_attribute SET id_attribute = ?, name = ?, key_name = ?, description = ?, key_type = ?, certifiable = ?, pivot = ? WHERE id_attribute = ?";
-    private static final String SQL_QUERY_SELECTALL = "SELECT id_attribute, name, key_name, description, key_type, certifiable, pivot FROM identitystore_attribute";
-    private static final String SQL_QUERY_SELECT_BY_KEY = "SELECT id_attribute, name, key_name, description, key_type, certifiable, pivot FROM identitystore_attribute WHERE key_name = ?";
+    private static final String SQL_QUERY_UPDATE = "UPDATE identitystore_attribute SET id_attribute = ?, name = ?, key_name = ?, description = ?, key_type = ?, certifiable = ?, pivot = ?, key_weight = ? WHERE id_attribute = ?";
+    private static final String SQL_QUERY_SELECTALL = "SELECT id_attribute, name, key_name, description, key_type, certifiable, pivot, key_weight FROM identitystore_attribute";
+    private static final String SQL_QUERY_SELECT_BY_KEY = "SELECT id_attribute, name, key_name, description, key_type, certifiable, pivot, key_weight FROM identitystore_attribute WHERE key_name = ?";
     private static final String SQL_QUERY_SELECT_NB_ATTRIBUTE_ID_USED = "SELECT count(*) FROM identitystore_attribute WHERE id_attribute = ? AND ( EXISTS( SELECT id_attribute FROM identitystore_attribute_right WHERE id_attribute = ? ) OR EXISTS( SELECT id_attribute FROM identitystore_identity_attribute WHERE id_attribute = ? ) OR EXISTS( SELECT id_attribute FROM identitystore_history_identity_attribute WHERE attribute_key IN  ( SELECT key_name FROM identitystore_attribute WHERE id_attribute = ? ) ) )";
 
     /**
@@ -96,7 +96,8 @@ public final class AttributeKeyDAO implements IAttributeKeyDAO
         daoUtil.setString( nIndex++, attributeKey.getDescription( ) );
         daoUtil.setInt( nIndex++, attributeKey.getKeyType( ).getId( ) );
         daoUtil.setBoolean( nIndex++, attributeKey.getCertifiable( ) );
-        daoUtil.setBoolean( nIndex, attributeKey.getPivot( ) );
+        daoUtil.setBoolean( nIndex++, attributeKey.getPivot( ) );
+        daoUtil.setInt( nIndex, attributeKey.getKeyWeight( ) );
 
         daoUtil.executeUpdate( );
         daoUtil.free( );
@@ -126,7 +127,8 @@ public final class AttributeKeyDAO implements IAttributeKeyDAO
             attributeKey.setDescription( daoUtil.getString( nIndex++ ) );
             attributeKey.setKeyType( KeyType.valueOf( daoUtil.getInt( nIndex++ ) ) );
             attributeKey.setCertifiable( daoUtil.getBoolean( nIndex++ ) );
-            attributeKey.setPivot( daoUtil.getBoolean( nIndex ) );
+            attributeKey.setPivot( daoUtil.getBoolean( nIndex++ ) );
+            attributeKey.setKeyWeight( daoUtil.getInt( nIndex ) );
         }
 
         daoUtil.free( );
@@ -162,7 +164,8 @@ public final class AttributeKeyDAO implements IAttributeKeyDAO
         daoUtil.setInt( nIndex++, attributeKey.getKeyType( ).getId( ) );
         daoUtil.setInt( nIndex++, attributeKey.getId( ) );
         daoUtil.setBoolean( nIndex++, attributeKey.getCertifiable( ) );
-        daoUtil.setBoolean( nIndex, attributeKey.getPivot( ) );
+        daoUtil.setBoolean( nIndex++, attributeKey.getPivot( ) );
+        daoUtil.setInt( nIndex, attributeKey.getKeyWeight( ) );
 
         daoUtil.executeUpdate( );
         daoUtil.free( );
@@ -189,7 +192,8 @@ public final class AttributeKeyDAO implements IAttributeKeyDAO
             attributeKey.setDescription( daoUtil.getString( nIndex++ ) );
             attributeKey.setKeyType( KeyType.valueOf( daoUtil.getInt( nIndex++ ) ) );
             attributeKey.setCertifiable( daoUtil.getBoolean( nIndex++ ) );
-            attributeKey.setPivot( daoUtil.getBoolean( nIndex ) );
+            attributeKey.setPivot( daoUtil.getBoolean( nIndex++ ) );
+            attributeKey.setKeyWeight( daoUtil.getInt( nIndex ) );
 
             attributeKeyList.add( attributeKey );
         }
@@ -243,7 +247,8 @@ public final class AttributeKeyDAO implements IAttributeKeyDAO
             attributeKey.setDescription( daoUtil.getString( nIndex++ ) );
             attributeKey.setKeyType( KeyType.valueOf( daoUtil.getInt( nIndex++ ) ) );
             attributeKey.setCertifiable( daoUtil.getBoolean( nIndex++ ) );
-            attributeKey.setPivot( daoUtil.getBoolean( nIndex ) );
+            attributeKey.setPivot( daoUtil.getBoolean( nIndex++ ) );
+            attributeKey.setKeyWeight( daoUtil.getInt( nIndex ) );
         }
 
         daoUtil.free( );

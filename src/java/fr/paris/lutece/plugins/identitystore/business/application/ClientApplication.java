@@ -34,7 +34,7 @@
 package fr.paris.lutece.plugins.identitystore.business.application;
 
 import fr.paris.lutece.plugins.identitystore.business.contract.ServiceContract;
-import org.hibernate.validator.constraints.NotEmpty;
+import javax.validation.constraints.NotEmpty;
 
 import fr.paris.lutece.plugins.identitystore.v2.business.IClientApplication;
 

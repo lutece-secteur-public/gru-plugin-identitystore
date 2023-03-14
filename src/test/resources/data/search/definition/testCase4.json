@@ -1,0 +1,328 @@
+{
+  "testDefinition": {
+    "name": "Recherche :: Test 4",
+    "test": {
+      "attributes": [
+        {
+          "key": "gender",
+          "value": "1",
+          "type": "string"
+        },
+        {
+          "key": "family_name",
+          "value": "Chassagne",
+          "type": "string"
+        },
+        {
+          "key": "first_name",
+          "value": "Christophe",
+          "type": "string"
+        },
+        {
+          "key": "birthdate",
+          "value": "01/09/1975",
+          "type": "string"
+        }
+      ]
+    },
+    "inputs": [
+      {
+        "name": "Identité 1",
+        "attributes": [
+          {
+            "key": "family_name",
+            "value": "Chassagne",
+            "type": "string"
+          },
+          {
+            "key": "first_name",
+            "value": "Christophe",
+            "type": "string"
+          },
+          {
+            "key": "birthdate",
+            "value": "01/09/1975",
+            "type": "string"
+          },
+          {
+            "key": "insee_birthplace_code",
+            "value": "77029",
+            "type": "string"
+          },
+          {
+            "key": "insee_birthcountry_code",
+            "value": "99100",
+            "type": "string"
+          }
+        ]
+      },
+      {
+        "name": "Identité 2",
+        "attributes": [
+          {
+            "key": "family_name",
+            "value": "Chassagnes",
+            "type": "string"
+          },
+          {
+            "key": "first_name",
+            "value": "Christophe",
+            "type": "string"
+          },
+          {
+            "key": "birthdate",
+            "value": "01/09/1975",
+            "type": "string"
+          },
+          {
+            "key": "insee_birthplace_code",
+            "value": "77029",
+            "type": "string"
+          },
+          {
+            "key": "insee_birthcountry_code",
+            "value": "99100",
+            "type": "string"
+          }
+        ]
+      },
+      {
+        "name": "Identité 3",
+        "attributes": [
+          {
+            "key": "family_name",
+            "value": "Chassagne",
+            "type": "string"
+          },
+          {
+            "key": "preferred_username",
+            "value": "Chassagne",
+            "type": "string"
+          },
+          {
+            "key": "first_name",
+            "value": "Christophe",
+            "type": "string"
+          },
+          {
+            "key": "birthdate",
+            "value": "01/09/1975",
+            "type": "string"
+          },
+          {
+            "key": "insee_birthplace_code",
+            "value": "77029",
+            "type": "string"
+          },
+          {
+            "key": "insee_birthcountry_code",
+            "value": "99100",
+            "type": "string"
+          }
+        ]
+      },
+      {
+        "name": "Identité 4",
+        "attributes": [
+          {
+            "key": "gender",
+            "value": "1",
+            "type": "string"
+          },
+          {
+            "key": "family_name",
+            "value": "Chassagne",
+            "type": "string"
+          },
+          {
+            "key": "first_name",
+            "value": "Chrystophe",
+            "type": "string"
+          },
+          {
+            "key": "birthdate",
+            "value": "01/09/1975",
+            "type": "string"
+          },
+          {
+            "key": "insee_birthplace_code",
+            "value": "77029",
+            "type": "string"
+          },
+          {
+            "key": "insee_birthcountry_code",
+            "value": "99100",
+            "type": "string"
+          }
+        ]
+      },
+      {
+        "name": "Identité 5",
+        "attributes": [
+          {
+            "key": "gender",
+            "value": "1",
+            "type": "string"
+          },
+          {
+            "key": "family_name",
+            "value": "Chassagne",
+            "type": "string"
+          },
+          {
+            "key": "first_name",
+            "value": "Christophe",
+            "type": "string"
+          },
+          {
+            "key": "birthdate",
+            "value": "09/01/1995",
+            "type": "string"
+          },
+          {
+            "key": "insee_birthplace_code",
+            "value": "91132",
+            "type": "string"
+          },
+          {
+            "key": "insee_birthcountry_code",
+            "value": "99100",
+            "type": "string"
+          }
+        ]
+      }
+    ],
+    "expected": [
+      {
+        "name": "Identité 1",
+        "attributes": [
+          {
+            "key": "family_name",
+            "value": "Chassagne",
+            "type": "string"
+          },
+          {
+            "key": "first_name",
+            "value": "Christophe",
+            "type": "string"
+          },
+          {
+            "key": "birthdate",
+            "value": "01/09/1975",
+            "type": "string"
+          },
+          {
+            "key": "insee_birthplace_code",
+            "value": "77029",
+            "type": "string"
+          },
+          {
+            "key": "insee_birthcountry_code",
+            "value": "99100",
+            "type": "string"
+          }
+        ]
+      },
+      {
+        "name": "Identité 2",
+        "attributes": [
+          {
+            "key": "family_name",
+            "value": "Chassagnes",
+            "type": "string"
+          },
+          {
+            "key": "first_name",
+            "value": "Christophe",
+            "type": "string"
+          },
+          {
+            "key": "birthdate",
+            "value": "01/09/1975",
+            "type": "string"
+          },
+          {
+            "key": "insee_birthplace_code",
+            "value": "77029",
+            "type": "string"
+          },
+          {
+            "key": "insee_birthcountry_code",
+            "value": "99100",
+            "type": "string"
+          }
+        ]
+      },
+      {
+        "name": "Identité 3",
+        "attributes": [
+          {
+            "key": "family_name",
+            "value": "Chassagne",
+            "type": "string"
+          },
+          {
+            "key": "preferred_username",
+            "value": "Chassagne",
+            "type": "string"
+          },
+          {
+            "key": "first_name",
+            "value": "Christophe",
+            "type": "string"
+          },
+          {
+            "key": "birthdate",
+            "value": "01/09/1975",
+            "type": "string"
+          },
+          {
+            "key": "insee_birthplace_code",
+            "value": "77029",
+            "type": "string"
+          },
+          {
+            "key": "insee_birthcountry_code",
+            "value": "99100",
+            "type": "string"
+          }
+        ]
+      },
+      {
+        "name": "Identité 4",
+        "attributes": [
+          {
+            "key": "gender",
+            "value": "1",
+            "type": "string"
+          },
+          {
+            "key": "family_name",
+            "value": "Chassagne",
+            "type": "string"
+          },
+          {
+            "key": "first_name",
+            "value": "Chrystophe",
+            "type": "string"
+          },
+          {
+            "key": "birthdate",
+            "value": "01/09/1975",
+            "type": "string"
+          },
+          {
+            "key": "insee_birthplace_code",
+            "value": "77029",
+            "type": "string"
+          },
+          {
+            "key": "insee_birthcountry_code",
+            "value": "99100",
+            "type": "string"
+          }
+        ]
+      }
+    ]
+  }
+}

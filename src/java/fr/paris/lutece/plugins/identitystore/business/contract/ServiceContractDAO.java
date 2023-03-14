@@ -50,24 +50,24 @@ import java.util.Optional;
 public final class ServiceContractDAO implements IServiceContractDAO
 {
     // Constants
-    private static final String SQL_QUERY_SELECT = "SELECT id_service_contract, name, organizational_entity, responsible_name, contact_name, service_type, starting_date, ending_date, authorized_merge, authorized_deletion, authorized_import, authorized_export FROM identitystore_service_contract WHERE id_service_contract = ?";
-    private static final String SQL_QUERY_SELECT_WITH_CLIENT_APP_ID = "SELECT id_service_contract, name, organizational_entity, responsible_name, contact_name, service_type, starting_date, ending_date, authorized_merge, authorized_deletion, authorized_import, authorized_export FROM identitystore_service_contract WHERE id_client_app = ?";
-    private static final String SQL_QUERY_SELECT_ACTIVE_WITH_CLIENT_APP_CODE = "SELECT a.id_service_contract, a.name, a.organizational_entity, a.responsible_name, a.contact_name, a.service_type, a.starting_date, a.ending_date, a.authorized_merge, a.authorized_deletion, a.authorized_import, a.authorized_export"
+    private static final String SQL_QUERY_SELECT = "SELECT id_service_contract, name, organizational_entity, responsible_name, contact_name, service_type, starting_date, ending_date, authorized_merge, authorized_account_update, authorized_deletion, authorized_import, authorized_export FROM identitystore_service_contract WHERE id_service_contract = ?";
+    private static final String SQL_QUERY_SELECT_WITH_CLIENT_APP_ID = "SELECT id_service_contract, name, organizational_entity, responsible_name, contact_name, service_type, starting_date, ending_date, authorized_merge, authorized_account_update, authorized_deletion, authorized_import, authorized_export FROM identitystore_service_contract WHERE id_client_app = ?";
+    private static final String SQL_QUERY_SELECT_ACTIVE_WITH_CLIENT_APP_CODE = "SELECT a.id_service_contract, a.name, a.organizational_entity, a.responsible_name, a.contact_name, a.service_type, a.starting_date, a.ending_date, a.authorized_merge, a.authorized_account_update, a.authorized_deletion, a.authorized_import, a.authorized_export"
             + " FROM identitystore_service_contract a" + " JOIN identitystore_client_application b on a.id_client_app = b.id_client_app"
             + " WHERE b.code = ? AND CASE" + " WHEN a.ending_date IS NULL THEN NOW() >= a.starting_date"
             + " ELSE NOW() BETWEEN a.starting_date AND a.ending_date" + " END";
-    private static final String SQL_QUERY_INSERT = "INSERT INTO identitystore_service_contract ( name, id_client_app, organizational_entity, responsible_name, contact_name, service_type, starting_date, ending_date, authorized_merge, authorized_deletion, authorized_import, authorized_export ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? ) ";
+    private static final String SQL_QUERY_INSERT = "INSERT INTO identitystore_service_contract ( name, id_client_app, organizational_entity, responsible_name, contact_name, service_type, starting_date, ending_date, authorized_merge, authorized_account_update, authorized_deletion, authorized_import, authorized_export ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? ) ";
     private static final String SQL_QUERY_DELETE = "DELETE FROM identitystore_service_contract WHERE id_service_contract = ?";
     private static final String SQL_QUERY_DELETE_WITH_CLIENT_APP_ID = "DELETE FROM identitystore_service_contract WHERE id_client_app = ?";
-    private static final String SQL_QUERY_UPDATE = "UPDATE identitystore_service_contract SET id_service_contract = ?, name = ?, id_client_app = ?, organizational_entity = ?, responsible_name = ?, contact_name = ?, service_type = ?, starting_date = ?, ending_date = ?, authorized_merge = ?, authorized_deletion = ?, authorized_import = ?, authorized_export = ? WHERE id_service_contract = ?";
-    private static final String SQL_QUERY_SELECTALL = "SELECT id_service_contract, name, id_client_app, organizational_entity, responsible_name, contact_name, service_type, starting_date, ending_date, authorized_merge, authorized_deletion, authorized_import, authorized_export FROM identitystore_service_contract";
+    private static final String SQL_QUERY_UPDATE = "UPDATE identitystore_service_contract SET id_service_contract = ?, name = ?, id_client_app = ?, organizational_entity = ?, responsible_name = ?, contact_name = ?, service_type = ?, starting_date = ?, ending_date = ?, authorized_merge = ?, authorized_account_update = ?, authorized_deletion = ?, authorized_import = ?, authorized_export = ? WHERE id_service_contract = ?";
+    private static final String SQL_QUERY_SELECTALL = "SELECT id_service_contract, name, id_client_app, organizational_entity, responsible_name, contact_name, service_type, starting_date, ending_date, authorized_merge, authorized_account_update, authorized_deletion, authorized_import, authorized_export FROM identitystore_service_contract";
     private static final String SQL_QUERY_SELECTALL_ID = "SELECT id_service_contract FROM identitystore_service_contract";
     private static final String SQL_QUERY_SELECTALL_BY_IDS = "SELECT a.id_service_contract, a.name, a.organizational_entity, a.responsible_name, a.contact_name,"
-            + " a.service_type, a.starting_date, a.ending_date, a.authorized_merge, a.authorized_deletion,"
+            + " a.service_type, a.starting_date, a.ending_date, a.authorized_merge, a.authorized_account_update, a.authorized_deletion,"
             + " a.authorized_import, a.authorized_export, b.code" + " FROM identitystore_service_contract a"
             + " JOIN identitystore_client_application b on a.id_client_app = b.id_client_app" + " WHERE id_service_contract IN (  ";
 
-    private static final String SQL_QUERY_SELECT_BETWEEN_ACTIVE_DATES = "SELECT id_service_contract, name, organizational_entity, responsible_name, contact_name, service_type, starting_date, ending_date, authorized_merge, authorized_deletion, authorized_import, authorized_export FROM identitystore_service_contract WHERE starting_date BETWEEN ? AND ? OR ending_date BETWEEN ? AND ?";
+    private static final String SQL_QUERY_SELECT_BETWEEN_ACTIVE_DATES = "SELECT id_service_contract, name, organizational_entity, responsible_name, contact_name, service_type, starting_date, ending_date, authorized_merge, authorized_account_update, authorized_deletion, authorized_import, authorized_export FROM identitystore_service_contract WHERE starting_date BETWEEN ? AND ? OR ending_date BETWEEN ? AND ?";
 
     /**
      * {@inheritDoc }
@@ -87,6 +87,7 @@ public final class ServiceContractDAO implements IServiceContractDAO
             daoUtil.setDate( nIndex++, serviceContract.getStartingDate( ) );
             daoUtil.setDate( nIndex++, serviceContract.getEndingDate( ) );
             daoUtil.setBoolean( nIndex++, serviceContract.getAuthorizedMerge( ) );
+            daoUtil.setBoolean( nIndex++, serviceContract.getAuthorizedAccountUpdate( ) );
             daoUtil.setBoolean( nIndex++, serviceContract.getAuthorizedDeletion( ) );
             daoUtil.setBoolean( nIndex++, serviceContract.getAuthorizedImport( ) );
             daoUtil.setBoolean( nIndex, serviceContract.getAuthorizedExport( ) );
@@ -126,6 +127,7 @@ public final class ServiceContractDAO implements IServiceContractDAO
                 serviceContract.setStartingDate( daoUtil.getDate( nIndex++ ) );
                 serviceContract.setEndingDate( daoUtil.getDate( nIndex++ ) );
                 serviceContract.setAuthorizedMerge( daoUtil.getBoolean( nIndex++ ) );
+                serviceContract.setAuthorizedAccountUpdate( daoUtil.getBoolean( nIndex++ ) );
                 serviceContract.setAuthorizedDeletion( daoUtil.getBoolean( nIndex++ ) );
                 serviceContract.setAuthorizedImport( daoUtil.getBoolean( nIndex++ ) );
                 serviceContract.setAuthorizedExport( daoUtil.getBoolean( nIndex ) );
@@ -161,6 +163,7 @@ public final class ServiceContractDAO implements IServiceContractDAO
                 serviceContract.setStartingDate( daoUtil.getDate( nIndex++ ) );
                 serviceContract.setEndingDate( daoUtil.getDate( nIndex++ ) );
                 serviceContract.setAuthorizedMerge( daoUtil.getBoolean( nIndex++ ) );
+                serviceContract.setAuthorizedAccountUpdate( daoUtil.getBoolean( nIndex++ ) );
                 serviceContract.setAuthorizedDeletion( daoUtil.getBoolean( nIndex++ ) );
                 serviceContract.setAuthorizedImport( daoUtil.getBoolean( nIndex++ ) );
                 serviceContract.setAuthorizedExport( daoUtil.getBoolean( nIndex ) );
@@ -195,6 +198,7 @@ public final class ServiceContractDAO implements IServiceContractDAO
                 serviceContract.setStartingDate( daoUtil.getDate( nIndex++ ) );
                 serviceContract.setEndingDate( daoUtil.getDate( nIndex++ ) );
                 serviceContract.setAuthorizedMerge( daoUtil.getBoolean( nIndex++ ) );
+                serviceContract.setAuthorizedAccountUpdate( daoUtil.getBoolean( nIndex++ ) );
                 serviceContract.setAuthorizedDeletion( daoUtil.getBoolean( nIndex++ ) );
                 serviceContract.setAuthorizedImport( daoUtil.getBoolean( nIndex++ ) );
                 serviceContract.setAuthorizedExport( daoUtil.getBoolean( nIndex ) );
@@ -252,6 +256,7 @@ public final class ServiceContractDAO implements IServiceContractDAO
             daoUtil.setDate( nIndex++, serviceContract.getStartingDate( ) );
             daoUtil.setDate( nIndex++, serviceContract.getEndingDate( ) );
             daoUtil.setBoolean( nIndex++, serviceContract.getAuthorizedMerge( ) );
+            daoUtil.setBoolean( nIndex++, serviceContract.getAuthorizedAccountUpdate( ) );
             daoUtil.setBoolean( nIndex++, serviceContract.getAuthorizedDeletion( ) );
             daoUtil.setBoolean( nIndex++, serviceContract.getAuthorizedImport( ) );
             daoUtil.setBoolean( nIndex++, serviceContract.getAuthorizedExport( ) );
@@ -286,6 +291,7 @@ public final class ServiceContractDAO implements IServiceContractDAO
                 serviceContract.setStartingDate( daoUtil.getDate( nIndex++ ) );
                 serviceContract.setEndingDate( daoUtil.getDate( nIndex++ ) );
                 serviceContract.setAuthorizedMerge( daoUtil.getBoolean( nIndex++ ) );
+                serviceContract.setAuthorizedAccountUpdate( daoUtil.getBoolean( nIndex++ ) );
                 serviceContract.setAuthorizedDeletion( daoUtil.getBoolean( nIndex++ ) );
                 serviceContract.setAuthorizedImport( daoUtil.getBoolean( nIndex++ ) );
                 serviceContract.setAuthorizedExport( daoUtil.getBoolean( nIndex ) );
@@ -380,6 +386,7 @@ public final class ServiceContractDAO implements IServiceContractDAO
                     serviceContract.setStartingDate( daoUtil.getDate( nIndex++ ) );
                     serviceContract.setEndingDate( daoUtil.getDate( nIndex++ ) );
                     serviceContract.setAuthorizedMerge( daoUtil.getBoolean( nIndex++ ) );
+                    serviceContract.setAuthorizedAccountUpdate( daoUtil.getBoolean( nIndex++ ) );
                     serviceContract.setAuthorizedDeletion( daoUtil.getBoolean( nIndex++ ) );
                     serviceContract.setAuthorizedImport( daoUtil.getBoolean( nIndex++ ) );
                     serviceContract.setAuthorizedExport( daoUtil.getBoolean( nIndex++ ) );
@@ -421,6 +428,7 @@ public final class ServiceContractDAO implements IServiceContractDAO
                 serviceContract.setStartingDate( daoUtil.getDate( nIndex++ ) );
                 serviceContract.setEndingDate( daoUtil.getDate( nIndex++ ) );
                 serviceContract.setAuthorizedMerge( daoUtil.getBoolean( nIndex++ ) );
+                serviceContract.setAuthorizedAccountUpdate( daoUtil.getBoolean( nIndex++ ) );
                 serviceContract.setAuthorizedDeletion( daoUtil.getBoolean( nIndex++ ) );
                 serviceContract.setAuthorizedImport( daoUtil.getBoolean( nIndex++ ) );
                 serviceContract.setAuthorizedExport( daoUtil.getBoolean( nIndex ) );

@@ -1,0 +1,248 @@
+--
+-- Drop tables if exists
+--
+
+DROP TABLE IF EXISTS identitystore_history_identity_attribute;
+DROP TABLE IF EXISTS identitystore_attribute_right;
+DROP TABLE IF EXISTS identitystore_client_application;
+DROP TABLE IF EXISTS identitystore_client_application_certifiers;
+DROP TABLE IF EXISTS identitystore_identity_attribute;
+DROP TABLE IF EXISTS identitystore_attribute_certificate;
+DROP TABLE IF EXISTS identitystore_attribute;
+DROP TABLE IF EXISTS identitystore_identity;
+--
+-- Structure for table identitystore_identity
+--
+
+CREATE TABLE identitystore_identity
+(
+    id_identity        int AUTO_INCREMENT,
+    connection_id      varchar(100) NULL UNIQUE,
+    customer_id        varchar(50)  NULL UNIQUE,
+    date_create        timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    is_deleted         SMALLINT              default 0,
+    date_delete        timestamp    NULL,
+    is_merged        SMALLINT              default 0,
+    date_merge       timestamp    NULL,
+    id_master_identity int          NULL,
+    PRIMARY KEY (id_identity),
+    INDEX (connection_id),
+    INDEX (customer_id)
+);
+
+--
+-- Structure for table identitystore_attribute
+--
+
+CREATE TABLE identitystore_attribute
+(
+    id_attribute int(6)       NOT NULL,
+    name         varchar(100) NOT NULL default '' UNIQUE,
+    key_name     varchar(100) NOT NULL default '' UNIQUE,
+    description  long varchar NULL,
+    key_type     int(11)      NOT NULL default '0',
+    certifiable  SMALLINT,
+    pivot        SMALLINT,
+    PRIMARY KEY (id_attribute)
+);
+
+-- Matrice de configuration des processus
+
+CREATE TABLE identitystore_ref_certification_level
+(
+    id_ref_certification_level int AUTO_INCREMENT,
+    name                       varchar(255) default '',
+    description                varchar(255) default '',
+    level                      varchar(50)  default '' NOT NULL,
+    PRIMARY KEY (id_ref_certification_level)
+);
+
+CREATE TABLE identitystore_ref_attribute_certification_level
+(
+    id_attribute                             int(6) NOT NULL,
+    id_ref_certification_level               int    NOT NULL,
+    id_ref_attribute_certification_processus int    NOT NULL,
+    PRIMARY KEY (id_attribute, id_ref_certification_level, id_ref_attribute_certification_processus)
+);
+ALTER TABLE identitystore_ref_attribute_certification_level
+    ADD CONSTRAINT fk_attribute_ref_certification_level_certification_level FOREIGN KEY (id_ref_certification_level) REFERENCES identitystore_ref_certification_level (id_ref_certification_level);
+ALTER TABLE identitystore_ref_attribute_certification_level
+    ADD CONSTRAINT fk_attribute_ref_certification_level_certification_processus FOREIGN KEY (id_ref_attribute_certification_processus) REFERENCES identitystore_ref_attribute_certification_processus (id_ref_attribute_certification_processus);
+ALTER TABLE identitystore_ref_attribute_certification_level
+    ADD CONSTRAINT fk_attribute_ref_certification_level_id_attribute FOREIGN KEY (id_attribute) REFERENCES identitystore_attribute (id_attribute);
+
+CREATE TABLE identitystore_ref_attribute_certification_processus
+(
+    id_ref_attribute_certification_processus int AUTO_INCREMENT,
+    label                                    varchar(50) default '' NOT NULL,
+    code                                     varchar(50) default '' NOT NULL,
+    PRIMARY KEY (id_ref_attribute_certification_processus)
+);
+
+--
+-- Structure for table identitystore_identity_attribute
+--
+
+CREATE TABLE identitystore_identity_attribute
+(
+    id_identity            int(11)      NOT NULL default '0',
+    id_attribute           int(11)      NOT NULL default '0',
+    attribute_value        long varchar NULL,
+    id_certification       int(11)      NOT NULL default '0',
+    id_file                int(11)               default '0',
+    lastupdate_date        timestamp    NOT NULL default CURRENT_TIMESTAMP,
+    lastupdate_application VARCHAR(100) NULL,
+    PRIMARY KEY (id_identity, id_attribute)
+);
+ALTER TABLE identitystore_identity_attribute
+    ADD CONSTRAINT fk_identity_attribute_id_identity FOREIGN KEY (id_identity) REFERENCES identitystore_identity (id_identity);
+ALTER TABLE identitystore_identity_attribute
+    ADD CONSTRAINT fk_identity_attribute_id_attribute FOREIGN KEY (id_attribute) REFERENCES identitystore_attribute (id_attribute);
+ALTER TABLE identitystore_identity_attribute
+    ADD INDEX ix_attribute_value USING BTREE (attribute_value(50) ASC);
+
+--
+-- Structure for table identitystore_attribute_certificate
+--
+
+CREATE TABLE identitystore_attribute_certificate
+(
+    id_attribute_certificate int AUTO_INCREMENT,
+    certifier_code           varchar(255) NOT NULL default '',
+    certificate_date         timestamp    NOT NULL,
+    certificate_level        int(11)      NOT NULL default '0',
+    expiration_date          timestamp    NULL     default NULL,
+    PRIMARY KEY (id_attribute_certificate)
+);
+
+--
+-- Structure for table identitystore_client_application_certifiers
+--
+
+CREATE TABLE identitystore_client_application_certifiers
+(
+    id_client_app  int(6)       NOT NULL,
+    certifier_code varchar(255) NOT NULL default '',
+    PRIMARY KEY (id_client_app, certifier_code),
+    INDEX (id_client_app)
+);
+
+
+--
+-- Structure for table identitystore_client_application
+--
+
+CREATE TABLE identitystore_client_application
+(
+    id_client_app int(6)       NOT NULL,
+    name          varchar(100) NOT NULL UNIQUE,
+    code          varchar(100) NOT NULL UNIQUE,
+    PRIMARY KEY (id_client_app)
+);
+
+--
+-- Structure for table identitystore_history_identity_attribute
+--
+
+CREATE TABLE identitystore_history_identity_attribute
+(
+    id_history             int AUTO_INCREMENT,
+    change_type            int(3)       NOT NULL,
+    id_identity            int(11)      NOT NULL,
+    identity_connection_id varchar(100),
+    attribute_key          varchar(50)  NOT NULL,
+    attribute_new_value    varchar(255) NOT NULL default '',
+    attribute_old_value    varchar(255) NOT NULL default '',
+    author_id              varchar(255)          default '',
+    author_type            int(2)       NOT NULL,
+    author_application     varchar(255)          default '',
+    certifier_name         varchar(255)          default '',
+    modification_date      timestamp    NOT NULL default CURRENT_TIMESTAMP,
+    PRIMARY KEY (id_history)
+);
+ALTER TABLE identitystore_history_identity_attribute
+    ADD CONSTRAINT fk_history_identity_attribute_id_identity FOREIGN KEY (id_identity) REFERENCES identitystore_identity (id_identity);
+
+--
+-- Structure for table identitystore_service_contract
+--
+DROP TABLE IF EXISTS identitystore_service_contract;
+CREATE TABLE identitystore_service_contract
+(
+    id_service_contract                             int AUTO_INCREMENT,
+    id_client_app                                   int(6)                 NOT NULL,
+    name                                            varchar(50) default '' NOT NULL,
+    organizational_entity                           varchar(50) default '' NOT NULL,
+    responsible_name                                varchar(50) default '' NOT NULL,
+    contact_name                                    varchar(50) default '' NOT NULL,
+    service_type                                    varchar(50) default '' NOT NULL,
+    starting_date                                   date                   NOT NULL,
+    ending_date                                     date        default NULL,
+    authorized_read                                 SMALLINT               NOT NULL,
+    authorized_deletion                             SMALLINT               NOT NULL,
+    authorized_search                               SMALLINT               NOT NULL,
+    authorized_import                               SMALLINT               NOT NULL,
+    authorized_export                               SMALLINT               NOT NULL,
+    authorized_merge                                SMALLINT               NOT NULL,
+    is_application_authorized_to_delete_value       INT(1)                 NOT NULL DEFAULT 0,
+    is_application_authorized_to_delete_certificate INT(1)                 NOT NULL DEFAULT 0,
+    PRIMARY KEY (id_service_contract)
+);
+ALTER TABLE identitystore_service_contract
+    ADD CONSTRAINT fk_service_contract_id_client_app FOREIGN KEY (id_client_app) REFERENCES identitystore_client_application (id_client_app);
+
+--
+-- Structure for table identitystore_client_access_control_list
+--
+
+CREATE TABLE identitystore_attribute_right
+(
+    id_service_contract int(6) NOT NULL,
+    id_attribute        int(6) NOT NULL,
+    searchable          int(1) NOT NULL default '0',
+    readable            int(1) NOT NULL default '0',
+    writable            int(1) NOT NULL default '0',
+    PRIMARY KEY (id_service_contract, id_attribute)
+);
+ALTER TABLE identitystore_attribute_right
+    ADD CONSTRAINT fk_attribute_right_id_attribute FOREIGN KEY (id_attribute) REFERENCES identitystore_attribute (id_attribute);
+ALTER TABLE identitystore_attribute_right
+    ADD CONSTRAINT fk_attribute_right_id_service_contract FOREIGN KEY (id_service_contract) REFERENCES identitystore_service_contract (id_service_contract);
+
+
+--
+-- Structure for table identitystore_attribute_requirement
+--
+DROP TABLE IF EXISTS identitystore_attribute_requirement;
+CREATE TABLE identitystore_attribute_requirement
+(
+    id_service_contract        int(6) NOT NULL,
+    id_attribute               int(6) NOT NULL,
+    id_ref_certification_level int    NOT NULL,
+    PRIMARY KEY (id_attribute, id_service_contract, id_ref_certification_level)
+);
+ALTER TABLE identitystore_attribute_requirement
+    ADD CONSTRAINT fk_attribute_requirement_id_service_contract FOREIGN KEY (id_service_contract) REFERENCES identitystore_service_contract (id_service_contract);
+ALTER TABLE identitystore_attribute_requirement
+    ADD CONSTRAINT fk_attribute_requirement_id_attribute FOREIGN KEY (id_attribute) REFERENCES identitystore_attribute (id_attribute);
+ALTER TABLE identitystore_attribute_requirement
+    ADD CONSTRAINT fk_attribute_requirement_certification_level FOREIGN KEY (id_ref_certification_level) REFERENCES identitystore_ref_certification_level (id_ref_certification_level);
+
+--
+-- Structure for table identitystore_attribute_certification
+--
+DROP TABLE IF EXISTS identitystore_attribute_certification;
+
+CREATE TABLE identitystore_attribute_certification
+(
+    id_service_contract                      int(6) NOT NULL,
+    id_attribute                             int(6) NOT NULL,
+    id_ref_attribute_certification_processus int    NOT NULL,
+    PRIMARY KEY (id_attribute, id_ref_attribute_certification_processus, id_service_contract)
+);
+ALTER TABLE identitystore_attribute_certification
+    ADD CONSTRAINT fk_attribute_certification_id_service_contract FOREIGN KEY (id_service_contract) REFERENCES identitystore_service_contract (id_service_contract);
+ALTER TABLE identitystore_attribute_certification
+    ADD CONSTRAINT fk_attribute_certification_id_attribute FOREIGN KEY (id_attribute) REFERENCES identitystore_attribute (id_attribute);
+ALTER TABLE identitystore_attribute_certification
+    ADD CONSTRAINT fk_attribute_certification_certification_processus FOREIGN KEY (id_ref_attribute_certification_processus) REFERENCES identitystore_ref_attribute_certification_processus (id_ref_attribute_certification_processus);

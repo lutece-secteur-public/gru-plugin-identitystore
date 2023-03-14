@@ -40,6 +40,7 @@ public class AttributeObject
     private String name;
     private String key;
     private String type;
+    private Integer weight;
     private String value;
     private String description;
     private boolean pivot;
@@ -50,12 +51,13 @@ public class AttributeObject
     private Timestamp certificateExpirationDate;
     private String lastUpdateApplicationCode;
 
-    public AttributeObject( String name, String key, String type, String value, String description, boolean pivot, String certifierCode, String certifierName,
-            Timestamp certificateDate, Integer certificateLevel, Timestamp certificateExpirationDate, String lastUpdateApplicationCode )
+    public AttributeObject( String name, String key, String type, Integer weight, String value, String description, boolean pivot, String certifierCode,
+            String certifierName, Timestamp certificateDate, Integer certificateLevel, Timestamp certificateExpirationDate, String lastUpdateApplicationCode )
     {
         this.name = name;
         this.key = key;
         this.type = type;
+        this.weight = weight;
         this.value = value;
         this.description = description;
         this.pivot = pivot;
@@ -100,6 +102,16 @@ public class AttributeObject
     public void setType( String type )
     {
         this.type = type;
+    }
+
+    public Integer getWeight( )
+    {
+        return weight;
+    }
+
+    public void setWeight( Integer weight )
+    {
+        this.weight = weight;
     }
 
     public String getValue( )

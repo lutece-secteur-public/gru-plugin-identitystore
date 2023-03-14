@@ -33,7 +33,7 @@
  */
 package fr.paris.lutece.plugins.identitystore.business.attribute;
 
-import org.hibernate.validator.constraints.NotEmpty;
+import javax.validation.constraints.NotEmpty;
 
 import java.io.Serializable;
 
@@ -58,6 +58,8 @@ public class AttributeKey implements Serializable
     private KeyType _keyType;
     private boolean _bCertifiable;
     private boolean _bPivot;
+
+    private int _nKeyWeight;
 
     /**
      * Returns the Id
@@ -204,5 +206,25 @@ public class AttributeKey implements Serializable
     public void setPivot( boolean bPivot )
     {
         _bPivot = bPivot;
+    }
+
+    /**
+     * Returns the weight of the attribute for scoring computation
+     * 
+     * @return the weight
+     */
+    public int getKeyWeight( )
+    {
+        return _nKeyWeight;
+    }
+
+    /**
+     * Sets the weight of the attribute for scoring computation
+     * 
+     * @param _nKeyWeight
+     */
+    public void setKeyWeight( int _nKeyWeight )
+    {
+        this._nKeyWeight = _nKeyWeight;
     }
 }

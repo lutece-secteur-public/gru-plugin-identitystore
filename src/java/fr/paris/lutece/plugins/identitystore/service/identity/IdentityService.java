@@ -45,13 +45,14 @@ import fr.paris.lutece.plugins.identitystore.business.identity.IdentityAttribute
 import fr.paris.lutece.plugins.identitystore.business.identity.IdentityHome;
 import fr.paris.lutece.plugins.identitystore.business.referentiel.RefAttributeCertificationLevel;
 import fr.paris.lutece.plugins.identitystore.cache.IdentityAttributeCache;
+import fr.paris.lutece.plugins.identitystore.service.IdentityChange;
+import fr.paris.lutece.plugins.identitystore.service.IdentityChangeType;
 import fr.paris.lutece.plugins.identitystore.service.contract.AttributeCertificationDefinitionService;
 import fr.paris.lutece.plugins.identitystore.service.contract.ServiceContractNotFoundException;
 import fr.paris.lutece.plugins.identitystore.service.contract.ServiceContractService;
 import fr.paris.lutece.plugins.identitystore.service.duplicate.IDuplicateService;
-import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.model.AttributeObject;
-import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.model.IdentityObject;
-import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.service.IIdentityIndexer;
+import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.model.IdentityObjectMapper;
+import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.task.FullIndexTask;
 import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.search.model.SearchAttribute;
 import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.search.model.inner.response.Response;
 import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.search.service.IIdentitySearcher;
@@ -73,28 +74,26 @@ import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreExceptio
 import fr.paris.lutece.portal.service.spring.SpringContextService;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 public class IdentityService
 {
-    private IdentityAttributeCache _cache = SpringContextService.getBean( "identitystore.identityAttributeCache" );
-    private AttributeCertificationDefinitionService _attributeCertificationDefinitionService = AttributeCertificationDefinitionService.instance( );
-    private IDuplicateService _duplicateServiceCreation = SpringContextService.getBean( "identitystore.duplicateService.creation" );
-    private IDuplicateService _duplicateServiceImportCertitude = SpringContextService.getBean( "identitystore.duplicateService.import.certitude" );
-    private IDuplicateService _duplicateServiceImportSuspicion = SpringContextService.getBean( "identitystore.duplicateService.import.suspicion" );
-    private IIdentityIndexer _identityIndexer = SpringContextService.getBean( IIdentityIndexer.NAME );
-    private IIdentitySearcher _identitySearcher = SpringContextService.getBean( IIdentitySearcher.NAME );
+    private final AttributeCertificationDefinitionService _attributeCertificationDefinitionService = AttributeCertificationDefinitionService.instance( );
+    private final IdentityStoreNotifyListenerService _identityStoreNotifyListenerService = IdentityStoreNotifyListenerService.instance( );
+    private final ServiceContractService _serviceContractService = ServiceContractService.instance( );
+    private final IDuplicateService _duplicateServiceCreation = SpringContextService.getBean( "identitystore.duplicateService.creation" );
+    private final IDuplicateService _duplicateServiceUpdate = SpringContextService.getBean( "identitystore.duplicateService.update" );
+    private final IDuplicateService _duplicateServiceImportCertitude = SpringContextService.getBean( "identitystore.duplicateService.import.certitude" );
+    private final IDuplicateService _duplicateServiceImportSuspicion = SpringContextService.getBean( "identitystore.duplicateService.import.suspicion" );
+    private final IdentityAttributeCache _cache = SpringContextService.getBean( "identitystore.identityAttributeCache" );
+    private final IIdentitySearcher _identitySearcher = SpringContextService.getBean( IIdentitySearcher.NAME );
 
     private static IdentityService _instance;
-
-    private static Logger _logger = Logger.getLogger( ServiceContractService.class );
 
     public static IdentityService instance( )
     {
@@ -110,23 +109,26 @@ public class IdentityService
      * Creates a new {@link Identity} according to the given {@link IdentityChangeRequest}
      * 
      * @param identityChangeRequest
+     *            the {@link IdentityChangeRequest} holding the parameters of the identity change request
      * @param applicationCode
      *            code of the {@link ClientApplication} requesting the change
      * @param response
-     * @return
+     *            the {@link IdentityChangeResponse} holding the status of the execution of the request
+     * @return the created {@link Identity}
      * @throws IdentityStoreException
+     *             in case of error
      */
     public Identity create( final IdentityChangeRequest identityChangeRequest, final String applicationCode, final IdentityChangeResponse response )
             throws IdentityStoreException
     {
         final Map<String, String> attributes = identityChangeRequest.getIdentity( ).getAttributes( ).stream( )
-                .collect( Collectors.toMap( CertifiedAttribute::getKey, certifiedAttribute -> certifiedAttribute.getValue( ) ) );
+                .collect( Collectors.toMap( CertifiedAttribute::getKey, CertifiedAttribute::getValue ) );
         final DuplicateDto duplicates = _duplicateServiceCreation.findDuplicates( attributes );
         if ( duplicates != null )
         {
             response.setStatus( IdentityChangeStatus.CONFLICT );
             response.setMessage( duplicates.getMessage( ) );
-            response.setDuplicates( duplicates );
+            // response.setDuplicates( duplicates ); //TODO voir si on renvoie le CUID
             return null;
         }
 
@@ -140,14 +142,14 @@ public class IdentityService
         {
             final IdentityAttribute attribute = new IdentityAttribute( );
             attribute.setIdIdentity( identity.getId( ) );
-            attribute.setAttributeKey( instance( ).getAttributeKey( certifiedAttribute.getKey( ) ) );
+            attribute.setAttributeKey( getAttributeKey( certifiedAttribute.getKey( ) ) );
             attribute.setValue( certifiedAttribute.getValue( ) );
             attribute.setLastUpdateApplicationCode( applicationCode );
 
             if ( certifiedAttribute.getCertificationProcess( ) != null )
             {
                 final AttributeCertificate certificate = new AttributeCertificate( );
-                certificate.setCertificateDate( new Timestamp( new Date( ).getTime( ) ) );
+                certificate.setCertificateDate( new Timestamp( certifiedAttribute.getCertificationDate( ).getTime( ) ) );
                 certificate.setCertifierCode( certifiedAttribute.getCertificationProcess( ) );
                 certificate.setCertifierName( certifiedAttribute.getCertificationProcess( ) );
                 final RefAttributeCertificationLevel refAttributeCertificationLevel = _attributeCertificationDefinitionService
@@ -179,13 +181,11 @@ public class IdentityService
         response.getAttributeStatuses( ).forEach( attributeStatus -> {
             AttributeChange attributeChange = IdentityStoreNotifyListenerService.buildAttributeChange( AttributeChangeType.CREATE, identity, attributeStatus,
                     identityChangeRequest.getOrigin( ), applicationCode );
-            IdentityStoreNotifyListenerService.instance( ).notifyListenersAttributeChange( attributeChange );
+            _identityStoreNotifyListenerService.notifyListenersAttributeChange( attributeChange );
         } );
 
         /* Indexation */
-        final Map<String, AttributeObject> attributeObjects = this.mapToIndexObject( identity );
-        _identityIndexer.create( new IdentityObject( identity.getConnectionId( ), identity.getCustomerId( ), identity.getCreationDate( ),
-                identity.getLastUpdateDate( ), attributeObjects ) );
+        _identityStoreNotifyListenerService.notifyListenersIdentityChange( new IdentityChange( identity, IdentityChangeType.CREATE ) );
 
         return identity;
     }
@@ -208,15 +208,36 @@ public class IdentityService
      * </ul>
      * 
      * @param identityChangeRequest
+     *            the {@link IdentityChangeRequest} holding the parameters of the identity change request
      * @param applicationCode
      *            code of the {@link ClientApplication} requesting the change
      * @param response
-     * @return
+     *            the {@link IdentityChangeResponse} holding the status of the execution of the request
+     * @return the updated {@link Identity}
      * @throws IdentityStoreException
+     *             in case of error
      */
     public Identity update( final IdentityChangeRequest identityChangeRequest, final String applicationCode, final IdentityChangeResponse response )
             throws IdentityStoreException
     {
+        final Map<String, String> attributes = identityChangeRequest.getIdentity( ).getAttributes( ).stream( )
+                .collect( Collectors.toMap( CertifiedAttribute::getKey, CertifiedAttribute::getValue ) );
+        final DuplicateDto duplicates = _duplicateServiceUpdate.findDuplicates( attributes );
+        if ( duplicates != null )
+        {
+            duplicates.getIdentities( ).removeIf(
+                    qualifiedIdentity -> StringUtils.equals( qualifiedIdentity.getCustomerId( ), identityChangeRequest.getIdentity( ).getCustomerId( ) ) );// TODO
+                                                                                                                                                           // à
+                                                                                                                                                           // confirmer
+        }
+        if ( duplicates != null && CollectionUtils.isNotEmpty( duplicates.getIdentities( ) ) )
+        {
+            response.setStatus( IdentityChangeStatus.CONFLICT );
+            response.setMessage( duplicates.getMessage( ) );
+            // response.setDuplicates( duplicates ); //TODO voir si on renvoie le CUID
+            return null;
+        }
+
         final Identity identity = IdentityHome.findByCustomerId( identityChangeRequest.getIdentity( ).getCustomerId( ) );
 
         if ( identity == null )
@@ -239,148 +260,156 @@ public class IdentityService
                     response.setMessage( "Cannot update a deleted Identity." );
                 }
                 else
-                {
-                    /* Récupération des attributs déja existants ou non */
-                    final Map<Boolean, List<CertifiedAttribute>> sortedAttributes = identityChangeRequest.getIdentity( ).getAttributes( ).stream( )
-                            .collect( Collectors.partitioningBy( a -> identity.getAttributes( ).containsKey( a.getKey( ) ) ) );
-                    final List<CertifiedAttribute> existingWritableAttributes = CollectionUtils.isNotEmpty( sortedAttributes.get( true ) )
-                            ? sortedAttributes.get( true )
-                            : new ArrayList<>( );
-                    final List<CertifiedAttribute> newWritableAttributes = CollectionUtils.isNotEmpty( sortedAttributes.get( false ) )
-                            ? sortedAttributes.get( false )
-                            : new ArrayList<>( );
-
-                    /* Create new attributes */
-                    for ( final CertifiedAttribute attributeToWrite : newWritableAttributes )
+                    if ( !_serviceContractService.canModifyIdentity( StringUtils.isNotEmpty( identity.getConnectionId( ) ), applicationCode ) )
                     {
-
-                        final IdentityAttribute attribute = new IdentityAttribute( );
-                        attribute.setIdIdentity( identity.getId( ) );
-                        attribute.setAttributeKey( IdentityService.instance( ).getAttributeKey( attributeToWrite.getKey( ) ) );
-                        attribute.setValue( attributeToWrite.getValue( ) );
-                        attribute.setLastUpdateApplicationCode( applicationCode );
-
-                        if ( attributeToWrite.getCertificationProcess( ) != null )
-                        {
-                            final AttributeCertificate certificate = new AttributeCertificate( );
-                            certificate.setCertificateDate( new Timestamp( new Date( ).getTime( ) ) );
-                            certificate.setCertifierCode( attributeToWrite.getCertificationProcess( ) );
-                            certificate.setCertifierName( attributeToWrite.getCertificationProcess( ) );
-                            final RefAttributeCertificationLevel refAttributeCertificationLevel = _attributeCertificationDefinitionService
-                                    .get( attributeToWrite.getCertificationProcess( ), attributeToWrite.getKey( ) );
-                            if ( refAttributeCertificationLevel == null )
-                            {
-                                throw new IdentityStoreException( "No Level defined for processus with code " + attributeToWrite.getCertificationProcess( ) );
-                            }
-                            final String level = refAttributeCertificationLevel.getRefCertificationLevel( ).getLevel( );
-                            certificate.setCertificateLevel( Integer.parseInt( level ) );
-                            attribute.setCertificate( AttributeCertificateHome.create( certificate ) );
-                            attribute.setIdCertificate( attribute.getCertificate( ).getId( ) );
-                        }
-
-                        IdentityAttributeHome.create( attribute );
-                        identity.getAttributes( ).put( attribute.getAttributeKey( ).getKeyName( ), attribute );
-
-                        final AttributeStatus attributeStatus = new AttributeStatus( );
-                        attributeStatus.setKey( attributeToWrite.getKey( ) );
-                        attributeStatus.setStatus( AttributeChangeStatus.CREATED );
-                        response.getAttributeStatuses( ).add( attributeStatus );
+                        response.setStatus( IdentityChangeStatus.CONFLICT );
+                        response.setCustomerId( identity.getCustomerId( ) );
+                        response.setMessage( "The client application is not authorized to update a connected identity." );
                     }
-
-                    /* Update existing attributes */
-                    for ( final CertifiedAttribute attributeToUpdate : existingWritableAttributes )
+                    else
                     {
-                        final IdentityAttribute existingAttribute = identity.getAttributes( ).get( attributeToUpdate.getKey( ) );
-                        RefAttributeCertificationLevel refAttributeCertificationLevel = null;
-                        if ( StringUtils.isNotEmpty( attributeToUpdate.getCertificationProcess( ) ) )
+                        /* Récupération des attributs déja existants ou non */
+                        final Map<Boolean, List<CertifiedAttribute>> sortedAttributes = identityChangeRequest.getIdentity( ).getAttributes( ).stream( )
+                                .collect( Collectors.partitioningBy( a -> identity.getAttributes( ).containsKey( a.getKey( ) ) ) );
+                        final List<CertifiedAttribute> existingWritableAttributes = CollectionUtils.isNotEmpty( sortedAttributes.get( true ) )
+                                ? sortedAttributes.get( true )
+                                : new ArrayList<>( );
+                        final List<CertifiedAttribute> newWritableAttributes = CollectionUtils.isNotEmpty( sortedAttributes.get( false ) )
+                                ? sortedAttributes.get( false )
+                                : new ArrayList<>( );
+
+                        /* Create new attributes */
+                        for ( final CertifiedAttribute attributeToWrite : newWritableAttributes )
                         {
-                            refAttributeCertificationLevel = _attributeCertificationDefinitionService.get( attributeToUpdate.getCertificationProcess( ),
-                                    attributeToUpdate.getKey( ) );
-                            if ( refAttributeCertificationLevel == null )
+
+                            final IdentityAttribute attribute = new IdentityAttribute( );
+                            attribute.setIdIdentity( identity.getId( ) );
+                            attribute.setAttributeKey( getAttributeKey( attributeToWrite.getKey( ) ) );
+                            attribute.setValue( attributeToWrite.getValue( ) );
+                            attribute.setLastUpdateApplicationCode( applicationCode );
+
+                            if ( attributeToWrite.getCertificationProcess( ) != null )
                             {
-                                throw new IdentityStoreException( "No Level defined for processus with code " + attributeToUpdate.getCertificationProcess( ) );
+                                final AttributeCertificate certificate = new AttributeCertificate( );
+                                certificate.setCertificateDate( new Timestamp( attributeToWrite.getCertificationDate( ).getTime( ) ) );
+                                certificate.setCertifierCode( attributeToWrite.getCertificationProcess( ) );
+                                certificate.setCertifierName( attributeToWrite.getCertificationProcess( ) );
+                                final RefAttributeCertificationLevel refAttributeCertificationLevel = _attributeCertificationDefinitionService
+                                        .get( attributeToWrite.getCertificationProcess( ), attributeToWrite.getKey( ) );
+                                if ( refAttributeCertificationLevel == null )
+                                {
+                                    throw new IdentityStoreException(
+                                            "No Level defined for processus with code " + attributeToWrite.getCertificationProcess( ) );
+                                }
+                                final String level = refAttributeCertificationLevel.getRefCertificationLevel( ).getLevel( );
+                                certificate.setCertificateLevel( Integer.parseInt( level ) );
+                                attribute.setCertificate( AttributeCertificateHome.create( certificate ) );
+                                attribute.setIdCertificate( attribute.getCertificate( ).getId( ) );
                             }
-                        }
-                        final String attributeToUpdateLevel = refAttributeCertificationLevel != null
-                                ? refAttributeCertificationLevel.getRefCertificationLevel( ).getLevel( )
-                                : "0";
-                        int attributeToUpdateLevelInt = Integer.parseInt( attributeToUpdateLevel );
-                        int existingAttributeLevelInt = existingAttribute.getCertificate( ) != null ? existingAttribute.getCertificate( ).getCertificateLevel( )
-                                : 0;
-                        if ( attributeToUpdateLevelInt == existingAttributeLevelInt
-                                && StringUtils.equals( attributeToUpdate.getValue( ), existingAttribute.getValue( ) ) )
-                        {
+
+                            IdentityAttributeHome.create( attribute );
+                            identity.getAttributes( ).put( attribute.getAttributeKey( ).getKeyName( ), attribute );
+
                             final AttributeStatus attributeStatus = new AttributeStatus( );
-                            attributeStatus.setKey( attributeToUpdate.getKey( ) );
-                            attributeStatus.setStatus( AttributeChangeStatus.NOT_UPDATED );
+                            attributeStatus.setKey( attributeToWrite.getKey( ) );
+                            attributeStatus.setStatus( AttributeChangeStatus.CREATED );
                             response.getAttributeStatuses( ).add( attributeStatus );
                         }
-                        else
-                            if ( attributeToUpdateLevelInt >= existingAttributeLevelInt )
+
+                        /* Update existing attributes */
+                        for ( final CertifiedAttribute attributeToUpdate : existingWritableAttributes )
+                        {
+                            final IdentityAttribute existingAttribute = identity.getAttributes( ).get( attributeToUpdate.getKey( ) );
+                            RefAttributeCertificationLevel refAttributeCertificationLevel = null;
+                            if ( StringUtils.isNotEmpty( attributeToUpdate.getCertificationProcess( ) ) )
                             {
-                                existingAttribute.setValue( attributeToUpdate.getValue( ) );
-                                existingAttribute.setLastUpdateApplicationCode( applicationCode );
-
-                                if ( attributeToUpdate.getCertificationProcess( ) != null )
+                                refAttributeCertificationLevel = _attributeCertificationDefinitionService.get( attributeToUpdate.getCertificationProcess( ),
+                                        attributeToUpdate.getKey( ) );
+                                if ( refAttributeCertificationLevel == null )
                                 {
-                                    final AttributeCertificate certificate = new AttributeCertificate( );
-                                    certificate.setCertificateDate( new Timestamp( new Date( ).getTime( ) ) );
-                                    certificate.setCertifierCode( attributeToUpdate.getCertificationProcess( ) );
-                                    certificate.setCertifierName( attributeToUpdate.getCertificationProcess( ) );
-
-                                    certificate.setCertificateLevel( attributeToUpdateLevelInt );
-                                    existingAttribute.setCertificate( AttributeCertificateHome.create( certificate ) ); // TODO supprime-t-on l'ancien
-                                                                                                                        // certificat ?
-                                    existingAttribute.setIdCertificate( existingAttribute.getCertificate( ).getId( ) );
+                                    throw new IdentityStoreException(
+                                            "No Level defined for processus with code " + attributeToUpdate.getCertificationProcess( ) );
                                 }
-
-                                IdentityAttributeHome.update( existingAttribute );
-                                identity.getAttributes( ).put( existingAttribute.getAttributeKey( ).getKeyName( ), existingAttribute );
-
+                            }
+                            final String attributeToUpdateLevel = refAttributeCertificationLevel != null
+                                    ? refAttributeCertificationLevel.getRefCertificationLevel( ).getLevel( )
+                                    : "0";
+                            int attributeToUpdateLevelInt = Integer.parseInt( attributeToUpdateLevel );
+                            int existingAttributeLevelInt = existingAttribute.getCertificate( ) != null
+                                    ? existingAttribute.getCertificate( ).getCertificateLevel( )
+                                    : 0;
+                            if ( attributeToUpdateLevelInt == existingAttributeLevelInt
+                                    && StringUtils.equals( attributeToUpdate.getValue( ), existingAttribute.getValue( ) ) )
+                            {
                                 final AttributeStatus attributeStatus = new AttributeStatus( );
                                 attributeStatus.setKey( attributeToUpdate.getKey( ) );
-                                attributeStatus.setStatus( AttributeChangeStatus.UPDATED );
+                                attributeStatus.setStatus( AttributeChangeStatus.NOT_UPDATED );
                                 response.getAttributeStatuses( ).add( attributeStatus );
                             }
                             else
-                            {
-                                final AttributeStatus attributeStatus = new AttributeStatus( );
-                                attributeStatus.setKey( attributeToUpdate.getKey( ) );
-                                attributeStatus.setStatus( AttributeChangeStatus.INSUFFICIENT_CERTIFICATION_LEVEL );
-                                response.getAttributeStatuses( ).add( attributeStatus );
-                            }
+                                if ( attributeToUpdateLevelInt >= existingAttributeLevelInt )
+                                {
+                                    existingAttribute.setValue( attributeToUpdate.getValue( ) );
+                                    existingAttribute.setLastUpdateApplicationCode( applicationCode );
+
+                                    if ( attributeToUpdate.getCertificationProcess( ) != null )
+                                    {
+                                        final AttributeCertificate certificate = new AttributeCertificate( );
+                                        certificate.setCertificateDate( new Timestamp( attributeToUpdate.getCertificationDate( ).getTime( ) ) );
+                                        certificate.setCertifierCode( attributeToUpdate.getCertificationProcess( ) );
+                                        certificate.setCertifierName( attributeToUpdate.getCertificationProcess( ) );
+
+                                        certificate.setCertificateLevel( attributeToUpdateLevelInt );
+                                        existingAttribute.setCertificate( AttributeCertificateHome.create( certificate ) ); // TODO supprime-t-on l'ancien
+                                                                                                                            // certificat ?
+                                        existingAttribute.setIdCertificate( existingAttribute.getCertificate( ).getId( ) );
+                                    }
+
+                                    IdentityAttributeHome.update( existingAttribute );
+                                    identity.getAttributes( ).put( existingAttribute.getAttributeKey( ).getKeyName( ), existingAttribute );
+
+                                    final AttributeStatus attributeStatus = new AttributeStatus( );
+                                    attributeStatus.setKey( attributeToUpdate.getKey( ) );
+                                    attributeStatus.setStatus( AttributeChangeStatus.UPDATED );
+                                    response.getAttributeStatuses( ).add( attributeStatus );
+                                }
+                                else
+                                {
+                                    final AttributeStatus attributeStatus = new AttributeStatus( );
+                                    attributeStatus.setKey( attributeToUpdate.getKey( ) );
+                                    attributeStatus.setStatus( AttributeChangeStatus.INSUFFICIENT_CERTIFICATION_LEVEL );
+                                    response.getAttributeStatuses( ).add( attributeStatus );
+                                }
+                        }
+
+                        IdentityHome.update( identity );
+
+                        response.setCustomerId( identity.getCustomerId( ) );
+                        response.setConnectionId( identity.getConnectionId( ) );
+                        response.setCreationDate( identity.getCreationDate( ) );
+                        response.setLastUpdateDate( identity.getLastUpdateDate( ) );
+                        boolean notAllAttributesCreatedOrUpdated = response.getAttributeStatuses( ).stream( )
+                                .anyMatch( attributeStatus -> AttributeChangeStatus.INSUFFICIENT_CERTIFICATION_LEVEL.equals( attributeStatus.getStatus( ) )
+                                        || AttributeChangeStatus.NOT_UPDATED.equals( attributeStatus.getStatus( ) )
+                                        || AttributeChangeStatus.INSUFFICIENT_RIGHTS.equals( attributeStatus.getStatus( ) )
+                                        || AttributeChangeStatus.UNAUTHORIZED.equals( attributeStatus.getStatus( ) ) );
+                        response.setStatus(
+                                notAllAttributesCreatedOrUpdated ? IdentityChangeStatus.UPDATE_INCOMPLETE_SUCCESS : IdentityChangeStatus.UPDATE_SUCCESS );
+                        if ( notAllAttributesCreatedOrUpdated )
+                        {
+                            response.setIdentity( IdentityMapper.toJsonIdentity( identity ) );
+                        }
+
+                        /* Historique des modifications */
+                        response.getAttributeStatuses( ).forEach( attributeStatus -> {
+                            AttributeChange attributeChange = IdentityStoreNotifyListenerService.buildAttributeChange( AttributeChangeType.UPDATE, identity,
+                                    attributeStatus, identityChangeRequest.getOrigin( ), applicationCode );
+                            _identityStoreNotifyListenerService.notifyListenersAttributeChange( attributeChange );
+                        } );
+
+                        /* Indexation */
+                        _identityStoreNotifyListenerService.notifyListenersIdentityChange( new IdentityChange( identity, IdentityChangeType.UPDATE ) );
                     }
-
-                    IdentityHome.update( identity );
-
-                    response.setCustomerId( identity.getCustomerId( ) );
-                    response.setConnectionId( identity.getConnectionId( ) );
-                    response.setCreationDate( identity.getCreationDate( ) );
-                    response.setLastUpdateDate( identity.getLastUpdateDate( ) );
-                    boolean notAllAttributesCreatedOrUpdated = response.getAttributeStatuses( ).stream( )
-                            .anyMatch( attributeStatus -> AttributeChangeStatus.INSUFFICIENT_CERTIFICATION_LEVEL.equals( attributeStatus.getStatus( ) )
-                                    || AttributeChangeStatus.NOT_UPDATED.equals( attributeStatus.getStatus( ) )
-                                    || AttributeChangeStatus.INSUFFICIENT_RIGHTS.equals( attributeStatus.getStatus( ) )
-                                    || AttributeChangeStatus.UNAUTHORIZED.equals( attributeStatus.getStatus( ) ) );
-                    response.setStatus(
-                            notAllAttributesCreatedOrUpdated ? IdentityChangeStatus.UPDATE_INCOMPLETE_SUCCESS : IdentityChangeStatus.UPDATE_SUCCESS );
-                    if ( notAllAttributesCreatedOrUpdated )
-                    {
-                        response.setIdentity( IdentityMapper.toJsonIdentity( identity ) );
-                    }
-
-                    /* Historique des modifications */
-                    response.getAttributeStatuses( ).forEach( attributeStatus -> {
-                        AttributeChange attributeChange = IdentityStoreNotifyListenerService.buildAttributeChange( AttributeChangeType.UPDATE, identity,
-                                attributeStatus, identityChangeRequest.getOrigin( ), applicationCode );
-                        IdentityStoreNotifyListenerService.instance( ).notifyListenersAttributeChange( attributeChange );
-                    } );
-
-                    /* Indexation */
-                    final Map<String, AttributeObject> attributeObjects = this.mapToIndexObject( identity );
-                    _identityIndexer.update( new IdentityObject( identity.getConnectionId( ), identity.getCustomerId( ), identity.getCreationDate( ),
-                            identity.getLastUpdateDate( ), attributeObjects ) );
-                }
 
         return identity;
     }
@@ -399,11 +428,14 @@ public class IdentityService
      * </ul>
      *
      * @param identityMergeRequest
+     *            the {@link IdentityMergeRequest} holding the parameters of the request
      * @param applicationCode
      *            code of the {@link ClientApplication} requesting the change
      * @param response
-     * @return
+     *            the {@link IdentityMergeResponse} holding the status of the execution of the request
+     * @return the merged {@link Identity}
      * @throws IdentityStoreException
+     *             in case of error
      */
     public Identity merge( final IdentityMergeRequest identityMergeRequest, final String applicationCode, final IdentityMergeResponse response )
             throws IdentityStoreException
@@ -465,7 +497,7 @@ public class IdentityService
                 if ( secondaryAttribute.getCertificate( ) != null )
                 {
                     final AttributeCertificate certificate = new AttributeCertificate( );
-                    certificate.setCertificateDate( new Timestamp( new Date( ).getTime( ) ) );
+                    certificate.setCertificateDate( new Timestamp( secondaryAttribute.getCertificate( ).getCertificateDate( ).getTime( ) ) );
                     certificate.setCertifierCode( secondaryAttribute.getCertificate( ).getCertifierCode( ) );
                     certificate.setCertifierName( secondaryAttribute.getCertificate( ).getCertifierName( ) );
                     certificate.setCertificateLevel( secondaryAttribute.getCertificate( ).getCertificateLevel( ) );
@@ -491,7 +523,7 @@ public class IdentityService
                     if ( secondaryAttribute.getCertificate( ) != null )
                     {
                         final AttributeCertificate certificate = new AttributeCertificate( );
-                        certificate.setCertificateDate( new Timestamp( new Date( ).getTime( ) ) );
+                        certificate.setCertificateDate( new Timestamp( secondaryAttribute.getCertificate( ).getCertificateDate( ).getTime( ) ) );
                         certificate.setCertifierCode( secondaryAttribute.getCertificate( ).getCertifierCode( ) );
                         certificate.setCertifierName( secondaryAttribute.getCertificate( ).getCertifierName( ) );
                         certificate.setCertificateLevel( secondaryAttribute.getCertificate( ).getCertificateLevel( ) );
@@ -521,14 +553,12 @@ public class IdentityService
         response.getAttributeStatuses( ).forEach( attributeStatus -> {
             AttributeChange attributeChange = IdentityStoreNotifyListenerService.buildAttributeChange( AttributeChangeType.MERGE, primaryIdentity,
                     attributeStatus, identityMergeRequest.getOrigin( ), applicationCode );
-            IdentityStoreNotifyListenerService.instance( ).notifyListenersAttributeChange( attributeChange );
+            _identityStoreNotifyListenerService.notifyListenersAttributeChange( attributeChange );
         } );
 
         /* Indexation */
-        final Map<String, AttributeObject> attributeObjects = this.mapToIndexObject( primaryIdentity );
-        _identityIndexer.delete( secondaryIdentity.getCustomerId( ) );
-        _identityIndexer.update( new IdentityObject( primaryIdentity.getConnectionId( ), primaryIdentity.getCustomerId( ), primaryIdentity.getCreationDate( ),
-                primaryIdentity.getLastUpdateDate( ), attributeObjects ) );
+        _identityStoreNotifyListenerService.notifyListenersIdentityChange( new IdentityChange( secondaryIdentity, IdentityChangeType.DELETE ) );
+        _identityStoreNotifyListenerService.notifyListenersIdentityChange( new IdentityChange( primaryIdentity, IdentityChangeType.UPDATE ) );
 
         return primaryIdentity;
     }
@@ -537,17 +567,20 @@ public class IdentityService
      * Imports an {@link Identity} according to the given {@link IdentityChangeRequest}
      *
      * @param identityChangeRequest
+     *            the {@link IdentityChangeRequest} holding the parameters of the identity change request
      * @param applicationCode
      *            code of the {@link ClientApplication} requesting the change
      * @param response
-     * @return
+     *            the {@link IdentityChangeResponse} holding the status of the execution of the request
+     * @return the imported {@link Identity}
      * @throws IdentityStoreException
+     *             in case of error
      */
     public Identity importIdentity( final IdentityChangeRequest identityChangeRequest, final String applicationCode, final IdentityChangeResponse response )
             throws IdentityStoreException
     {
         final Map<String, String> attributes = identityChangeRequest.getIdentity( ).getAttributes( ).stream( )
-                .collect( Collectors.toMap( CertifiedAttribute::getKey, certifiedAttribute -> certifiedAttribute.getValue( ) ) );
+                .collect( Collectors.toMap( CertifiedAttribute::getKey, CertifiedAttribute::getValue ) );
 
         final DuplicateDto certitudeDuplicates = _duplicateServiceImportCertitude.findDuplicates( attributes );
         if ( certitudeDuplicates != null && CollectionUtils.isNotEmpty( certitudeDuplicates.getIdentities( ) ) )
@@ -562,7 +595,7 @@ public class IdentityService
         if ( suspicionDuplicates != null && CollectionUtils.isNotEmpty( suspicionDuplicates.getIdentities( ) ) )
         {
             response.setStatus( IdentityChangeStatus.CONFLICT );
-            response.setDuplicates( suspicionDuplicates );
+            // response.setDuplicates( suspicionDuplicates );
             response.setMessage( "Found duplicates" );
         }
         else
@@ -578,6 +611,7 @@ public class IdentityService
      * filtered list.
      * 
      * @param response
+     *            the {@link IdentitySearchResponse} holding the status of the execution of the request
      * @param applicationCode
      *            code of the {@link ClientApplication} requesting the change
      * @param qualifiedIdentities
@@ -586,7 +620,7 @@ public class IdentityService
     public void getQualifiedIdentitiesFilteredForReading( final IdentitySearchResponse response, final String applicationCode,
             final List<QualifiedIdentity> qualifiedIdentities ) throws ServiceContractNotFoundException
     {
-        final ServiceContract serviceContract = ServiceContractService.instance( ).getActiveServiceContract( applicationCode );
+        final ServiceContract serviceContract = _serviceContractService.getActiveServiceContract( applicationCode );
         final List<QualifiedIdentity> filteredIdentities = qualifiedIdentities.stream( ).peek( qualifiedIdentity -> {
             final List<fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.search.CertifiedAttribute> filteredAttributeValues = qualifiedIdentity
                     .getAttributes( ).stream( ).filter( certifiedAttribute -> {
@@ -605,26 +639,6 @@ public class IdentityService
                             response.getAlerts( ).add( alert );
                         }
                         return canReadAttribute;
-                    } ).filter( attributeValue -> {
-                        final boolean hasRequiredLevel = serviceContract.getAttributeRequirements( ).stream( ).anyMatch(
-                                attributeRequirement -> StringUtils.equals( attributeRequirement.getAttributeKey( ).getKeyName( ), attributeValue.getKey( ) )
-                                        && ( ( attributeValue.getCertificationLevel( ) == null
-                                                && attributeRequirement.getRefCertificationLevel( ).getLevel( ) == null ) )
-                                        || ( attributeValue.getCertificationLevel( ) != null
-                                                && Integer.parseInt( attributeRequirement.getRefCertificationLevel( ).getLevel( ) ) <= attributeValue
-                                                        .getCertificationLevel( ) ) );
-
-                        // TODO voir si on met des alert directement dans l'identité
-                        if ( !hasRequiredLevel )
-                        {
-                            final IdentitySearchMessage alert = new IdentitySearchMessage( );
-                            alert.setAttributeName( attributeValue.getKey( ) );
-                            alert.setAttributeValues( attributeValue.getValue( ) );
-                            alert.setMessage( "Identity " + qualifiedIdentity.getCustomerId( )
-                                    + " The certification level for this attribute is below the minimum level required by the service contract." );
-                            response.getAlerts( ).add( alert );
-                        }
-                        return hasRequiredLevel;
                     } ).collect( Collectors.toList( ) );
             qualifiedIdentity.getAttributes( ).clear( );
             qualifiedIdentity.getAttributes( ).addAll( filteredAttributeValues );
@@ -635,10 +649,7 @@ public class IdentityService
 
     public void fullIndexing( )
     {
-        final List<IdentityObject> identities = IdentityHome.findAll( ).stream( ).filter( i -> !i.isDeleted( ) && !i.isMerged( ) ).map(
-                i -> new IdentityObject( i.getConnectionId( ), i.getCustomerId( ), i.getCreationDate( ), i.getLastUpdateDate( ), this.mapToIndexObject( i ) ) )
-                .collect( Collectors.toList( ) );
-        _identityIndexer.fullIndex( identities );
+        new FullIndexTask( ).run( );
     }
 
     public AttributeKey getAttributeKey( final String keyName ) throws IdentityAttributeNotFoundException
@@ -664,47 +675,17 @@ public class IdentityService
         _cache.removeKey( attributeKey.getKeyName( ) );
     }
 
-    private Map<String, AttributeObject> mapToIndexObject( final Identity identity )
-    {
-        return identity.getAttributes( ).values( ).stream( )
-                .map( attribute -> new AttributeObject( attribute.getAttributeKey( ).getName( ), attribute.getAttributeKey( ).getKeyName( ),
-                        attribute.getAttributeKey( ).getKeyType( ).getCode( ), attribute.getValue( ), attribute.getAttributeKey( ).getDescription( ),
-                        attribute.getAttributeKey( ).getPivot( ), attribute.getCertificate( ) != null ? attribute.getCertificate( ).getCertifierCode( ) : null,
-                        attribute.getCertificate( ) != null ? attribute.getCertificate( ).getCertifierName( ) : null,
-                        attribute.getCertificate( ) != null ? attribute.getCertificate( ).getCertificateDate( ) : null,
-                        attribute.getCertificate( ) != null ? attribute.getCertificate( ).getCertificateLevel( ) : null,
-                        attribute.getCertificate( ) != null ? attribute.getCertificate( ).getExpirationDate( ) : null,
-                        attribute.getLastUpdateApplicationCode( ) ) )
-                .collect( Collectors.toMap( AttributeObject::getKey, o -> o ) );
-    }
-
-    public void search( IdentitySearchRequest identitySearchRequest, IdentitySearchResponse response, final String applicationCode )
+    public void search( final IdentitySearchRequest identitySearchRequest, final IdentitySearchResponse response, final String applicationCode )
             throws ServiceContractNotFoundException
     {
         final List<SearchAttribute> searchAttributes = identitySearchRequest.getSearch( ).getAttributes( ).stream( )
                 .map( dto -> new SearchAttribute( dto.getKey( ), dto.getValue( ), dto.isStrict( ) ) ).collect( Collectors.toList( ) );
         final Response search = _identitySearcher.search( searchAttributes );
-        final List<QualifiedIdentity> identities = new ArrayList<>( );
-        search.getResult( ).getHits( ).forEach( hit -> {
-            final QualifiedIdentity identity = new QualifiedIdentity( );
-            final IdentityObject source = hit.getSource( );
-            identity.setConnectionId( source.getConnectionId( ) );
-            identity.setCustomerId( source.getCustomerId( ) );
-            // TODO manque creation date et last update date
-            identity.setQuality( hit.getScore( ) );
-            source.getAttributes( ).forEach( ( s, attributeObject ) -> {
-                final fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.search.CertifiedAttribute attribute = new fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.search.CertifiedAttribute( );
-                attribute.setKey( s );
-                attribute.setValue( attributeObject.getValue( ) );
-                attribute.setType( attributeObject.getType( ) );
-                attribute.setCertifier( attributeObject.getCertifierCode( ) );
-                attribute.setCertificationDate( attributeObject.getCertificateDate( ) );
-                attribute.setCertificationLevel( attribute.getCertificationLevel( ) );
-                identity.getAttributes( ).add( attribute );
-            } );
-            identities.add( identity );
-        } );
-        // TODO calculer le taux de couverture
-        this.getQualifiedIdentitiesFilteredForReading( response, applicationCode, identities );
+        if ( search != null )
+        {
+            final List<QualifiedIdentity> identities = new ArrayList<>( );
+            search.getResult( ).getHits( ).forEach( hit -> identities.add( IdentityObjectMapper.toQualifiedIdentity( hit, searchAttributes ) ) );
+            this.getQualifiedIdentitiesFilteredForReading( response, applicationCode, identities );
+        }
     }
 }

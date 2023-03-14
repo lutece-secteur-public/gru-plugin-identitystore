@@ -37,7 +37,7 @@ import fr.paris.lutece.portal.service.util.AppLogService;
 
 public class ElasticClientException extends Exception
 {
-    public ElasticClientException( String strMessage, Throwable exception )
+    public ElasticClientException( final String strMessage, final Throwable exception )
     {
         super( strMessage, exception );
         AppLogService.error( strMessage, exception );

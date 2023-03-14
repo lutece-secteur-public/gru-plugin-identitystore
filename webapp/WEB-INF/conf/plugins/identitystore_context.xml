@@ -18,6 +18,9 @@
     <bean id="identitystore.refCertificationLevelDAO" class="fr.paris.lutece.plugins.identitystore.business.referentiel.RefCertificationLevelDAO" />
     <bean id="identitystore.refAttributeCertificationLevelDAO" class="fr.paris.lutece.plugins.identitystore.business.referentiel.RefAttributeCertificationLevelDAO" />
     <bean id="identitystore.refAttributeCertificationProcessusDAO" class="fr.paris.lutece.plugins.identitystore.business.referentiel.RefAttributeCertificationProcessusDAO" />
+    <bean id="identitystore.identityObjectDAO" class="fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.business.IdentityObjectDAO" />
+    <bean id="geocodes.countryDAO" class="fr.paris.lutece.plugins.identitystore.business.geocodes.CountryDAO" />
+    <bean id="geocodes.cityDAO" class="fr.paris.lutece.plugins.identitystore.business.geocodes.CityDAO" />
 
     <!-- Cache -->
     <bean id="identitystore.activeServiceContractCache"  class="fr.paris.lutece.plugins.identitystore.cache.ActiveServiceContractCache"/>
@@ -40,6 +43,10 @@
         <constructor-arg name="_searchIdentityService" ref="identitystore.db.searchIdentityService"/>
         <constructor-arg name="_prefix" value="identitystore.identity.duplicates.creation"/>
     </bean>
+    <bean id="identitystore.duplicateService.update" class="fr.paris.lutece.plugins.identitystore.service.duplicate.DuplicateService" >
+        <constructor-arg name="_searchIdentityService" ref="identitystore.db.searchIdentityService"/>
+        <constructor-arg name="_prefix" value="identitystore.identity.duplicates.update"/>
+    </bean>
     <bean id="identitystore.duplicateService.import.certitude" class="fr.paris.lutece.plugins.identitystore.service.duplicate.DuplicateService" >
         <constructor-arg name="_searchIdentityService" ref="identitystore.searchIdentityService"/>
         <constructor-arg name="_prefix" value="identitystore.identity.duplicates.import.certitude"/>
@@ -52,6 +59,9 @@
     <!-- Logging -->
     <bean id="identitystore.listener.logging" class="fr.paris.lutece.plugins.identitystore.service.listeners.LoggingListener" />
     <bean id="identitystore.listener.databaseLogging" class="fr.paris.lutece.plugins.identitystore.service.listeners.DatabaseLoggingListener" />
+    <bean id="identitystore.listener.index" class="fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.listener.IdentityIndexListener" >
+        <constructor-arg ref="identitystore.identityIndexer" name="_identityIndexer"/>
+    </bean>
 
     <!-- Listeners & External -->
     <bean id="identitystore.attributes.changelisteners.list" class="java.util.ArrayList">
@@ -65,6 +75,7 @@
     <bean id="identitystore.identity.changelisteners.list" class="java.util.ArrayList">
         <constructor-arg>
             <list>
+                <ref bean="identitystore.listener.index" />
             </list>
         </constructor-arg>
     </bean>
@@ -86,6 +97,8 @@
     <bean id="identitystore.v2.identityStoreRestService"  class="fr.paris.lutece.plugins.identitystore.v2.web.rs.IdentityStoreRestService" />
     <bean id="identitystore.v3.identityStoreRestService"  class="fr.paris.lutece.plugins.identitystore.v3.web.rs.IdentityStoreRestService" />
     <bean id="identitystore.swaggerRest"  class="fr.paris.lutece.plugins.identitystore.v2.web.rs.swagger.SwaggerRest" />
-    <bean id="identitystore.serviceContractRest" class="fr.paris.lutece.plugins.identitystore.web.rs.ServiceContractRestService" />
+    <bean id="identitystore.serviceContractRest" class="fr.paris.lutece.plugins.identitystore.v3.web.rs.ServiceContractRestService" />
+    <bean id="geocodes.countryRest" class="fr.paris.lutece.plugins.identitystore.v3.web.rs.CountryRest" />
+    <bean id="geocodes.cityRest" class="fr.paris.lutece.plugins.identitystore.v3.web.rs.CityRest" />
 
 </beans>

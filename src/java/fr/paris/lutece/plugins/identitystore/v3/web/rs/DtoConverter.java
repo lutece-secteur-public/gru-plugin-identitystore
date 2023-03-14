@@ -35,6 +35,10 @@ package fr.paris.lutece.plugins.identitystore.v3.web.rs;
 
 import fr.paris.lutece.plugins.identitystore.business.attribute.AttributeCertificate;
 import fr.paris.lutece.plugins.identitystore.business.attribute.AttributeKey;
+import fr.paris.lutece.plugins.identitystore.business.contract.AttributeCertification;
+import fr.paris.lutece.plugins.identitystore.business.contract.AttributeRequirement;
+import fr.paris.lutece.plugins.identitystore.business.contract.AttributeRight;
+import fr.paris.lutece.plugins.identitystore.business.contract.ServiceContract;
 import fr.paris.lutece.plugins.identitystore.business.identity.Identity;
 import fr.paris.lutece.plugins.identitystore.business.identity.IdentityAttribute;
 import fr.paris.lutece.plugins.identitystore.service.ChangeAuthor;
@@ -43,6 +47,10 @@ import fr.paris.lutece.plugins.identitystore.service.certifier.CertifierRegistry
 import fr.paris.lutece.plugins.identitystore.v2.web.rs.AuthorType;
 import fr.paris.lutece.plugins.identitystore.v2.web.rs.dto.AuthorDto;
 import fr.paris.lutece.plugins.identitystore.v2.web.rs.dto.CertificateDto;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.contract.AttributeDefinitionDto;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.contract.AttributeType;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.contract.CertificationProcessus;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.contract.ServiceContractDto;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.search.CertifiedAttribute;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.search.QualifiedIdentity;
 import fr.paris.lutece.portal.service.util.AppException;
@@ -50,7 +58,10 @@ import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -73,7 +84,7 @@ public final class DtoConverter
      *            business identity to convert
      * @return identityDto initialized from provided identity
      */
-    public static QualifiedIdentity convertToDto( final Identity identity )
+    public static QualifiedIdentity convertIdentityToDto( final Identity identity )
     {
         final QualifiedIdentity qualifiedIdentity = new QualifiedIdentity( );
         qualifiedIdentity.setConnectionId( identity.getConnectionId( ) );
@@ -103,6 +114,111 @@ public final class DtoConverter
         }
 
         return qualifiedIdentity;
+    }
+
+    /**
+     * returns a serviceContractDto initialized from provided serviceContract
+     *
+     * @param serviceContract
+     *            business service contract to convert
+     * @return serviceContractDto initialized from provided serviceContract
+     */
+    public static ServiceContractDto convertContractToDto( final ServiceContract serviceContract )
+    {
+        final ServiceContractDto serviceContractDto = new ServiceContractDto( );
+        serviceContractDto.setName( serviceContract.getName( ) );
+        serviceContractDto.setServiceType( serviceContract.getServiceType( ) );
+        serviceContractDto.setContactName( serviceContract.getContactName( ) );
+        serviceContractDto.setOrganizationalEntity( serviceContract.getOrganizationalEntity( ) );
+        serviceContractDto.setResponsibleName( serviceContract.getResponsibleName( ) );
+        serviceContractDto.setStartingDate( serviceContract.getStartingDate( ) );
+        serviceContractDto.setEndingDate( serviceContract.getEndingDate( ) );
+        serviceContractDto.setAuthorizedAccountUpdate( serviceContract.getAuthorizedAccountUpdate( ) );
+        serviceContractDto.setAuthorizedDeletion( serviceContract.getAuthorizedDeletion( ) );
+        serviceContractDto.setAuthorizedExport( serviceContract.getAuthorizedExport( ) );
+        serviceContractDto.setAuthorizedImport( serviceContract.getAuthorizedImport( ) );
+        serviceContractDto.setAuthorizedMerge( serviceContract.getAuthorizedMerge( ) );
+        serviceContractDto.setIsAuthorizedDeleteCertificate( serviceContract.getAuthorizedDeleteCertificate( ) );
+        serviceContractDto.setIsAuthorizedDeleteValue( serviceContract.getAuthorizedDeleteValue( ) );
+
+        final List<AttributeDefinitionDto> attributeDefinitions = new ArrayList<>( );
+
+        for ( final AttributeRight attributeRight : serviceContract.getAttributeRights( ) )
+        {
+            final AttributeDefinitionDto attributeDefinitionDto = new AttributeDefinitionDto( );
+            attributeDefinitionDto.setName( attributeRight.getAttributeKey( ).getName( ) );
+            attributeDefinitionDto.setKeyName( attributeRight.getAttributeKey( ).getKeyName( ) );
+            attributeDefinitionDto.setDescription( attributeRight.getAttributeKey( ).getDescription( ) );
+            attributeDefinitionDto.setType( AttributeType.valueOf( attributeRight.getAttributeKey( ).getKeyType( ).name( ) ) );
+            attributeDefinitionDto.setCertifiable( attributeRight.getAttributeKey( ).getCertifiable( ) );
+            attributeDefinitionDto.setPivot( attributeRight.getAttributeKey( ).getPivot( ) );
+            attributeDefinitionDto.setKeyWeight( attributeRight.getAttributeKey( ).getKeyWeight( ) );
+            attributeDefinitionDto.setAttributeRight( new fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.contract.AttributeRight( ) );
+            attributeDefinitionDto.getAttributeRight( ).setReadable( attributeRight.isReadable( ) );
+            attributeDefinitionDto.getAttributeRight( ).setSearchable( attributeRight.isSearchable( ) );
+            attributeDefinitionDto.getAttributeRight( ).setWritable( attributeRight.isWritable( ) );
+            attributeDefinitions.add( attributeDefinitionDto );
+        }
+
+        for ( final AttributeCertification attributeCertification : serviceContract.getAttributeCertifications( ) )
+        {
+            AttributeDefinitionDto current = attributeDefinitions.stream( )
+                    .filter( attributeDefinitionDto -> attributeDefinitionDto.getKeyName( ).equals( attributeCertification.getAttributeKey( ).getKeyName( ) ) )
+                    .findFirst( ).orElse( null );
+            if ( current == null )
+            {
+                current = new AttributeDefinitionDto( );
+                current.setName( attributeCertification.getAttributeKey( ).getName( ) );
+                current.setKeyName( attributeCertification.getAttributeKey( ).getKeyName( ) );
+                current.setDescription( attributeCertification.getAttributeKey( ).getDescription( ) );
+                current.setType( AttributeType.valueOf( attributeCertification.getAttributeKey( ).getKeyType( ).name( ) ) );
+                current.setCertifiable( attributeCertification.getAttributeKey( ).getCertifiable( ) );
+                current.setPivot( attributeCertification.getAttributeKey( ).getPivot( ) );
+                current.setKeyWeight( attributeCertification.getAttributeKey( ).getKeyWeight( ) );
+                attributeDefinitions.add( current );
+            }
+
+            final List<CertificationProcessus> certificationProcessuses = attributeCertification.getRefAttributeCertificationProcessus( ).stream( )
+                    .map( ref -> {
+                        final CertificationProcessus certificationProcessus = new CertificationProcessus( );
+                        certificationProcessus.setCode( ref.getCode( ) );
+                        certificationProcessus.setLabel( ref.getLabel( ) );
+                        certificationProcessus.setLevel( ref.getLevel( ).getRefCertificationLevel( ).getLevel( ) );
+                        return certificationProcessus;
+                    } ).collect( Collectors.toList( ) );
+            current.getAttributeCertifications( ).addAll( certificationProcessuses );
+        }
+
+        // TODO améliorer car la remontée n'est pas optimale pour ce UC
+        final List<AttributeRequirement> attributeRequirements = serviceContract.getAttributeRequirements( ).stream( )
+                .filter( attributeRequirement -> attributeRequirement.getRefCertificationLevel( ).getLevel( ) != null ).collect( Collectors.toList( ) );
+        for ( final AttributeRequirement attributeRequirement : attributeRequirements )
+        {
+            AttributeDefinitionDto current = attributeDefinitions.stream( )
+                    .filter( attributeDefinitionDto -> attributeDefinitionDto.getKeyName( ).equals( attributeRequirement.getAttributeKey( ).getKeyName( ) ) )
+                    .findFirst( ).orElse( null );
+            if ( current == null )
+            {
+                current = new AttributeDefinitionDto( );
+                current.setName( attributeRequirement.getAttributeKey( ).getName( ) );
+                current.setKeyName( attributeRequirement.getAttributeKey( ).getKeyName( ) );
+                current.setDescription( attributeRequirement.getAttributeKey( ).getDescription( ) );
+                current.setType( AttributeType.valueOf( attributeRequirement.getAttributeKey( ).getKeyType( ).name( ) ) );
+                current.setCertifiable( attributeRequirement.getAttributeKey( ).getCertifiable( ) );
+                current.setPivot( attributeRequirement.getAttributeKey( ).getPivot( ) );
+                current.setKeyWeight( attributeRequirement.getAttributeKey( ).getKeyWeight( ) );
+                attributeDefinitions.add( current );
+            }
+            fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.contract.AttributeRequirement requirement = new fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.contract.AttributeRequirement( );
+            requirement.setLevel( attributeRequirement.getRefCertificationLevel( ).getLevel( ) );
+            requirement.setName( attributeRequirement.getRefCertificationLevel( ).getName( ) );
+            requirement.setDescription( attributeRequirement.getRefCertificationLevel( ).getDescription( ) );
+            current.setAttributeRequirement( requirement );
+        }
+
+        serviceContractDto.getAttributeDefinitions( ).addAll( attributeDefinitions );
+
+        return serviceContractDto;
     }
 
     /**

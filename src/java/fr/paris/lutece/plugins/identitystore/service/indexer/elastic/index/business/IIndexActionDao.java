@@ -41,9 +41,11 @@ public interface IIndexActionDao
 {
     String BEAN_NAME = "identitystore.indexActionDAO";
 
-    void insert( IndexAction indexAction, Plugin plugin );
+    void insert( final IndexAction indexAction, final Plugin plugin );
 
-    void delete( IndexAction indexAction, Plugin plugin );
+    void delete( final IndexAction indexAction, final Plugin plugin );
 
-    List<IndexAction> select( int limit, Plugin plugin );
+    List<IndexAction> select( int limit, final Plugin plugin );
+
+    List<IndexAction> selectAll( Plugin plugin );
 }

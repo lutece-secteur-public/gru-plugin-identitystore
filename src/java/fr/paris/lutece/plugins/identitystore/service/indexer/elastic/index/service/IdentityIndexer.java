@@ -33,53 +33,57 @@
  */
 package fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.client.ElasticClient;
 import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.client.ElasticClientException;
 import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.business.IndexAction;
 import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.business.IndexActionHome;
 import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.business.IndexActionType;
 import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.model.IdentityObject;
+import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.model.internal.BulkAction;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.util.Iterator;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class IdentityIndexer implements IIdentityIndexer
 {
 
     private static Logger logger = Logger.getLogger( IdentityIndexer.class );
-    private static String INDEX = "identities";
     private ElasticClient _elasticClient;
 
-    public IdentityIndexer( String strServerUrl, String strLogin, String strPassword )
+    public IdentityIndexer( final String strServerUrl, final String strLogin, final String strPassword )
     {
         this._elasticClient = new ElasticClient( strServerUrl, strLogin, strPassword );
     }
 
-    public IdentityIndexer( String strServerUrl )
+    public IdentityIndexer( final String strServerUrl )
     {
         this._elasticClient = new ElasticClient( strServerUrl );
     }
 
     @Override
-    public void create( IdentityObject identity )
+    public void create( final IdentityObject identity, final String index )
     {
         try
         {
-            if ( !this._elasticClient.isExists( INDEX ) )
+            if ( !this._elasticClient.isExists( IIdentityIndexer.CURRENT_INDEX_ALIAS ) )
             {
-                final InputStream inputStream = this.getClass( ).getClassLoader( )
-                        .getResourceAsStream( "fr/paris/lutece/plugins/identitystore/service/indexer/elastic/index/model/internal/mappings.json" );
-                final String mappings = new BufferedReader( new InputStreamReader( inputStream, StandardCharsets.UTF_8 ) ).lines( )
-                        .collect( Collectors.joining( "\n" ) );
-                this._elasticClient.createMappings( INDEX, mappings );
+                final String newIndex = "identities-" + UUID.randomUUID( );
+                this.initIndex( newIndex );
+                this.createOrUpdateAlias( "", newIndex, IIdentityIndexer.CURRENT_INDEX_ALIAS );
             }
 
-            final String response = this._elasticClient.create( INDEX, identity.getCustomerId( ), identity );
+            final String response = this._elasticClient.create( IIdentityIndexer.CURRENT_INDEX_ALIAS, identity.getCustomerId( ), identity );
             logger.info( "Indexed document: " + response );
         }
         catch( final ElasticClientException e )
@@ -90,14 +94,35 @@ public class IdentityIndexer implements IIdentityIndexer
     }
 
     @Override
-    public void update( IdentityObject identity )
+    public void bulk( final List<BulkAction> bulkActions, final String index )
     {
         try
         {
-            final String response = this._elasticClient.update( INDEX, identity.getCustomerId( ), identity );
+            final String response = this._elasticClient.indexByBulk( index, bulkActions );
             logger.info( "Indexed document: " + response );
         }
-        catch( ElasticClientException e )
+        catch( final ElasticClientException e )
+        {
+            logger.error( "Failed to bulk index ", e );
+        }
+    }
+
+    @Override
+    public void update( final IdentityObject identity, final String index )
+    {
+        try
+        {
+            if ( !this._elasticClient.isExists( IIdentityIndexer.CURRENT_INDEX_ALIAS ) )
+            {
+                final String newIndex = "identities-" + UUID.randomUUID( );
+                this.initIndex( newIndex );
+                this.createOrUpdateAlias( "", newIndex, IIdentityIndexer.CURRENT_INDEX_ALIAS );
+            }
+
+            final String response = this._elasticClient.update( IIdentityIndexer.CURRENT_INDEX_ALIAS, identity.getCustomerId( ), identity );
+            logger.info( "Indexed document: " + response );
+        }
+        catch( final ElasticClientException e )
         {
             this.handleError( identity.getCustomerId( ), IndexActionType.UPDATE );
             logger.error( "Failed to index ", e );
@@ -105,14 +130,14 @@ public class IdentityIndexer implements IIdentityIndexer
     }
 
     @Override
-    public void delete( String documentId )
+    public void delete( final String documentId, final String index )
     {
         try
         {
-            final String response = this._elasticClient.deleteDocument( INDEX, documentId );
+            final String response = this._elasticClient.deleteDocument( IIdentityIndexer.CURRENT_INDEX_ALIAS, documentId );
             logger.info( "Removed document: " + response );
         }
-        catch( ElasticClientException e )
+        catch( final ElasticClientException e )
         {
             this.handleError( documentId, IndexActionType.DELETE );
             logger.error( "Failed to remove document ", e );
@@ -120,34 +145,111 @@ public class IdentityIndexer implements IIdentityIndexer
     }
 
     @Override
-    public void fullIndex( List<IdentityObject> identities )
+    public void initIndex( final String index ) throws ElasticClientException
     {
+        final InputStream inputStream = this.getClass( ).getClassLoader( )
+                .getResourceAsStream( "fr/paris/lutece/plugins/identitystore/service/indexer/elastic/index/model/internal/mappings.json" );
+        final String mappings = new BufferedReader( new InputStreamReader( inputStream, StandardCharsets.UTF_8 ) ).lines( )
+                .collect( Collectors.joining( "\n" ) );
+        this._elasticClient.createMappings( index, mappings );
+    }
+
+    @Override
+    public void deleteIndex( final String index ) throws ElasticClientException
+    {
+        this._elasticClient.deleteIndex( index );
+    }
+
+    @Override
+    public void makeIndexReadOnly( final String index ) throws ElasticClientException
+    {
+        final String settings = "{ \"index.blocks.write\": true }";
+        this._elasticClient.updateSettings( index, settings );
+    }
+
+    @Override
+    public void createOrUpdateAlias( final String oldIndex, final String newIndex, final String alias )
+    {
+        boolean aliasExists = false;
         try
         {
-            if ( this._elasticClient.isExists( INDEX ) )
+            aliasExists = this._elasticClient.getAlias( alias ) != null;
+        }
+        catch( final ElasticClientException e )
+        {
+            aliasExists = false;
+        }
+
+        try
+        {
+            if ( aliasExists )
             {
-                this._elasticClient.deleteIndex( INDEX );
+                if ( StringUtils.isNotEmpty( oldIndex ) )
+                {
+                    this._elasticClient.deleteAlias( oldIndex, alias );
+                }
+                else
+                {
+                    this._elasticClient.deleteAlias( "*", alias );
+                }
             }
-            final InputStream inputStream = this.getClass( ).getClassLoader( )
-                    .getResourceAsStream( "fr/paris/lutece/plugins/identitystore/service/indexer/elastic/index/model/internal/mappings.json" );
-            final String mappings = new BufferedReader( new InputStreamReader( inputStream, StandardCharsets.UTF_8 ) ).lines( )
-                    .collect( Collectors.joining( "\n" ) );
-            this._elasticClient.createMappings( INDEX, mappings );
-            // TODO bulk request pour optimiser
-            identities.forEach( identityObject -> this.create( identityObject ) );
+
+            if ( StringUtils.isNotEmpty( newIndex ) )
+            {
+                this._elasticClient.createAlias( newIndex, alias );
+            }
         }
         catch( ElasticClientException e )
         {
-            logger.error( "Failed to reindex", e );
+            throw new RuntimeException( e );
         }
     }
 
+    @Override
+    public String getIndexBehindAlias( final String alias )
+    {
+        try
+        {
+            final String response = this._elasticClient.getAlias( alias );
+            final ObjectMapper mapper = new ObjectMapper( );
+            final JsonNode node = mapper.readTree( response );
+
+            if ( node != null )
+            {
+                final Iterator<String> iterator = node.fieldNames( );
+                if ( iterator != null && iterator.hasNext( ) )
+                {
+                    return iterator.next( );
+                }
+            }
+        }
+        catch( ElasticClientException | JsonProcessingException e )
+        {
+            return null;
+        }
+        return null;
+    }
+
+    @Override
     public boolean isAlive( )
     {
         return _elasticClient.isAlive( );
     }
 
-    private void handleError( String documentId, IndexActionType actionType )
+    @Override
+    public boolean indexExists( final String index )
+    {
+        try
+        {
+            return _elasticClient.isExists( index );
+        }
+        catch( ElasticClientException e )
+        {
+            return false;
+        }
+    }
+
+    private void handleError( final String documentId, final IndexActionType actionType )
     {
         final IndexAction indexAction = new IndexAction( actionType, documentId );
         IndexActionHome.create( indexAction );

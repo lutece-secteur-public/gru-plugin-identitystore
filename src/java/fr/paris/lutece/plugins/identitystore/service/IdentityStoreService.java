@@ -415,7 +415,7 @@ public final class IdentityStoreService
                 }
             }
 
-            qualifiedIdentities.add( fr.paris.lutece.plugins.identitystore.v3.web.rs.DtoConverter.convertToDto( identity ) );
+            qualifiedIdentities.add( fr.paris.lutece.plugins.identitystore.v3.web.rs.DtoConverter.convertIdentityToDto( identity ) );
         }
 
         return qualifiedIdentities;

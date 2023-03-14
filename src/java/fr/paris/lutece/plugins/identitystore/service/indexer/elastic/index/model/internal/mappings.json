@@ -22,6 +22,14 @@
             "attributes.email_login.value" : {
                 "type" : "text",
                 "analyzer" : "email_analyzer"
+            },
+            "attributes.birthdate.value" : {
+                "type" : "text",
+                "analyzer" : "keyword"
+            },
+            "attributes.first_name.value" : {
+                "type" : "text",
+                "analyzer" : "whitespace"
             }
         }
     }

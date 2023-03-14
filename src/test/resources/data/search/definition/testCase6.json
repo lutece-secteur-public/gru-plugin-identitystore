@@ -1,0 +1,337 @@
+{
+  "testDefinition": {
+    "name": "Recherche :: Test 6",
+    "test": {
+      "attributes": [
+        {
+          "key": "family_name",
+          "value": "Lambert",
+          "type": "string"
+        },
+        {
+          "key": "first_name",
+          "value": "Alexandre",
+          "type": "string"
+        },
+        {
+          "key": "birthdate",
+          "value": "07/07/1977",
+          "type": "string"
+        }
+      ]
+    },
+    "inputs": [
+      {
+        "name": "Identité 1",
+        "attributes": [
+          {
+            "key": "gender",
+            "value": "1",
+            "type": "string"
+          },
+          {
+            "key": "family_name",
+            "value": "Lambert",
+            "type": "string"
+          },
+          {
+            "key": "first_name",
+            "value": "Alexandre",
+            "type": "string"
+          },
+          {
+            "key": "birthdate",
+            "value": "07/07/1977",
+            "type": "string"
+          },
+          {
+            "key": "insee_birthplace_code",
+            "value": "78644",
+            "type": "string"
+          },
+          {
+            "key": "insee_birthcountry_code",
+            "value": "99100",
+            "type": "string"
+          }
+        ]
+      },
+      {
+        "name": "Identité 2",
+        "attributes": [
+          {
+            "key": "gender",
+            "value": "1",
+            "type": "string"
+          },
+          {
+            "key": "family_name",
+            "value": "Lambert",
+            "type": "string"
+          },
+          {
+            "key": "first_name",
+            "value": "Alexandra",
+            "type": "string"
+          },
+          {
+            "key": "birthdate",
+            "value": "07/07/1977",
+            "type": "string"
+          },
+          {
+            "key": "insee_birthplace_code",
+            "value": "78644",
+            "type": "string"
+          },
+          {
+            "key": "insee_birthcountry_code",
+            "value": "99100",
+            "type": "string"
+          }
+        ]
+      },{
+        "name": "Identité 3",
+        "attributes": [
+          {
+            "key": "gender",
+            "value": "1",
+            "type": "string"
+          },
+          {
+            "key": "family_name",
+            "value": "Lanbert",
+            "type": "string"
+          },
+          {
+            "key": "first_name",
+            "value": "Alexandre",
+            "type": "string"
+          },
+          {
+            "key": "birthdate",
+            "value": "07/07/1977",
+            "type": "string"
+          },
+          {
+            "key": "insee_birthplace_code",
+            "value": "78644",
+            "type": "string"
+          },
+          {
+            "key": "insee_birthcountry_code",
+            "value": "99100",
+            "type": "string"
+          }
+        ]
+      },{
+        "name": "Identité 4",
+        "attributes": [
+          {
+            "key": "gender",
+            "value": "1",
+            "type": "string"
+          },
+          {
+            "key": "family_name",
+            "value": "Lambert",
+            "type": "string"
+          },
+          {
+            "key": "first_name",
+            "value": "Alexandre",
+            "type": "string"
+          },
+          {
+            "key": "birthdate",
+            "value": "07/07/1977",
+            "type": "string"
+          }
+        ]
+      },{
+        "name": "Identité 5",
+        "attributes": [
+          {
+            "key": "gender",
+            "value": "1",
+            "type": "string"
+          },
+          {
+            "key": "family_name",
+            "value": "Lambert",
+            "type": "string"
+          },
+          {
+            "key": "first_name",
+            "value": "Alexandre",
+            "type": "string"
+          },
+          {
+            "key": "birthdate",
+            "value": "09/09/1999",
+            "type": "string"
+          },
+          {
+            "key": "insee_birthplace_code",
+            "value": "91132",
+            "type": "string"
+          },
+          {
+            "key": "insee_birthcountry_code",
+            "value": "99100",
+            "type": "string"
+          }
+        ]
+      },{
+        "name": "Identité 6",
+        "attributes": [
+          {
+            "key": "family_name",
+            "value": "Lanbert",
+            "type": "string"
+          },
+          {
+            "key": "first_name",
+            "value": "Alexandra",
+            "type": "string"
+          },
+          {
+            "key": "birthdate",
+            "value": "07/07/1977",
+            "type": "string"
+          }
+        ]
+      }
+    ],
+    "expected": [
+      {
+        "name": "Identité 1",
+        "attributes": [
+          {
+            "key": "gender",
+            "value": "1",
+            "type": "string"
+          },
+          {
+            "key": "family_name",
+            "value": "Lambert",
+            "type": "string"
+          },
+          {
+            "key": "first_name",
+            "value": "Alexandre",
+            "type": "string"
+          },
+          {
+            "key": "birthdate",
+            "value": "07/07/1977",
+            "type": "string"
+          },
+          {
+            "key": "insee_birthplace_code",
+            "value": "78644",
+            "type": "string"
+          },
+          {
+            "key": "insee_birthcountry_code",
+            "value": "99100",
+            "type": "string"
+          }
+        ]
+      },
+      {
+        "name": "Identité 2",
+        "attributes": [
+          {
+            "key": "gender",
+            "value": "1",
+            "type": "string"
+          },
+          {
+            "key": "family_name",
+            "value": "Lambert",
+            "type": "string"
+          },
+          {
+            "key": "first_name",
+            "value": "Alexandra",
+            "type": "string"
+          },
+          {
+            "key": "birthdate",
+            "value": "07/07/1977",
+            "type": "string"
+          },
+          {
+            "key": "insee_birthplace_code",
+            "value": "78644",
+            "type": "string"
+          },
+          {
+            "key": "insee_birthcountry_code",
+            "value": "99100",
+            "type": "string"
+          }
+        ]
+      },{
+        "name": "Identité 3",
+        "attributes": [
+          {
+            "key": "gender",
+            "value": "1",
+            "type": "string"
+          },
+          {
+            "key": "family_name",
+            "value": "Lanbert",
+            "type": "string"
+          },
+          {
+            "key": "first_name",
+            "value": "Alexandre",
+            "type": "string"
+          },
+          {
+            "key": "birthdate",
+            "value": "07/07/1977",
+            "type": "string"
+          },
+          {
+            "key": "insee_birthplace_code",
+            "value": "78644",
+            "type": "string"
+          },
+          {
+            "key": "insee_birthcountry_code",
+            "value": "99100",
+            "type": "string"
+          }
+        ]
+      },{
+        "name": "Identité 4",
+        "attributes": [
+          {
+            "key": "gender",
+            "value": "1",
+            "type": "string"
+          },
+          {
+            "key": "family_name",
+            "value": "Lambert",
+            "type": "string"
+          },
+          {
+            "key": "first_name",
+            "value": "Alexandre",
+            "type": "string"
+          },
+          {
+            "key": "birthdate",
+            "value": "07/07/1977",
+            "type": "string"
+          }
+        ]
+      }
+    ]
+  }
+}

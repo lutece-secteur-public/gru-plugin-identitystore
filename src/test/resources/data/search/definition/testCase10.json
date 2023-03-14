@@ -1,0 +1,398 @@
+{
+  "testDefinition": {
+    "name": "Recherche :: Test 10",
+    "test": {
+      "attributes": [
+        {
+          "key": "family_name",
+          "value": "Valet",
+          "type": "string"
+        },
+        {
+          "key": "preferred_username",
+          "value": "Charles",
+          "type": "string"
+        },
+        {
+          "key": "first_name",
+          "value": "Coline",
+          "type": "string"
+        },
+        {
+          "key": "birthdate",
+          "value": "05/05/1955",
+          "type": "string"
+        },
+        {
+          "key": "insee_birthplace_code",
+          "value": "77449",
+          "type": "string"
+        },
+        {
+          "key": "insee_birthcountry_code",
+          "value": "99100",
+          "type": "string"
+        },
+        {
+          "key": "email_login",
+          "value": "coline@yopmail.com",
+          "type": "string"
+        },
+        {
+          "key": "mobile_phone",
+          "value": "0642487125",
+          "type": "string"
+        },
+        {
+          "key": "fixed_phone",
+          "value": "0102235647",
+          "type": "string"
+        }
+      ]
+    },
+    "inputs": [
+      {
+        "name": "Identité 1",
+        "attributes": [
+          {
+            "key": "preferred_username",
+            "value": "Charles",
+            "type": "string"
+          },
+          {
+            "key": "first_name",
+            "value": "Coline",
+            "type": "string"
+          },
+          {
+            "key": "birthdate",
+            "value": "05/05/1965",
+            "type": "string"
+          },
+          {
+            "key": "insee_birthplace_code",
+            "value": "77449",
+            "type": "string"
+          },
+          {
+            "key": "insee_birthcountry_code",
+            "value": "99100",
+            "type": "string"
+          },
+          {
+            "key": "email_login",
+            "value": "coline@yopmail.com",
+            "type": "string"
+          },
+          {
+            "key": "mobile_phone",
+            "value": "0642487125",
+            "type": "string"
+          },
+          {
+            "key": "fixed_phone",
+            "value": "0102235647",
+            "type": "string"
+          }
+        ]
+      },
+      {
+        "name": "Identité 2",
+        "attributes": [
+          {
+            "key": "family_name",
+            "value": "Valet",
+            "type": "string"
+          },
+          {
+            "key": "preferred_username",
+            "value": "Charle",
+            "type": "string"
+          },
+          {
+            "key": "birthdate",
+            "value": "05/05/1955",
+            "type": "string"
+          },
+          {
+            "key": "insee_birthplace_code",
+            "value": "77449",
+            "type": "string"
+          },
+          {
+            "key": "insee_birthcountry_code",
+            "value": "99100",
+            "type": "string"
+          },
+          {
+            "key": "email_login",
+            "value": "coline@yopmail.com",
+            "type": "string"
+          },
+          {
+            "key": "mobile_phone",
+            "value": "0642487125",
+            "type": "string"
+          },
+          {
+            "key": "fixed_phone",
+            "value": "0102235647",
+            "type": "string"
+          }
+        ]
+      },
+      {
+        "name": "Identité 3",
+        "attributes": [
+          {
+            "key": "family_name",
+            "value": "Valet",
+            "type": "string"
+          },
+          {
+            "key": "birthdate",
+            "value": "05/05/1955",
+            "type": "string"
+          },
+          {
+            "key": "insee_birthplace_code",
+            "value": "77449",
+            "type": "string"
+          },
+          {
+            "key": "insee_birthcountry_code",
+            "value": "99100",
+            "type": "string"
+          },
+          {
+            "key": "email_login",
+            "value": "coline@yopmail.com",
+            "type": "string"
+          },
+          {
+            "key": "mobile_phone",
+            "value": "0642487125",
+            "type": "string"
+          },
+          {
+            "key": "fixed_phone",
+            "value": "0102235647",
+            "type": "string"
+          }
+        ]
+      },
+      {
+        "name": "Identité 4",
+        "attributes": [
+          {
+            "key": "family_name",
+            "value": "Valet",
+            "type": "string"
+          },
+          {
+            "key": "preferred_username",
+            "value": "Charles",
+            "type": "string"
+          },
+          {
+            "key": "first_name",
+            "value": "Coline",
+            "type": "string"
+          },
+          {
+            "key": "birthdate",
+            "value": "05/05/1955",
+            "type": "string"
+          },
+          {
+            "key": "insee_birthcountry_code",
+            "value": "99125",
+            "type": "string"
+          },
+          {
+            "key": "mobile_phone",
+            "value": "0642487125",
+            "type": "string"
+          },
+          {
+            "key": "fixed_phone",
+            "value": "0102235647",
+            "type": "string"
+          }
+        ]
+      },
+      {
+        "name": "Identité 5",
+        "attributes": [
+          {
+            "key": "family_name",
+            "value": "Valet",
+            "type": "string"
+          },
+          {
+            "key": "preferred_username",
+            "value": "Charles",
+            "type": "string"
+          },
+          {
+            "key": "first_name",
+            "value": "Coline",
+            "type": "string"
+          },
+          {
+            "key": "birthdate",
+            "value": "05/05/1955",
+            "type": "string"
+          },
+          {
+            "key": "email_login",
+            "value": "coline@yopmail.com",
+            "type": "string"
+          },
+          {
+            "key": "mobile_phone",
+            "value": "0742487125",
+            "type": "string"
+          },
+          {
+            "key": "fixed_phone",
+            "value": "0102235647",
+            "type": "string"
+          }
+        ]
+      },
+      {
+        "name": "Identité 6",
+        "attributes": [
+          {
+            "key": "family_name",
+            "value": "Valet",
+            "type": "string"
+          },
+          {
+            "key": "preferred_username",
+            "value": "Charles",
+            "type": "string"
+          },
+          {
+            "key": "first_name",
+            "value": "Coline",
+            "type": "string"
+          },
+          {
+            "key": "birthdate",
+            "value": "05/05/1955",
+            "type": "string"
+          },
+          {
+            "key": "insee_birthplace_code",
+            "value": "77449",
+            "type": "string"
+          },
+          {
+            "key": "insee_birthcountry_code",
+            "value": "99100",
+            "type": "string"
+          },
+          {
+            "key": "email_login",
+            "value": "coline@yopmail.com",
+            "type": "string"
+          },
+          {
+            "key": "fixed_phone",
+            "value": "0302235647",
+            "type": "string"
+          }
+        ]
+      }
+    ],
+    "expected": [
+      {
+        "name": "Identité 3",
+        "attributes": [
+          {
+            "key": "family_name",
+            "value": "Valet",
+            "type": "string"
+          },
+          {
+            "key": "birthdate",
+            "value": "05/05/1955",
+            "type": "string"
+          },
+          {
+            "key": "insee_birthplace_code",
+            "value": "77449",
+            "type": "string"
+          },
+          {
+            "key": "insee_birthcountry_code",
+            "value": "99100",
+            "type": "string"
+          },
+          {
+            "key": "email_login",
+            "value": "coline@yopmail.com",
+            "type": "string"
+          },
+          {
+            "key": "mobile_phone",
+            "value": "0642487125",
+            "type": "string"
+          },
+          {
+            "key": "fixed_phone",
+            "value": "0102235647",
+            "type": "string"
+          }
+        ]
+      },
+      {
+        "name": "Identité 6",
+        "attributes": [
+          {
+            "key": "family_name",
+            "value": "Valet",
+            "type": "string"
+          },
+          {
+            "key": "preferred_username",
+            "value": "Charles",
+            "type": "string"
+          },
+          {
+            "key": "first_name",
+            "value": "Coline",
+            "type": "string"
+          },
+          {
+            "key": "birthdate",
+            "value": "05/05/1955",
+            "type": "string"
+          },
+          {
+            "key": "insee_birthplace_code",
+            "value": "77449",
+            "type": "string"
+          },
+          {
+            "key": "insee_birthcountry_code",
+            "value": "99100",
+            "type": "string"
+          },
+          {
+            "key": "email_login",
+            "value": "coline@yopmail.com",
+            "type": "string"
+          },
+          {
+            "key": "fixed_phone",
+            "value": "0302235647",
+            "type": "string"
+          }
+        ]
+      }
+    ]
+  }
+}

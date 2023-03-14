@@ -34,7 +34,7 @@
 package fr.paris.lutece.plugins.identitystore.business.referentiel;
 
 import org.apache.commons.lang3.StringUtils;
-import org.hibernate.validator.constraints.NotEmpty;
+import javax.validation.constraints.NotEmpty;
 
 import javax.validation.constraints.Size;
 import java.io.Serializable;
@@ -56,6 +56,8 @@ public class RefAttributeCertificationProcessus implements Serializable
     @NotEmpty( message = "#i18n{identitystore.validation.refattributecertificationprocessus.code.notEmpty}" )
     @Size( max = 50, message = "#i18n{identitystore.validation.refattributecertificationprocessus.code.size}" )
     private String _strCode;
+
+    private RefAttributeCertificationLevel level;
 
     /**
      * Returns the Id
@@ -96,6 +98,16 @@ public class RefAttributeCertificationProcessus implements Serializable
     public void setCode( String _strCode )
     {
         this._strCode = _strCode;
+    }
+
+    public RefAttributeCertificationLevel getLevel( )
+    {
+        return level;
+    }
+
+    public void setLevel( RefAttributeCertificationLevel level )
+    {
+        this.level = level;
     }
 
     @Override

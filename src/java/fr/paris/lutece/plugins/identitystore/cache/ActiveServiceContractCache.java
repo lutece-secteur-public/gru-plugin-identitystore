@@ -59,7 +59,7 @@ public class ActiveServiceContractCache extends AbstractCacheableService
 
     public void refresh( )
     {
-        _logger.info( "Initialisation du cache des contrats de service" );
+        _logger.info( "Init service contract cache" );
         this.resetCache( );
         final List<ClientApplication> clientApplications = ClientApplicationHome.selectApplicationList( );
         clientApplications.forEach( clientApplication -> {
@@ -70,7 +70,7 @@ public class ActiveServiceContractCache extends AbstractCacheableService
             }
             catch( ServiceContractNotFoundException e )
             {
-                _logger.warn( "Pas de contrat de service actif trouvé dans le cache pour le code application: " + clientApplication.getCode( ) );
+                _logger.warn( "An error occurred during service contract cache refreshing : {} ", e );
             }
         } );
     }
@@ -82,7 +82,7 @@ public class ActiveServiceContractCache extends AbstractCacheableService
             this.removeKey( applicationCode );
         }
         this.putInCache( applicationCode, serviceContract );
-        _logger.info( "Contrat de service actif ajouté pour pour le code application: " + applicationCode );
+        _logger.info( "An active service contract has been added for client application with code : " + applicationCode );
     }
 
     /**
@@ -103,7 +103,7 @@ public class ActiveServiceContractCache extends AbstractCacheableService
             }
             catch( ServiceContractNotFoundException e )
             {
-                _logger.error( "Impossible de supprimer le contrat de service id" + id + " : " + e.getMessage( ) );
+                _logger.error( "Cannot delete service contract with id" + id + " : {}", e );
             }
         } );
     }
@@ -124,13 +124,13 @@ public class ActiveServiceContractCache extends AbstractCacheableService
         final List<ServiceContract> serviceContracts = ClientApplicationHome.selectActiveServiceContract( applicationCode );
         if ( CollectionUtils.isEmpty( serviceContracts ) )
         {
-            throw new ServiceContractNotFoundException( "Pas de contrat de service trouvé pour l'application " + applicationCode );
+            throw new ServiceContractNotFoundException( "No contract service found for client application with code " + applicationCode );
         }
         else
             if ( CollectionUtils.size( serviceContracts ) > 1 )
             {
                 throw new ServiceContractNotFoundException(
-                        "Il y a plus d'un contrat de service actif pour l'application " + applicationCode + ". Il ne peut y en avoir qu'un." );
+                        "There is more than one active service contract for the application with code " + applicationCode + ". There shall be one only." );
             }
 
         final ServiceContract serviceContract = serviceContracts.get( 0 );

@@ -1,0 +1,331 @@
+{
+  "testDefinition": {
+    "name": "Recherche :: Test 7",
+    "test": {
+      "attributes": [
+        {
+          "key": "family_name",
+          "value": "Girrard",
+          "type": "string"
+        },
+        {
+          "key": "first_name",
+          "value": "Nicole",
+          "type": "string"
+        },
+        {
+          "key": "birthdate",
+          "value": "05/05/1965",
+          "type": "string"
+        }
+      ]
+    },
+    "inputs": [
+      {
+        "name": "Identité 1",
+        "attributes": [
+          {
+            "key": "gender",
+            "value": "2",
+            "type": "string"
+          },
+          {
+            "key": "family_name",
+            "value": "Girrard",
+            "type": "string"
+          },
+          {
+            "key": "first_name",
+            "value": "Nicole",
+            "type": "string"
+          },
+          {
+            "key": "birthdate",
+            "value": "05/05/1965",
+            "type": "string"
+          },
+          {
+            "key": "insee_birthplace_code",
+            "value": "77449",
+            "type": "string"
+          },
+          {
+            "key": "insee_birthcountry_code",
+            "value": "99100",
+            "type": "string"
+          }
+        ]
+      },
+      {
+        "name": "Identité 2",
+        "attributes": [
+          {
+            "key": "gender",
+            "value": "2",
+            "type": "string"
+          },
+          {
+            "key": "family_name",
+            "value": "Girrard",
+            "type": "string"
+          },
+          {
+            "key": "first_name",
+            "value": "Nicol",
+            "type": "string"
+          },
+          {
+            "key": "birthdate",
+            "value": "05/05/1965",
+            "type": "string"
+          },
+          {
+            "key": "insee_birthplace_code",
+            "value": "77449",
+            "type": "string"
+          },
+          {
+            "key": "insee_birthcountry_code",
+            "value": "99100",
+            "type": "string"
+          }
+        ]
+      },
+      {
+        "name": "Identité 3",
+        "attributes": [
+          {
+            "key": "gender",
+            "value": "1",
+            "type": "string"
+          },
+          {
+            "key": "family_name",
+            "value": "Girard",
+            "type": "string"
+          },
+          {
+            "key": "first_name",
+            "value": "Nicole",
+            "type": "string"
+          },
+          {
+            "key": "birthdate",
+            "value": "05/05/1965",
+            "type": "string"
+          },
+          {
+            "key": "insee_birthplace_code",
+            "value": "77449",
+            "type": "string"
+          },
+          {
+            "key": "insee_birthcountry_code",
+            "value": "99100",
+            "type": "string"
+          }
+        ]
+      },
+      {
+        "name": "Identité 4",
+        "attributes": [
+          {
+            "key": "gender",
+            "value": "1",
+            "type": "string"
+          },
+          {
+            "key": "family_name",
+            "value": "Girrard",
+            "type": "string"
+          },
+          {
+            "key": "preferred_username",
+            "value": "Thomas",
+            "type": "string"
+          },
+          {
+            "key": "first_name",
+            "value": "Nicole",
+            "type": "string"
+          },
+          {
+            "key": "birthdate",
+            "value": "05/05/1965",
+            "type": "string"
+          }
+        ]
+      },
+      {
+        "name": "Identité 5",
+        "attributes": [
+          {
+            "key": "gender",
+            "value": "1",
+            "type": "string"
+          },
+          {
+            "key": "family_name",
+            "value": "Girrard",
+            "type": "string"
+          },
+          {
+            "key": "first_name",
+            "value": "Nicole",
+            "type": "string"
+          },
+          {
+            "key": "birthdate",
+            "value": "06/06/1976",
+            "type": "string"
+          },
+          {
+            "key": "insee_birthplace_code",
+            "value": "78291",
+            "type": "string"
+          },
+          {
+            "key": "insee_birthcountry_code",
+            "value": "99100",
+            "type": "string"
+          }
+        ]
+      }
+    ],
+    "expected": [
+      {
+        "name": "Identité 1",
+        "attributes": [
+          {
+            "key": "gender",
+            "value": "2",
+            "type": "string"
+          },
+          {
+            "key": "family_name",
+            "value": "Girrard",
+            "type": "string"
+          },
+          {
+            "key": "first_name",
+            "value": "Nicole",
+            "type": "string"
+          },
+          {
+            "key": "birthdate",
+            "value": "05/05/1965",
+            "type": "string"
+          },
+          {
+            "key": "insee_birthplace_code",
+            "value": "77449",
+            "type": "string"
+          },
+          {
+            "key": "insee_birthcountry_code",
+            "value": "99100",
+            "type": "string"
+          }
+        ]
+      },
+      {
+        "name": "Identité 2",
+        "attributes": [
+          {
+            "key": "gender",
+            "value": "2",
+            "type": "string"
+          },
+          {
+            "key": "family_name",
+            "value": "Girrard",
+            "type": "string"
+          },
+          {
+            "key": "first_name",
+            "value": "Nicol",
+            "type": "string"
+          },
+          {
+            "key": "birthdate",
+            "value": "05/05/1965",
+            "type": "string"
+          },
+          {
+            "key": "insee_birthplace_code",
+            "value": "77449",
+            "type": "string"
+          },
+          {
+            "key": "insee_birthcountry_code",
+            "value": "99100",
+            "type": "string"
+          }
+        ]
+      },{
+        "name": "Identité 3",
+        "attributes": [
+          {
+            "key": "gender",
+            "value": "1",
+            "type": "string"
+          },
+          {
+            "key": "family_name",
+            "value": "Girard",
+            "type": "string"
+          },
+          {
+            "key": "first_name",
+            "value": "Nicole",
+            "type": "string"
+          },
+          {
+            "key": "birthdate",
+            "value": "05/05/1965",
+            "type": "string"
+          },
+          {
+            "key": "insee_birthplace_code",
+            "value": "77449",
+            "type": "string"
+          },
+          {
+            "key": "insee_birthcountry_code",
+            "value": "99100",
+            "type": "string"
+          }
+        ]
+      },{
+        "name": "Identité 4",
+        "attributes": [
+          {
+            "key": "gender",
+            "value": "1",
+            "type": "string"
+          },
+          {
+            "key": "family_name",
+            "value": "Girrard",
+            "type": "string"
+          },
+          {
+            "key": "preferred_username",
+            "value": "Thomas",
+            "type": "string"
+          },
+          {
+            "key": "first_name",
+            "value": "Nicole",
+            "type": "string"
+          },
+          {
+            "key": "birthdate",
+            "value": "05/05/1965",
+            "type": "string"
+          }
+        ]
+      }
+    ]
+  }
+}

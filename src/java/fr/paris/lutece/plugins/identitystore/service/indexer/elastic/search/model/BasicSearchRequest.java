@@ -180,7 +180,7 @@ public class BasicSearchRequest
         match.setQuery( attribute.getValue( ) );
         if ( !attribute.isStrict( ) )
         {
-            match.setFuzziness( "AUTO" );
+            match.setFuzziness( "1" );
         }
         return match;
     }

@@ -35,6 +35,7 @@ package fr.paris.lutece.plugins.identitystore.service.indexer.search;
 
 import fr.paris.lutece.plugins.identitystore.service.IdentityStoreService;
 import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.model.IdentityObject;
+import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.model.IdentityObjectMapper;
 import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.search.model.SearchAttribute;
 import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.search.model.inner.response.Response;
 import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.search.service.IIdentitySearcher;
@@ -81,25 +82,7 @@ public class ElasticSearchIdentityService implements ISearchIdentityService
         final List<QualifiedIdentity> identities = new ArrayList<>( );
         if ( search != null )
         {
-            search.getResult( ).getHits( ).forEach( hit -> {
-                final QualifiedIdentity identity = new QualifiedIdentity( );
-                final IdentityObject source = hit.getSource( );
-                identity.setConnectionId( source.getConnectionId( ) );
-                identity.setCustomerId( source.getCustomerId( ) );
-                // TODO manque creation date et last update date
-                identity.setQuality( hit.getScore( ) );
-                source.getAttributes( ).forEach( ( s, attributeObject ) -> {
-                    final fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.search.CertifiedAttribute attribute = new fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.search.CertifiedAttribute( );
-                    attribute.setKey( s );
-                    attribute.setValue( attributeObject.getValue( ) );
-                    attribute.setType( attributeObject.getType( ) );
-                    attribute.setCertifier( attributeObject.getCertifierCode( ) );
-                    attribute.setCertificationDate( attributeObject.getCertificateDate( ) );
-                    attribute.setCertificationLevel( attribute.getCertificationLevel( ) );
-                    identity.getAttributes( ).add( attribute );
-                } );
-                identities.add( identity );
-            } );
+            search.getResult( ).getHits( ).forEach( hit -> identities.add( IdentityObjectMapper.toQualifiedIdentity( hit, searchAttributes ) ) );
         }
         return identities;
     }

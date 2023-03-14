@@ -48,8 +48,11 @@
 		<@formGroup labelFor='authorized_merge' labelKey='#i18n{identitystore.modify_servicecontract.labelAuthorizedMerge}'>
 			<@checkBox id="authorized_merge" name="authorized_merge"  value="1" checked=servicecontract.authorizedMerge!'false' tabIndex='6' />
 		</@formGroup>
+		<@formGroup labelFor='authorized_account_update labelKey='#i18n{identitystore.modify_servicecontract.labelAuthorizedAccountUpdate}'>
+			<@checkBox id="authorized_account_update" name="authorized_account_update"  value="1" checked=servicecontract.authorizedAccountUpdate!'false' tabIndex='7' />
+		</@formGroup>
 		<@formGroup labelFor='authorized_deletion' labelKey='#i18n{identitystore.modify_servicecontract.labelAuthorizedDeletion}'>
-          	<@checkBox id="authorized_deletion" name="authorized_deletion"  value="1" checked=servicecontract.authorizedDeletion!'false' tabIndex='7' />
+          	<@checkBox id="authorized_deletion" name="authorized_deletion"  value="1" checked=servicecontract.authorizedDeletion!'false' tabIndex='8' />
 		</@formGroup>
 		<@formGroup labelFor='authorized_import' labelKey='#i18n{identitystore.modify_servicecontract.labelAuthorizedImport}'>
           	<@checkBox id="authorized_import" name="authorized_import"  value="1" checked=servicecontract.authorizedImport!'false' tabIndex='9' />

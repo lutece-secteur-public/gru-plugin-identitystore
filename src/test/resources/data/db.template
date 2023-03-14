@@ -1,0 +1,9 @@
+portal.poolservice=fr.paris.lutece.util.pool.service.LuteceConnectionService
+portal.driver=org.postgresql.Driver
+portal.url=${db_url}
+portal.user=idstore
+portal.password=idstore
+portal.initconns=2
+portal.maxconns=50
+portal.logintimeout=2
+portal.checkvalidconnectionsql=SELECT 1

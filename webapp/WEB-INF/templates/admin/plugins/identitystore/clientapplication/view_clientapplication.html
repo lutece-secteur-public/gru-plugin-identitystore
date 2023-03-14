@@ -53,6 +53,7 @@
     <th>#i18n{identitystore.manage_servicecontracts.columnContactName}</th>
     <th>#i18n{identitystore.manage_servicecontracts.columnServiceType}</th>
     <th>#i18n{identitystore.manage_servicecontracts.columnAuthorizedMerge}</th>
+    <th>#i18n{identitystore.manage_servicecontracts.columnAuthorizedAccountUpdate}</th>
     <th>#i18n{identitystore.manage_servicecontracts.columnAuthorizedDeletion}</th>
     <th>#i18n{identitystore.manage_servicecontracts.columnAuthorizedImport}</th>
     <th>#i18n{identitystore.manage_servicecontracts.columnAuthorizedExport}</th>
@@ -88,6 +89,13 @@
     </td>
     <td>
         <#if servicecontract.authorizedMerge = true>
+            <i class="fas fa-check" aria-hidden="true"></i>
+        <#else>
+            <i class="fas fa-times" aria-hidden="true"></i>
+        </#if>
+    </td>
+    <td>
+        <#if servicecontract.authorizedAccountUpdate = true>
             <i class="fas fa-check" aria-hidden="true"></i>
         <#else>
             <i class="fas fa-times" aria-hidden="true"></i>

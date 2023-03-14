@@ -1,0 +1,168 @@
+{
+  "testDefinition": {
+    "name": "Recherche :: Test 3",
+    "test": {
+      "attributes": [
+        {
+          "key": "email_login",
+          "value": "j.dupont@yopmail.com",
+          "type": "string"
+        }
+      ]
+    },
+    "inputs": [
+      {
+        "name": "Identité 1",
+        "attributes": [
+          {
+            "key": "email_login",
+            "value": "j.dupont@yopmail.com",
+            "type": "string"
+          },
+          {
+            "key": "family_name",
+            "value": "Dupont",
+            "type": "string"
+          },
+          {
+            "key": "first_name",
+            "value": "Jean",
+            "type": "string"
+          },
+          {
+            "key": "birthdate",
+            "value": "10/10/1980",
+            "type": "string"
+          }
+        ]
+      },
+      {
+        "name": "Identité 2",
+        "attributes": [
+          {
+            "key": "family_name",
+            "value": "Dupont",
+            "type": "string"
+          },
+          {
+            "key": "email_login",
+            "value": "j.dupont@gmail.com",
+            "type": "string"
+          },
+          {
+            "key": "first_name",
+            "value": "Jean",
+            "type": "string"
+          },
+          {
+            "key": "birthdate",
+            "value": "01/01/1985",
+            "type": "string"
+          }
+        ]
+      },
+      {
+        "name": "Identité 3",
+        "attributes": [
+          {
+            "key": "family_name",
+            "value": "Dupont",
+            "type": "string"
+          },
+          {
+            "key": "email_login",
+            "value": "jdupont@yopmail.com",
+            "type": "string"
+          },
+          {
+            "key": "first_name",
+            "value": "Jean",
+            "type": "string"
+          },
+          {
+            "key": "birthdate",
+            "value": "01/01/1985",
+            "type": "string"
+          }
+        ]
+      },
+      {
+        "name": "Identité 4",
+        "attributes": [
+          {
+            "key": "family_name",
+            "value": "Dupont",
+            "type": "string"
+          },
+          {
+            "key": "email_login",
+            "value": "j.dupon@yopmail.com",
+            "type": "string"
+          },
+          {
+            "key": "first_name",
+            "value": "Jean",
+            "type": "string"
+          },
+          {
+            "key": "birthdate",
+            "value": "01/01/1985",
+            "type": "string"
+          }
+        ]
+      },
+      {
+        "name": "Identité 5",
+        "attributes": [
+          {
+            "key": "family_name",
+            "value": "Dupont",
+            "type": "string"
+          },
+          {
+            "key": "email_login",
+            "value": "j.depont@yopmail.com",
+            "type": "string"
+          },
+          {
+            "key": "first_name",
+            "value": "Jean",
+            "type": "string"
+          },
+          {
+            "key": "birthdate",
+            "value": "01/01/1985",
+            "type": "string"
+          }
+        ]
+      }
+    ],
+    "expected": [
+      {
+        "name": "Identité 1",
+        "attributes": [
+          {
+            "key": "email_login",
+            "value": "j.dupont@yopmail.com",
+            "type": "string"
+          },
+          {
+            "key": "family_name",
+            "value": "Dupont",
+            "type": "string"
+          },
+          {
+            "key": "first_name",
+            "value": "Jean",
+            "type": "string"
+          },
+          {
+            "key": "birthdate",
+            "value": "10/10/1980",
+            "type": "string"
+          }
+        ]
+      }
+    ]
+  }
+}

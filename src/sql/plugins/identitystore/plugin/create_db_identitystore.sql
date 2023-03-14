@@ -51,6 +51,7 @@ CREATE TABLE identitystore_attribute
     key_name     varchar(100) NOT NULL default '' UNIQUE,
     description  varchar(100) NULL,
     key_type     int          NOT NULL default '0',
+    key_weight   int          NOT NULL default '0',
     certifiable  smallint              default 0,
     pivot        smallint              default 0,
     PRIMARY KEY (id_attribute)
@@ -193,6 +194,7 @@ CREATE TABLE identitystore_service_contract
     authorized_import                               smallint not null default 0,
     authorized_export                               smallint not null default 0,
     authorized_merge                                smallint not null default 0,
+    authorized_account_update                       smallint not null default 0,
     is_application_authorized_to_delete_value       smallint not null default 0,
     is_application_authorized_to_delete_certificate smallint not null default 0,
     PRIMARY KEY (id_service_contract)
@@ -266,3 +268,39 @@ CREATE TABLE identitystore_index_action
     date_index      timestamp   NOT NULL,
     PRIMARY KEY (id_index_action)
 );
+
+
+--
+-- Structure for table geocodes_country
+--
+
+DROP TABLE IF EXISTS geocodes_country;
+CREATE TABLE geocodes_country (
+    id_country int AUTO_INCREMENT,
+    code varchar(10) default '' NOT NULL,
+    name varchar(255) default '' NOT NULL,
+    PRIMARY KEY (id_country)
+);
+
+ALTER TABLE geocodes_country
+ADD INDEX IDX_COUNTRY_CODE (code ASC) ,
+ADD INDEX IDX_COUNTRY_NAME (name ASC)  ;
+
+--
+-- Structure for table geocodes_city
+--
+
+DROP TABLE IF EXISTS geocodes_city;
+CREATE TABLE geocodes_city (
+    id_city int AUTO_INCREMENT,
+    code_country varchar(10) default '' NOT NULL,
+    code varchar(10) default '' NOT NULL,
+    code_zone varchar(10) default '' NOT NULL,
+    name varchar(255) default '' NOT NULL,
+    PRIMARY KEY (id_city)
+);
+
+ALTER TABLE geocodes_city
+ADD INDEX IDX_CITY_CODE (code ASC),
+ADD INDEX IDX_CITY_NAME (name ASC),
+ADD INDEX IDX_COUNTRY_CODE_CITIES (code_country ASC);
