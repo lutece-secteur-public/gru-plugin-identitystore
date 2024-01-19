@@ -33,14 +33,15 @@
  */
 package fr.paris.lutece.plugins.identitystore.service.attribute;
 
+import fr.paris.lutece.plugins.geocodes.business.City;
+import fr.paris.lutece.plugins.geocodes.business.Country;
+import fr.paris.lutece.plugins.geocodes.service.GeoCodesService;
 import fr.paris.lutece.plugins.identitystore.business.attribute.AttributeKey;
-import fr.paris.lutece.plugins.identitystore.business.identity.IdentityHome;
 import fr.paris.lutece.plugins.identitystore.cache.IdentityAttributeValidationCache;
 import fr.paris.lutece.plugins.identitystore.cache.IdentityDtoCache;
 import fr.paris.lutece.plugins.identitystore.service.contract.AttributeCertificationDefinitionService;
 import fr.paris.lutece.plugins.identitystore.service.contract.ServiceContractService;
 import fr.paris.lutece.plugins.identitystore.service.identity.IdentityAttributeNotFoundException;
-import fr.paris.lutece.plugins.identitystore.v3.web.rs.DtoConverter;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.AttributeChangeStatus;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.AttributeDto;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.AttributeStatus;
@@ -57,6 +58,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -168,6 +170,44 @@ public class IdentityAttributeValidationService
             return;
         }
 
+        // Vérification des codes INSEE.
+        // Si non vides et invalides, on considère qu'ils sont absents de la requète
+        final List<AttributeStatus> inseeCodeStatuses = new ArrayList<>( );
+        if ( pivotAttrs.containsKey( Constants.PARAM_BIRTH_PLACE_CODE ) )
+        {
+            final AttributeDto birthPlaceCodeAttr = pivotAttrs.get( Constants.PARAM_BIRTH_PLACE_CODE );
+            if ( StringUtils.isNotBlank( birthPlaceCodeAttr.getValue( ) ) )
+            {
+                final Optional<City> city = GeoCodesService.getInstance( ).getCityByCode( birthPlaceCodeAttr.getValue( ) );
+                if ( city == null || !city.isPresent( ) )
+                {
+                    pivotAttrs.remove( Constants.PARAM_BIRTH_PLACE_CODE );
+                    final AttributeStatus birthplaceCodeStatus = new AttributeStatus( );
+                    birthplaceCodeStatus.setKey( Constants.PARAM_BIRTH_PLACE_CODE );
+                    birthplaceCodeStatus.setStatus( AttributeChangeStatus.UNKNOWN_GEOCODES_CODE );
+                    birthplaceCodeStatus.setMessageKey( Constants.PROPERTY_ATTRIBUTE_STATUS_VALIDATION_ERROR_UNKNOWN_GEOCODES_CODE );
+                    inseeCodeStatuses.add( birthplaceCodeStatus );
+                }
+            }
+        }
+        if ( pivotAttrs.containsKey( Constants.PARAM_BIRTH_COUNTRY_CODE ) )
+        {
+            final AttributeDto birthcountryCodeAttr = pivotAttrs.get( Constants.PARAM_BIRTH_COUNTRY_CODE );
+            if ( StringUtils.isNotBlank( birthcountryCodeAttr.getValue( ) ) )
+            {
+                final Optional<Country> country = GeoCodesService.getInstance( ).getCountryByCode( birthcountryCodeAttr.getValue( ) );
+                if ( country == null || !country.isPresent( ) )
+                {
+                    pivotAttrs.remove( Constants.PARAM_BIRTH_COUNTRY_CODE );
+                    final AttributeStatus birthcountryCodeStatus = new AttributeStatus( );
+                    birthcountryCodeStatus.setKey( Constants.PARAM_BIRTH_COUNTRY_CODE );
+                    birthcountryCodeStatus.setStatus( AttributeChangeStatus.UNKNOWN_GEOCODES_CODE );
+                    birthcountryCodeStatus.setMessageKey( Constants.PROPERTY_ATTRIBUTE_STATUS_VALIDATION_ERROR_UNKNOWN_GEOCODES_CODE );
+                    inseeCodeStatuses.add( birthcountryCodeStatus );
+                }
+            }
+        }
+
         if ( StringUtils.isNotBlank( cuid ) )
         {
             final IdentityDto existingIdentityDto = _identityDtoCache.getByCustomerId( cuid,
@@ -194,6 +234,7 @@ public class IdentityAttributeValidationService
                 response.setStatus( ResponseStatusFactory.failure( )
                         .setMessageKey( Constants.PROPERTY_REST_ERROR_IDENTITY_ALL_PIVOT_ATTRIBUTE_SAME_CERTIFICATION )
                         .setMessage( "All pivot attributes must be set and certified with the '" + highestCertifiedPivot.getCertifier( ) + "' certifier" ) );
+                response.getStatus( ).getAttributeStatuses( ).addAll( inseeCodeStatuses );
                 return;
             }
 
@@ -214,6 +255,7 @@ public class IdentityAttributeValidationService
                         response.setStatus( ResponseStatusFactory.failure( )
                                 .setMessageKey( Constants.PROPERTY_REST_ERROR_IDENTITY_ALL_PIVOT_ATTRIBUTE_SAME_CERTIFICATION ).setMessage(
                                         "All pivot attributes must be set and certified with the '" + highestCertifiedPivot.getCertifier( ) + "' certifier" ) );
+                        response.getStatus( ).getAttributeStatuses( ).addAll( inseeCodeStatuses );
                         return;
                     }
                 }
@@ -233,6 +275,7 @@ public class IdentityAttributeValidationService
                     response.setStatus(
                             ResponseStatusFactory.failure( ).setMessageKey( Constants.PROPERTY_REST_ERROR_IDENTITY_FORBIDDEN_PIVOT_ATTRIBUTE_DELETION )
                                     .setMessage( "Deleting pivot attribute is forbidden for this identity." ) );
+                    response.getStatus( ).getAttributeStatuses( ).addAll( inseeCodeStatuses );
                     return;
                 }
             }
