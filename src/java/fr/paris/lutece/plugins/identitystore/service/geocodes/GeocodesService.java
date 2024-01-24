@@ -38,6 +38,7 @@ import fr.paris.lutece.plugins.geocodes.business.Country;
 import fr.paris.lutece.plugins.geocodes.service.GeoCodesService;
 import fr.paris.lutece.plugins.identitystore.business.identity.Identity;
 import fr.paris.lutece.plugins.identitystore.business.identity.IdentityAttribute;
+import fr.paris.lutece.plugins.identitystore.business.identity.IdentityAttributeHome;
 import fr.paris.lutece.plugins.identitystore.service.attribute.IdentityAttributeService;
 import fr.paris.lutece.plugins.identitystore.service.identity.IdentityAttributeNotFoundException;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.AttributeChangeStatus;
@@ -63,9 +64,9 @@ public class GeocodesService
             final String clientCode ) throws IdentityStoreException
     {
         final List<AttributeStatus> attrStatusList = processCountryForCreate( identity, attrToCreate, clientCode );
-        final IdentityAttribute birthCountry = identity.getAttributes( ).get( Constants.PARAM_BIRTH_COUNTRY );
+        final IdentityAttribute birthCountryCode = identity.getAttributes( ).get( Constants.PARAM_BIRTH_COUNTRY_CODE );
         // Si l'identité n'a pas de pays de naissance renseigné, on traite la ville de naissance comme étant française
-        if ( birthCountry == null || "FRANCE".equalsIgnoreCase( birthCountry.getValue( ) ) )
+        if ( birthCountryCode == null || "99100".equalsIgnoreCase( birthCountryCode.getValue( ) ) )
         {
             attrStatusList.addAll( processFrenchCityForCreate( identity, attrToCreate, clientCode ) );
         }
@@ -79,10 +80,53 @@ public class GeocodesService
     public static List<AttributeStatus> processCountryAndCityForUpdate( final Identity identity, final List<AttributeDto> attrToCreate,
             final List<AttributeDto> attrToUpdate, final String clientCode ) throws IdentityStoreException
     {
+        final IdentityAttribute previousCountryCode = identity.getAttributes( ).get( Constants.PARAM_BIRTH_COUNTRY_CODE );
+        final AttributeDto newCountryCode = attrToUpdate.stream( ).filter( a -> a.getKey( ).equals( Constants.PARAM_BIRTH_COUNTRY_CODE ) ).findFirst( )
+                .orElse( null );
+
         final List<AttributeStatus> attrStatusList = processCountryForUpdate( identity, attrToCreate, attrToUpdate, clientCode );
-        final IdentityAttribute birthCountry = identity.getAttributes( ).get( Constants.PARAM_BIRTH_COUNTRY );
+
+        final AttributeStatus countryCodeStatus = attrStatusList.stream( ).filter( s -> s.getKey( ).equals( Constants.PARAM_BIRTH_COUNTRY_CODE ) ).findFirst( )
+                .orElse( null );
+
+        if ( countryCodeStatus != null && countryCodeStatus.getStatus( ) == AttributeChangeStatus.UPDATED && previousCountryCode != null
+                && newCountryCode != null && !previousCountryCode.getValue( ).equals( newCountryCode.getValue( ) ) )
+        {
+            // Si l'identité a changé de pays
+            final IdentityAttribute existingBirthplace = identity.getAttributes( ).get( Constants.PARAM_BIRTH_PLACE );
+            if ( existingBirthplace != null )
+            {
+                // Suppression du libellé de commune de naissance
+                IdentityAttributeHome.remove( identity.getId( ), existingBirthplace.getAttributeKey( ).getId( ) );
+                identity.getAttributes( ).remove( Constants.PARAM_BIRTH_PLACE );
+                final AttributeStatus removedBirthplace = new AttributeStatus( );
+                removedBirthplace.setKey( Constants.PARAM_BIRTH_PLACE );
+                removedBirthplace.setStatus( AttributeChangeStatus.REMOVED );
+                removedBirthplace.setMessageKey( Constants.PROPERTY_ATTRIBUTE_STATUS_REMOVED );
+                attrStatusList.add( removedBirthplace );
+            }
+            if ( previousCountryCode.getValue( ).equals( "99100" ) )
+            {
+                // Passage de France à Etranger
+                final IdentityAttribute existingBirthplaceCode = identity.getAttributes( ).get( Constants.PARAM_BIRTH_PLACE_CODE );
+                if ( existingBirthplaceCode != null )
+                {
+                    // Suppression du code commune de naissance
+                    IdentityAttributeHome.remove( identity.getId( ), existingBirthplaceCode.getAttributeKey( ).getId( ) );
+                    identity.getAttributes( ).remove( Constants.PARAM_BIRTH_PLACE_CODE );
+                    final AttributeStatus removedBirthplaceCode = new AttributeStatus( );
+                    removedBirthplaceCode.setKey( Constants.PARAM_BIRTH_PLACE_CODE );
+                    removedBirthplaceCode.setStatus( AttributeChangeStatus.REMOVED );
+                    removedBirthplaceCode.setMessageKey( Constants.PROPERTY_ATTRIBUTE_STATUS_REMOVED );
+                    attrStatusList.add( removedBirthplaceCode );
+                }
+            }
+        }
+
+        final IdentityAttribute birthCountryCode = identity.getAttributes( ).get( Constants.PARAM_BIRTH_COUNTRY_CODE );
+
         // Si l'identité n'a pas de pays de naissance renseigné, on traite la ville de naissance comme étant française
-        if ( birthCountry == null || "FRANCE".equalsIgnoreCase( birthCountry.getValue( ) ) )
+        if ( birthCountryCode == null || "99100".equalsIgnoreCase( birthCountryCode.getValue( ) ) )
         {
             attrStatusList.addAll( processFrenchCityForUpdate( identity, attrToCreate, attrToUpdate, clientCode ) );
         }
