@@ -64,7 +64,8 @@ public class GeocodesService
     {
         final List<AttributeStatus> attrStatusList = processCountryForCreate( identity, attrToCreate, clientCode );
         final IdentityAttribute birthCountry = identity.getAttributes( ).get( Constants.PARAM_BIRTH_COUNTRY );
-        if ( birthCountry != null && "FRANCE".equalsIgnoreCase( birthCountry.getValue( ) ) )
+        // Si l'identité n'a pas de pays de naissance renseigné, on traite la ville de naissance comme étant française
+        if ( birthCountry == null || "FRANCE".equalsIgnoreCase( birthCountry.getValue( ) ) )
         {
             attrStatusList.addAll( processFrenchCityForCreate( identity, attrToCreate, clientCode ) );
         }
@@ -80,7 +81,8 @@ public class GeocodesService
     {
         final List<AttributeStatus> attrStatusList = processCountryForUpdate( identity, attrToCreate, attrToUpdate, clientCode );
         final IdentityAttribute birthCountry = identity.getAttributes( ).get( Constants.PARAM_BIRTH_COUNTRY );
-        if ( birthCountry != null && "FRANCE".equalsIgnoreCase( birthCountry.getValue( ) ) )
+        // Si l'identité n'a pas de pays de naissance renseigné, on traite la ville de naissance comme étant française
+        if ( birthCountry == null || "FRANCE".equalsIgnoreCase( birthCountry.getValue( ) ) )
         {
             attrStatusList.addAll( processFrenchCityForUpdate( identity, attrToCreate, attrToUpdate, clientCode ) );
         }
