@@ -56,6 +56,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -178,7 +179,7 @@ public class IdentityAttributeValidationService
             final AttributeDto birthPlaceCodeAttr = pivotAttrs.get( Constants.PARAM_BIRTH_PLACE_CODE );
             if ( StringUtils.isNotBlank( birthPlaceCodeAttr.getValue( ) ) )
             {
-                final Optional<City> city = GeoCodesService.getInstance( ).getCityByCode( birthPlaceCodeAttr.getValue( ) );
+                final Optional<City> city = GeoCodesService.getInstance( ).getCityByDateAndCode(new Date(), birthPlaceCodeAttr.getValue());
                 if ( city == null || !city.isPresent( ) )
                 {
                     pivotAttrs.remove( Constants.PARAM_BIRTH_PLACE_CODE );
