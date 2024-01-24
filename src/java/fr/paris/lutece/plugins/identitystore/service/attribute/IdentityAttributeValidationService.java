@@ -179,7 +179,7 @@ public class IdentityAttributeValidationService
             final AttributeDto birthPlaceCodeAttr = pivotAttrs.get( Constants.PARAM_BIRTH_PLACE_CODE );
             if ( StringUtils.isNotBlank( birthPlaceCodeAttr.getValue( ) ) )
             {
-                final Optional<City> city = GeoCodesService.getInstance( ).getCityByDateAndCode(new Date(), birthPlaceCodeAttr.getValue());
+                final Optional<City> city = GeoCodesService.getInstance( ).getCityByDateAndCode( new Date( ), birthPlaceCodeAttr.getValue( ) );
                 if ( city == null || !city.isPresent( ) )
                 {
                     pivotAttrs.remove( Constants.PARAM_BIRTH_PLACE_CODE );
@@ -226,11 +226,21 @@ public class IdentityAttributeValidationService
             }
         }
 
+        if ( pivotAttrs.containsKey( Constants.PARAM_BIRTH_COUNTRY_CODE )
+                && !pivotAttrs.get( Constants.PARAM_BIRTH_COUNTRY_CODE ).getValue( ).equals( "99100" ) )
+        {
+            // Si on est sur un pays étranger, l'attribut "birthplace_code" n'est pas un pivot.
+            pivotKeys.remove( Constants.PARAM_BIRTH_PLACE_CODE );
+            pivotAttrs.remove( Constants.PARAM_BIRTH_PLACE_CODE );
+        }
         final AttributeDto highestCertifiedPivot = pivotAttrs.values( ).stream( ).max( Comparator.comparing( AttributeDto::getCertificationLevel ) )
                 .orElse( null );
         if ( highestCertifiedPivot != null && highestCertifiedPivot.getCertificationLevel( ) >= pivotCertificationLevelThreshold )
         {
-            if ( pivotAttrs.values( ).stream( ).anyMatch( a -> !a.getCertifier( ).equals( highestCertifiedPivot.getCertifier( ) ) ) )
+            // Si le pivot avec la plus haute certification dépasse le niveau défini en properties, on exige que tous les pivots soient présents et avec la même
+            // certification
+            if ( pivotKeys.size( ) != pivotAttrs.size( )
+                    || pivotAttrs.values( ).stream( ).anyMatch( a -> !a.getCertifier( ).equals( highestCertifiedPivot.getCertifier( ) ) ) )
             {
                 response.setStatus( ResponseStatusFactory.failure( )
                         .setMessageKey( Constants.PROPERTY_REST_ERROR_IDENTITY_ALL_PIVOT_ATTRIBUTE_SAME_CERTIFICATION )
@@ -238,47 +248,13 @@ public class IdentityAttributeValidationService
                 response.getStatus( ).getAttributeStatuses( ).addAll( inseeCodeStatuses );
                 return;
             }
-
-            // Pays de naissance étranger, on accepte que le code commune de naissance ne soit pas renseigné
-            final boolean acceptNoCityCode = pivotAttrs.containsKey( Constants.PARAM_BIRTH_COUNTRY_CODE )
-                    && !pivotAttrs.get( Constants.PARAM_BIRTH_COUNTRY_CODE ).getValue( ).equals( "99100" );
-            if ( pivotKeys.size( ) != pivotAttrs.size( ) )
-            {
-                for ( final String pivotKey : pivotKeys )
-                {
-                    if ( acceptNoCityCode && pivotKey.equals( Constants.PARAM_BIRTH_PLACE_CODE ) )
-                    {
-                        continue;
-                    }
-                    final AttributeDto pivotAttr = pivotAttrs.get( pivotKey );
-                    if ( pivotAttr == null )
-                    {
-                        response.setStatus( ResponseStatusFactory.failure( )
-                                .setMessageKey( Constants.PROPERTY_REST_ERROR_IDENTITY_ALL_PIVOT_ATTRIBUTE_SAME_CERTIFICATION ).setMessage(
-                                        "All pivot attributes must be set and certified with the '" + highestCertifiedPivot.getCertifier( ) + "' certifier" ) );
-                        response.getStatus( ).getAttributeStatuses( ).addAll( inseeCodeStatuses );
-                        return;
-                    }
-                }
-            }
-            // Tout est OK => on vérifie qu'aucun des attributs pivots envoyé n'a de valeur vide (sauf le birthplace_code, dans le cas d'un pays étrager)
+            // On vérifie qu'aucun des attributs pivots envoyé n'a de valeur vide
             // Si c'est le cas, on rejete (suppression non autorisée)
-            final List<AttributeDto> blankPivots = pivotAttrs.values( ).stream( ).filter( a -> StringUtils.isBlank( a.getValue( ) ) )
-                    .collect( Collectors.toList( ) );
-            for ( final AttributeDto blankPivot : blankPivots )
+            if ( pivotAttrs.values( ).stream( ).anyMatch( a -> StringUtils.isBlank( a.getValue( ) ) ) )
             {
-                if ( acceptNoCityCode && blankPivot.getKey( ).equals( Constants.PARAM_BIRTH_PLACE_CODE ) )
-                {
-                    continue;
-                }
-                else
-                {
-                    response.setStatus(
-                            ResponseStatusFactory.failure( ).setMessageKey( Constants.PROPERTY_REST_ERROR_IDENTITY_FORBIDDEN_PIVOT_ATTRIBUTE_DELETION )
-                                    .setMessage( "Deleting pivot attribute is forbidden for this identity." ) );
-                    response.getStatus( ).getAttributeStatuses( ).addAll( inseeCodeStatuses );
-                    return;
-                }
+                response.setStatus( ResponseStatusFactory.failure( ).setMessageKey( Constants.PROPERTY_REST_ERROR_IDENTITY_FORBIDDEN_PIVOT_ATTRIBUTE_DELETION )
+                        .setMessage( "Deleting pivot attribute is forbidden for this identity." ) );
+                response.getStatus( ).getAttributeStatuses( ).addAll( inseeCodeStatuses );
             }
         }
     }
