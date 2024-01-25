@@ -91,6 +91,12 @@ public class IdentityExportService
     public IdentityExportResponse export( final IdentityExportRequest request, final String clientCode ) throws IdentityStoreException
     {
         final IdentityExportResponse response = new IdentityExportResponse( );
+        if ( request.getCuidList( ).size( ) > exportLimit )
+        {
+            response.setStatus( ResponseStatusFactory.badRequest( ).setMessage( "Provided CUID list exceeds the allowed export limit of " + exportLimit )
+                    .setMessageKey( Constants.PROPERTY_REST_ERROR_EXPORT_LIMIT_EXCEEDED ) );
+            return response;
+        }
         final ServiceContract serviceContract = ServiceContractService.instance( ).getActiveServiceContract( clientCode );
         final boolean includeDeletedIdentities = request.getIncludeDeletedIdentities( ) != null ? request.getIncludeDeletedIdentities( )
                 : includeDeletedIdentitiesDefault;
@@ -108,10 +114,6 @@ public class IdentityExportService
                 identity.setAttributes( attrToKeep );
             }
             response.getIdentities( ).add( identity );
-            if ( response.getIdentities( ).size( ) >= exportLimit )
-            {
-                break;
-            }
         }
         if ( response.getIdentities( ).isEmpty( ) )
         {
