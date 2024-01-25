@@ -94,16 +94,18 @@ public class IdentityIndexer implements IIdentityIndexer
     }
 
     @Override
-    public void bulk( final List<BulkAction> bulkActions, final String index )
+    public boolean bulk( final List<BulkAction> bulkActions, final String index )
     {
         try
         {
             final String response = this._elasticClient.indexByBulk( index, bulkActions );
             AppLogService.debug( "Indexed document: " + response );
+            return true;
         }
         catch( final ElasticClientException e )
         {
             AppLogService.error( "Failed to bulk index ", e );
+            return false;
         }
     }
 

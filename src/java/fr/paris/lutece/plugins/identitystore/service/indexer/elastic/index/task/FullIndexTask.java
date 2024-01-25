@@ -51,6 +51,7 @@ import org.apache.commons.lang3.time.StopWatch;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 public class FullIndexTask extends AbstractIndexTask
@@ -110,7 +111,24 @@ public class FullIndexTask extends AbstractIndexTask
                 this.getStatus( ).log( "Size of indexing batches : " + BATCH_SIZE );
                 final Batch<Integer> batch = Batch.ofSize( identityIdsList, BATCH_SIZE );
                 this.getStatus( ).log( "NB of indexing batches : " + batch.size( ) );
-                batch.stream( ).parallel( ).forEach( identityIdList -> this.process( identityIdList, newIndex ) );
+                final AtomicInteger failedCalls = new AtomicInteger( 0 );
+                batch.stream( ).parallel( ).forEach( identityIdList -> {
+                    boolean processed = this.process( identityIdList, newIndex );
+                    while ( !processed )
+                    {
+                        final int nbRetry = failedCalls.getAndIncrement( );
+                        this.getStatus( ).log( "Retry nb " + nbRetry );
+                        try
+                        {
+                            Thread.sleep( 1000 );
+                        }
+                        catch( InterruptedException e )
+                        {
+                            this.getStatus( ).log( "Could thread sleep.. + " + e.getMessage( ) );
+                        }
+                        processed = this.process( identityIdList, newIndex );
+                    }
+                } );
                 this.getStatus( ).log( "All batches processed, now switch alias to publish new index.." );
                 final String oldIndex = identityIndexer.getIndexBehindAlias( IIdentityIndexer.CURRENT_INDEX_ALIAS );
                 if ( !StringUtils.equals( oldIndex, newIndex ) )
@@ -149,14 +167,18 @@ public class FullIndexTask extends AbstractIndexTask
         this.close( );
     }
 
-    private void process( final List<Integer> identityIdList, String newIndex )
+    private boolean process( final List<Integer> identityIdList, final String newIndex )
     {
         final List<IdentityObject> identityObjects = IdentityObjectHome.loadEligibleIdentitiesForIndex( identityIdList );
         final List<BulkAction> actions = identityObjects.stream( )
                 .map( identityObject -> new BulkAction( identityObject.getCustomerId( ), identityObject, BulkActionType.INDEX ) )
                 .collect( Collectors.toList( ) );
-        this.createIdentityIndexer( ).bulk( actions, newIndex );
-        this.getStatus( ).incrementCurrentNbIndexedIdentities( identityObjects.size( ) );
+        final boolean bulked = this.createIdentityIndexer( ).bulk( actions, newIndex );
+        if ( bulked )
+        {
+            this.getStatus( ).incrementCurrentNbIndexedIdentities( identityObjects.size( ) );
+        }
+        return bulked;
     }
 
     public IIdentityIndexer createIdentityIndexer( )

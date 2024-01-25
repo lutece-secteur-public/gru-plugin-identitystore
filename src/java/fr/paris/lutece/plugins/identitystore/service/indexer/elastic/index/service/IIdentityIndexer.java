@@ -46,7 +46,7 @@ public interface IIdentityIndexer
     /* Documents API */
     void create( final IdentityObject identity, final String index );
 
-    void bulk( final List<BulkAction> bulkActions, final String index );
+    boolean bulk( final List<BulkAction> bulkActions, final String index );
 
     void update( final IdentityObject identity, final String index );
 

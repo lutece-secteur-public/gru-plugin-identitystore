@@ -92,6 +92,7 @@ public class MissingIndexTask extends Daemon
             for ( final List<BulkAction> batchActions : batch )
             {
                 AppLogService.debug( "Processing batch : " + ++batchCounter );
+                // TODO handle bulk error
                 this._identityIndexer.bulk( batchActions, IIdentityIndexer.CURRENT_INDEX_ALIAS );
             }
 

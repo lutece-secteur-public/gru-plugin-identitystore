@@ -129,9 +129,6 @@ public class GeocodesService
             attrToUpdate.remove( countryLabelToUpdate );
         }
 
-        
-        
-        
         // Country code to CREATE
         if ( countryCodeToCreate != null )
         {
@@ -316,7 +313,7 @@ public class GeocodesService
             // No country code sent, checking if label was sent
             else
             {
-            	// get birth date
+                // get birth date
                 Date birthdate;
                 final IdentityAttribute birthdateAttr = identity.getAttributes( ).get( Constants.PARAM_BIRTH_DATE );
                 try
@@ -338,10 +335,10 @@ public class GeocodesService
                 {
                     birthdate = null;
                 }
-                
+
                 if ( countryLabelToCreate != null )
                 {
-                	
+
                     final List<Country> countries = GeoCodesService.getInstance( ).getCountriesListByName( countryLabelToCreate.getValue( ), birthdate );
                     if ( CollectionUtils.isEmpty( countries ) )
                     {
@@ -418,7 +415,8 @@ public class GeocodesService
                         }
                         else
                         {
-                            final List<Country> countries = GeoCodesService.getInstance( ).getCountriesListByName( countryLabelToUpdate.getValue( ), birthdate );
+                            final List<Country> countries = GeoCodesService.getInstance( ).getCountriesListByName( countryLabelToUpdate.getValue( ),
+                                    birthdate );
                             if ( CollectionUtils.isEmpty( countries ) )
                             {
                                 // Country doesn't exist in Geocodes for provided label
@@ -562,17 +560,18 @@ public class GeocodesService
         {
             if ( countryLabelToCreate != null )
             {
-            	Date birthdate;
+                Date birthdate;
                 try
                 {
-                    final AttributeDto bdToCreate = attrToCreate.stream( ).filter( a -> a.getKey( ).equals( Constants.PARAM_BIRTH_DATE ) ).findFirst( ).orElse( null );
+                    final AttributeDto bdToCreate = attrToCreate.stream( ).filter( a -> a.getKey( ).equals( Constants.PARAM_BIRTH_DATE ) ).findFirst( )
+                            .orElse( null );
                     birthdate = bdToCreate != null ? DateUtils.parseDate( bdToCreate.getValue( ), "dd/MM/yyyy" ) : null;
                 }
                 catch( final ParseException e )
                 {
                     birthdate = null;
                 }
-                
+
                 final List<Country> countries = GeoCodesService.getInstance( ).getCountriesListByName( countryLabelToCreate.getValue( ), birthdate );
                 if ( CollectionUtils.isEmpty( countries ) )
                 {
