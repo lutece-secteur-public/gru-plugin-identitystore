@@ -351,7 +351,7 @@ public final class IdentityHome
 
     /**
      * get identities that have been updated during the previous `days`.
-     * 
+     *
      * @param days
      *            max number of days since the last update
      * @param identityChangeTypes
@@ -364,6 +364,35 @@ public final class IdentityHome
             final List<SearchUpdatedAttribute> updatedAttributes, final Integer max )
     {
         return _dao.selectUpdated( days, identityChangeTypes, updatedAttributes, max, _plugin );
+    }
+
+    /**
+     * get identity IDs that have been updated during the previous `days`.
+     *
+     * @param days
+     *            max number of days since the last update
+     * @param identityChangeTypes
+     *            filters on specific change types
+     * @param updatedAttributes
+     *            filters on specific updated attributes
+     * @return the list of identities
+     */
+    public static List<Integer> findUpdatedIdentityIds( final Integer days, final List<IdentityChangeType> identityChangeTypes,
+            final List<SearchUpdatedAttribute> updatedAttributes, final Integer max )
+    {
+        return _dao.selectUpdatedIds( days, identityChangeTypes, updatedAttributes, max, _plugin );
+    }
+
+    /**
+     * get updated identities from their IDs.
+     * 
+     * @param identityIds
+     *            list of desired identity IDs
+     * @return the list of identities
+     */
+    public static List<UpdatedIdentityDto> getUpdatedIdentitiesFromIds( final List<Integer> identityIds )
+    {
+        return _dao.selectUpdatedFromIds( identityIds, _plugin );
     }
 
     /**

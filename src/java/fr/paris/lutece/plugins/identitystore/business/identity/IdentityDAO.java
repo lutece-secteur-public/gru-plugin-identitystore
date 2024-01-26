@@ -117,6 +117,8 @@ public final class IdentityDAO implements IIdentityDAO
     private static final String SQL_QUERY_SEARCH_IDENTITY_HISTORY = "SELECT change_type, change_status, change_message, author_type, author_name, client_code, customer_id, modification_date, metadata::text FROM identitystore_identity_history WHERE ${client_code} AND ${customer_id} AND ${author_name} AND ${change_type} AND ${modification_date} AND ${metadata} ORDER BY modification_date DESC";
 
     private static final String SQL_QUERY_SELECT_UPDATED_IDENTITIES = "SELECT DISTINCT i.customer_id, i.last_update_date FROM identitystore_identity i JOIN identitystore_identity_history ih ON i.customer_id = ih.customer_id JOIN identitystore_identity_attribute_history iah ON i.id_identity = iah.id_identity WHERE 1=1";
+    private static final String SQL_QUERY_SELECT_UPDATED_IDENTITIES_FROM_IDS = "SELECT i.customer_id, i.last_update_date FROM identitystore_identity i WHERE id_identity IN (${identity_id_list}) ORDER BY i.last_update_date DESC";
+    private static final String SQL_QUERY_SELECT_UPDATED_IDENTITY_IDS = "SELECT DISTINCT i.id_identity, i.last_update_date FROM identitystore_identity i JOIN identitystore_identity_history ih ON i.customer_id = ih.customer_id JOIN identitystore_identity_attribute_history iah ON i.id_identity = iah.id_identity WHERE 1=1";
     private static final String SQL_QUERY_FILTER_LAST_UPDATE = "i.last_update_date > (NOW() - INTERVAL '${days}' DAY)";
     private static final String SQL_QUERY_FILTER_IDENTITY_MODIFICATION_DATE = "ih.modification_date > (NOW() - INTERVAL '${days}' DAY)";
     private static final String SQL_QUERY_FILTER_ATTRIBUTE_MODIFICATION_DATE = "iah.modification_date > (NOW() - INTERVAL '${days}' DAY)";
@@ -691,6 +693,53 @@ public final class IdentityDAO implements IIdentityDAO
     {
         final List<UpdatedIdentityDto> list = new ArrayList<>( );
         final StringBuilder sqlBuilder = new StringBuilder( SQL_QUERY_SELECT_UPDATED_IDENTITIES );
+
+        addUpdatedIdentitiesFilters( days, identityChangeTypes, updatedAttributes, max, sqlBuilder );
+
+        try ( final DAOUtil daoUtil = new DAOUtil( sqlBuilder.toString( ), plugin ) )
+        {
+            daoUtil.executeQuery( );
+            while ( daoUtil.next( ) )
+            {
+                final UpdatedIdentityDto updatedIdentity = new UpdatedIdentityDto( );
+                int nIndex = 1;
+                updatedIdentity.setCustomerId( daoUtil.getString( nIndex++ ) );
+                updatedIdentity.setModificationDate( daoUtil.getTimestamp( nIndex ) );
+                list.add( updatedIdentity );
+            }
+        }
+        return list;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public List<Integer> selectUpdatedIds( final Integer days, final List<IdentityChangeType> identityChangeTypes,
+            final List<SearchUpdatedAttribute> updatedAttributes, final Integer max, final Plugin plugin )
+    {
+        final List<Integer> ids = new ArrayList<>( );
+        final StringBuilder sqlBuilder = new StringBuilder( SQL_QUERY_SELECT_UPDATED_IDENTITY_IDS );
+
+        addUpdatedIdentitiesFilters( days, identityChangeTypes, updatedAttributes, max, sqlBuilder );
+
+        try ( final DAOUtil daoUtil = new DAOUtil( sqlBuilder.toString( ), plugin ) )
+        {
+            daoUtil.executeQuery( );
+            while ( daoUtil.next( ) )
+            {
+                ids.add( daoUtil.getInt( 1 ) );
+            }
+        }
+        return ids;
+    }
+
+    /**
+     * Adds filters for the search updated identities request.
+     */
+    private void addUpdatedIdentitiesFilters( final Integer days, final List<IdentityChangeType> identityChangeTypes,
+            final List<SearchUpdatedAttribute> updatedAttributes, final Integer max, final StringBuilder sqlBuilder )
+    {
         if ( days != null )
         {
             // AND i.last_update_date > (NOW() - INTERVAL '100' DAY)
@@ -738,12 +787,23 @@ public final class IdentityDAO implements IIdentityDAO
                 sqlBuilder.append( " AND " ).append( fullAttributesFilters.stream( ).collect( Collectors.joining( " OR ", "(", ")" ) ) );
             }
         }
+        sqlBuilder.append( " ORDER BY i.last_update_date DESC " );
         if ( max != null && max > 0 )
         {
             sqlBuilder.append( " LIMIT " ).append( max );
         }
+    }
 
-        try ( final DAOUtil daoUtil = new DAOUtil( sqlBuilder.toString( ), plugin ) )
+    /**
+     * {@inheritDoc}
+     */
+    public List<UpdatedIdentityDto> selectUpdatedFromIds( final List<Integer> identityIds, final Plugin plugin )
+    {
+        final List<UpdatedIdentityDto> list = new ArrayList<>( );
+        final String sql = SQL_QUERY_SELECT_UPDATED_IDENTITIES_FROM_IDS.replace( "${identity_id_list}",
+                identityIds.stream( ).map( Object::toString ).collect( Collectors.joining( ", " ) ) );
+
+        try ( final DAOUtil daoUtil = new DAOUtil( sql, plugin ) )
         {
             daoUtil.executeQuery( );
             while ( daoUtil.next( ) )
@@ -755,6 +815,7 @@ public final class IdentityDAO implements IIdentityDAO
                 list.add( updatedIdentity );
             }
         }
+
         return list;
     }
 

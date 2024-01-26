@@ -227,6 +227,31 @@ public interface IIdentityDAO
             final List<SearchUpdatedAttribute> updatedAttributes, final Integer max, final Plugin plugin );
 
     /**
+     * get identity IDs that have been updated during the previous `days`.
+     *
+     * @param days
+     *            max number of days since the last update
+     * @param identityChangeTypes
+     *            filters on specific change types
+     * @param updatedAttributes
+     *            filters on specific updated attributes
+     * @return the list of identities
+     */
+    List<Integer> selectUpdatedIds( final Integer days, final List<IdentityChangeType> identityChangeTypes,
+            final List<SearchUpdatedAttribute> updatedAttributes, final Integer max, final Plugin plugin );
+
+    /**
+     * select updated identities from their IDs.
+     * 
+     * @param identityIds
+     *            list of desired identity IDs
+     * @param plugin
+     *            the plugin
+     * @return the list of identities
+     */
+    List<UpdatedIdentityDto> selectUpdatedFromIds( final List<Integer> identityIds, final Plugin plugin );
+
+    /**
      * Search for history entries that matches the following parameters
      *
      * @param strCustomerId
