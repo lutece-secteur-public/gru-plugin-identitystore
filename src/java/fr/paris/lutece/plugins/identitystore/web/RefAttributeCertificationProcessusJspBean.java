@@ -37,6 +37,7 @@ import fr.paris.lutece.plugins.identitystore.business.attribute.AttributeKeyHome
 import fr.paris.lutece.plugins.identitystore.business.referentiel.RefAttributeCertificationLevel;
 import fr.paris.lutece.plugins.identitystore.business.referentiel.RefAttributeCertificationProcessus;
 import fr.paris.lutece.plugins.identitystore.business.referentiel.RefAttributeCertificationProcessusHome;
+import fr.paris.lutece.plugins.identitystore.business.referentiel.RefCertificationLevel;
 import fr.paris.lutece.plugins.identitystore.business.referentiel.RefCertificationLevelHome;
 import fr.paris.lutece.plugins.identitystore.service.contract.AttributeCertificationDefinitionService;
 import fr.paris.lutece.portal.service.admin.AccessDeniedException;
@@ -167,7 +168,8 @@ public class RefAttributeCertificationProcessusJspBean extends AbstractManagePro
         Map<String, Object> model = getModel( );
         model.put( MARK_REFATTRIBUTECERTIFICATIONPROCESSUS, _refattributecertificationprocessus );
         model.put( MARK_ATTRIBUTE_LEVELS_LIST, RefAttributeCertificationProcessusHome.selectAttributeLevels( _refattributecertificationprocessus ) );
-        model.put( MARK_AVAILAIBLE_LEVELS_LIST, RefAttributeCertificationProcessusHome.selectCertificationLevels( ) );
+        model.put( MARK_AVAILAIBLE_LEVELS_LIST, RefAttributeCertificationProcessusHome.selectCertificationLevels( ).stream( )
+                .sorted( Comparator.comparing( RefCertificationLevel::getLevel ) ).collect( Collectors.toList( ) ) );
         model.put( SecurityTokenService.MARK_TOKEN, SecurityTokenService.getInstance( ).getToken( request, ACTION_CREATE_REFATTRIBUTECERTIFICATIONPROCESSUS ) );
 
         return getPage( PROPERTY_PAGE_TITLE_CREATE_REFATTRIBUTECERTIFICATIONPROCESSUS, TEMPLATE_CREATE_REFATTRIBUTECERTIFICATIONPROCESSUS, model );
@@ -275,7 +277,8 @@ public class RefAttributeCertificationProcessusJspBean extends AbstractManagePro
         Map<String, Object> model = getModel( );
         model.put( MARK_REFATTRIBUTECERTIFICATIONPROCESSUS, _refattributecertificationprocessus );
         model.put( MARK_ATTRIBUTE_LEVELS_LIST, RefAttributeCertificationProcessusHome.selectAttributeLevels( _refattributecertificationprocessus ) );
-        model.put( MARK_AVAILAIBLE_LEVELS_LIST, RefAttributeCertificationProcessusHome.selectCertificationLevels( ) );
+        model.put( MARK_AVAILAIBLE_LEVELS_LIST, RefAttributeCertificationProcessusHome.selectCertificationLevels( ).stream( )
+                .sorted( Comparator.comparing( RefCertificationLevel::getLevel ) ).collect( Collectors.toList( ) ) );
         model.put( SecurityTokenService.MARK_TOKEN, SecurityTokenService.getInstance( ).getToken( request, ACTION_MODIFY_REFATTRIBUTECERTIFICATIONPROCESSUS ) );
 
         return getPage( PROPERTY_PAGE_TITLE_MODIFY_REFATTRIBUTECERTIFICATIONPROCESSUS, TEMPLATE_MODIFY_REFATTRIBUTECERTIFICATIONPROCESSUS, model );

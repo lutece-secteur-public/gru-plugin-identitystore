@@ -35,7 +35,7 @@
                     <option value="${attributeLevel.attributeKey.id!},-1" <#if attributeLevel.refCertificationLevel.id == -1> selected="selected"</#if> >AUCUN</option>
                     <#if availaible_certification_levels_list?? && availaible_certification_levels_list?has_content>
                     <#list availaible_certification_levels_list as level>
-                        <option value="${attributeLevel.attributeKey.id!},${level.id!}" <#if attributeLevel.refCertificationLevel.id == level.id> selected="selected"</#if> >${level.level!}</option>
+                        <option value="${attributeLevel.attributeKey.id!},${level.id!}" <#if attributeLevel.refCertificationLevel.id == level.id> selected="selected"</#if> >${level.name} (${level.level!})</option>
                     </#list>
                     </#if>
                 </@select>

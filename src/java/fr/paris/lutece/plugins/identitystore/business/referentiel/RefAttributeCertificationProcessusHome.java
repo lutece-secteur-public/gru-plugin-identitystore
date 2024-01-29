@@ -169,7 +169,7 @@ public final class RefAttributeCertificationProcessusHome
         return iRefAttributeCertificationLevelDAO.selectRefAttributeLevelByProcessus( _plugin, refattributecertificationprocessus );
     }
 
-    public static Object selectCertificationLevels( )
+    public static List<RefCertificationLevel> selectCertificationLevels( )
     {
         return iRefCertificationLevelDAO.selectRefCertificationLevelsList( _plugin );
     }
