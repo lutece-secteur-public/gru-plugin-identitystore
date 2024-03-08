@@ -43,6 +43,7 @@ import fr.paris.lutece.plugins.identitystore.business.contract.AttributeRight;
 import fr.paris.lutece.plugins.identitystore.business.contract.ServiceContract;
 import fr.paris.lutece.plugins.identitystore.business.contract.ServiceContractHome;
 import fr.paris.lutece.plugins.identitystore.business.referentiel.RefAttributeCertificationProcessusHome;
+import fr.paris.lutece.plugins.identitystore.business.referentiel.RefCertificationLevel;
 import fr.paris.lutece.plugins.identitystore.business.referentiel.RefCertificationLevelHome;
 import fr.paris.lutece.plugins.identitystore.service.contract.ServiceContractService;
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
@@ -109,6 +110,7 @@ public class ServiceContractJspBean extends ManageServiceContractJspBean<Integer
     private static final String MARK_AVAILAIBLE_CLIENT_APPLICATIONS_LIST = "availaible_client_applications_list";
     private static final String MARK_EDIT_ACTION = "edit_action";
     private static final String MARK_BACK_URL = "back_url";
+    private static final String MARK_MANDATORY_ATTRIBUTE_KEYS_LIST = "mandatory_attribute_keys_list";
 
     private static final String JSP_MANAGE_SERVICECONTRACTS = "jsp/admin/plugins/identitystore/ManageServiceContracts.jsp";
 
@@ -260,10 +262,15 @@ public class ServiceContractJspBean extends ManageServiceContractJspBean<Integer
         final List<ServiceContractAttributeDefinitionDto> attributeRequirementList = ServiceContractHome.getDto( _servicecontract );
         sortAttributeRequirementList( attributeRequirementList );
 
+        final List<String> mandatoryAttrKeyList = AttributeKeyHome.getMandatoryForCreationAttributeKeyList( ).stream( ).map( AttributeKey::getKeyName )
+                .collect( Collectors.toList( ) );
+
+        model.put( MARK_MANDATORY_ATTRIBUTE_KEYS_LIST, mandatoryAttrKeyList );
         model.put( MARK_SERVICECONTRACT, _servicecontract );
         model.put( MARK_EDIT_ACTION, "action_createServiceContract" );
         model.put( MARK_ATTRIBUTE_REQUIREMENTS_LIST, attributeRequirementList );
-        model.put( MARK_AVAILAIBLE_LEVELS_LIST, ServiceContractHome.selectCertificationLevels( ) );
+        model.put( MARK_AVAILAIBLE_LEVELS_LIST, ServiceContractHome.selectCertificationLevels( ).stream( )
+                .sorted( Comparator.comparing( RefCertificationLevel::getLevel ) ).collect( Collectors.toList( ) ) );
         model.put( MARK_AVAILAIBLE_CLIENT_APPLICATIONS_LIST, ClientApplicationHome.selectApplicationList( ) );
         model.put( SecurityTokenService.MARK_TOKEN, SecurityTokenService.getInstance( ).getToken( request, ACTION_CREATE_SERVICECONTRACT ) );
 
@@ -418,10 +425,15 @@ public class ServiceContractJspBean extends ManageServiceContractJspBean<Integer
         final List<ServiceContractAttributeDefinitionDto> attributeRequirementList = ServiceContractHome.getDto( _servicecontract );
         sortAttributeRequirementList( attributeRequirementList );
 
+        final List<String> mandatoryAttrKeyList = AttributeKeyHome.getMandatoryForCreationAttributeKeyList( ).stream( ).map( AttributeKey::getKeyName )
+                .collect( Collectors.toList( ) );
+
+        model.put( MARK_MANDATORY_ATTRIBUTE_KEYS_LIST, mandatoryAttrKeyList );
         model.put( MARK_SERVICECONTRACT, _servicecontract );
         model.put( MARK_EDIT_ACTION, "action_modifyServiceContract" );
         model.put( MARK_ATTRIBUTE_REQUIREMENTS_LIST, attributeRequirementList );
-        model.put( MARK_AVAILAIBLE_LEVELS_LIST, ServiceContractHome.selectCertificationLevels( ) );
+        model.put( MARK_AVAILAIBLE_LEVELS_LIST, ServiceContractHome.selectCertificationLevels( ).stream( )
+                .sorted( Comparator.comparing( RefCertificationLevel::getLevel ) ).collect( Collectors.toList( ) ) );
         model.put( MARK_AVAILAIBLE_CLIENT_APPLICATIONS_LIST, ClientApplicationHome.selectApplicationList( ) );
         model.put( SecurityTokenService.MARK_TOKEN, SecurityTokenService.getInstance( ).getToken( request, ACTION_MODIFY_SERVICECONTRACT ) );
 

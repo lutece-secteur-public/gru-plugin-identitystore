@@ -92,8 +92,8 @@
 				${attribute.attributeKey.name!}
 			</td>
 			<td>
-				<label for="${attribute.attributeKey.id}-mandatory">
-					<input id="${attribute.attributeKey.id}-mandatory" type="checkbox" name="mandatory" value="${attribute.attributeKey.id}" <#if attribute.attributeRight.mandatory> checked</#if> />
+				<label for="${attribute.attributeKey.id}-mandatory" <#if mandatory_attribute_keys_list?seq_contains(attribute.attributeKey.keyName)> onclick="return false;" title='#i18n{identitystore.modify_servicecontract.info.global.mandatory.attribute}'</#if> >
+					<input id="${attribute.attributeKey.id}-mandatory" type="checkbox" name="mandatory" value="${attribute.attributeKey.id}" <#if attribute.attributeRight.mandatory || mandatory_attribute_keys_list?seq_contains(attribute.attributeKey.keyName)> checked</#if> />
 				#i18n{identitystore.modify_clientapplication.labelMandatory}
 				</label>
 			</td>
@@ -114,7 +114,7 @@
 					<option value="${attribute.attributeKey.id!},-1" <#if attribute.refCertificationLevel.id == -1> selected="selected"</#if> >AUCUN</option>
 					<#if availaible_certification_levels_list?? && availaible_certification_levels_list?has_content>
 						<#list availaible_certification_levels_list as level>
-							<option value="${attribute.attributeKey.id!},${level.id!}" <#if attribute.refCertificationLevel.id == level.id> selected="selected"</#if> >${level.level!}</option>
+							<option value="${attribute.attributeKey.id!},${level.id!}" <#if attribute.refCertificationLevel.id == level.id> selected="selected"</#if> >${level.name} (${level.level!})</option>
 						</#list>
 					</#if>
 				</@select>
