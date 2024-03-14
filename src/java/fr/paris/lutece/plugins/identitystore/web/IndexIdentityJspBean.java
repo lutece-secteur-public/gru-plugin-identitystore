@@ -33,24 +33,21 @@
  */
 package fr.paris.lutece.plugins.identitystore.web;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import fr.paris.lutece.plugins.identitystore.service.IdentityManagementResourceIdService;
 import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.task.FullIndexTask;
-import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.task.IndexStatus;
+import fr.paris.lutece.portal.business.progressmanager.ProgressFeed;
 import fr.paris.lutece.portal.service.admin.AccessDeniedException;
+import fr.paris.lutece.portal.service.progressmanager.ProgressManagerService;
 import fr.paris.lutece.portal.service.security.SecurityTokenService;
 import fr.paris.lutece.portal.service.spring.SpringContextService;
-import fr.paris.lutece.portal.service.util.AppLogService;
 import fr.paris.lutece.portal.util.mvc.admin.annotations.Controller;
 import fr.paris.lutece.portal.util.mvc.commons.annotations.Action;
 import fr.paris.lutece.portal.util.mvc.commons.annotations.View;
-import org.apache.commons.lang3.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 
 /**
  * This class provides the user interface to index Identity features
@@ -58,16 +55,11 @@ import java.util.Map;
 @Controller( controllerJsp = "IndexIdentities.jsp", controllerPath = "jsp/admin/plugins/identitystore/", right = "IDENTITYSTORE_MANAGEMENT" )
 public class IndexIdentityJspBean extends ManageIdentitiesJspBean
 {
-    private final static ObjectMapper _mapper = new ObjectMapper( ).disable( DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES );
-    /**
-     * 
-     */
     // Templates
     private static final String TEMPLATE_INDEX_IDENTITIES = "/admin/plugins/identitystore/index_identities.html";
 
     // Properties for page titles
     private static final String PROPERTY_PAGE_TITLE_MANAGE_IDENTITIES = "identitystore.index_identities.pageTitle";
-    private static final String INFO_IDENTITIES_INDEX = "identitystore.index_identities.completed";
 
     // Markers
     private static final String MARK_INDEX_LAST_LOGS = "index_last_logs";
@@ -78,7 +70,12 @@ public class IndexIdentityJspBean extends ManageIdentitiesJspBean
 
     // Actions
     private static final String ACTION_INDEX_IDENTITIES = "indexIdentities";
-    private static final String ACTION_INDEX_STATUS = "indexStatus";
+
+    // Feed
+    private static final String MARK_FEED_TOKEN = "feed_token";
+    private static final String FEED_NAME = "fullIndexFeed";
+    private String _feedToken;
+    private final ProgressManagerService progressManagerService = ProgressManagerService.getInstance( );
     private final FullIndexTask _fullIndexTask = SpringContextService.getBean( "identitystore.fullIndexer" );
     private String _strLastLogs;
 
@@ -89,12 +86,13 @@ public class IndexIdentityJspBean extends ManageIdentitiesJspBean
         {
             _strLastLogs = _fullIndexTask.getStatus( ).getLogs( );
         }
-
+        this.registerFeed( );
         final Map<String, Object> model = getModel( );
         model.put( MARK_HAS_INDEX_ROLE,
                 IdentityManagementResourceIdService.isAuthorized( IdentityManagementResourceIdService.PERMISSION_INDEX_IDENTITY, getUser( ) ) );
         model.put( MARK_INDEX_LAST_LOGS, _strLastLogs );
         model.put( SecurityTokenService.MARK_TOKEN, SecurityTokenService.getInstance( ).getToken( request, ACTION_INDEX_IDENTITIES ) );
+        model.put( MARK_FEED_TOKEN, _feedToken );
 
         return getPage( PROPERTY_PAGE_TITLE_MANAGE_IDENTITIES, TEMPLATE_INDEX_IDENTITIES, model );
     }
@@ -116,48 +114,26 @@ public class IndexIdentityJspBean extends ManageIdentitiesJspBean
         }
         if ( _fullIndexTask.getStatus( ) == null || !_fullIndexTask.getStatus( ).isRunning( ) )
         {
-            new Thread( _fullIndexTask::doJob ).start( );
+            _fullIndexTask.doJob( _feedToken );
         }
-
+        this.unregisterFeed( );
         return redirectView( request, VIEW_INDEX_IDENTITIES );
     }
 
-    /**
-     * Get the status of the current index process
-     *
-     * @param request
-     *            The Http request
-     * @return The index
-     */
-    @Action( ACTION_INDEX_STATUS )
-    public String doGetIndexStatus( HttpServletRequest request )
+    private void unregisterFeed( )
     {
-        final HashMap<String, String> additionalParameters = new HashMap<>( );
-        additionalParameters.put( "json", this.getJsonStatus( _fullIndexTask.getStatus( ) ) );
-        return redirect( request, null, additionalParameters );
+        progressManagerService.unRegisterFeed( _feedToken );
+        _feedToken = null;
     }
 
-    /**
-     * Get Json status of current indexing process
-     *
-     * @param indexStatus
-     * @return JsonStatus of the status
-     */
-    private String getJsonStatus( IndexStatus indexStatus )
+    private void registerFeed( )
     {
-        try
-        {
-            String jsonStatus = _mapper.writeValueAsString( indexStatus );
-            if ( StringUtils.isNotEmpty( jsonStatus ) )
-            {
-                jsonStatus = jsonStatus.replaceAll( "\\n", "\\\n" );
-            }
-            return jsonStatus;
-        }
-        catch( JsonProcessingException e )
-        {
-            AppLogService.error( "Unable to serialize index status", e );
-            return StringUtils.EMPTY;
+        final Optional<ProgressFeed> progressFeed = progressManagerService.getProgressFeeds().values().stream()
+                .filter(feed -> Objects.equals(FEED_NAME, feed.getId())).findFirst();
+        if(progressFeed.isPresent()) {
+            _feedToken = progressFeed.get().getToken();
+        } else {
+            _feedToken = progressManagerService.registerFeed( FEED_NAME, 0 );
         }
     }
 }

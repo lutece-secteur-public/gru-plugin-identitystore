@@ -14,14 +14,16 @@
     </@boxHeader>
     <@boxBody>
         <@messages infos=infos />
-        <div class="my-3">
-            <div class="progress" id="index-progress-container" >
-                <div id="index-progressbar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar"
-                     aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
-                </div>
-            </div>
+        <div id="progress-container" class="my-3">
+            <#if index_last_logs?has_content>
+                <@progress token='${feed_token}' showReport=true intervalTime=1000 value=100 min=0 />
+            <#else>
+                <@progress token='${feed_token}' showReport=true intervalTime=1000 value=0 min=0 />
+            </#if>
         </div>
-        <div class="my-3">
+    </@boxBody>
+    <@boxBody>
+        <div id="report-container" class="my-3">
             <pre id="logs-console">
                 ${index_last_logs!''}
             </pre>
@@ -29,55 +31,5 @@
     </@boxBody>
 </@rowBox>
 <script>
-    // checking
-    setInterval(() => {
-        check()
-    }, 500);
 
-    // check if indexing in progress;
-    async function check() {
-        await getStatus().then(indexStatus => {
-            if (indexStatus != null) {
-                progressBar(indexStatus);
-                displayLogs(indexStatus);
-            }
-        });
-    }
-
-    async function getStatus() {
-        let response = await fetch("jsp/admin/plugins/identitystore/IndexIdentities.jsp?action=indexStatus");
-        const urlParams = new URLSearchParams(response.url);
-        return JSON.parse(urlParams.get('json'));
-    }
-
-    // progress bar
-    function progressBar(indexStatus) {
-        if ( indexStatus !== null ) {
-            const buttonRun = document.getElementsByName("action_indexIdentities")[0];
-            buttonRun.disabled = indexStatus.running;
-            const progressBar = document.getElementById("index-progressbar");
-            progressBar.setAttribute("aria-valuenow", indexStatus.progress);
-            progressBar.style.width = indexStatus.progress + "%";
-            progressBar.innerHTML = indexStatus.progress.toFixed(2) + "%" + " ( Traitement de " + indexStatus.currentNbIndexedIdentities + "/" + indexStatus.nbTotalIdentities + " identités)";
-            scrollLogs(indexStatus);
-        }
-    }
-
-    function displayLogs(indexStatus) {
-        const console = document.getElementById("logs-console");
-        console.innerHTML = indexStatus.logs;
-    }
-
-    function scrollLogs(indexStatus) {
-        if(indexStatus.running) {
-            const console = document.getElementById("logs-console");
-            console.scrollTop = console.scrollHeight;
-        }
-    }
 </script>
-<style>
-    pre {
-        height: 450px;
-        overflow: scroll;
-    }
-</style>

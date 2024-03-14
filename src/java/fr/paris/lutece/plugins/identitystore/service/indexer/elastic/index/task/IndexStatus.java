@@ -33,6 +33,7 @@
  */
 package fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.task;
 
+import fr.paris.lutece.portal.service.progressmanager.ProgressManagerService;
 import fr.paris.lutece.portal.service.util.AppLogService;
 
 import java.io.Serializable;
@@ -40,44 +41,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class IndexStatus implements Serializable
 {
-    protected int _nCurrentNbIndexedIdentities = 0;
-    protected int _nNbTotalIdentities = 0;
+    protected final ProgressManagerService progressManagerService = ProgressManagerService.getInstance( );
+    protected String _strFeedToken;
     protected StringBuilder _sbLogs;
     protected final AtomicBoolean _bIsRunning = new AtomicBoolean( );
-
-    public int getCurrentNbIndexedIdentities( )
-    {
-        return _nCurrentNbIndexedIdentities;
-    }
-
-    public void setCurrentNbIndexedIdentities( int _nCurrentNbIndexedIdentities )
-    {
-        this._nCurrentNbIndexedIdentities = _nCurrentNbIndexedIdentities;
-    }
-
-    public void incrementCurrentNbIndexedIdentities( int increment )
-    {
-        this._nCurrentNbIndexedIdentities += increment;
-    }
-
-    public int getNbTotalIdentities( )
-    {
-        return _nNbTotalIdentities;
-    }
-
-    public void setNbTotalIdentities( int _nNbTotalIdentities )
-    {
-        this._nNbTotalIdentities = _nNbTotalIdentities;
-    }
-
-    public double getProgress( )
-    {
-        if ( _nNbTotalIdentities == 0 )
-        {
-            return 0;
-        }
-        return ( (double) _nCurrentNbIndexedIdentities / (double) _nNbTotalIdentities ) * 100.0;
-    }
 
     public String getLogs( )
     {
@@ -99,13 +66,43 @@ public class IndexStatus implements Serializable
         this._bIsRunning.set( running );
     }
 
+    public String getFeedToken( )
+    {
+        return _strFeedToken;
+    }
+
+    public void setFeedToken( String _strFeedToken )
+    {
+        this._strFeedToken = _strFeedToken;
+    }
+
     protected void log( final String message )
     {
-        if ( _sbLogs == null )
+        if ( this._sbLogs == null )
         {
-            _sbLogs = new StringBuilder( );
+            this._sbLogs = new StringBuilder( );
         }
-        _sbLogs.append( message ).append( "\n" );
+        this._sbLogs.append( message ).append( "\n" );
+        if ( this._strFeedToken != null )
+        {
+            this.progressManagerService.addReport( _strFeedToken, message );
+        }
         AppLogService.debug( message );
+    }
+
+    public void initFeed( int size )
+    {
+        if ( this.getFeedToken( ) != null )
+        {
+            this.progressManagerService.initFeed( this.getFeedToken( ), size );
+        }
+    }
+
+    public void incrementCurrentNbIndexedIdentities( int size )
+    {
+        if ( this.getFeedToken( ) != null )
+        {
+            this.progressManagerService.incrementSuccess( this.getFeedToken( ), size );
+        }
     }
 }

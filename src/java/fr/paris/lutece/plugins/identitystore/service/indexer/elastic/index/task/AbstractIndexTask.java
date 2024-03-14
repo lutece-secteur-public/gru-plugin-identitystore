@@ -33,18 +33,19 @@
  */
 package fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.task;
 
+import org.apache.commons.lang3.StringUtils;
+
 public abstract class AbstractIndexTask
 {
     protected IndexStatus status = new IndexStatus( );
 
-    protected void init( )
+    protected void init( final String strFeedToken )
     {
         if ( this.status == null )
         {
             this.status = new IndexStatus( );
         }
-        this.status.setCurrentNbIndexedIdentities( 0 );
-        this.status.setNbTotalIdentities( 0 );
+        this.status.setFeedToken( strFeedToken );
         this.status._sbLogs = new StringBuilder( );
         this.status.setRunning( true );
     }

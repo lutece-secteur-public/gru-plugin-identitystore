@@ -83,15 +83,23 @@ public class FullIndexTask extends AbstractIndexTask
 
     public void doJob( )
     {
+        this.doJob( null );
+    }
+
+    public void doJob( final String feedToken )
+    {
         final StopWatch stopWatch = new StopWatch( );
         stopWatch.start( );
-        this.init( );
+        this.init( feedToken );
         this.getStatus( ).log( "Starting identities full reindex at " + DateFormatUtils.format( stopWatch.getStartTime( ), "dd-MM-yyyy'T'HH:mm:ss" ) );
+
         final IIdentityIndexer identityIndexer = this.createIdentityIndexer( );
+        int nbEligibleIdentities = 0;
         if ( identityIndexer.isAlive( ) )
         {
             final String newIndex = "identities-" + UUID.randomUUID( );
             this.getStatus( ).log( "ES available :: indexing" );
+
             try
             {
                 this.getStatus( ).log( "Creating new index : " + newIndex );
@@ -108,8 +116,9 @@ public class FullIndexTask extends AbstractIndexTask
                 }
 
                 final List<Integer> identityIdsList = new ArrayList<>( IdentityObjectHome.getEligibleIdListForIndex( ) );
-                this.getStatus( ).setNbTotalIdentities( identityIdsList.size( ) );
-                this.getStatus( ).log( "NB identities to be indexed : " + this.getStatus( ).getNbTotalIdentities( ) );
+                nbEligibleIdentities = identityIdsList.size( );
+                this.getStatus( ).initFeed( nbEligibleIdentities );
+                this.getStatus( ).log( "NB identities to be indexed : " + nbEligibleIdentities );
                 this.getStatus( ).log( "Size of indexing batches : " + BATCH_SIZE );
                 final Batch<Integer> batch = Batch.ofSize( identityIdsList, BATCH_SIZE );
                 this.getStatus( ).log( "NB of indexing batches : " + batch.size( ) );
@@ -163,9 +172,9 @@ public class FullIndexTask extends AbstractIndexTask
         stopWatch.stop( );
         final String duration = DurationFormatUtils.formatDurationWords( stopWatch.getTime( ), true, true );
 
-        if ( this.getStatus( ).getNbTotalIdentities( ) > 0 )
+        if ( nbEligibleIdentities > 0 )
         {
-            this.getStatus( ).log( "Re-indexed  " + this.getStatus( ).getNbTotalIdentities( ) + " identities in " + duration );
+            this.getStatus( ).log( "Re-indexed  " + nbEligibleIdentities + " identities in " + duration );
         }
         else
         {
