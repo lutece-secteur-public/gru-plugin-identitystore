@@ -10,7 +10,7 @@
 	<groupId>fr.paris.lutece.plugins</groupId>
 	<artifactId>plugin-identitystore</artifactId>
 	<packaging>lutece-plugin</packaging>
-	<version>3.1.4</version>
+	<version>3.1.4b</version>
 	<name>Lutece identitystore plugin</name>
 
 	<properties>
