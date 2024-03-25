@@ -41,7 +41,7 @@
             <feature-title>identitystore.adminFeature.ManageProcessusRef.name</feature-title>
             <feature-description>identitystore.adminFeature.ManageProcessusRef.description</feature-description>
             <feature-level>0</feature-level>
-            <feature-url>jsp/admin/plugins/identitystore/ManageProcessusRef.jsp</feature-url>
+            <feature-url>jsp/admin/plugins/identitystore/ManageAttributeKeys.jsp</feature-url>
             <feature-icon-url/>
         </admin-feature>
         <admin-feature>
