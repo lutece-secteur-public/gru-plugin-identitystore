@@ -77,9 +77,6 @@
         <constructor-arg ref="identitystore.elasticsearch.identityIndexer" name="_identityIndexer"/>
     </bean>
 
-    <!-- External providers-->
-    <bean id="identitystore.identityInfoExternalProvider" class="fr.paris.lutece.plugins.identitystore.service.external.MockIdentityInfoExternalProvider" />
-
     <!-- Config -->
     <bean id="identitystore.application.code.delete.authorized.list" class="java.util.ArrayList">
         <constructor-arg>
