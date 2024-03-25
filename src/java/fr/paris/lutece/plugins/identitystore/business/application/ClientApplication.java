@@ -34,7 +34,6 @@
 package fr.paris.lutece.plugins.identitystore.business.application;
 
 import fr.paris.lutece.plugins.identitystore.business.contract.ServiceContract;
-import fr.paris.lutece.plugins.identitystore.v2.business.IClientApplication;
 
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.Size;
@@ -47,7 +46,7 @@ import java.util.List;
  * class representing Client application
  *
  */
-public class ClientApplication implements IClientApplication, Serializable
+public class ClientApplication implements Serializable
 {
     private static final long serialVersionUID = 1L;
 
@@ -111,7 +110,6 @@ public class ClientApplication implements IClientApplication, Serializable
      * {@inheritDoc}
      *
      */
-    @Override
     public String getClientCode( )
     {
         return _strClientCode;

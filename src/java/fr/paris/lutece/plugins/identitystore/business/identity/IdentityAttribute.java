@@ -35,7 +35,6 @@ package fr.paris.lutece.plugins.identitystore.business.identity;
 
 import fr.paris.lutece.plugins.identitystore.business.attribute.AttributeCertificate;
 import fr.paris.lutece.plugins.identitystore.business.attribute.AttributeKey;
-import fr.paris.lutece.plugins.identitystore.v2.web.rs.dto.AttributeStatusDto;
 import fr.paris.lutece.portal.business.file.File;
 
 import javax.validation.constraints.NotBlank;
@@ -59,8 +58,6 @@ public class IdentityAttribute implements Serializable
     private AttributeCertificate _certificate;
     private Timestamp _dateLastUpdate;
     private String _strLastUpdateClientCode;
-    // for DTO conversion, not stored in DB
-    private AttributeStatusDto _status;
 
     /**
      * Returns the IdIdentity
@@ -227,23 +224,6 @@ public class IdentityAttribute implements Serializable
     public void setLastUpdateClientCode( String strLastUpdateClientCode )
     {
         this._strLastUpdateClientCode = strLastUpdateClientCode;
-    }
-
-    /**
-     * @return the sStatus for WS
-     */
-    public AttributeStatusDto getStatus( )
-    {
-        return _status;
-    }
-
-    /**
-     * @param status
-     *            the status to set for WS response
-     */
-    public void setStatus( AttributeStatusDto status )
-    {
-        this._status = status;
     }
 
 }
