@@ -66,7 +66,6 @@ import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreExceptio
 import fr.paris.lutece.portal.service.spring.SpringContextService;
 import fr.paris.lutece.portal.service.util.AppPropertiesService;
 
-
 /**
  * Service class used to validate attribute values in requests
  */
@@ -158,17 +157,17 @@ public class IdentityAttributeValidationService
      * @param response
      *            the response
      */
-    public void validatePivotAttributesIntegrity( final IdentityDto existingIdentityDto, final String clientCode, final IdentityDto identity, boolean geocodesCheck, final ChangeResponse response )
-            throws IdentityStoreException
+    public void validatePivotAttributesIntegrity( final IdentityDto existingIdentityDto, final String clientCode, final IdentityDto identity,
+            boolean geocodesCheck, final ChangeResponse response ) throws IdentityStoreException
     {
 
-    	// get pivot attributes
+        // get pivot attributes
         final List<String> pivotKeys = IdentityAttributeService.instance( ).getPivotAttributeKeys( ).stream( ).map( AttributeKey::getKeyName )
                 .collect( Collectors.toList( ) );
 
         // get attributes to update, and add certification levels
         final Map<String, AttributeDto> pivotUpdatedAttrs = identity.getAttributes( ).stream( ).filter( a -> pivotKeys.contains( a.getKey( ) ) )
-        		.peek( a -> a.setCertificationLevel( AttributeCertificationDefinitionService.instance( ).getLevelAsInteger( a.getCertifier( ), a.getKey( ) ) ) )
+                .peek( a -> a.setCertificationLevel( AttributeCertificationDefinitionService.instance( ).getLevelAsInteger( a.getCertifier( ), a.getKey( ) ) ) )
                 .collect( Collectors.toMap( AttributeDto::getKey, Function.identity( ) ) );
 
         // If the request does not contains at least one pivot attribute, we skip this validation rule
@@ -178,17 +177,12 @@ public class IdentityAttributeValidationService
         }
 
         // in case of update, we get the existing attributes for the check
-        final Map<String, AttributeDto> pivotExistingAttrs = new HashMap<>();
+        final Map<String, AttributeDto> pivotExistingAttrs = new HashMap<>( );
         if ( existingIdentityDto != null )
         {
-        	pivotExistingAttrs.putAll( existingIdentityDto.getAttributes( ).stream( )
-            .filter( a -> pivotKeys.contains( a.getKey( ) ) )
-            .collect( Collectors.toMap( AttributeDto::getKey, Function.identity( ) ) )
-            );
+            pivotExistingAttrs.putAll( existingIdentityDto.getAttributes( ).stream( ).filter( a -> pivotKeys.contains( a.getKey( ) ) )
+                    .collect( Collectors.toMap( AttributeDto::getKey, Function.identity( ) ) ) );
         }
-
-
-
 
         // *** Geocode checks ***
 
@@ -198,14 +192,14 @@ public class IdentityAttributeValidationService
         AttributeDto birthdateAttr = pivotUpdatedAttrs.get( Constants.PARAM_BIRTH_DATE );
         if ( birthdateAttr == null && existingIdentityDto != null )
         {
-        	birthdateAttr = pivotExistingAttrs.get( Constants.PARAM_BIRTH_DATE );
+            birthdateAttr = pivotExistingAttrs.get( Constants.PARAM_BIRTH_DATE );
         }
 
         try
         {
             if ( birthdateAttr != null )
             {
-            	birthdate = DateUtils.parseDate( birthdateAttr.getValue( ), "dd/MM/yyyy" );
+                birthdate = DateUtils.parseDate( birthdateAttr.getValue( ), "dd/MM/yyyy" );
             }
         }
         catch( final ParseException e )
@@ -213,13 +207,13 @@ public class IdentityAttributeValidationService
             final AttributeStatus birthplaceCodeStatus = new AttributeStatus( );
             birthplaceCodeStatus.setKey( Constants.PARAM_BIRTH_DATE );
             birthplaceCodeStatus.setStatus( AttributeChangeStatus.INVALID_VALUE );
-            birthplaceCodeStatus.setMessageKey( Constants.PROPERTY_ATTRIBUTE_STATUS_NOT_UPDATED);
+            birthplaceCodeStatus.setMessageKey( Constants.PROPERTY_ATTRIBUTE_STATUS_NOT_UPDATED );
             geocodeStatuses.add( birthplaceCodeStatus );
         }
 
         if ( birthdate == null )
         {
-        	pivotUpdatedAttrs.remove( Constants.PARAM_BIRTH_DATE );
+            pivotUpdatedAttrs.remove( Constants.PARAM_BIRTH_DATE );
 
             // birthdate is mandatory for birthplace and birthcountry codes
             // we won't consider those values either (if present)
@@ -253,7 +247,7 @@ public class IdentityAttributeValidationService
             final AttributeDto birthcountryCodeAttr = pivotUpdatedAttrs.get( Constants.PARAM_BIRTH_COUNTRY_CODE );
             if ( StringUtils.isNotBlank( birthcountryCodeAttr.getValue( ) ) )
             {
-            	// TODO : use GeoCodesService.getInstance( ).getCountryByDateAndCode() when available ...
+                // TODO : use GeoCodesService.getInstance( ).getCountryByDateAndCode() when available ...
                 final Optional<Country> country = GeoCodesService.getInstance( ).getCountryByCode( birthcountryCodeAttr.getValue( ) );
                 if ( country == null || !country.isPresent( ) )
                 {
@@ -267,24 +261,21 @@ public class IdentityAttributeValidationService
             }
         }
 
-
-
         // ** consolidate targeted list of pivot attributes with new or updated valid attributes, and existing attributes **
 
-        final Map<String, AttributeDto> pivotTargetAttrs = new HashMap<>();
+        final Map<String, AttributeDto> pivotTargetAttrs = new HashMap<>( );
         pivotTargetAttrs.putAll( pivotUpdatedAttrs );
 
         // in case of update, we include the existing attributes for the check
         if ( existingIdentityDto != null )
         {
-    		// Get the targeted pivot attributes from updated pivot attributes
-    		// and pivot attributes that exist and are not present in request.
-    		// If there is an existing attribute with a higher certification level, we ignore the request attribute
-    		pivotTargetAttrs.putAll( pivotExistingAttrs.keySet( ).stream()
-    				.filter( a -> ( !pivotUpdatedAttrs.containsKey( a )
-    								|| pivotUpdatedAttrs.get( a ).getCertificationLevel( ) < pivotExistingAttrs.get( a ).getCertificationLevel( ) ) )
-    				.collect( Collectors.toMap( Function.identity( ), pivotExistingAttrs::get ) )
-    				);
+            // Get the targeted pivot attributes from updated pivot attributes
+            // and pivot attributes that exist and are not present in request.
+            // If there is an existing attribute with a higher certification level, we ignore the request attribute
+            pivotTargetAttrs.putAll( pivotExistingAttrs.keySet( ).stream( )
+                    .filter( a -> ( !pivotUpdatedAttrs.containsKey( a )
+                            || pivotUpdatedAttrs.get( a ).getCertificationLevel( ) < pivotExistingAttrs.get( a ).getCertificationLevel( ) ) )
+                    .collect( Collectors.toMap( Function.identity( ), pivotExistingAttrs::get ) ) );
         }
 
         // if the birth country is not the main Geocode country, the birth place code is ignored
@@ -296,10 +287,7 @@ public class IdentityAttributeValidationService
             pivotTargetAttrs.remove( Constants.PARAM_BIRTH_PLACE_CODE );
         }
 
-
-
         // ** Main checks on target Attributes **
-
 
         // get highest certification level for pivot attributes (as reference)
         final AttributeDto highestCertifiedPivot = pivotTargetAttrs.values( ).stream( ).max( Comparator.comparing( AttributeDto::getCertificationLevel ) )
@@ -308,26 +296,24 @@ public class IdentityAttributeValidationService
         // if the highest certification level is below the treshold, we wont carry out the check
         if ( highestCertifiedPivot.getCertificationLevel( ) < pivotCertificationLevelThreshold )
         {
-        	return;
+            return;
         }
 
         // check that we have the 6 pivot attributes (or 5 if birth country is not the geocode main country)
-        if ( ! (   ( pivotTargetAttrs.size( ) == pivotKeys.size( ) )
-        		|| ( pivotTargetAttrs.size( ) >= pivotKeys.size( )
-        				&& !Constants.GEOCODE_MAIN_COUNTRY_CODE.equals( pivotTargetAttrs.get( Constants.PARAM_BIRTH_COUNTRY_CODE ).getValue( ) ) ) ) )
-    	{
-	    	response.setStatus( ResponseStatusFactory.failure( )
-	                .setMessageKey( Constants.PROPERTY_REST_ERROR_IDENTITY_ALL_PIVOT_ATTRIBUTE_SAME_CERTIFICATION )
-	                .setMessage( "Above level " + pivotCertificationLevelThreshold + ", all pivot attributes must be present and have the same certification level." ) );
-	    	response.getStatus( ).getAttributeStatuses( ).addAll( geocodeStatuses );
-	        return ;
-    	}
+        if ( !( ( pivotTargetAttrs.size( ) == pivotKeys.size( ) ) || ( pivotTargetAttrs.size( ) >= pivotKeys.size( )
+                && !Constants.GEOCODE_MAIN_COUNTRY_CODE.equals( pivotTargetAttrs.get( Constants.PARAM_BIRTH_COUNTRY_CODE ).getValue( ) ) ) ) )
+        {
+            response.setStatus( ResponseStatusFactory.failure( ).setMessageKey( Constants.PROPERTY_REST_ERROR_IDENTITY_ALL_PIVOT_ATTRIBUTE_SAME_CERTIFICATION )
+                    .setMessage( "Above level " + pivotCertificationLevelThreshold
+                            + ", all pivot attributes must be present and have the same certification level." ) );
+            response.getStatus( ).getAttributeStatuses( ).addAll( geocodeStatuses );
+            return;
+        }
 
         // we check that each pivot attribute has the same certification level
         if ( pivotTargetAttrs.values( ).stream( ).anyMatch( a -> !a.getCertifier( ).equals( highestCertifiedPivot.getCertifier( ) ) ) )
         {
-            response.setStatus( ResponseStatusFactory.failure( )
-                    .setMessageKey( Constants.PROPERTY_REST_ERROR_IDENTITY_ALL_PIVOT_ATTRIBUTE_SAME_CERTIFICATION )
+            response.setStatus( ResponseStatusFactory.failure( ).setMessageKey( Constants.PROPERTY_REST_ERROR_IDENTITY_ALL_PIVOT_ATTRIBUTE_SAME_CERTIFICATION )
                     .setMessage( "All pivot attributes must be set and certified with the '" + highestCertifiedPivot.getCertifier( ) + "' certifier" ) );
             response.getStatus( ).getAttributeStatuses( ).addAll( geocodeStatuses );
             return;

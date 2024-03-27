@@ -97,9 +97,9 @@ public class IdentityStoreUpdateRequest extends AbstractIdentityStoreRequest
         final IdentityChangeResponse response = ServiceContractService.instance( ).validateIdentityChange( _identityChangeRequest, _strClientCode );
         if ( ResponseStatusFactory.failure( ).equals( response.getStatus( ) ) )
         {
-        	return response;
+            return response;
         }
-        
+
         // Data content checks
         final List<AttributeStatus> formatStatuses = IdentityAttributeFormatterService.instance( )
                 .formatIdentityChangeRequestAttributeValues( _identityChangeRequest );
@@ -107,39 +107,36 @@ public class IdentityStoreUpdateRequest extends AbstractIdentityStoreRequest
         IdentityAttributeValidationService.instance( ).validateIdentityAttributeValues( _identityChangeRequest.getIdentity( ), response );
         if ( ResponseStatusFactory.failure( ).equals( response.getStatus( ) ) )
         {
-        	return response;
+            return response;
         }
-        
+
         // Integrity checks
-       	final IdentityDto existingIdentityDto = _identityDtoCache.getByCustomerId( _strCustomerId,
-                    ServiceContractService.instance( ).getActiveServiceContract( _strClientCode ) );
-        
-        if ( existingIdentityDto == null ) 
+        final IdentityDto existingIdentityDto = _identityDtoCache.getByCustomerId( _strCustomerId,
+                ServiceContractService.instance( ).getActiveServiceContract( _strClientCode ) );
+
+        if ( existingIdentityDto == null )
         {
-        	// updated identity dto should exist
-    		 response.setStatus( ResponseStatusFactory.failure( )
-                     .setMessageKey( Constants.PROPERTY_REST_ERROR_IDENTITY_NOT_FOUND )
-                     .setMessage( "Identity not found" ) );
-             return response;
-        } 
-        	
-    	IdentityAttributeValidationService.instance( ).validatePivotAttributesIntegrity( existingIdentityDto, _strClientCode,
+            // updated identity dto should exist
+            response.setStatus(
+                    ResponseStatusFactory.failure( ).setMessageKey( Constants.PROPERTY_REST_ERROR_IDENTITY_NOT_FOUND ).setMessage( "Identity not found" ) );
+            return response;
+        }
+
+        IdentityAttributeValidationService.instance( ).validatePivotAttributesIntegrity( existingIdentityDto, _strClientCode,
                 _identityChangeRequest.getIdentity( ), true, response );
         if ( ResponseStatusFactory.failure( ).equals( response.getStatus( ) ) )
         {
-        	return response;
+            return response;
         }
-        
+
         // perform update
         IdentityService.instance( ).update( _strCustomerId, _identityChangeRequest, _author, _strClientCode, response );
-        
+
         // if request is accepted and treatment successful, add the formatting statuses
-        if ( ResponseStatusFactory.success( ).equals( response.getStatus( ) )
-                || ResponseStatusFactory.incompleteSuccess( ).equals( response.getStatus( ) ) )
+        if ( ResponseStatusFactory.success( ).equals( response.getStatus( ) ) || ResponseStatusFactory.incompleteSuccess( ).equals( response.getStatus( ) ) )
         {
             response.getStatus( ).getAttributeStatuses( ).addAll( formatStatuses );
         }
-
 
         return response;
     }

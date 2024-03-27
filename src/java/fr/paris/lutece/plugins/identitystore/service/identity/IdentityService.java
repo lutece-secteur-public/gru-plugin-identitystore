@@ -1434,7 +1434,7 @@ public class IdentityService
                 final AttributeStatus status = _identityAttributeService.uncertifyAttribute( attribute );
                 attrStatusList.add( status );
             }
-            
+
             // update identity to set lastupdate_date
             IdentityHome.update( identity );
 

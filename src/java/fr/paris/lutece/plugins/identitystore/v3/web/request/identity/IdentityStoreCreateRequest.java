@@ -77,43 +77,39 @@ public class IdentityStoreCreateRequest extends AbstractIdentityStoreRequest
     @Override
     public IdentityChangeResponse doSpecificRequest( ) throws IdentityStoreException
     {
-    	// quality checks
+        // quality checks
         final IdentityChangeResponse response = ServiceContractService.instance( ).validateIdentityChange( _identityChangeRequest, _strClientCode );
         if ( ResponseStatusFactory.failure( ).equals( response.getStatus( ) ) )
         {
-        	return response;
+            return response;
         }
-        
+
         // data content checks
         final List<AttributeStatus> formatStatuses = IdentityAttributeFormatterService.instance( )
-                    .formatIdentityChangeRequestAttributeValues( _identityChangeRequest );
-        
+                .formatIdentityChangeRequestAttributeValues( _identityChangeRequest );
+
         IdentityAttributeValidationService.instance( ).validateIdentityAttributeValues( _identityChangeRequest.getIdentity( ), response );
         if ( ResponseStatusFactory.failure( ).equals( response.getStatus( ) ) )
         {
-        	return response;
+            return response;
         }
-        
+
         // Integrity checks
-        IdentityAttributeValidationService.instance( ).validatePivotAttributesIntegrity( null, _strClientCode, _identityChangeRequest.getIdentity( ),
-               true, response );
+        IdentityAttributeValidationService.instance( ).validatePivotAttributesIntegrity( null, _strClientCode, _identityChangeRequest.getIdentity( ), true,
+                response );
         if ( ResponseStatusFactory.failure( ).equals( response.getStatus( ) ) )
         {
-        	return response;
+            return response;
         }
-        
+
         // perform create
         IdentityService.instance( ).create( _identityChangeRequest, _author, _strClientCode, response );
-        
+
         // if request is accepted and treatment successful, add the formatting statuses
-        if ( ResponseStatusFactory.success( ).equals( response.getStatus( ) )
-                || ResponseStatusFactory.incompleteSuccess( ).equals( response.getStatus( ) ) )
+        if ( ResponseStatusFactory.success( ).equals( response.getStatus( ) ) || ResponseStatusFactory.incompleteSuccess( ).equals( response.getStatus( ) ) )
         {
             response.getStatus( ).getAttributeStatuses( ).addAll( formatStatuses );
         }
-        
-        
-        
 
         return response;
     }
