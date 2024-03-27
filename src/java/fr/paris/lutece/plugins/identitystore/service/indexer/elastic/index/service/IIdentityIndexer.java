@@ -67,4 +67,6 @@ public interface IIdentityIndexer
     void deleteIndex( String index ) throws ElasticClientException;
 
     void makeIndexReadOnly( final String index ) throws ElasticClientException;
+
+    void removeIndexReadOnly( final String index ) throws ElasticClientException;
 }

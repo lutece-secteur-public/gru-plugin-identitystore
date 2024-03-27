@@ -171,6 +171,13 @@ public class IdentityIndexer implements IIdentityIndexer
     }
 
     @Override
+    public void removeIndexReadOnly( final String index ) throws ElasticClientException
+    {
+        final String settings = "{ \"index.blocks.write\": false }";
+        this._elasticClient.updateSettings( index, settings );
+    }
+
+    @Override
     public void createOrUpdateAlias( final String oldIndex, final String newIndex, final String alias )
     {
         boolean aliasExists = false;

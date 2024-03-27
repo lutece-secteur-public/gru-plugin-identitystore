@@ -86,90 +86,92 @@ public class FullIndexTask extends AbstractIndexTask
         final StopWatch stopWatch = new StopWatch( );
         stopWatch.start( );
         this.init( );
-        this.getStatus( ).log( "Starting identities full reindex at " + DateFormatUtils.format( stopWatch.getStartTime( ), "dd-MM-yyyy'T'HH:mm:ss" ) );
-        final IIdentityIndexer identityIndexer = this.createIdentityIndexer( );
-        if ( identityIndexer.isAlive( ) )
+        final List<Integer> identityIdsList = new ArrayList<>( IdentityObjectHome.getEligibleIdListForIndex( ) );
+        if ( !identityIdsList.isEmpty( ) )
         {
-            final String newIndex = "identities-" + UUID.randomUUID( );
-            this.getStatus( ).log( "ES available :: indexing" );
-            try
+            this.getStatus( ).log( "Starting identities full reindex at " + DateFormatUtils.format( stopWatch.getStartTime( ), "dd-MM-yyyy'T'HH:mm:ss" ) );
+            final IIdentityIndexer identityIndexer = this.createIdentityIndexer( );
+            if ( identityIndexer.isAlive( ) )
             {
-                this.getStatus( ).log( "Creating new index : " + newIndex );
-                identityIndexer.initIndex( newIndex );
+                final String newIndex = "identities-" + UUID.randomUUID( );
+                this.getStatus( ).log( "ES available :: indexing" );
+                try
+                {
+                    this.getStatus( ).log( "Creating new index : " + newIndex );
+                    identityIndexer.initIndex( newIndex );
 
-                if ( identityIndexer.indexExists( IIdentityIndexer.CURRENT_INDEX_ALIAS ) )
-                {
-                    this.getStatus( ).log( "Set current index READ-ONLY" );
-                    identityIndexer.makeIndexReadOnly( IIdentityIndexer.CURRENT_INDEX_ALIAS );
-                }
-                else
-                {
-                    identityIndexer.createOrUpdateAlias( "", newIndex, IIdentityIndexer.CURRENT_INDEX_ALIAS );
-                }
+                    if ( identityIndexer.indexExists( IIdentityIndexer.CURRENT_INDEX_ALIAS ) )
+                    {
+                        this.getStatus( ).log( "Set current index READ-ONLY" );
+                        identityIndexer.makeIndexReadOnly( IIdentityIndexer.CURRENT_INDEX_ALIAS );
+                    }
+                    else
+                    {
+                        identityIndexer.createOrUpdateAlias( "", newIndex, IIdentityIndexer.CURRENT_INDEX_ALIAS );
+                    }
 
-                final List<Integer> identityIdsList = new ArrayList<>( IdentityObjectHome.getEligibleIdListForIndex( ) );
-                this.getStatus( ).setNbTotalIdentities( identityIdsList.size( ) );
-                this.getStatus( ).log( "NB identities to be indexed : " + this.getStatus( ).getNbTotalIdentities( ) );
-                this.getStatus( ).log( "Size of indexing batches : " + BATCH_SIZE );
-                final Batch<Integer> batch = Batch.ofSize( identityIdsList, BATCH_SIZE );
-                this.getStatus( ).log( "NB of indexing batches : " + batch.size( ) );
-                final AtomicInteger failedCalls = new AtomicInteger( 0 );
-                batch.stream( ).parallel( ).forEach( identityIdList -> {
-                    boolean processed = this.process( identityIdList, newIndex );
-                    while ( !processed )
+                    this.getStatus( ).setNbTotalIdentities( identityIdsList.size( ) );
+                    this.getStatus( ).log( "NB identities to be indexed : " + this.getStatus( ).getNbTotalIdentities( ) );
+                    this.getStatus( ).log( "Size of indexing batches : " + BATCH_SIZE );
+                    final Batch<Integer> batch = Batch.ofSize( identityIdsList, BATCH_SIZE );
+                    this.getStatus( ).log( "NB of indexing batches : " + batch.size( ) );
+                    final AtomicInteger failedCalls = new AtomicInteger( 0 );
+                    batch.stream( ).parallel( ).forEach( identityIdList -> {
+                        boolean processed = this.process( identityIdList, newIndex );
+                        while ( !processed )
+                        {
+                            final int nbRetry = failedCalls.getAndIncrement( );
+                            this.getStatus( ).log( "Retry nb " + nbRetry );
+                            if ( nbRetry > MAX_RETRY )
+                            {
+                                this.getStatus( ).log( "The number of retries exceeds the configured value of " + MAX_RETRY + ", interrupting.." );
+                                break;
+                            }
+                            try
+                            {
+                                Thread.sleep( TEMPO_RETRY );
+                            }
+                            catch( InterruptedException e )
+                            {
+                                this.getStatus( ).log( "Could thread sleep.. + " + e.getMessage( ) );
+                            }
+                            processed = this.process( identityIdList, newIndex );
+                        }
+                    } );
+                    this.getStatus( ).log( "All batches processed, now switch alias to publish new index.." );
+                    final String oldIndex = identityIndexer.getIndexBehindAlias( IIdentityIndexer.CURRENT_INDEX_ALIAS );
+                    if ( !StringUtils.equals( oldIndex, newIndex ) )
                     {
-                        final int nbRetry = failedCalls.getAndIncrement( );
-                        this.getStatus( ).log( "Retry nb " + nbRetry );
-                        if ( nbRetry > MAX_RETRY )
+                        this.getStatus( ).log( "Old index id: " + oldIndex );
+                        identityIndexer.createOrUpdateAlias( oldIndex, newIndex, IIdentityIndexer.CURRENT_INDEX_ALIAS );
+                        if ( oldIndex != null )
                         {
-                            this.getStatus( ).log( "The number of retries exceeds the configured value of " + MAX_RETRY + ", interrupting.." );
-                            break;
+                            this.getStatus( ).log( "Delete old index : " + oldIndex );
+                            identityIndexer.deleteIndex( oldIndex );
                         }
-                        try
-                        {
-                            Thread.sleep( TEMPO_RETRY );
-                        }
-                        catch( InterruptedException e )
-                        {
-                            this.getStatus( ).log( "Could thread sleep.. + " + e.getMessage( ) );
-                        }
-                        processed = this.process( identityIdList, newIndex );
-                    }
-                } );
-                this.getStatus( ).log( "All batches processed, now switch alias to publish new index.." );
-                final String oldIndex = identityIndexer.getIndexBehindAlias( IIdentityIndexer.CURRENT_INDEX_ALIAS );
-                if ( !StringUtils.equals( oldIndex, newIndex ) )
-                {
-                    this.getStatus( ).log( "Old index id: " + oldIndex );
-                    identityIndexer.createOrUpdateAlias( oldIndex, newIndex, IIdentityIndexer.CURRENT_INDEX_ALIAS );
-                    if ( oldIndex != null )
-                    {
-                        this.getStatus( ).log( "Delete old index : " + oldIndex );
-                        identityIndexer.deleteIndex( oldIndex );
                     }
                 }
+                catch( final ElasticClientException e )
+                {
+                    this.getStatus( ).log( "Failed to reindex " + e.getMessage( ) );
+                    final String oldIndex = identityIndexer.getIndexBehindAlias( IIdentityIndexer.CURRENT_INDEX_ALIAS );
+                    rollbackIndexCreation( oldIndex, newIndex );
+                }
+                // Index pending identities
+                new MissingIndexTask( ).run( );
             }
-            catch( final ElasticClientException e )
+            else
             {
-                this.getStatus( ).log( "Failed to reindex " + e.getMessage( ) );
+                this.getStatus( ).log( "[ERROR] ES not available" );
             }
-            // Index pending identities
-            new MissingIndexTask( ).run( );
-        }
-        else
-        {
-            this.getStatus( ).log( "[ERROR] ES not available" );
-        }
-        stopWatch.stop( );
-        final String duration = DurationFormatUtils.formatDurationWords( stopWatch.getTime( ), true, true );
-
-        if ( this.getStatus( ).getNbTotalIdentities( ) > 0 )
-        {
+            stopWatch.stop( );
+            final String duration = DurationFormatUtils.formatDurationWords( stopWatch.getTime( ), true, true );
             this.getStatus( ).log( "Re-indexed  " + this.getStatus( ).getNbTotalIdentities( ) + " identities in " + duration );
         }
         else
         {
-            this.getStatus( ).log( "Re-indexed failed" );
+            stopWatch.stop( );
+            this.getStatus( ).log( "No index in database" );
         }
         this.close( );
     }
@@ -199,6 +201,20 @@ public class FullIndexTask extends AbstractIndexTask
         {
             AppLogService.debug( "Creating elastic connection with authentification" );
             return new IdentityIndexer( ELASTIC_URL, ELASTIC_USER, ELASTIC_PWD );
+        }
+    }
+
+    public void rollbackIndexCreation( String oldIndex, String newIndex )
+    {
+        final IIdentityIndexer identityIndexer = this.createIdentityIndexer( );
+        try
+        {
+            identityIndexer.deleteIndex( newIndex );
+            identityIndexer.removeIndexReadOnly( oldIndex );
+        }
+        catch( ElasticClientException e )
+        {
+            this.getStatus( ).log( "Failed to rollback " + e.getMessage( ) );
         }
     }
 }
