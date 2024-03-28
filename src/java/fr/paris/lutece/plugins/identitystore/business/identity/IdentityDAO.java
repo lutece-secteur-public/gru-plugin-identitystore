@@ -88,7 +88,7 @@ public final class IdentityDAO implements IIdentityDAO
             + "    FROM identitystore_identity id" + "        INNER JOIN identity_tree mtree ON mtree.id_master_identity = id.id_identity" + " )" + " select "
             + COLUMNS + " from identity_tree a where a.is_merged = 0;";
 
-    private static final String SQL_QUERY_SELECT_ID_BY_CONNECTION_ID = "SELECT id_identity, is_deleted, is_merged FROM identitystore_identity WHERE lower(connection_id) = lower(?)";
+    private static final String SQL_QUERY_SELECT_ID_BY_CUSTOMER_ID = "SELECT id_identity, is_deleted, is_merged FROM identitystore_identity WHERE lower(customer_id) = lower(?)";
     private static final String SQL_QUERY_SELECT_BY_ATTRIBUTES_FOR_API_SEARCH = "SELECT DISTINCT " + COLUMNS
             + " FROM identitystore_identity a, identitystore_identity_attribute b, identitystore_ref_attribute c"
             + " WHERE a.id_identity = b.id_identity AND b.id_attribute = c.id_attribute AND (${filter})"
@@ -403,7 +403,7 @@ public final class IdentityDAO implements IIdentityDAO
     @Override
     public int selectIdByCustomerId( final String strCustomerId, final Plugin plugin )
     {
-        try ( final DAOUtil daoUtil = new DAOUtil( SQL_QUERY_SELECT_ID_BY_CONNECTION_ID, plugin ) )
+        try ( final DAOUtil daoUtil = new DAOUtil(SQL_QUERY_SELECT_ID_BY_CUSTOMER_ID, plugin ) )
         {
             daoUtil.setString( 1, strCustomerId );
             daoUtil.executeQuery( );
