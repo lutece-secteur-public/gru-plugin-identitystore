@@ -40,6 +40,7 @@ import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.model
 import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.service.IIdentityIndexer;
 import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.service.IdentityIndexer;
 import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.service.IdentityObjectHome;
+import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.service.RetryService;
 import fr.paris.lutece.plugins.identitystore.utils.Batch;
 import fr.paris.lutece.portal.service.util.AppLogService;
 import fr.paris.lutece.portal.service.util.AppPropertiesService;
@@ -51,14 +52,11 @@ import org.apache.commons.lang3.time.StopWatch;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 public class FullIndexTask extends AbstractIndexTask
 {
     private final int BATCH_SIZE = AppPropertiesService.getPropertyInt( "identitystore.task.reindex.batch.size", 1000 );
-    private final int MAX_RETRY = AppPropertiesService.getPropertyInt( "identitystore.task.reindex.retry.max", 500 );
-    private final int TEMPO_RETRY = AppPropertiesService.getPropertyInt( "identitystore.task.reindex.retry.wait", 100 );
     private final boolean ACTIVE = AppPropertiesService.getPropertyBoolean( "identitystore.task.reindex.active", false );
     private final String ELASTIC_URL = AppPropertiesService.getProperty( "elasticsearch.url" );
     private final String ELASTIC_USER = AppPropertiesService.getProperty( "elasticsearch.user", "" );
@@ -115,28 +113,8 @@ public class FullIndexTask extends AbstractIndexTask
                     this.getStatus( ).log( "Size of indexing batches : " + BATCH_SIZE );
                     final Batch<Integer> batch = Batch.ofSize( identityIdsList, BATCH_SIZE );
                     this.getStatus( ).log( "NB of indexing batches : " + batch.size( ) );
-                    final AtomicInteger failedCalls = new AtomicInteger( 0 );
                     batch.stream( ).parallel( ).forEach( identityIdList -> {
-                        boolean processed = this.process( identityIdList, newIndex );
-                        while ( !processed )
-                        {
-                            final int nbRetry = failedCalls.getAndIncrement( );
-                            this.getStatus( ).log( "Retry nb " + nbRetry );
-                            if ( nbRetry > MAX_RETRY )
-                            {
-                                this.getStatus( ).log( "The number of retries exceeds the configured value of " + MAX_RETRY + ", interrupting.." );
-                                break;
-                            }
-                            try
-                            {
-                                Thread.sleep( TEMPO_RETRY );
-                            }
-                            catch( InterruptedException e )
-                            {
-                                this.getStatus( ).log( "Could thread sleep.. + " + e.getMessage( ) );
-                            }
-                            processed = this.process( identityIdList, newIndex );
-                        }
+                        this.process( identityIdList, newIndex );
                     } );
                     this.getStatus( ).log( "All batches processed, now switch alias to publish new index.." );
                     final String oldIndex = identityIndexer.getIndexBehindAlias( IIdentityIndexer.CURRENT_INDEX_ALIAS );
@@ -155,7 +133,7 @@ public class FullIndexTask extends AbstractIndexTask
                 {
                     this.getStatus( ).log( "Failed to reindex " + e.getMessage( ) );
                     final String oldIndex = identityIndexer.getIndexBehindAlias( IIdentityIndexer.CURRENT_INDEX_ALIAS );
-                    rollbackIndexCreation( oldIndex, newIndex );
+                    rollbackIndexCreation( oldIndex, newIndex, identityIndexer );
                 }
                 // Index pending identities
                 new MissingIndexTask( ).run( );
@@ -176,18 +154,18 @@ public class FullIndexTask extends AbstractIndexTask
         this.close( );
     }
 
-    private boolean process( final List<Integer> identityIdList, final String newIndex )
+    private void process( final List<Integer> identityIdList, final String newIndex )
     {
+        final RetryService _retryService = new RetryService();
         final List<IdentityObject> identityObjects = IdentityObjectHome.loadEligibleIdentitiesForIndex( identityIdList );
         final List<BulkAction> actions = identityObjects.stream( )
                 .map( identityObject -> new BulkAction( identityObject.getCustomerId( ), identityObject, BulkActionType.INDEX ) )
                 .collect( Collectors.toList( ) );
-        final boolean bulked = this.createIdentityIndexer( ).bulk( actions, newIndex );
+        final boolean bulked = _retryService.callBulkWithRetry( actions, newIndex );
         if ( bulked )
         {
             this.getStatus( ).incrementCurrentNbIndexedIdentities( identityObjects.size( ) );
         }
-        return bulked;
     }
 
     public IIdentityIndexer createIdentityIndexer( )
@@ -204,9 +182,8 @@ public class FullIndexTask extends AbstractIndexTask
         }
     }
 
-    public void rollbackIndexCreation( String oldIndex, String newIndex )
+    public void rollbackIndexCreation( String oldIndex, String newIndex, IIdentityIndexer identityIndexer )
     {
-        final IIdentityIndexer identityIndexer = this.createIdentityIndexer( );
         try
         {
             identityIndexer.deleteIndex( newIndex );

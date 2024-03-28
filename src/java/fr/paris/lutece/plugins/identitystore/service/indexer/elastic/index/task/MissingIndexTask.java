@@ -40,6 +40,7 @@ import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.model
 import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.model.internal.BulkActionType;
 import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.service.IIdentityIndexer;
 import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.service.IdentityObjectHome;
+import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.service.RetryService;
 import fr.paris.lutece.plugins.identitystore.utils.Batch;
 import fr.paris.lutece.portal.service.daemon.Daemon;
 import fr.paris.lutece.portal.service.spring.SpringContextService;
@@ -55,6 +56,7 @@ import java.util.List;
 public class MissingIndexTask extends Daemon
 {
     private final IIdentityIndexer _identityIndexer = SpringContextService.getBean( "identitystore.elasticsearch.identityIndexer" );
+    private final RetryService _retryService = SpringContextService.getBean( "identitystore.elasticsearch.retryService" );
 
     @Override
     public void run( )
@@ -93,7 +95,7 @@ public class MissingIndexTask extends Daemon
             {
                 AppLogService.debug( "Processing batch : " + ++batchCounter );
                 // TODO handle bulk error
-                this._identityIndexer.bulk( batchActions, IIdentityIndexer.CURRENT_INDEX_ALIAS );
+                _retryService.callBulkWithRetry( batchActions, IIdentityIndexer.CURRENT_INDEX_ALIAS );
             }
 
             // Clean processed actions
