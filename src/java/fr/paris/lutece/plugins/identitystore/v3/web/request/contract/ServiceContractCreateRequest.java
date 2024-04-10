@@ -40,70 +40,109 @@ import fr.paris.lutece.plugins.identitystore.business.contract.ServiceContract;
 import fr.paris.lutece.plugins.identitystore.business.referentiel.RefAttributeCertificationProcessus;
 import fr.paris.lutece.plugins.identitystore.service.contract.AttributeCertificationDefinitionService;
 import fr.paris.lutece.plugins.identitystore.service.contract.ServiceContractService;
-import fr.paris.lutece.plugins.identitystore.v3.web.rs.AbstractIdentityStoreRequest;
+import fr.paris.lutece.plugins.identitystore.v3.web.request.AbstractIdentityStoreAppCodeRequest;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.DtoConverter;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.IdentityRequestValidator;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.contract.ServiceContractChangeResponse;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.contract.ServiceContractDto;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.ResponseStatusFactory;
+import fr.paris.lutece.plugins.identitystore.web.exception.ClientAuthorizationException;
+import fr.paris.lutece.plugins.identitystore.web.exception.DuplicatesConsistencyException;
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
+import fr.paris.lutece.plugins.identitystore.web.exception.RequestContentFormattingException;
+import fr.paris.lutece.plugins.identitystore.web.exception.RequestFormatException;
+import fr.paris.lutece.plugins.identitystore.web.exception.ResourceConsistencyException;
+import fr.paris.lutece.plugins.identitystore.web.exception.ResourceNotFoundException;
 
 /**
  * This class represents a create request for ServiceContractRestService
  */
-public class ServiceContractCreateRequest extends AbstractIdentityStoreRequest
+public class ServiceContractCreateRequest extends AbstractIdentityStoreAppCodeRequest
 {
     private final ServiceContractDto _serviceContractDto;
+
+    private ClientApplication clientApplication;
+    private ServiceContract serviceContractToCreate;
 
     /**
      * Constructor of ServiceContractCreateRequest
      *
      * @param serviceContractDto
      *            the dto of identity's change
-     * @param strClientAppCode
+     * @param strClientCode
      *            the app client code
      */
-    public ServiceContractCreateRequest( ServiceContractDto serviceContractDto, String strClientAppCode, final String authorName, final String authorType )
-            throws IdentityStoreException
+    public ServiceContractCreateRequest( final ServiceContractDto serviceContractDto, final String strClientCode, final String strAppCode,
+            final String authorName, final String authorType ) throws IdentityStoreException
     {
-        super( strClientAppCode, authorName, authorType );
+        super( strClientCode, strAppCode, authorName, authorType );
+        if ( serviceContractDto == null )
+        {
+            throw new RequestFormatException( "Provided service contract is null", Constants.PROPERTY_REST_ERROR_PROVIDED_SERVICE_CONTRACT_NULL );
+        }
         this._serviceContractDto = serviceContractDto;
     }
 
     @Override
-    protected void validateSpecificRequest( ) throws IdentityStoreException
+    protected void fetchResources( ) throws ResourceNotFoundException
     {
-        IdentityRequestValidator.instance( ).checkServiceContract( _serviceContractDto );
+        clientApplication = ClientApplicationHome.findByCode( _serviceContractDto.getClientCode( ) );
+        if ( clientApplication == null )
+        {
+            throw new ResourceNotFoundException( "No application could be found with code " + _serviceContractDto.getClientCode( ),
+                    Constants.PROPERTY_REST_ERROR_APPLICATION_NOT_FOUND );
+        }
+        serviceContractToCreate = DtoConverter.convertDtoToContract( _serviceContractDto );
     }
 
     @Override
-    public ServiceContractChangeResponse doSpecificRequest( ) throws IdentityStoreException
+    protected void validateRequestFormat( ) throws RequestFormatException
+    {
+        IdentityRequestValidator.instance( ).checkServiceContract( _serviceContractDto );
+        ServiceContractService.instance( ).validateContractDefinition( serviceContractToCreate, clientApplication.getId( ) );
+    }
+
+    @Override
+    protected void validateClientAuthorization( ) throws ClientAuthorizationException
+    {
+        // do nothing
+    }
+
+    @Override
+    protected void validateResourcesConsistency( ) throws ResourceConsistencyException
+    {
+        // do nothing
+    }
+
+    @Override
+    protected void formatRequestContent( ) throws RequestContentFormattingException
+    {
+        // do nothing
+    }
+
+    @Override
+    protected void checkDuplicatesConsistency( ) throws DuplicatesConsistencyException
+    {
+        // do nothing
+    }
+
+    @Override
+    protected ServiceContractChangeResponse doSpecificRequest( ) throws IdentityStoreException
     {
         final ServiceContractChangeResponse response = new ServiceContractChangeResponse( );
-        final ClientApplication clientApplication = ClientApplicationHome.findByCode( _serviceContractDto.getClientCode( ) );
-        if ( clientApplication == null )
+        final ServiceContract createdServiceContract = ServiceContractService.instance( ).create( serviceContractToCreate, clientApplication );
+        // TODO amélioration générale à mener sur ce point
+        for ( final AttributeCertification certification : createdServiceContract.getAttributeCertifications( ) )
         {
-            response.setStatus(
-                    ResponseStatusFactory.notFound( ).setMessage( "No application could be found with code " + _serviceContractDto.getClientCode( ) )
-                            .setMessageKey( Constants.PROPERTY_REST_ERROR_APPLICATION_NOT_FOUND ) );
-        }
-        else
-        {
-            final ServiceContract serviceContract = ServiceContractService.instance( ).create( DtoConverter.convertDtoToContract( _serviceContractDto ),
-                    clientApplication.getId( ) );
-            // TODO amélioration générale à mener sur ce point
-            for ( final AttributeCertification certification : serviceContract.getAttributeCertifications( ) )
+            for ( final RefAttributeCertificationProcessus processus : certification.getRefAttributeCertificationProcessus( ) )
             {
-                for ( final RefAttributeCertificationProcessus processus : certification.getRefAttributeCertificationProcessus( ) )
-                {
-                    processus.setLevel(
-                            AttributeCertificationDefinitionService.instance( ).get( processus.getCode( ), certification.getAttributeKey( ).getKeyName( ) ) );
-                }
+                processus.setLevel(
+                        AttributeCertificationDefinitionService.instance( ).get( processus.getCode( ), certification.getAttributeKey( ).getKeyName( ) ) );
             }
-            response.setServiceContract( DtoConverter.convertContractToDto( serviceContract ) );
-            response.setStatus( ResponseStatusFactory.success( ).setMessageKey( Constants.PROPERTY_REST_INFO_SUCCESSFUL_OPERATION ) );
         }
+        response.setServiceContract( DtoConverter.convertContractToDto( createdServiceContract ) );
+        response.setStatus( ResponseStatusFactory.success( ).setMessageKey( Constants.PROPERTY_REST_INFO_SUCCESSFUL_OPERATION ) );
 
         return response;
     }

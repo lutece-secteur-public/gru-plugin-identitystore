@@ -33,22 +33,31 @@
  */
 package fr.paris.lutece.plugins.identitystore.v3.web.request.identity;
 
+import fr.paris.lutece.plugins.identitystore.business.contract.ServiceContract;
+import fr.paris.lutece.plugins.identitystore.service.contract.ServiceContractService;
 import fr.paris.lutece.plugins.identitystore.service.identity.IdentityService;
-import fr.paris.lutece.plugins.identitystore.v3.web.rs.AbstractIdentityStoreRequest;
+import fr.paris.lutece.plugins.identitystore.v3.web.request.AbstractIdentityStoreAppCodeRequest;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.IdentityRequestValidator;
-import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.RequestAuthor;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.search.IdentitySearchResponse;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.ResponseStatusFactory;
+import fr.paris.lutece.plugins.identitystore.web.exception.ClientAuthorizationException;
+import fr.paris.lutece.plugins.identitystore.web.exception.DuplicatesConsistencyException;
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
-import fr.paris.lutece.portal.service.util.AppException;
+import fr.paris.lutece.plugins.identitystore.web.exception.RequestContentFormattingException;
+import fr.paris.lutece.plugins.identitystore.web.exception.RequestFormatException;
+import fr.paris.lutece.plugins.identitystore.web.exception.ResourceConsistencyException;
+import fr.paris.lutece.plugins.identitystore.web.exception.ResourceNotFoundException;
 import org.apache.commons.lang3.StringUtils;
 
 /**
  * This class represents a get request for IdentityStoreRestServive
  *
  */
-public class IdentityStoreGetRequest extends AbstractIdentityStoreRequest
+public class IdentityStoreGetRequest extends AbstractIdentityStoreAppCodeRequest
 {
     private final String _strCustomerId;
+    private ServiceContract serviceContract;
 
     /**
      * Constructor of IdentityStoreGetRequest
@@ -60,30 +69,63 @@ public class IdentityStoreGetRequest extends AbstractIdentityStoreRequest
      * @param strAuthorType
      * @param strAuthorName
      */
-    public IdentityStoreGetRequest( String strCustomerId, String strClientCode, String strAuthorType, String strAuthorName ) throws IdentityStoreException
+    public IdentityStoreGetRequest( final String strCustomerId, final String strClientCode, final String strAppCode, final String strAuthorType,
+            final String strAuthorName ) throws IdentityStoreException
     {
-        super( strClientCode, strAuthorName, strAuthorType );
+        super( strClientCode, strAppCode, strAuthorName, strAuthorType );
         this._strCustomerId = strCustomerId;
     }
 
     @Override
-    protected void validateSpecificRequest( ) throws IdentityStoreException
+    protected void fetchResources( ) throws ResourceNotFoundException
+    {
+        serviceContract = ServiceContractService.instance( ).getActiveServiceContract( _strClientCode );
+    }
+
+    @Override
+    protected void validateRequestFormat( ) throws RequestFormatException
     {
         IdentityRequestValidator.instance( ).checkCustomerId( _strCustomerId );
+    }
+
+    @Override
+    protected void validateClientAuthorization( ) throws ClientAuthorizationException
+    {
+        ServiceContractService.instance( ).validateGetAuthorization( serviceContract );
+    }
+
+    @Override
+    protected void validateResourcesConsistency( ) throws ResourceConsistencyException
+    {
+        // do nothing because GET request does not create or update any resource
+    }
+
+    @Override
+    protected void formatRequestContent( ) throws RequestContentFormattingException
+    {
+        // do nothing because GET request does not create or update any resource
+    }
+
+    @Override
+    protected void checkDuplicatesConsistency( ) throws DuplicatesConsistencyException
+    {
+        // do nothing because GET request does not create or update any resource
     }
 
     /**
      * get the identity
      * 
-     * @throws AppException
+     * @throws IdentityStoreException
      *             if there is an exception during the treatment
      */
     @Override
-    public IdentitySearchResponse doSpecificRequest( ) throws IdentityStoreException
+    protected IdentitySearchResponse doSpecificRequest( ) throws IdentityStoreException
     {
         final IdentitySearchResponse response = new IdentitySearchResponse( );
 
-        IdentityService.instance( ).search( _strCustomerId, StringUtils.EMPTY, response, _strClientCode, _author );
+        // renvoie un ResourceNotFoundException si pas d'identité trouvée
+        response.getIdentities( ).add( IdentityService.instance( ).search( _strCustomerId, StringUtils.EMPTY, serviceContract, _author ) );
+        response.setStatus( ResponseStatusFactory.ok( ).setMessageKey( Constants.PROPERTY_REST_INFO_SUCCESSFUL_OPERATION ) );
 
         return response;
     }

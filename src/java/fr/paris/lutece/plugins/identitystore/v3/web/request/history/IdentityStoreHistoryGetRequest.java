@@ -33,30 +33,80 @@
  */
 package fr.paris.lutece.plugins.identitystore.v3.web.request.history;
 
+import fr.paris.lutece.plugins.identitystore.business.contract.ServiceContract;
+import fr.paris.lutece.plugins.identitystore.cache.IdentityDtoCache;
+import fr.paris.lutece.plugins.identitystore.service.contract.ServiceContractService;
 import fr.paris.lutece.plugins.identitystore.service.history.IdentityHistoryService;
+import fr.paris.lutece.plugins.identitystore.v3.web.request.AbstractIdentityStoreAppCodeRequest;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.AbstractIdentityStoreRequest;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.IdentityRequestValidator;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.IdentityDto;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.history.IdentityHistory;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.history.IdentityHistoryGetResponse;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.ResponseStatusFactory;
+import fr.paris.lutece.plugins.identitystore.web.exception.ClientAuthorizationException;
+import fr.paris.lutece.plugins.identitystore.web.exception.DuplicatesConsistencyException;
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
+import fr.paris.lutece.plugins.identitystore.web.exception.RequestContentFormattingException;
+import fr.paris.lutece.plugins.identitystore.web.exception.RequestFormatException;
+import fr.paris.lutece.plugins.identitystore.web.exception.ResourceConsistencyException;
+import fr.paris.lutece.plugins.identitystore.web.exception.ResourceNotFoundException;
+import fr.paris.lutece.portal.service.spring.SpringContextService;
 
-public class IdentityStoreHistoryGetRequest extends AbstractIdentityStoreRequest
+public class IdentityStoreHistoryGetRequest extends AbstractIdentityStoreAppCodeRequest
 {
+    private final IdentityDtoCache _identityDtoCache = SpringContextService.getBean( "identitystore.identityDtoCache" );
 
     private final String _strCustomerId;
 
-    public IdentityStoreHistoryGetRequest( String strClientCode, String strCustomerId, String authorName, String authorType ) throws IdentityStoreException
+    private ServiceContract serviceContract;
+
+    public IdentityStoreHistoryGetRequest( final String strCustomerId, final String strClientCode, final String strAppCode, final String authorName,
+            final String authorType ) throws IdentityStoreException
     {
-        super( strClientCode, authorName, authorType );
+        super( strClientCode, strAppCode, authorName, authorType );
         _strCustomerId = strCustomerId;
     }
 
     @Override
-    protected void validateSpecificRequest( ) throws IdentityStoreException
+    protected void fetchResources( ) throws ResourceNotFoundException
+    {
+        serviceContract = ServiceContractService.instance( ).getActiveServiceContract( _strClientCode );
+        if ( _identityDtoCache.getByCustomerId( _strCustomerId, serviceContract ) == null )
+        {
+            throw new ResourceNotFoundException( "No matching identity could be found", Constants.PROPERTY_REST_ERROR_NO_MATCHING_IDENTITY );
+        }
+    }
+
+    @Override
+    protected void validateRequestFormat( ) throws RequestFormatException
     {
         IdentityRequestValidator.instance( ).checkCustomerId( _strCustomerId );
+    }
+
+    @Override
+    protected void validateClientAuthorization( ) throws ClientAuthorizationException
+    {
+
+    }
+
+    @Override
+    protected void validateResourcesConsistency( ) throws ResourceConsistencyException
+    {
+
+    }
+
+    @Override
+    protected void formatRequestContent( ) throws RequestContentFormattingException
+    {
+
+    }
+
+    @Override
+    protected void checkDuplicatesConsistency( ) throws DuplicatesConsistencyException
+    {
+
     }
 
     @Override
@@ -64,16 +114,10 @@ public class IdentityStoreHistoryGetRequest extends AbstractIdentityStoreRequest
     {
         final IdentityHistoryGetResponse response = new IdentityHistoryGetResponse( );
 
-        final IdentityHistory identityHistory = IdentityHistoryService.instance( ).get( _strCustomerId, _strClientCode );
-        if ( identityHistory != null )
-        {
-            response.setHistory( identityHistory );
-            response.setStatus( ResponseStatusFactory.ok( ).setMessageKey( Constants.PROPERTY_REST_INFO_SUCCESSFUL_OPERATION ) );
-        }
-        else
-        {
-            response.setStatus( ResponseStatusFactory.notFound( ).setMessageKey( Constants.PROPERTY_REST_ERROR_NO_HISTORY_FOUND ) );
-        }
+        final IdentityHistory identityHistory = IdentityHistoryService.instance( ).get( _strCustomerId, serviceContract );
+
+        response.setHistory( identityHistory );
+        response.setStatus( ResponseStatusFactory.ok( ).setMessageKey( Constants.PROPERTY_REST_INFO_SUCCESSFUL_OPERATION ) );
 
         return response;
     }

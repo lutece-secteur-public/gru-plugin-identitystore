@@ -45,12 +45,12 @@ import fr.paris.lutece.plugins.identitystore.business.referentiel.RefAttributeCe
 import fr.paris.lutece.plugins.identitystore.cache.AttributeKeyCache;
 import fr.paris.lutece.plugins.identitystore.service.contract.AttributeCertificationDefinitionService;
 import fr.paris.lutece.plugins.identitystore.service.contract.ServiceContractService;
-import fr.paris.lutece.plugins.identitystore.service.identity.IdentityAttributeNotFoundException;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.AttributeChangeStatus;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.AttributeDto;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.AttributeStatus;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
+import fr.paris.lutece.plugins.identitystore.web.exception.ResourceNotFoundException;
 import fr.paris.lutece.portal.service.spring.SpringContextService;
 import fr.paris.lutece.portal.service.util.AppPropertiesService;
 import fr.paris.lutece.util.sql.TransactionManager;
@@ -68,7 +68,7 @@ public class IdentityAttributeService
 {
     private static final String UNCERTIFY_PROCESSUS = "identitystore.identity.uncertify.processus";
 
-    private final AttributeKeyCache _cache = SpringContextService.getBean( "identitystore.attributeKeyCache" );
+    private final AttributeKeyCache _attributeKeyCache = SpringContextService.getBean( "identitystore.attributeKeyCache" );
     private final AttributeCertificationDefinitionService _attributeCertificationDefinitionService = AttributeCertificationDefinitionService.instance( );
     private final ServiceContractService _serviceContractService = ServiceContractService.instance( );
 
@@ -79,20 +79,17 @@ public class IdentityAttributeService
         if ( _instance == null )
         {
             _instance = new IdentityAttributeService( );
-            _instance._cache.refresh( );
+            _instance._attributeKeyCache.refresh( );
         }
         return _instance;
     }
 
     /**
      * Get all attributes
-     * 
-     * @return
-     * @throws IdentityAttributeNotFoundException
      */
     public List<AttributeKey> getAllAtributeKeys( )
     {
-        return _cache.getAll( );
+        return _attributeKeyCache.getAll( );
     }
 
     /**
@@ -101,12 +98,12 @@ public class IdentityAttributeService
      * @param keyName
      *            the key name
      * @return {@link AttributeKey}
-     * @throws IdentityAttributeNotFoundException
+     * @throws ResourceNotFoundException
      *             if no {@link AttributeKey} exists for the provided key name.
      */
-    public AttributeKey getAttributeKey( final String keyName ) throws IdentityAttributeNotFoundException
+    public AttributeKey getAttributeKey( final String keyName ) throws ResourceNotFoundException
     {
-        return _cache.get( keyName );
+        return _attributeKeyCache.get( keyName );
     }
 
     /**
@@ -120,7 +117,7 @@ public class IdentityAttributeService
     {
         try
         {
-            return _cache.get( keyName );
+            return _attributeKeyCache.get( keyName );
         }
         catch( final Exception e )
         {
@@ -135,12 +132,16 @@ public class IdentityAttributeService
      */
     public List<AttributeKey> getPivotAttributeKeys( )
     {
-        return _cache.getAll( ).stream( ).filter( AttributeKey::getPivot ).collect( Collectors.toList( ) );
+        return _attributeKeyCache.getAll( ).stream( ).filter( AttributeKey::getPivot ).collect( Collectors.toList( ) );
     }
 
     public List<AttributeKey> getCommonAttributeKeys( final String keyName )
     {
-        return _cache.getAll( ).stream( )
+        if ( _attributeKeyCache.getKeys( ).isEmpty( ) )
+        {
+            _attributeKeyCache.refresh( );
+        }
+        return _attributeKeyCache.getKeys( ).stream( ).map( this::getAttributeKeySafe ).filter( Objects::nonNull )
                 .filter( attributeKey -> attributeKey.getCommonSearchKeyName( ) != null && Objects.equals( attributeKey.getCommonSearchKeyName( ), keyName ) )
                 .collect( Collectors.toList( ) );
     }
@@ -151,7 +152,7 @@ public class IdentityAttributeService
         try
         {
             AttributeKeyHome.create( attributeKey );
-            _cache.put( attributeKey.getKeyName( ), attributeKey );
+            _attributeKeyCache.put( attributeKey.getKeyName( ), attributeKey );
             TransactionManager.commitTransaction( null );
         }
         catch( Exception e )
@@ -167,7 +168,7 @@ public class IdentityAttributeService
         try
         {
             AttributeKeyHome.update( attributeKey );
-            _cache.put( attributeKey.getKeyName( ), attributeKey );
+            _attributeKeyCache.put( attributeKey.getKeyName( ), attributeKey );
             TransactionManager.commitTransaction( null );
         }
         catch( Exception e )
@@ -183,7 +184,7 @@ public class IdentityAttributeService
         try
         {
             AttributeKeyHome.remove( attributeKey.getId( ) );
-            _cache.removeKey( attributeKey.getKeyName( ) );
+            _attributeKeyCache.removeKey( attributeKey.getKeyName( ) );
             TransactionManager.commitTransaction( null );
         }
         catch( Exception e )
@@ -200,7 +201,7 @@ public class IdentityAttributeService
      * @param identity
      * @param clientCode
      * @return AttributeStatus
-     * @throws IdentityAttributeNotFoundException
+     * @throws IdentityStoreException
      */
     public AttributeStatus createAttribute( final AttributeDto attributeToCreate, final Identity identity, final String clientCode )
             throws IdentityStoreException
@@ -216,7 +217,7 @@ public class IdentityAttributeService
 
         final IdentityAttribute attribute = new IdentityAttribute( );
         attribute.setIdIdentity( identity.getId( ) );
-        attribute.setAttributeKey( getAttributeKey( attributeToCreate.getKey( ) ) ); // ?
+        attribute.setAttributeKey( getAttributeKey( attributeToCreate.getKey( ) ) );
         attribute.setValue( attributeToCreate.getValue( ) );
         attribute.setLastUpdateClientCode( clientCode );
 

@@ -33,35 +33,55 @@
  */
 package fr.paris.lutece.plugins.identitystore.v3.web.request.identity;
 
+import fr.paris.lutece.plugins.identitystore.business.contract.ServiceContract;
+import fr.paris.lutece.plugins.identitystore.business.identity.Identity;
 import fr.paris.lutece.plugins.identitystore.cache.IdentityDtoCache;
 import fr.paris.lutece.plugins.identitystore.service.attribute.IdentityAttributeFormatterService;
-import fr.paris.lutece.plugins.identitystore.service.attribute.IdentityAttributeValidationService;
+import fr.paris.lutece.plugins.identitystore.service.attribute.IdentityAttributeGeocodesAdjustmentService;
+import fr.paris.lutece.plugins.identitystore.v3.web.request.AbstractIdentityStoreAppCodeRequest;
+import fr.paris.lutece.plugins.identitystore.v3.web.request.validator.IdentityAttributeValidator;
 import fr.paris.lutece.plugins.identitystore.service.contract.ServiceContractService;
 import fr.paris.lutece.plugins.identitystore.service.identity.IdentityService;
-import fr.paris.lutece.plugins.identitystore.v3.web.rs.AbstractIdentityStoreRequest;
+import fr.paris.lutece.plugins.identitystore.v3.web.request.validator.IdentityDuplicateValidator;
+import fr.paris.lutece.plugins.identitystore.v3.web.request.validator.IdentityValidator;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.IdentityRequestValidator;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.AttributeChangeStatus;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.AttributeChangeStatusType;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.AttributeStatus;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.IdentityDto;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.ResponseStatus;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.crud.IdentityChangeRequest;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.crud.IdentityChangeResponse;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.ResponseStatusFactory;
+import fr.paris.lutece.plugins.identitystore.web.exception.ClientAuthorizationException;
+import fr.paris.lutece.plugins.identitystore.web.exception.DuplicatesConsistencyException;
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
+import fr.paris.lutece.plugins.identitystore.web.exception.RequestContentFormattingException;
+import fr.paris.lutece.plugins.identitystore.web.exception.RequestFormatException;
+import fr.paris.lutece.plugins.identitystore.web.exception.ResourceConsistencyException;
+import fr.paris.lutece.plugins.identitystore.web.exception.ResourceNotFoundException;
 import fr.paris.lutece.portal.service.spring.SpringContextService;
+import org.apache.commons.lang3.tuple.Pair;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-
-import org.apache.commons.lang3.StringUtils;
+import java.util.stream.Collectors;
 
 /**
  * This class represents an update request for IdentityStoreRestServive
  */
-public class IdentityStoreUpdateRequest extends AbstractIdentityStoreRequest
+public class IdentityStoreUpdateRequest extends AbstractIdentityStoreAppCodeRequest
 {
+    private final IdentityDtoCache _identityDtoCache = SpringContextService.getBean( "identitystore.identityDtoCache" );
 
     private final IdentityChangeRequest _identityChangeRequest;
     private final String _strCustomerId;
-    private final IdentityDtoCache _identityDtoCache = SpringContextService.getBean( "identitystore.identityDtoCache" );
+    private final List<AttributeStatus> formatStatuses;
+
+    private ServiceContract serviceContract;
+    private IdentityDto existingIdentityToUpdate;
 
     /**
      * Constructor of IdentityStoreUpdateRequest
@@ -69,19 +89,69 @@ public class IdentityStoreUpdateRequest extends AbstractIdentityStoreRequest
      * @param identityChangeRequest
      *            the dto of identity's change
      */
-    public IdentityStoreUpdateRequest( String _strCustomerId, IdentityChangeRequest identityChangeRequest, String strClientAppCode, String authorName,
-            String authorType ) throws IdentityStoreException
+    public IdentityStoreUpdateRequest( final String _strCustomerId, final IdentityChangeRequest identityChangeRequest, final String strClientCode,
+            final String strAppCode, final String authorName, final String authorType ) throws RequestFormatException
     {
-        super( strClientAppCode, authorName, authorType );
+        super( strClientCode, strAppCode, authorName, authorType );
         this._identityChangeRequest = identityChangeRequest;
         this._strCustomerId = _strCustomerId;
+        this.formatStatuses = new ArrayList<>( );
     }
 
     @Override
-    protected void validateSpecificRequest( ) throws IdentityStoreException
+    protected void fetchResources( ) throws ResourceNotFoundException
+    {
+        serviceContract = ServiceContractService.instance( ).getActiveServiceContract( _strClientCode );
+        existingIdentityToUpdate = _identityDtoCache.getByCustomerId( _strCustomerId, serviceContract );
+        if ( existingIdentityToUpdate == null )
+        {
+            throw new ResourceNotFoundException( "No matching identity could be found", Constants.PROPERTY_REST_ERROR_NO_MATCHING_IDENTITY );
+        }
+    }
+
+    @Override
+    protected void validateRequestFormat( ) throws RequestFormatException
     {
         IdentityRequestValidator.instance( ).checkIdentityChange( _identityChangeRequest, true );
         IdentityRequestValidator.instance( ).checkIdentityForUpdate( _identityChangeRequest.getIdentity( ).getConnectionId( ), _strCustomerId );
+        IdentityAttributeValidator.instance( ).checkAttributeExistence( _identityChangeRequest.getIdentity( ) );
+        IdentityAttributeValidator.instance( ).validatePivotAttributesIntegrity( existingIdentityToUpdate, _identityChangeRequest.getIdentity( ), true );
+    }
+
+    @Override
+    protected void validateClientAuthorization( ) throws ClientAuthorizationException
+    {
+        ServiceContractService.instance( ).validateUpdateAuthorization( _identityChangeRequest, existingIdentityToUpdate, serviceContract );
+        // If identity is connected and service contract doesn't allow unrestricted update, do a bunch of additionnal checks
+        if ( existingIdentityToUpdate.getMonParisActive( ) && !serviceContract.getAuthorizedAccountUpdate( ) )
+        {
+            IdentityAttributeValidator.instance( ).checkConnectedIdentityUpdate( _identityChangeRequest.getIdentity( ).getAttributes( ),
+                    existingIdentityToUpdate );
+        }
+    }
+
+    @Override
+    protected void validateResourcesConsistency( ) throws ResourceConsistencyException
+    {
+        IdentityValidator.instance( ).checkIdentityLastUpdateDate( existingIdentityToUpdate, _identityChangeRequest.getIdentity( ).getLastUpdateDate( ) );
+        IdentityValidator.instance( ).checkIdentityMergedStatusForUpdate( existingIdentityToUpdate );
+        IdentityValidator.instance( ).checkIdentityDeletedStatusForUpdate( existingIdentityToUpdate );
+    }
+
+    @Override
+    protected void formatRequestContent( ) throws RequestContentFormattingException
+    {
+        formatStatuses.addAll( IdentityAttributeFormatterService.instance( ).formatIdentityChangeRequestAttributeValues( _identityChangeRequest ) );
+        formatStatuses
+                .addAll( IdentityAttributeGeocodesAdjustmentService.instance( ).adjustGeocodesAttributes( _identityChangeRequest, existingIdentityToUpdate ) );
+        IdentityAttributeValidator.instance( ).validateIdentityAttributeValues( _identityChangeRequest.getIdentity( ) );
+    }
+
+    @Override
+    protected void checkDuplicatesConsistency( ) throws DuplicatesConsistencyException
+    {
+        IdentityDuplicateValidator.instance( ).checkConnectionIdUniquenessForUpdate( _identityChangeRequest, existingIdentityToUpdate );
+        IdentityDuplicateValidator.instance( ).checkDuplicateExistenceForUpdate( _identityChangeRequest, existingIdentityToUpdate );
     }
 
     /**
@@ -91,52 +161,39 @@ public class IdentityStoreUpdateRequest extends AbstractIdentityStoreRequest
      *             if there is an exception during the treatment
      */
     @Override
-    public IdentityChangeResponse doSpecificRequest( ) throws IdentityStoreException
+    protected IdentityChangeResponse doSpecificRequest( ) throws IdentityStoreException
     {
-        // Quality checks
-        final IdentityChangeResponse response = ServiceContractService.instance( ).validateIdentityChange( _identityChangeRequest, _strClientCode );
-        if ( ResponseStatusFactory.failure( ).equals( response.getStatus( ) ) )
-        {
-            return response;
-        }
-
-        // Data content checks
-        final List<AttributeStatus> formatStatuses = IdentityAttributeFormatterService.instance( )
-                .formatIdentityChangeRequestAttributeValues( _identityChangeRequest );
-
-        IdentityAttributeValidationService.instance( ).validateIdentityAttributeValues( _identityChangeRequest.getIdentity( ), response );
-        if ( ResponseStatusFactory.failure( ).equals( response.getStatus( ) ) )
-        {
-            return response;
-        }
-
-        // Integrity checks
-        final IdentityDto existingIdentityDto = _identityDtoCache.getByCustomerId( _strCustomerId,
-                ServiceContractService.instance( ).getActiveServiceContract( _strClientCode ) );
-
-        if ( existingIdentityDto == null )
-        {
-            // updated identity dto should exist
-            response.setStatus(
-                    ResponseStatusFactory.failure( ).setMessageKey( Constants.PROPERTY_REST_ERROR_IDENTITY_NOT_FOUND ).setMessage( "Identity not found" ) );
-            return response;
-        }
-
-        IdentityAttributeValidationService.instance( ).validatePivotAttributesIntegrity( existingIdentityDto, _strClientCode,
-                _identityChangeRequest.getIdentity( ), true, response );
-        if ( ResponseStatusFactory.failure( ).equals( response.getStatus( ) ) )
-        {
-            return response;
-        }
+        final IdentityChangeResponse response = new IdentityChangeResponse( );
 
         // perform update
-        IdentityService.instance( ).update( _strCustomerId, _identityChangeRequest, _author, _strClientCode, response );
+        final Pair<Identity, List<AttributeStatus>> result = IdentityService.instance( ).update( _strCustomerId, _identityChangeRequest, _author,
+                serviceContract, formatStatuses );
 
-        // if request is accepted and treatment successful, add the formatting statuses
-        if ( ResponseStatusFactory.success( ).equals( response.getStatus( ) ) || ResponseStatusFactory.incompleteSuccess( ).equals( response.getStatus( ) ) )
+        final Identity updatedIdentity = result.getKey( );
+        final List<AttributeStatus> attrStatusList = result.getValue( );
+        attrStatusList.addAll( formatStatuses );
+
+        final boolean allAttributesCreatedOrUpdated = attrStatusList.stream( ).map( AttributeStatus::getStatus )
+                .allMatch( status -> status.getType( ) == AttributeChangeStatusType.SUCCESS );
+        final ResponseStatus status = allAttributesCreatedOrUpdated ? ResponseStatusFactory.success( ) : ResponseStatusFactory.incompleteSuccess( );
+
+        final String msgKey;
+        if ( Collections.disjoint( AttributeChangeStatus.getSuccessStatuses( ),
+                attrStatusList.stream( ).map( AttributeStatus::getStatus ).collect( Collectors.toList( ) ) ) )
         {
-            response.getStatus( ).getAttributeStatuses( ).addAll( formatStatuses );
+            // If there was no attribute change, send back a specific message key
+            msgKey = Constants.PROPERTY_REST_INFO_NO_ATTRIBUTE_CHANGE;
         }
+        else
+        {
+            msgKey = Constants.PROPERTY_REST_INFO_SUCCESSFUL_OPERATION;
+        }
+
+        response.setStatus( status.setAttributeStatuses( attrStatusList ).setMessageKey( msgKey ) );
+        response.setCustomerId( updatedIdentity.getCustomerId( ) );
+        response.setConnectionId( updatedIdentity.getConnectionId( ) );
+        response.setCreationDate( updatedIdentity.getCreationDate( ) );
+        response.setLastUpdateDate( updatedIdentity.getLastUpdateDate( ) );
 
         return response;
     }

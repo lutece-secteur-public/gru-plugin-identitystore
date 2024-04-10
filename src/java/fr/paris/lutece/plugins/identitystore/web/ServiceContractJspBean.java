@@ -69,7 +69,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -341,9 +340,10 @@ public class ServiceContractJspBean extends ManageServiceContractJspBean<Integer
 
         try
         {
-            ServiceContractService.instance( ).create( _servicecontract, selectedClientAppId );
+            ServiceContractService.instance( ).validateContractDefinition( _servicecontract, selectedClientAppId );
+            ServiceContractService.instance( ).create( _servicecontract, ClientApplicationHome.findByPrimaryKey( selectedClientAppId ) );
         }
-        catch( Exception e )
+        catch( final Exception e )
         {
             addError( e.getMessage( ) );
             return redirect( request, VIEW_CREATE_SERVICECONTRACT, PARAMETER_ID_CLIENTAPPLICATION, selectedClientAppId );
@@ -508,7 +508,7 @@ public class ServiceContractJspBean extends ManageServiceContractJspBean<Integer
 
         try
         {
-            ServiceContractService.instance( ).update( _servicecontract, Integer.parseInt( parameterValues [0] ) );
+            ServiceContractService.instance( ).update( _servicecontract, ClientApplicationHome.findByPrimaryKey( Integer.parseInt( parameterValues [0] ) ) );
         }
         catch( IdentityStoreException e )
         {
@@ -644,7 +644,7 @@ public class ServiceContractJspBean extends ManageServiceContractJspBean<Integer
     private boolean checkServiceContractsActivationDate( final ServiceContract serviceContract, final int clientAppId )
     {
         final ClientApplication clientApplication = ClientApplicationHome.findByPrimaryKey( clientAppId );
-        final List<ServiceContract> serviceContracts = ClientApplicationHome.selectServiceContracts( clientApplication );
+        final List<ServiceContract> serviceContracts = ClientApplicationHome.selectServiceContracts( clientApplication.getId( ) );
         final List<ServiceContract> filteredServiceContracts = serviceContracts.stream( ).filter( c -> !Objects.equals( c.getId( ), serviceContract.getId( ) ) )
                 .collect( Collectors.toList( ) );
         if ( filteredServiceContracts == null || filteredServiceContracts.isEmpty( ) )

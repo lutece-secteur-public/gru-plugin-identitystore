@@ -31,23 +31,17 @@
  *
  * License 1.0
  */
-package fr.paris.lutece.plugins.identitystore.service.duplicate;
+package fr.paris.lutece.plugins.identitystore.v3.web.rs;
 
-import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
-import fr.paris.lutece.portal.service.util.AppLogService;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.ResponseDto;
 
-public class DuplicateRuleNotFoundException extends IdentityStoreException
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+
+public interface IRestService
 {
-
-    /**
-     * Constructor
-     *
-     * @param strMessage
-     *            The message
-     */
-    public DuplicateRuleNotFoundException( String strMessage )
+    default Response buildJsonResponse( final ResponseDto entity )
     {
-        super( strMessage );
-        AppLogService.error( strMessage );
+        return Response.status( entity.getStatus( ).getHttpCode( ) ).entity( entity ).type( MediaType.APPLICATION_JSON_TYPE ).build( );
     }
 }

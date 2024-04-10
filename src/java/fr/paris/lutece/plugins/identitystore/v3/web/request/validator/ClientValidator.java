@@ -31,26 +31,44 @@
  *
  * License 1.0
  */
-package fr.paris.lutece.plugins.identitystore.service.contract;
+package fr.paris.lutece.plugins.identitystore.v3.web.request.validator;
 
-import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
-import fr.paris.lutece.portal.service.util.AppLogService;
+import fr.paris.lutece.plugins.identitystore.business.application.ClientApplicationHome;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.application.ClientApplicationDto;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
+import fr.paris.lutece.plugins.identitystore.web.exception.ResourceConsistencyException;
 
-/**
- * CertifierNotFoundException
- */
-public class ServiceContractNotFoundException extends IdentityStoreException
+public class ClientValidator
 {
+    private static ClientValidator instance;
+
+    public static ClientValidator instance( )
+    {
+        if ( instance == null )
+        {
+            instance = new ClientValidator( );
+        }
+        return instance;
+    }
+
+    private ClientValidator( )
+    {
+    }
 
     /**
-     * Constructor
-     *
-     * @param strMessage
-     *            The message
+     * Checks if the client application to create has a unique client code
+     * 
+     * @param clientApplicationToCreate
+     *            the client application
+     * @throws ResourceConsistencyException
+     *             if a client application already exists with the same client code
      */
-    public ServiceContractNotFoundException( String strMessage )
+    public void checkClientCodeUniqueness( final ClientApplicationDto clientApplicationToCreate ) throws ResourceConsistencyException
     {
-        super( strMessage );
-        AppLogService.error( strMessage );
+        if ( ClientApplicationHome.findByCode( clientApplicationToCreate.getClientCode( ) ) != null )
+        {
+            throw new ResourceConsistencyException( "A client already exists with the code " + clientApplicationToCreate.getClientCode( ),
+                    Constants.PROPERTY_REST_ERROR_CLIENT_ALREADY_EXISTS );
+        }
     }
 }

@@ -91,15 +91,15 @@
     <!-- REST -->
     <bean id="identitystore.customObjectMapper"  class="fr.paris.lutece.plugins.identitystore.v3.web.rs.CustomMapper" />
     <bean id="identitystore.uncaughtExceptionMapper"  class="fr.paris.lutece.plugins.identitystore.v3.web.rs.error.UncaughtExceptionMapper" />
-    <bean id="identitystore.uncaughtIdentityNotFoundExceptionMapper"  class="fr.paris.lutece.plugins.identitystore.v3.web.rs.error.UncaughtIdentityNotFoundExceptionMapper" />
-    <bean id="identitystore.uncaughtServiceContractNotFoundExceptionMapper"  class="fr.paris.lutece.plugins.identitystore.v3.web.rs.error.UncaughtServiceContractNotFoundExceptionMapper" />
     <bean id="identitystore.uncaughtIdentityStoreExceptionMapper"  class="fr.paris.lutece.plugins.identitystore.v3.web.rs.error.UncaughtIdentityStoreExceptionMapper" />
+    <bean id="identitystore.uncaughtClientAuthorizationExceptionMapper"  class="fr.paris.lutece.plugins.identitystore.v3.web.rs.error.UncaughtClientAuthorizationExceptionMapper" />
+    <bean id="identitystore.uncaughtDuplicatesConsistencyExceptionMapper"  class="fr.paris.lutece.plugins.identitystore.v3.web.rs.error.UncaughtDuplicatesConsistencyExceptionMapper" />
+    <bean id="identitystore.uncaughtRequestContentFormattingExceptionMapper"  class="fr.paris.lutece.plugins.identitystore.v3.web.rs.error.UncaughtRequestContentFormattingExceptionMapper" />
+    <bean id="identitystore.uncaughtRequestFormatExceptionMapper"  class="fr.paris.lutece.plugins.identitystore.v3.web.rs.error.UncaughtRequestFormatExceptionMapper" />
+    <bean id="identitystore.uncaughtResourceNotFoundExceptionMapper"  class="fr.paris.lutece.plugins.identitystore.v3.web.rs.error.UncaughtResourceNotFoundExceptionMapper" />
     <bean id="identitystore.uncaughtJerseyExceptionMapper"  class="fr.paris.lutece.plugins.identitystore.v3.web.rs.error.UncaughtJerseyExceptionMapper" />
 
-    <bean id="identitystore.v1.identityStoreRestService"  class="fr.paris.lutece.plugins.identitystore.v1.web.rs.IdentityStoreRestService" />
-    <bean id="identitystore.v2.identityStoreRestService"  class="fr.paris.lutece.plugins.identitystore.v2.web.rs.IdentityStoreRestService" />
     <bean id="identitystore.v3.identityStoreRestService"  class="fr.paris.lutece.plugins.identitystore.v3.web.rs.IdentityStoreRestService" />
-    <bean id="identitystore.swaggerRest"  class="fr.paris.lutece.plugins.identitystore.v2.web.rs.swagger.SwaggerRest" />
     <bean id="identitystore.serviceContractRest" class="fr.paris.lutece.plugins.identitystore.v3.web.rs.ServiceContractRestService" />
     <bean id="identitystore.clientRest" class="fr.paris.lutece.plugins.identitystore.v3.web.rs.ClientRestService" />
     <bean id="identitystore.referentielRest" class="fr.paris.lutece.plugins.identitystore.v3.web.rs.ReferentielRestService" />

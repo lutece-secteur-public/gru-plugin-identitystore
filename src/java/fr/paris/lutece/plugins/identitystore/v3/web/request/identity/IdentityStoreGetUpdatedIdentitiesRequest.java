@@ -33,8 +33,8 @@
  */
 package fr.paris.lutece.plugins.identitystore.v3.web.request.identity;
 
-import fr.paris.lutece.plugins.identitystore.business.identity.IdentityHome;
-import fr.paris.lutece.plugins.identitystore.v3.web.rs.AbstractIdentityStoreRequest;
+import fr.paris.lutece.plugins.identitystore.service.identity.IdentityService;
+import fr.paris.lutece.plugins.identitystore.v3.web.request.AbstractIdentityStoreAppCodeRequest;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.IdentityRequestValidator;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.Page;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.crud.UpdatedIdentityDto;
@@ -42,9 +42,14 @@ import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.search.UpdatedIdentit
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.search.UpdatedIdentitySearchResponse;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.ResponseStatusFactory;
+import fr.paris.lutece.plugins.identitystore.web.exception.ClientAuthorizationException;
+import fr.paris.lutece.plugins.identitystore.web.exception.DuplicatesConsistencyException;
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
-import fr.paris.lutece.portal.service.util.AppException;
-import fr.paris.lutece.portal.service.util.AppPropertiesService;
+import fr.paris.lutece.plugins.identitystore.web.exception.RequestContentFormattingException;
+import fr.paris.lutece.plugins.identitystore.web.exception.RequestFormatException;
+import fr.paris.lutece.plugins.identitystore.web.exception.ResourceConsistencyException;
+import fr.paris.lutece.plugins.identitystore.web.exception.ResourceNotFoundException;
+import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.List;
 
@@ -52,7 +57,7 @@ import java.util.List;
  * This class represents a get request for IdentityStoreRestServive
  *
  */
-public class IdentityStoreGetUpdatedIdentitiesRequest extends AbstractIdentityStoreRequest
+public class IdentityStoreGetUpdatedIdentitiesRequest extends AbstractIdentityStoreAppCodeRequest
 {
     private final UpdatedIdentitySearchRequest _request;
 
@@ -67,94 +72,58 @@ public class IdentityStoreGetUpdatedIdentitiesRequest extends AbstractIdentitySt
      * @param strAuthorName
      */
     public IdentityStoreGetUpdatedIdentitiesRequest( final UpdatedIdentitySearchRequest updatedIdentitySearchRequest, final String strClientCode,
-            final String strAuthorName, final String strAuthorType ) throws IdentityStoreException
+            final String strAppCode, final String strAuthorName, final String strAuthorType ) throws IdentityStoreException
     {
-        super( strClientCode, strAuthorName, strAuthorType );
+        super( strClientCode, strAppCode, strAuthorName, strAuthorType );
         this._request = updatedIdentitySearchRequest;
     }
 
     @Override
-    protected void validateSpecificRequest( ) throws IdentityStoreException
+    protected void fetchResources( ) throws ResourceNotFoundException
     {
-        IdentityRequestValidator.instance( ).checkUpdatedIdentitySearchRequest( this._request );
+        // do nothing
     }
 
-    /**
-     * get the identity
-     * 
-     * @throws AppException
-     *             if there is an exception during the treatment
-     */
     @Override
-    public UpdatedIdentitySearchResponse doSpecificRequest( )
+    protected void validateRequestFormat( ) throws RequestFormatException
+    {
+        IdentityRequestValidator.instance( ).checkUpdatedIdentitySearchRequest( _request );
+    }
+
+    @Override
+    protected void validateClientAuthorization( ) throws ClientAuthorizationException
+    {
+        // TODO there is no authorization in the service contract for that
+    }
+
+    @Override
+    protected void validateResourcesConsistency( ) throws ResourceConsistencyException
+    {
+        // do nothing
+    }
+
+    @Override
+    protected void formatRequestContent( ) throws RequestContentFormattingException
+    {
+        // do nothing
+    }
+
+    @Override
+    protected void checkDuplicatesConsistency( ) throws DuplicatesConsistencyException
+    {
+        // do nothing
+    }
+
+    @Override
+    protected UpdatedIdentitySearchResponse doSpecificRequest( ) throws IdentityStoreException
     {
         final UpdatedIdentitySearchResponse response = new UpdatedIdentitySearchResponse( );
-        final int maxFromProperty = AppPropertiesService.getPropertyInt( "identitystore.identity.updated.size.limit", 500 );
-        final int maxResult = _request.getMax( ) == null ? maxFromProperty : Math.min( _request.getMax( ), maxFromProperty );
-        final List<UpdatedIdentityDto> updatedIdentities;
-        if ( _request.getPage( ) != null && _request.getSize( ) != null )
-        {
-            // Si pagination
-            if ( _request.getPage( ) < 1 )
-            {
-                response.setStatus( ResponseStatusFactory.badRequest( ).setMessage( "Pagination should start at index 1" )
-                        .setMessageKey( Constants.PROPERTY_REST_PAGINATION_START_ERROR ) );
-                return response;
-            }
-            if ( _request.getSize( ) < 1 )
-            {
-                response.setStatus( ResponseStatusFactory.badRequest( ).setMessage( "Page size should be of at least 1" )
-                        .setMessageKey( Constants.PROPERTY_REST_PAGE_SIZE_ERROR ) );
-                return response;
-            }
 
-            // première requête qui ne ramène que les ID (avec un LIMIT ${maxResult} ), triés par date de derniere modification
-            final List<Integer> allUpdatedIdentityIds = IdentityHome.findUpdatedIdentityIds( _request.getDays( ), _request.getIdentityChangeTypes( ),
-                    _request.getUpdatedAttributes( ), maxResult );
-
-            final int totalRecords = allUpdatedIdentityIds.size( );
-            if ( totalRecords == 0 )
-            {
-                response.setStatus( ResponseStatusFactory.noResult( ).setMessage( "No updated identity found with the provided criterias." )
-                        .setMessageKey( Constants.PROPERTY_REST_ERROR_NO_UPDATED_IDENTITY_FOUND ) );
-                return response;
-            }
-            final int totalPages = (int) Math.ceil( (double) totalRecords / _request.getSize( ) );
-            if ( _request.getPage( ) > totalPages )
-            {
-                response.setStatus( ResponseStatusFactory.badRequest( ).setMessage( "Pagination index should not exceed total number of pages." )
-                        .setMessageKey( Constants.PROPERTY_REST_PAGINATION_END_ERROR ) );
-                return response;
-            }
-
-            final Page pagination = new Page( );
-            pagination.setTotalPages( totalPages );
-            pagination.setTotalRecords( totalRecords );
-            pagination.setCurrentPage( _request.getPage( ) );
-            pagination.setNextPage( _request.getPage( ) == totalPages ? null : _request.getPage( ) + 1 );
-            pagination.setPreviousPage( _request.getPage( ) > 1 ? _request.getPage( ) - 1 : null );
-            response.setPagination( pagination );
-
-            // deuxième requête qui prend les IDs correspondant à la page demandée (sublist), et qui va chercher les datas
-            final int start = ( _request.getPage( ) - 1 ) * _request.getSize( );
-            final int end = Math.min( start + _request.getSize( ), totalRecords );
-            updatedIdentities = IdentityHome.getUpdatedIdentitiesFromIds( allUpdatedIdentityIds.subList( start, end ) );
-        }
-        else
-        {
-            // Pas de pagination demandée, une seule requête qui ramène directement les datas (avec un LIMIT ${maxResult} )
-            updatedIdentities = IdentityHome.findUpdatedIdentities( _request.getDays( ), _request.getIdentityChangeTypes( ), _request.getUpdatedAttributes( ),
-                    maxResult );
-            if ( updatedIdentities.isEmpty( ) )
-            {
-                response.setStatus( ResponseStatusFactory.noResult( ).setMessage( "No updated identity found with the provided criterias." )
-                        .setMessageKey( Constants.PROPERTY_REST_ERROR_NO_UPDATED_IDENTITY_FOUND ) );
-                return response;
-            }
-        }
+        final Pair<List<UpdatedIdentityDto>, Page> result = IdentityService.instance( ).searchUpdatedIdentities( _request );
 
         response.setStatus( ResponseStatusFactory.ok( ).setMessageKey( Constants.PROPERTY_REST_INFO_SUCCESSFUL_OPERATION ) );
-        response.getUpdatedIdentityList( ).addAll( updatedIdentities );
+        response.getUpdatedIdentityList( ).addAll( result.getKey( ) );
+        response.setPagination( result.getValue( ) );
 
         return response;
     }

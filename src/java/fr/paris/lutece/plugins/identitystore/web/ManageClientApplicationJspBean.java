@@ -178,7 +178,7 @@ public class ManageClientApplicationJspBean extends ManageIdentitiesJspBean
         Map<String, Object> model = getModel( );
 
         _clientApplication = ClientApplicationHome.findByPrimaryKey( nId );
-        List<ServiceContract> serviceContracts = ClientApplicationHome.selectServiceContracts( _clientApplication );
+        List<ServiceContract> serviceContracts = ClientApplicationHome.selectServiceContracts( _clientApplication.getId( ) );
         _clientApplication.setServiceContracts( serviceContracts );
 
         model.put( MARK_CLIENTAPPLICATION, _clientApplication );

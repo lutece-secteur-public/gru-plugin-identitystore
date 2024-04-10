@@ -35,13 +35,19 @@ package fr.paris.lutece.plugins.identitystore.v3.web.request.application;
 
 import fr.paris.lutece.plugins.identitystore.business.application.ClientApplication;
 import fr.paris.lutece.plugins.identitystore.business.application.ClientApplicationHome;
-import fr.paris.lutece.plugins.identitystore.v3.web.rs.AbstractIdentityStoreRequest;
+import fr.paris.lutece.plugins.identitystore.v3.web.request.AbstractIdentityStoreAppCodeRequest;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.DtoConverter;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.IdentityRequestValidator;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.application.ClientsSearchResponse;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.ResponseStatusFactory;
+import fr.paris.lutece.plugins.identitystore.web.exception.ClientAuthorizationException;
+import fr.paris.lutece.plugins.identitystore.web.exception.DuplicatesConsistencyException;
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
+import fr.paris.lutece.plugins.identitystore.web.exception.RequestContentFormattingException;
+import fr.paris.lutece.plugins.identitystore.web.exception.RequestFormatException;
+import fr.paris.lutece.plugins.identitystore.web.exception.ResourceConsistencyException;
+import fr.paris.lutece.plugins.identitystore.web.exception.ResourceNotFoundException;
 import fr.paris.lutece.portal.service.util.AppException;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -52,10 +58,10 @@ import java.util.List;
  * This class represents a get request for IdentityStoreRestServive
  *
  */
-public class ClientsGetRequest extends AbstractIdentityStoreRequest
+public class ClientsGetRequest extends AbstractIdentityStoreAppCodeRequest
 {
 
-    private final String _strApplicationCode;
+    private final String _strTargetApplicationCode;
 
     /**
      * Constructor of IdentityStoreGetRequest
@@ -63,15 +69,47 @@ public class ClientsGetRequest extends AbstractIdentityStoreRequest
      * @param strClientCode
      *            the client application Code
      */
-    public ClientsGetRequest( String strClientCode, String strApplicationCode, final String authorName, final String authorType ) throws IdentityStoreException
+    public ClientsGetRequest( final String strTargetApplicationCode, final String strClientCode, final String strHeaderAppCode, final String authorName,
+            final String authorType ) throws IdentityStoreException
     {
-        super( strClientCode, authorName, authorType );
-        this._strApplicationCode = strApplicationCode;
+        super( strClientCode, strHeaderAppCode, authorName, authorType );
+        this._strTargetApplicationCode = strTargetApplicationCode;
     }
 
     @Override
-    protected void validateSpecificRequest( ) throws IdentityStoreException
+    protected void fetchResources( ) throws ResourceNotFoundException
     {
+        // do nothing
+    }
+
+    @Override
+    protected void validateRequestFormat( ) throws RequestFormatException
+    {
+        // do nothing
+    }
+
+    @Override
+    protected void validateClientAuthorization( ) throws ClientAuthorizationException
+    {
+        // do nothing
+    }
+
+    @Override
+    protected void validateResourcesConsistency( ) throws ResourceConsistencyException
+    {
+        // do nothing
+    }
+
+    @Override
+    protected void formatRequestContent( ) throws RequestContentFormattingException
+    {
+        // do nothing
+    }
+
+    @Override
+    protected void checkDuplicatesConsistency( ) throws DuplicatesConsistencyException
+    {
+        // do nothing
     }
 
     /**
@@ -81,15 +119,14 @@ public class ClientsGetRequest extends AbstractIdentityStoreRequest
      *             if there is an exception during the treatment
      */
     @Override
-    public ClientsSearchResponse doSpecificRequest( )
+    protected ClientsSearchResponse doSpecificRequest( ) throws IdentityStoreException
     {
         final ClientsSearchResponse response = new ClientsSearchResponse( );
 
         final List<ClientApplication> clientApplications;
-
-        if ( !StringUtils.isEmpty( _strApplicationCode ) )
+        if ( !StringUtils.isEmpty( _strTargetApplicationCode ) )
         {
-            clientApplications = ClientApplicationHome.findByApplicationCode( _strApplicationCode );
+            clientApplications = ClientApplicationHome.findByApplicationCode( _strTargetApplicationCode );
         }
         else
         {
@@ -98,16 +135,13 @@ public class ClientsGetRequest extends AbstractIdentityStoreRequest
 
         if ( clientApplications == null || CollectionUtils.isEmpty( clientApplications ) )
         {
-            response.setStatus( ResponseStatusFactory.noResult( ).setMessageKey( Constants.PROPERTY_REST_ERROR_NO_CLIENT_FOUND ) );
+            throw new ResourceNotFoundException( "No client found", Constants.PROPERTY_REST_ERROR_NO_CLIENT_FOUND );
         }
-        else
+        for ( final ClientApplication clientApplication : clientApplications )
         {
-            for ( final ClientApplication clientApplication : clientApplications )
-            {
-                response.getClientApplications( ).add( DtoConverter.convertClientToDto( clientApplication ) );
-            }
-            response.setStatus( ResponseStatusFactory.ok( ).setMessageKey( Constants.PROPERTY_REST_INFO_SUCCESSFUL_OPERATION ) );
+            response.getClientApplications( ).add( DtoConverter.convertClientToDto( clientApplication ) );
         }
+        response.setStatus( ResponseStatusFactory.ok( ).setMessageKey( Constants.PROPERTY_REST_INFO_SUCCESSFUL_OPERATION ) );
 
         return response;
     }

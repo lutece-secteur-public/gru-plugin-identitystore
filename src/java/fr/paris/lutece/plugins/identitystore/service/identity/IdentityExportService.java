@@ -45,9 +45,11 @@ import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.exporting.IdentityExp
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.ResponseStatusFactory;
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
+import fr.paris.lutece.plugins.identitystore.web.exception.ResourceNotFoundException;
 import fr.paris.lutece.portal.service.spring.SpringContextService;
 import fr.paris.lutece.portal.service.util.AppPropertiesService;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -58,7 +60,6 @@ public class IdentityExportService
     private final IdentityDtoCache _identityDtoCache = SpringContextService.getBean( "identitystore.identityDtoCache" );
 
     // PROPERTIES
-    private final int exportLimit = AppPropertiesService.getPropertyInt( "identitystore.identity.export.size.limit", 500 );
     private final boolean includeDeletedIdentitiesDefault = AppPropertiesService.getPropertyBoolean( "identitystore.identity.export.include.deleted.identities",
             false );
 
@@ -84,20 +85,13 @@ public class IdentityExportService
      * 
      * @param request
      *            the export request
-     * @param clientCode
-     *            the client code
+     * @param serviceContract
+     *            the service contract
      * @return
      */
-    public IdentityExportResponse export( final IdentityExportRequest request, final String clientCode ) throws IdentityStoreException
+    public List<IdentityDto> export( final IdentityExportRequest request, final ServiceContract serviceContract ) throws IdentityStoreException
     {
-        final IdentityExportResponse response = new IdentityExportResponse( );
-        if ( request.getCuidList( ).size( ) > exportLimit )
-        {
-            response.setStatus( ResponseStatusFactory.badRequest( ).setMessage( "Provided CUID list exceeds the allowed export limit of " + exportLimit )
-                    .setMessageKey( Constants.PROPERTY_REST_ERROR_EXPORT_LIMIT_EXCEEDED ) );
-            return response;
-        }
-        final ServiceContract serviceContract = ServiceContractService.instance( ).getActiveServiceContract( clientCode );
+        final List<IdentityDto> identities = new ArrayList<>( );
         final boolean includeDeletedIdentities = request.getIncludeDeletedIdentities( ) != null ? request.getIncludeDeletedIdentities( )
                 : includeDeletedIdentitiesDefault;
         for ( final String cuid : request.getCuidList( ) )
@@ -113,18 +107,13 @@ public class IdentityExportService
                         .collect( Collectors.toList( ) );
                 identity.setAttributes( attrToKeep );
             }
-            response.getIdentities( ).add( identity );
+            identities.add( identity );
         }
-        if ( response.getIdentities( ).isEmpty( ) )
+        if ( identities.isEmpty( ) )
         {
-            response.setStatus( ResponseStatusFactory.noResult( ).setMessage( "No identities were found for provided CUIDs" )
-                    .setMessageKey( Constants.PROPERTY_REST_ERROR_NO_MATCHING_IDENTITY ) );
+            throw new ResourceNotFoundException( "No identities were found for provided CUIDs", Constants.PROPERTY_REST_ERROR_NO_MATCHING_IDENTITY );
         }
-        else
-        {
-            response.setStatus(
-                    ResponseStatusFactory.ok( ).setMessage( "Export completed" ).setMessageKey( Constants.PROPERTY_REST_INFO_SUCCESSFUL_OPERATION ) );
-        }
-        return response;
+
+        return identities;
     }
 }

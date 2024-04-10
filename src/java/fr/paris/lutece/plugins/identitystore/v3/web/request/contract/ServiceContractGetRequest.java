@@ -33,27 +33,27 @@
  */
 package fr.paris.lutece.plugins.identitystore.v3.web.request.contract;
 
-import fr.paris.lutece.plugins.identitystore.business.contract.AttributeCertification;
-import fr.paris.lutece.plugins.identitystore.business.contract.ServiceContract;
-import fr.paris.lutece.plugins.identitystore.business.contract.ServiceContractHome;
-import fr.paris.lutece.plugins.identitystore.business.referentiel.RefAttributeCertificationProcessus;
-import fr.paris.lutece.plugins.identitystore.service.contract.AttributeCertificationDefinitionService;
-import fr.paris.lutece.plugins.identitystore.v3.web.rs.AbstractIdentityStoreRequest;
-import fr.paris.lutece.plugins.identitystore.v3.web.rs.DtoConverter;
+import fr.paris.lutece.plugins.identitystore.service.contract.ServiceContractService;
+import fr.paris.lutece.plugins.identitystore.v3.web.request.AbstractIdentityStoreAppCodeRequest;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.IdentityRequestValidator;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.contract.ServiceContractDto;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.contract.ServiceContractSearchResponse;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.ResponseStatusFactory;
+import fr.paris.lutece.plugins.identitystore.web.exception.ClientAuthorizationException;
+import fr.paris.lutece.plugins.identitystore.web.exception.DuplicatesConsistencyException;
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
+import fr.paris.lutece.plugins.identitystore.web.exception.RequestContentFormattingException;
+import fr.paris.lutece.plugins.identitystore.web.exception.RequestFormatException;
+import fr.paris.lutece.plugins.identitystore.web.exception.ResourceConsistencyException;
+import fr.paris.lutece.plugins.identitystore.web.exception.ResourceNotFoundException;
 import fr.paris.lutece.portal.service.util.AppException;
-
-import java.util.Optional;
 
 /**
  * This class represents a get request for ServiceContractRestService
  *
  */
-public class ServiceContractGetRequest extends AbstractIdentityStoreRequest
+public class ServiceContractGetRequest extends AbstractIdentityStoreAppCodeRequest
 {
     private final Integer _nServiceContractId;
 
@@ -65,17 +65,47 @@ public class ServiceContractGetRequest extends AbstractIdentityStoreRequest
      * @param nServiceContractId
      *            the service contract id
      */
-    public ServiceContractGetRequest( String strClientCode, Integer nServiceContractId, final String authorName, final String authorType )
-            throws IdentityStoreException
+    public ServiceContractGetRequest( final Integer nServiceContractId, final String strClientCode, final String strAppCode, final String authorName,
+            final String authorType ) throws IdentityStoreException
     {
-        super( strClientCode, authorName, authorType );
+        super( strClientCode, strAppCode, authorName, authorType );
         this._nServiceContractId = nServiceContractId;
     }
 
     @Override
-    protected void validateSpecificRequest( ) throws IdentityStoreException
+    protected void fetchResources( ) throws ResourceNotFoundException
+    {
+        // do nothing
+    }
+
+    @Override
+    protected void validateRequestFormat( ) throws RequestFormatException
     {
         IdentityRequestValidator.instance( ).checkContractId( _nServiceContractId );
+    }
+
+    @Override
+    protected void validateClientAuthorization( ) throws ClientAuthorizationException
+    {
+        // TODO no authorization in service contract for that
+    }
+
+    @Override
+    protected void validateResourcesConsistency( ) throws ResourceConsistencyException
+    {
+        // do nothing
+    }
+
+    @Override
+    protected void formatRequestContent( ) throws RequestContentFormattingException
+    {
+        // do nothing
+    }
+
+    @Override
+    protected void checkDuplicatesConsistency( ) throws DuplicatesConsistencyException
+    {
+        // do nothing
     }
 
     /**
@@ -85,34 +115,14 @@ public class ServiceContractGetRequest extends AbstractIdentityStoreRequest
      *             if there is an exception during the treatment
      */
     @Override
-    public ServiceContractSearchResponse doSpecificRequest( )
+    protected ServiceContractSearchResponse doSpecificRequest( ) throws IdentityStoreException
     {
         final ServiceContractSearchResponse response = new ServiceContractSearchResponse( );
 
-        final Optional<ServiceContract> result = ServiceContractHome.findByPrimaryKey( _nServiceContractId );
+        final ServiceContractDto serviceContract = ServiceContractService.instance( ).exportServiceContract( _nServiceContractId );
 
-        if ( !result.isPresent( ) )
-        {
-            response.setStatus( ResponseStatusFactory.notFound( ).setMessageKey( Constants.PROPERTY_REST_ERROR_SERVICE_CONTRACT_NOT_FOUND ) );
-        }
-        else
-        {
-            final ServiceContract serviceContract = result.get( );
-            serviceContract.setAttributeRights( ServiceContractHome.selectApplicationRights( serviceContract ) );
-            serviceContract.setAttributeCertifications( ServiceContractHome.selectAttributeCertifications( serviceContract ) );
-            serviceContract.setAttributeRequirements( ServiceContractHome.selectAttributeRequirements( serviceContract ) );
-            // TODO amélioration générale à mener sur ce point
-            for ( final AttributeCertification certification : serviceContract.getAttributeCertifications( ) )
-            {
-                for ( final RefAttributeCertificationProcessus processus : certification.getRefAttributeCertificationProcessus( ) )
-                {
-                    processus.setLevel(
-                            AttributeCertificationDefinitionService.instance( ).get( processus.getCode( ), certification.getAttributeKey( ).getKeyName( ) ) );
-                }
-            }
-            response.setServiceContract( DtoConverter.convertContractToDto( serviceContract ) );
-            response.setStatus( ResponseStatusFactory.ok( ).setMessageKey( Constants.PROPERTY_REST_INFO_SUCCESSFUL_OPERATION ) );
-        }
+        response.setStatus( ResponseStatusFactory.ok( ).setMessageKey( Constants.PROPERTY_REST_INFO_SUCCESSFUL_OPERATION ) );
+        response.setServiceContract( serviceContract );
 
         return response;
     }

@@ -33,22 +33,40 @@
  */
 package fr.paris.lutece.plugins.identitystore.v3.web.request.identity;
 
-import fr.paris.lutece.plugins.identitystore.service.attribute.IdentityAttributeValidationService;
+import fr.paris.lutece.plugins.identitystore.business.contract.ServiceContract;
+import fr.paris.lutece.plugins.identitystore.cache.IdentityDtoCache;
+import fr.paris.lutece.plugins.identitystore.v3.web.request.AbstractIdentityStoreAppCodeRequest;
+import fr.paris.lutece.plugins.identitystore.v3.web.request.validator.IdentityAttributeValidator;
 import fr.paris.lutece.plugins.identitystore.service.contract.ServiceContractService;
 import fr.paris.lutece.plugins.identitystore.service.identity.IdentityService;
-import fr.paris.lutece.plugins.identitystore.v3.web.rs.AbstractIdentityStoreRequest;
+import fr.paris.lutece.plugins.identitystore.v3.web.request.validator.IdentityValidator;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.IdentityRequestValidator;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.IdentityDto;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.merge.IdentityMergeRequest;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.merge.IdentityMergeResponse;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.ResponseStatusFactory;
+import fr.paris.lutece.plugins.identitystore.web.exception.ClientAuthorizationException;
+import fr.paris.lutece.plugins.identitystore.web.exception.DuplicatesConsistencyException;
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
+import fr.paris.lutece.plugins.identitystore.web.exception.RequestContentFormattingException;
+import fr.paris.lutece.plugins.identitystore.web.exception.RequestFormatException;
+import fr.paris.lutece.plugins.identitystore.web.exception.ResourceConsistencyException;
+import fr.paris.lutece.plugins.identitystore.web.exception.ResourceNotFoundException;
+import fr.paris.lutece.portal.service.spring.SpringContextService;
 
 /**
  * This class represents a create request for IdentityStoreRestServive
  */
-public class IdentityStoreCancelMergeRequest extends AbstractIdentityStoreRequest
+public class IdentityStoreCancelMergeRequest extends AbstractIdentityStoreAppCodeRequest
 {
+    private final IdentityDtoCache _identityDtoCache = SpringContextService.getBean( "identitystore.identityDtoCache" );
+
     private final IdentityMergeRequest _identityMergeRequest;
+
+    private ServiceContract serviceContract;
+    private IdentityDto primaryIdentity;
+    private IdentityDto secondaryIdentity;
 
     /**
      * Constructor of IdentityStoreCreateRequest
@@ -56,33 +74,72 @@ public class IdentityStoreCancelMergeRequest extends AbstractIdentityStoreReques
      * @param identityMergeRequest
      *            the dto of identity's merge
      */
-    public IdentityStoreCancelMergeRequest( IdentityMergeRequest identityMergeRequest, String strClientAppCode, String authorName, String authorType )
-            throws IdentityStoreException
+    public IdentityStoreCancelMergeRequest( final IdentityMergeRequest identityMergeRequest, final String strClientCode, final String strAppCode,
+            final String authorName, final String authorType ) throws IdentityStoreException
     {
-        super( strClientAppCode, authorName, authorType );
+        super( strClientCode, strAppCode, authorName, authorType );
+        if ( identityMergeRequest == null )
+        {
+            throw new RequestFormatException( "Provided Identity Merge request is null", Constants.PROPERTY_REST_ERROR_MERGE_REQUEST_NULL );
+        }
         this._identityMergeRequest = identityMergeRequest;
     }
 
     @Override
-    protected void validateSpecificRequest( ) throws IdentityStoreException
+    protected void fetchResources( ) throws ResourceNotFoundException
     {
-        // Vérification de la consistence des paramètres
+        serviceContract = ServiceContractService.instance( ).getActiveServiceContract( _strClientCode );
+        primaryIdentity = _identityDtoCache.getByCustomerId( _identityMergeRequest.getPrimaryCuid( ), serviceContract );
+        if ( primaryIdentity == null )
+        {
+            throw new ResourceNotFoundException( "Could not find primary identity", Constants.PROPERTY_REST_ERROR_PRIMARY_IDENTITY_NOT_FOUND );
+        }
+        secondaryIdentity = _identityDtoCache.getByCustomerId( _identityMergeRequest.getSecondaryCuid( ), serviceContract );
+        if ( secondaryIdentity == null )
+        {
+            throw new ResourceNotFoundException( "Could not find secondary identity", Constants.PROPERTY_REST_ERROR_SECONDARY_IDENTITY_NOT_FOUND );
+        }
+    }
+
+    @Override
+    protected void validateRequestFormat( ) throws RequestFormatException
+    {
         IdentityRequestValidator.instance( ).checkCancelMergeRequest( _identityMergeRequest );
     }
 
     @Override
-    public IdentityMergeResponse doSpecificRequest( ) throws IdentityStoreException
+    protected void validateClientAuthorization( ) throws ClientAuthorizationException
     {
-        final IdentityMergeResponse response = ServiceContractService.instance( ).validateIdentityMerge( _identityMergeRequest, _strClientCode );
+        ServiceContractService.instance( ).validateMergeAuthorization( _identityMergeRequest, serviceContract );
+    }
 
-        if ( !ResponseStatusFactory.failure( ).equals( response.getStatus( ) ) )
-        {
-            IdentityAttributeValidationService.instance( ).validateIdentityAttributeValues( _identityMergeRequest.getIdentity( ), response );
-            if ( !ResponseStatusFactory.failure( ).equals( response.getStatus( ) ) )
-            {
-                IdentityService.instance( ).cancelMerge( _identityMergeRequest, _author, _strClientCode, response );
-            }
-        }
+    @Override
+    protected void validateResourcesConsistency( ) throws ResourceConsistencyException
+    {
+        IdentityValidator.instance( ).checkIdentityLastUpdateDate( primaryIdentity, _identityMergeRequest.getPrimaryLastUpdateDate( ) );
+        IdentityValidator.instance( ).checkIdentityMergedStatusForMergeCancel( primaryIdentity, secondaryIdentity );
+    }
+
+    @Override
+    protected void formatRequestContent( ) throws RequestContentFormattingException
+    {
+        // do nothing
+    }
+
+    @Override
+    protected void checkDuplicatesConsistency( ) throws DuplicatesConsistencyException
+    {
+        // do nothing
+    }
+
+    @Override
+    protected IdentityMergeResponse doSpecificRequest( ) throws IdentityStoreException
+    {
+        final IdentityMergeResponse response = new IdentityMergeResponse( );
+
+        IdentityService.instance( ).cancelMerge( _identityMergeRequest, _author, _strClientCode );
+
+        response.setStatus( ResponseStatusFactory.success( ).setMessageKey( Constants.PROPERTY_REST_INFO_SUCCESSFUL_OPERATION ) );
 
         return response;
     }

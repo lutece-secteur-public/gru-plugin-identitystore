@@ -35,20 +35,26 @@ package fr.paris.lutece.plugins.identitystore.v3.web.request.application;
 
 import fr.paris.lutece.plugins.identitystore.business.application.ClientApplication;
 import fr.paris.lutece.plugins.identitystore.business.application.ClientApplicationHome;
-import fr.paris.lutece.plugins.identitystore.v3.web.rs.AbstractIdentityStoreRequest;
+import fr.paris.lutece.plugins.identitystore.v3.web.request.AbstractIdentityStoreAppCodeRequest;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.DtoConverter;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.IdentityRequestValidator;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.application.ClientSearchResponse;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.ResponseStatusFactory;
+import fr.paris.lutece.plugins.identitystore.web.exception.ClientAuthorizationException;
+import fr.paris.lutece.plugins.identitystore.web.exception.DuplicatesConsistencyException;
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
+import fr.paris.lutece.plugins.identitystore.web.exception.RequestContentFormattingException;
+import fr.paris.lutece.plugins.identitystore.web.exception.RequestFormatException;
+import fr.paris.lutece.plugins.identitystore.web.exception.ResourceConsistencyException;
+import fr.paris.lutece.plugins.identitystore.web.exception.ResourceNotFoundException;
 import fr.paris.lutece.portal.service.util.AppException;
 
 /**
  * This class represents a get request for IdentityStoreRestServive
  *
  */
-public class ClientGetRequest extends AbstractIdentityStoreRequest
+public class ClientGetRequest extends AbstractIdentityStoreAppCodeRequest
 {
 
     private final String _strTargetClientCode;
@@ -59,17 +65,47 @@ public class ClientGetRequest extends AbstractIdentityStoreRequest
      * @param strClientCode
      *            the client application Code
      */
-    public ClientGetRequest( final String strTargetClientCode, final String strClientCode, final String authorName, final String authorType )
-            throws IdentityStoreException
+    public ClientGetRequest( final String strTargetClientCode, final String strClientCode, final String strAppCode, final String authorName,
+            final String authorType ) throws IdentityStoreException
     {
-        super( strClientCode, authorName, authorType );
+        super( strClientCode, strAppCode, authorName, authorType );
         this._strTargetClientCode = strTargetClientCode;
     }
 
     @Override
-    protected void validateSpecificRequest( ) throws IdentityStoreException
+    protected void fetchResources( ) throws ResourceNotFoundException
+    {
+        // do nothing
+    }
+
+    @Override
+    protected void validateRequestFormat( ) throws RequestFormatException
     {
         IdentityRequestValidator.instance( ).checkTargetClientCode( _strTargetClientCode );
+    }
+
+    @Override
+    protected void validateClientAuthorization( ) throws ClientAuthorizationException
+    {
+        // do nothing
+    }
+
+    @Override
+    protected void validateResourcesConsistency( ) throws ResourceConsistencyException
+    {
+        // do nothing
+    }
+
+    @Override
+    protected void formatRequestContent( ) throws RequestContentFormattingException
+    {
+        // do nothing
+    }
+
+    @Override
+    protected void checkDuplicatesConsistency( ) throws DuplicatesConsistencyException
+    {
+        // do nothing
     }
 
     /**
@@ -79,7 +115,7 @@ public class ClientGetRequest extends AbstractIdentityStoreRequest
      *             if there is an exception during the treatment
      */
     @Override
-    public ClientSearchResponse doSpecificRequest( )
+    public ClientSearchResponse doSpecificRequest( ) throws IdentityStoreException
     {
         final ClientSearchResponse response = new ClientSearchResponse( );
 
@@ -87,13 +123,10 @@ public class ClientGetRequest extends AbstractIdentityStoreRequest
 
         if ( clientApplication == null )
         {
-            response.setStatus( ResponseStatusFactory.notFound( ).setMessageKey( Constants.PROPERTY_REST_ERROR_NO_CLIENT_FOUND ) );
+            throw new ResourceNotFoundException( "No client found", Constants.PROPERTY_REST_ERROR_NO_CLIENT_FOUND );
         }
-        else
-        {
-            response.setClientApplication( DtoConverter.convertClientToDto( clientApplication ) );
-            response.setStatus( ResponseStatusFactory.ok( ).setMessageKey( Constants.PROPERTY_REST_INFO_SUCCESSFUL_OPERATION ) );
-        }
+        response.setClientApplication( DtoConverter.convertClientToDto( clientApplication ) );
+        response.setStatus( ResponseStatusFactory.ok( ).setMessageKey( Constants.PROPERTY_REST_INFO_SUCCESSFUL_OPERATION ) );
 
         return response;
     }

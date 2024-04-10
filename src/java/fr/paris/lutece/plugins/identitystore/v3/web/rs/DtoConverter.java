@@ -68,7 +68,9 @@ import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.contract.ServiceContr
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.referentiel.AttributeCertificationLevelDto;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.referentiel.AttributeCertificationProcessusDto;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.referentiel.LevelDto;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
+import fr.paris.lutece.plugins.identitystore.web.exception.ResourceNotFoundException;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -334,7 +336,7 @@ public final class DtoConverter
      *            business service contract to convert
      * @return serviceContractDto initialized from provided serviceContractDto
      */
-    public static ServiceContract convertDtoToContract( final ServiceContractDto serviceContractDto ) throws IdentityStoreException
+    public static ServiceContract convertDtoToContract( final ServiceContractDto serviceContractDto ) throws ResourceNotFoundException
     {
         final ServiceContract serviceContract = new ServiceContract( );
         serviceContract.setId( serviceContractDto.getId( ) );
@@ -375,8 +377,9 @@ public final class DtoConverter
                 requirement.setAttributeKey( attributeKey );
                 final Optional<RefCertificationLevel> refCertificationLevel = RefCertificationLevelHome.getRefCertificationLevelsList( ).stream( )
                         .filter( level -> level.getLevel( ).equals( attributeDefinition.getAttributeRequirement( ).getLevel( ) ) ).findFirst( );
-                requirement.setRefCertificationLevel( refCertificationLevel.orElseThrow( ( ) -> new IdentityStoreException(
-                        "No certification level found with value " + attributeDefinition.getAttributeRequirement( ).getLevel( ) ) ) );
+                requirement.setRefCertificationLevel( refCertificationLevel.orElseThrow( ( ) -> new ResourceNotFoundException(
+                        "No certification level found with value " + attributeDefinition.getAttributeRequirement( ).getLevel( ),
+                        Constants.PROPERTY_REST_ERROR_NO_CERTIFICATION_LEVEL_FOUND ) ) );
                 serviceContract.getAttributeRequirements( ).add( requirement );
             }
 
@@ -391,8 +394,9 @@ public final class DtoConverter
                             .get( attributeCertification.getCode( ), attributeKey.getKeyName( ) );
                     if ( refAttributeCertificationLevel == null )
                     {
-                        throw new IdentityStoreException(
-                                "No processus could be found with code " + attributeCertification.getCode( ) + " for attribute " + attributeKey.getKeyName( ) );
+                        throw new ResourceNotFoundException(
+                                "No processus could be found with code " + attributeCertification.getCode( ) + " for attribute " + attributeKey.getKeyName( ),
+                                Constants.PROPERTY_REST_ERROR_NO_CERTIFICATION_PROCESSUS_FOUND );
                     }
                     certification.getRefAttributeCertificationProcessus( ).add( refAttributeCertificationLevel.getRefAttributeCertificationProcessus( ) );
                 }

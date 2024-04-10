@@ -43,22 +43,24 @@ import fr.paris.lutece.plugins.identitystore.business.contract.ServiceContract;
 import fr.paris.lutece.plugins.identitystore.business.contract.ServiceContractHome;
 import fr.paris.lutece.plugins.identitystore.business.referentiel.RefAttributeCertificationProcessus;
 import fr.paris.lutece.plugins.identitystore.cache.ActiveServiceContractCache;
-import fr.paris.lutece.plugins.identitystore.service.attribute.IdentityAttributeService;
-import fr.paris.lutece.plugins.identitystore.service.identity.IdentityAttributeNotFoundException;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.DtoConverter;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.AttributeChangeStatus;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.AttributeDto;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.AttributeStatus;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.IdentityDto;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.contract.ServiceContractDto;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.crud.IdentityChangeRequest;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.crud.IdentityChangeResponse;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.merge.IdentityMergeRequest;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.merge.IdentityMergeResponse;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.search.IdentitySearchMessage;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.search.IdentitySearchRequest;
-import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.search.IdentitySearchResponse;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.search.SearchAttribute;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
-import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.ResponseStatusFactory;
+import fr.paris.lutece.plugins.identitystore.web.exception.ClientAuthorizationException;
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
+import fr.paris.lutece.plugins.identitystore.web.exception.RequestFormatException;
+import fr.paris.lutece.plugins.identitystore.web.exception.ResourceNotFoundException;
 import fr.paris.lutece.portal.service.i18n.I18nService;
 import fr.paris.lutece.portal.service.spring.SpringContextService;
 import fr.paris.lutece.util.sql.TransactionManager;
@@ -100,258 +102,23 @@ public class ServiceContractService
      * @param clientCode
      *            code of the {@link ClientApplication} requesting the change
      * @return the active {@link ServiceContract}
-     * @throws ServiceContractNotFoundException
+     * @throws ResourceNotFoundException
      */
-    public ServiceContract getActiveServiceContract( final String clientCode ) throws ServiceContractNotFoundException
+    public ServiceContract getActiveServiceContract( final String clientCode ) throws ResourceNotFoundException
     {
         return _cache.get( clientCode );
     }
 
-    /**
-     * Validates the {@link IdentityChangeRequest} against the {@link ServiceContract} associated to the {@link ClientApplication} requesting the change. Each
-     * violation is listed in the {@link IdentityChangeResponse} with a status by attribute key. The following rules are verified: <br>
-     * <ul>
-     * <li>The attribute must be writable</li>
-     * <li>The certification processus, if given in the request, must be in the list of authorized processus</li>
-     * </ul>
-     *
-     * @param identityChangeRequest
-     *            {@link IdentityChangeRequest} with list of attributes
-     * @param clientCode
-     *            code of the {@link ClientApplication} requesting the change
-     * @return {@link IdentityChangeResponse} containing the execution status
-     * @throws ServiceContractNotFoundException
-     * @throws IdentityAttributeNotFoundException
-     */
-    public IdentityChangeResponse validateIdentityChange( final IdentityChangeRequest identityChangeRequest, final String clientCode )
-            throws ServiceContractNotFoundException, IdentityAttributeNotFoundException
+    public List<String> getMandatoryAttributes( final ServiceContract serviceContract, final List<AttributeKey> sharedMandatoryAttributeList )
     {
-        final IdentityChangeResponse response = new IdentityChangeResponse( );
-        final List<AttributeStatus> attrStatusList = new ArrayList<>( );
-        final ServiceContract serviceContract = this.getActiveServiceContract( clientCode );
-        for ( final AttributeDto attributeDto : identityChangeRequest.getIdentity( ).getAttributes( ) )
-        {
-            boolean canWriteAttribute = IdentityAttributeService.instance( ).getAttributeKey( attributeDto.getKey( ) ) != null;
-            if ( !canWriteAttribute )
-            {
-                attrStatusList.add( this.buildAttributeStatus( attributeDto, AttributeChangeStatus.NOT_FOUND ) );
-                continue;
-            }
-
-            canWriteAttribute = serviceContract.getAttributeRights( ).stream( )
-                    .anyMatch( attributeRight -> StringUtils.equals( attributeRight.getAttributeKey( ).getKeyName( ), attributeDto.getKey( ) )
-                            && attributeRight.isWritable( ) );
-            if ( !canWriteAttribute )
-            {
-                attrStatusList.add( this.buildAttributeStatus( attributeDto, AttributeChangeStatus.UNAUTHORIZED ) );
-                continue;
-            }
-
-            if ( attributeDto.getCertifier( ) != null )
-            {
-                canWriteAttribute = serviceContract.getAttributeCertifications( ).stream( ).anyMatch(
-                        attributeCertification -> StringUtils.equals( attributeCertification.getAttributeKey( ).getKeyName( ), attributeDto.getKey( ) )
-                                && attributeCertification.getRefAttributeCertificationProcessus( ).stream( )
-                                        .anyMatch( processus -> StringUtils.equals( processus.getCode( ), attributeDto.getCertifier( ) ) ) );
-                if ( !canWriteAttribute )
-                {
-                    attrStatusList.add( this.buildAttributeStatus( attributeDto, AttributeChangeStatus.INSUFFICIENT_RIGHTS ) );
-                }
-            }
-        }
-
-        if ( !attrStatusList.isEmpty( ) )
-        {
-            response.setStatus(
-                    ResponseStatusFactory.failure( ).setAttributeStatuses( attrStatusList ).setMessage( "The request violates service contract definition" )
-                            .setMessageKey( Constants.PROPERTY_REST_ERROR_SERVICE_CONTRACT_VIOLATION ) );
-        }
-
-        return response;
-    }
-
-    /**
-     * Validates the {@link IdentityMergeRequest} against the {@link ServiceContract} associated to the {@link ClientApplication} requesting the change. Each
-     * violation is listed in the {@link IdentityMergeResponse} with a status by attribute key. The following rules are verified: <br>
-     * <ul>
-     * <li>The {@link ClientApplication} must be authorized to perform the merge</li>
-     * </ul>
-     *
-     * @param identityMergeRequest
-     *            {@link IdentityMergeRequest} with list of attributes
-     * @param clientCode
-     *            code of the {@link ClientApplication} requesting the change
-     * @return {@link IdentityMergeResponse} containing the execution status
-     * @throws ServiceContractNotFoundException
-     */
-    public IdentityMergeResponse validateIdentityMerge( final IdentityMergeRequest identityMergeRequest, final String clientCode )
-            throws ServiceContractNotFoundException
-    {
-        final IdentityMergeResponse response = new IdentityMergeResponse( );
-        final ServiceContract serviceContract = this.getActiveServiceContract( clientCode );
-        if ( !serviceContract.getAuthorizedMerge( ) )
-        {
-            response.setStatus( ResponseStatusFactory.failure( ).setMessage( "The client application is not authorized to merge identities" )
-                    .setMessageKey( Constants.PROPERTY_REST_ERROR_MERGE_UNAUTHORIZED ) );
-        }
-
-        return response;
-    }
-
-    /**
-     * Validates the {@link IdentityChangeRequest} against the {@link ServiceContract} associated to the {@link ClientApplication} requesting the change. Each
-     * violation is listed in the {@link IdentityChangeResponse} with a status by attribute key. The following rules are verified: <br>
-     * <ul>
-     * <li>The {@link ClientApplication} must be authorized to perform the import</li>
-     * </ul>
-     *
-     * @param identityChangeRequest
-     *            {@link IdentityMergeRequest} with list of attributes
-     * @param clientCode
-     *            code of the {@link ClientApplication} requesting the change
-     * @return {@link IdentityMergeResponse} containing the execution status
-     * @throws ServiceContractNotFoundException
-     */
-    public IdentityChangeResponse validateIdentityImport( final IdentityChangeRequest identityChangeRequest, final String clientCode )
-            throws ServiceContractNotFoundException, IdentityAttributeNotFoundException
-    {
-        final IdentityChangeResponse response = new IdentityChangeResponse( );
-        final ServiceContract serviceContract = this.getActiveServiceContract( clientCode );
-        if ( !serviceContract.getAuthorizedImport( ) )
-        {
-            response.setStatus( ResponseStatusFactory.failure( ).setMessage( "The client application is not authorized to import identities " )
-                    .setMessageKey( Constants.PROPERTY_REST_ERROR_IMPORT_UNAUTHORIZED ) );
-        }
-        else
-        {
-            return this.validateIdentityChange( identityChangeRequest, clientCode );
-        }
-
-        return response;
-    }
-
-    /**
-     * Validates the {@link IdentitySearchRequest} against the {@link ServiceContract} associated to the {@link ClientApplication} requesting the search. Each
-     * violation is listed in the response with a status by attribute key. The following rules are verified: <br>
-     * <ul>
-     * <li>The attribute must be searchable</li>
-     * </ul>
-     *
-     * @param identitySearchRequest
-     *            {@link IdentitySearchRequest} with list of attributes
-     * @param clientCode
-     *            code of the {@link ClientApplication} requesting the search
-     * @throws ServiceContractNotFoundException
-     */
-    public IdentitySearchResponse validateIdentitySearch( final IdentitySearchRequest identitySearchRequest, final String clientCode,
-            final boolean checkContract ) throws ServiceContractNotFoundException
-    {
-        final ServiceContract serviceContract = this.getActiveServiceContract( clientCode );
-        final IdentitySearchResponse response = new IdentitySearchResponse( );
-        if ( checkContract && !serviceContract.getAuthorizedSearch( ) )
-        {
-            response.setStatus( ResponseStatusFactory.failure( ).setMessage( "The client application is not authorized to search an identity." )
-                    .setMessageKey( Constants.PROPERTY_REST_ERROR_SEARCH_UNAUTHORIZED ) );
-            final IdentitySearchMessage message = new IdentitySearchMessage( );
-            message.setMessage( "The client application is not authorized to search an identity." ); // TODO améliorer le modèle
-            response.getAlerts( ).add( message );
-            return response;
-        }
-
-        if ( identitySearchRequest.getSearch( ) != null )
-        {
-
-            for ( final SearchAttribute searchAttribute : identitySearchRequest.getSearch( ).getAttributes( ) )
-            {
-                final Optional<AttributeRight> attributeRight = serviceContract.getAttributeRights( ).stream( )
-                        .filter( a -> StringUtils.equals( a.getAttributeKey( ).getKeyName( ), searchAttribute.getKey( ) ) ).findFirst( );
-                if ( attributeRight.isPresent( ) )
-                {
-                    boolean canSearchAttribute = attributeRight.get( ).isSearchable( );
-
-                    if ( !canSearchAttribute )
-                    {
-                        final IdentitySearchMessage alert = new IdentitySearchMessage( );
-                        alert.setAttributeName( searchAttribute.getKey( ) );
-                        alert.setMessage( "This attribute is not searchable in service contract definition." );
-                        response.getAlerts( ).add( alert );
-                        response.setStatus( ResponseStatusFactory.failure( ).setMessageKey( Constants.PROPERTY_REST_ERROR_SERVICE_CONTRACT_VIOLATION ) );
-                    }
-                }
-                else
-                { // if key does not exist, it can be a common key for search
-                    final List<AttributeRight> commonAttributes = serviceContract.getAttributeRights( ).stream( )
-                            .filter( a -> StringUtils.equals( a.getAttributeKey( ).getCommonSearchKeyName( ), searchAttribute.getKey( ) ) )
-                            .collect( Collectors.toList( ) );
-                    if ( CollectionUtils.isNotEmpty( commonAttributes ) )
-                    {
-                        boolean canSearchAttribute = commonAttributes.stream( ).allMatch( a -> a.isSearchable( ) );
-                        if ( !canSearchAttribute )
-                        {
-                            final IdentitySearchMessage alert = new IdentitySearchMessage( );
-                            alert.setAttributeName( searchAttribute.getKey( ) );
-                            alert.setMessage( "This attribute group is not searchable in service contract definition." );
-                            response.getAlerts( ).add( alert );
-                            response.setStatus( ResponseStatusFactory.failure( ).setMessageKey( Constants.PROPERTY_REST_ERROR_SERVICE_CONTRACT_VIOLATION ) );
-                        }
-                    }
-                    else
-                    {
-                        final IdentitySearchMessage alert = new IdentitySearchMessage( );
-                        alert.setAttributeName( searchAttribute.getKey( ) );
-                        alert.setMessage( "This attribute does not exist in service contract definition." );
-                        response.getAlerts( ).add( alert );
-                        response.setStatus( ResponseStatusFactory.failure( ).setMessageKey( Constants.PROPERTY_REST_ERROR_SERVICE_CONTRACT_VIOLATION ) );
-                    }
-                }
-            }
-        }
-
-        return response;
-    }
-
-    public List<String> getMandatoryAttributes( final String clientCode, final List<AttributeKey> sharedMandatoryAttributeList )
-            throws ServiceContractNotFoundException
-    {
-        final List<AttributeRight> rights = this.getActiveServiceContract( clientCode ).getAttributeRights( );
+        final List<AttributeRight> rights = serviceContract.getAttributeRights( );
         return Stream
                 .concat( sharedMandatoryAttributeList.stream( ).map( AttributeKey::getKeyName ),
                         rights.stream( ).filter( AttributeRight::isMandatory ).map( ar -> ar.getAttributeKey( ).getKeyName( ) ) )
                 .distinct( ).collect( Collectors.toList( ) );
-
     }
 
-    public boolean canModifyConnectedIdentity( final String clientCode ) throws ServiceContractNotFoundException
-    {
-        final ServiceContract serviceContract = this.getActiveServiceContract( clientCode );
-        return serviceContract.getAuthorizedAccountUpdate( );
-    }
-
-    public boolean canCreateIdentity( final String clientCode ) throws ServiceContractNotFoundException
-    {
-        final ServiceContract serviceContract = this.getActiveServiceContract( clientCode );
-        return serviceContract.getAuthorizedCreation( );
-    }
-
-    public boolean canUpdateIdentity( final String clientCode ) throws ServiceContractNotFoundException
-    {
-        final ServiceContract serviceContract = this.getActiveServiceContract( clientCode );
-        return serviceContract.getAuthorizedUpdate( );
-    }
-
-    public boolean canUncertifyIdentity( final String clientCode ) throws ServiceContractNotFoundException
-    {
-        final ServiceContract serviceContract = this.getActiveServiceContract( clientCode );
-        return serviceContract.getAuthorizedDecertification( );
-    }
-
-    public boolean canDeleteIdentity( String clientCode ) throws ServiceContractNotFoundException
-    {
-        final ServiceContract serviceContract = this.getActiveServiceContract( clientCode );
-        return serviceContract.getAuthorizedDeletion( );
-    }
-
-    public int getDataRetentionPeriodInMonths( final String clientCode ) throws ServiceContractNotFoundException
+    public int getDataRetentionPeriodInMonths( final String clientCode ) throws ResourceNotFoundException
     {
         final ServiceContract serviceContract = this.getActiveServiceContract( clientCode );
         return serviceContract.getDataRetentionPeriodInMonths( );
@@ -366,24 +133,19 @@ public class ServiceContractService
     }
 
     /**
-     * Creates a new {@link ServiceContract} (if possible) and adds it to cache if active. The contract can be created if:
-     * <ul>
-     * <li>The start date of the contract is not in the range [start date; end date] of an existing contract</li>
-     * <li>The end date of the contract is not in the range [start date; end date] of an existing contract</li>
-     * </ul>
+     * Creates a new {@link ServiceContract} (if possible) and adds it to cache if active.
      *
      * @param serviceContract
-     * @param applicationId
-     * @return
+     *            the service contract to create
+     * @param clientApplication
+     *            the client application
      */
-    public ServiceContract create( final ServiceContract serviceContract, final Integer applicationId ) throws IdentityStoreException
+    public ServiceContract create( final ServiceContract serviceContract, final ClientApplication clientApplication ) throws IdentityStoreException
     {
         TransactionManager.beginTransaction( null );
         try
         {
-            final ClientApplication clientApplication = ClientApplicationHome.findByPrimaryKey( applicationId );
-            this.validateContractDefinition( serviceContract, clientApplication );
-            ServiceContractHome.create( serviceContract, applicationId );
+            ServiceContractHome.create( serviceContract, clientApplication.getId( ) );
             if ( CollectionUtils.isNotEmpty( serviceContract.getAttributeRights( ) ) )
             {
                 ServiceContractHome.addAttributeRights( serviceContract.getAttributeRights( ), serviceContract );
@@ -404,35 +166,28 @@ public class ServiceContractService
             }
             TransactionManager.commitTransaction( null );
         }
-        catch( Exception e )
+        catch( final Exception e )
         {
             TransactionManager.rollBack( null );
-            throw new IdentityStoreException( e.getMessage( ), e );
+            throw new IdentityStoreException( e.getMessage( ), Constants.PROPERTY_REST_ERROR_DURING_TREATMENT );
         }
 
         return serviceContract;
     }
 
     /**
-     * Update an existing {@link ServiceContract} (if possible) and adds it to cache if active. The contract can be updated if:
-     * <ul>
-     * <li>The start date of the contract is not in the range [start date; end date] of an existing contract</li>
-     * <li>The end date of the contract is not in the range [start date; end date] of an existing contract</li>
-     * </ul>
+     * Update an existing {@link ServiceContract} (if possible) and adds it to cache if active.
      *
      * @param serviceContract
-     * @param applicationId
+     * @param clientApplication
      * @return
      */
-    public ServiceContract update( final ServiceContract serviceContract, final Integer applicationId ) throws IdentityStoreException
+    public ServiceContract update( final ServiceContract serviceContract, final ClientApplication clientApplication ) throws IdentityStoreException
     {
-
         TransactionManager.beginTransaction( null );
         try
         {
-            final ClientApplication clientApplication = ClientApplicationHome.findByPrimaryKey( applicationId );
-            this.validateContractDefinition( serviceContract, clientApplication );
-            ServiceContractHome.update( serviceContract, applicationId );
+            ServiceContractHome.update( serviceContract, clientApplication.getId( ) );
             ServiceContractHome.removeAttributeRights( serviceContract );
             ServiceContractHome.addAttributeRights( serviceContract.getAttributeRights( ), serviceContract );
             ServiceContractHome.removeAttributeRequirements( serviceContract );
@@ -448,7 +203,7 @@ public class ServiceContractService
             }
             TransactionManager.commitTransaction( null );
         }
-        catch( Exception e )
+        catch( final Exception e )
         {
             TransactionManager.rollBack( null );
             throw new IdentityStoreException( e.getMessage( ), e );
@@ -457,21 +212,20 @@ public class ServiceContractService
     }
 
     /**
-     * Closes an existing {@link ServiceContract} (if possible) and adds it to cache if active.
+     * Closes an existing {@link ServiceContract}
      *
      * @param serviceContract
      * @return
      */
     public ServiceContract close( final ServiceContract serviceContract ) throws IdentityStoreException
     {
-
         TransactionManager.beginTransaction( null );
         try
         {
             ServiceContractHome.close( serviceContract );
             TransactionManager.commitTransaction( null );
         }
-        catch( Exception e )
+        catch( final Exception e )
         {
             TransactionManager.rollBack( null );
             throw new IdentityStoreException( e.getMessage( ), e );
@@ -517,19 +271,19 @@ public class ServiceContractService
      * date and End date of an existing contract.
      *
      * @param serviceContract
-     * @param clientApplication
+     * @param clientApplicationId
      */
-    private void validateContractDefinition( final ServiceContract serviceContract, final ClientApplication clientApplication )
-            throws ServiceContractDefinitionException
+    public void validateContractDefinition( final ServiceContract serviceContract, final int clientApplicationId ) throws RequestFormatException
     {
-        final List<ServiceContract> serviceContracts = ClientApplicationHome.selectServiceContracts( clientApplication );
+        final List<ServiceContract> serviceContracts = ClientApplicationHome.selectServiceContracts( clientApplicationId );
         if ( serviceContracts == null || serviceContracts.isEmpty( ) )
         {
             return;
         }
         if ( serviceContract.getStartingDate( ) == null )
         {
-            throw new ServiceContractDefinitionException( "The start date of the contract shall be set" );
+            throw new RequestFormatException( "Provided Service Contract must specify a starting date",
+                    Constants.PROPERTY_REST_ERROR_SERVICE_CONTRACT_WITHOUT_START_DATE );
         }
         // filter current contract in case of update
         final List<ServiceContract> filteredServiceContracts = serviceContracts.stream( ).filter( c -> !Objects.equals( c.getId( ), serviceContract.getId( ) ) )
@@ -537,18 +291,21 @@ public class ServiceContractService
         if ( filteredServiceContracts.stream( )
                 .anyMatch( contract -> isInRange( serviceContract.getStartingDate( ), contract.getStartingDate( ), contract.getEndingDate( ) ) ) )
         {
-            throw new ServiceContractDefinitionException( "The start date of the contract is in the range of an existing service contract" );
+            throw new RequestFormatException( "The start date of the contract is in the range of an existing service contract",
+                    Constants.PROPERTY_REST_ERROR_SERVICE_CONTRACT_START_DATE_CONFLICT );
         }
         if ( filteredServiceContracts.stream( )
                 .anyMatch( contract -> isInRange( serviceContract.getEndingDate( ), contract.getStartingDate( ), contract.getEndingDate( ) ) ) )
         {
-            throw new ServiceContractDefinitionException( "The end date of the contract is in the range of an existing service contract" );
+            throw new RequestFormatException( "The end date of the contract is in the range of an existing service contract",
+                    Constants.PROPERTY_REST_ERROR_SERVICE_CONTRACT_END_DATE_CONFLICT );
         }
         // TODO traiter le cas où il existe un contrat sans date de fin => soit on interdit soit on ferme le contrat automatiquement
         if ( filteredServiceContracts.stream( )
                 .anyMatch( contract -> contract.getEndingDate( ) == null && contract.getStartingDate( ).before( serviceContract.getStartingDate( ) ) ) )
         {
-            throw new ServiceContractDefinitionException( "A contract exists with an infinite end date" );
+            throw new RequestFormatException( "A contract exists with an infinite end date",
+                    Constants.PROPERTY_REST_ERROR_NEVERENDING_SERVICE_CONTRACT_EXISTING );
         }
 
         // https://dev.lutece.paris.fr/gitlab/bild/gestion-identite/identity-management/-/issues/224
@@ -585,7 +342,7 @@ public class ServiceContractService
         }
         if ( hasLevelError )
         {
-            throw new ServiceContractDefinitionException( message.toString( ) );
+            throw new RequestFormatException( message.toString( ), Constants.PROPERTY_REST_ERROR_SERVICE_CONTRACT_INSUFICIENT_PROCESSUS_LEVEL );
         }
     }
 
@@ -611,4 +368,370 @@ public class ServiceContractService
         return clientApplicationList.stream( ).map( ClientApplication::getClientCode ).collect( Collectors.toList( ) );
     }
 
+    // ====================================//
+
+    /**
+     * Validates that the {@link ServiceContract} associated to the {@link ClientApplication} requesting the search, is authorizing searching.
+     * 
+     * @param serviceContract
+     *            the service contract
+     * @throws ClientAuthorizationException
+     */
+    public void validateGetAuthorization( final ServiceContract serviceContract ) throws ClientAuthorizationException
+    {
+        if ( !serviceContract.getAuthorizedSearch( ) )
+        {
+            throw new ClientAuthorizationException( "The service contract of the sent client code doesn't allow searching identities",
+                    Constants.PROPERTY_REST_ERROR_CLIENT_AUTHORIZATION_SEARCH );
+        }
+    }
+
+    /**
+     * Validates the {@link IdentitySearchRequest} against the {@link ServiceContract} associated to the {@link ClientApplication} requesting the search. Each
+     * violation is listed in the {@link ClientAuthorizationException}'s response with a status by attribute key. The following rules are verified:
+     * <ul>
+     * <li>The service contract must exist and allow to search identities</li>
+     * <li>The requested attributes must be searchable</li>
+     * </ul>
+     *
+     * @param identitySearchRequest
+     *            {@link IdentitySearchRequest} with list of attributes
+     * @param serviceContract
+     *            the service contract
+     * @throws ClientAuthorizationException
+     */
+    public void validateSearchAuthorization( final IdentitySearchRequest identitySearchRequest, final ServiceContract serviceContract )
+            throws ClientAuthorizationException
+    {
+        this.validateGetAuthorization( serviceContract );
+        if ( identitySearchRequest.getSearch( ) != null )
+        {
+            final List<IdentitySearchMessage> alerts = new ArrayList<>( );
+            for ( final SearchAttribute searchAttribute : identitySearchRequest.getSearch( ).getAttributes( ) )
+            {
+                final Optional<AttributeRight> attributeRight = serviceContract.getAttributeRights( ).stream( )
+                        .filter( a -> StringUtils.equals( a.getAttributeKey( ).getKeyName( ), searchAttribute.getKey( ) ) ).findFirst( );
+                if ( attributeRight.isPresent( ) )
+                {
+                    boolean canSearchAttribute = attributeRight.get( ).isSearchable( );
+                    if ( !canSearchAttribute )
+                    {
+                        final IdentitySearchMessage alert = new IdentitySearchMessage( );
+                        alert.setAttributeName( searchAttribute.getKey( ) );
+                        alert.setMessage( "This attribute is not searchable in service contract definition." );
+                        alerts.add( alert );
+                    }
+                }
+                else
+                { // if key does not exist, it can be a common key for search
+                    final List<AttributeRight> commonAttributes = serviceContract.getAttributeRights( ).stream( )
+                            .filter( a -> StringUtils.equals( a.getAttributeKey( ).getCommonSearchKeyName( ), searchAttribute.getKey( ) ) )
+                            .collect( Collectors.toList( ) );
+                    if ( CollectionUtils.isNotEmpty( commonAttributes ) )
+                    {
+                        boolean canSearchAttribute = commonAttributes.stream( ).allMatch( a -> a.isSearchable( ) );
+                        if ( !canSearchAttribute )
+                        {
+                            final IdentitySearchMessage alert = new IdentitySearchMessage( );
+                            alert.setAttributeName( searchAttribute.getKey( ) );
+                            alert.setMessage( "This attribute group is not searchable in service contract definition." );
+                            alerts.add( alert );
+                        }
+                    }
+                    else
+                    {
+                        final IdentitySearchMessage alert = new IdentitySearchMessage( );
+                        alert.setAttributeName( searchAttribute.getKey( ) );
+                        alert.setMessage( "This attribute does not exist in service contract definition." );
+                        alerts.add( alert );
+                    }
+                }
+            }
+            if ( CollectionUtils.isNotEmpty( alerts ) )
+            {
+                throw new ClientAuthorizationException( "The request violates service contract definition",
+                        Constants.PROPERTY_REST_ERROR_SERVICE_CONTRACT_VIOLATION, alerts );
+            }
+        }
+    }
+
+    /**
+     * Validates the {@link IdentityChangeRequest} against the {@link ServiceContract} associated to the {@link ClientApplication} requesting the change. Each
+     * violation is listed in the {@link ClientAuthorizationException}'s response with a status by attribute key. The following rules are verified: <br>
+     * <ul>
+     * <li>The service contract must exist and allow writing identities</li>
+     * <li>The attribute must be writable</li>
+     * <li>The certification processus, if given in the request, must be in the list of authorized processus</li>
+     * </ul>
+     *
+     * @param identityChangeRequest
+     *            {@link IdentityChangeRequest} with list of attributes
+     * @param serviceContract
+     *            the service contract of the client requesting the change
+     * @throws ClientAuthorizationException
+     */
+    public void validateCreateAuthorization( final IdentityChangeRequest identityChangeRequest, final ServiceContract serviceContract )
+            throws ClientAuthorizationException
+    {
+        if ( !serviceContract.getAuthorizedCreation( ) )
+        {
+            throw new ClientAuthorizationException( "The service contract of the sent client code doesn't allow creating identities",
+                    Constants.PROPERTY_REST_ERROR_CLIENT_AUTHORIZATION_CREATE );
+        }
+
+        if ( StringUtils.isNotEmpty( identityChangeRequest.getIdentity( ).getConnectionId( ) ) && !serviceContract.getAuthorizedAccountUpdate( ) )
+        {
+            throw new ClientAuthorizationException( "You cannot specify a GUID when requesting for a creation",
+                    Constants.PROPERTY_REST_ERROR_IDENTITY_CREATE_WITH_GUID );
+        }
+
+        if ( identityChangeRequest.getIdentity( ).getMonParisActive( ) != null && !serviceContract.getAuthorizedAccountUpdate( ) )
+        {
+            throw new ClientAuthorizationException( "You cannot set the 'mon_paris_active' flag when requesting for a creation",
+                    Constants.PROPERTY_REST_ERROR_IDENTITY_CREATE_WITH_MON_PARIS_FLAG );
+        }
+
+        this.validateWritableAndCertifiableAttributes( identityChangeRequest.getIdentity( ).getAttributes( ), serviceContract );
+    }
+
+    /**
+     * Validates the {@link IdentityChangeRequest} against the {@link ServiceContract} associated to the {@link ClientApplication} requesting the change. Each
+     * violation is listed in the {@link ClientAuthorizationException}'s response with a status by attribute key. The following rules are verified: <br>
+     * <ul>
+     * <li>The service contract must exist and allow writing identities</li>
+     * <li>The attribute must be writable</li>
+     * <li>The certification processus, if given in the request, must be in the list of authorized processus</li>
+     * </ul>
+     *
+     * @param identityChangeRequest
+     *            {@link IdentityChangeRequest} with list of attributes
+     * @param serviceContract
+     *            service contract of the client requesting the change
+     * @throws ClientAuthorizationException
+     */
+    public void validateUpdateAuthorization( final IdentityChangeRequest identityChangeRequest, final IdentityDto existingIdentityToUpdate,
+            final ServiceContract serviceContract ) throws ClientAuthorizationException
+    {
+        if ( !serviceContract.getAuthorizedUpdate( ) )
+        {
+            throw new ClientAuthorizationException( "The service contract of the sent client code doesn't allow updating identities",
+                    Constants.PROPERTY_REST_ERROR_CLIENT_AUTHORIZATION_UPDATE );
+        }
+        if ( identityChangeRequest.getIdentity( ).getMonParisActive( ) != null && !serviceContract.getAuthorizedAccountUpdate( ) )
+        {
+            throw new ClientAuthorizationException( "The client application is not authorized to update the 'mon_paris_active' flag",
+                    Constants.PROPERTY_REST_ERROR_FORBIDDEN_MON_PARIS_ACTIVE_UPDATE );
+        }
+        if ( StringUtils.isNotEmpty( identityChangeRequest.getIdentity( ).getConnectionId( ) )
+                && !Objects.equals( identityChangeRequest.getIdentity( ).getConnectionId( ), existingIdentityToUpdate.getConnectionId( ) )
+                && !serviceContract.getAuthorizedAccountUpdate( ) )
+        {
+            throw new ClientAuthorizationException( "The client application is not authorized to update the connection_id",
+                    Constants.PROPERTY_REST_ERROR_CLIENT_AUTHORIZATION_UPDATE_GUID );
+        }
+
+        this.validateWritableAndCertifiableAttributes( identityChangeRequest.getIdentity( ).getAttributes( ), serviceContract );
+    }
+
+    /**
+     * Validates the {@link IdentityMergeRequest} against the {@link ServiceContract} associated to the {@link ClientApplication} requesting the change. Each
+     * violation is listed in the {@link IdentityMergeResponse} with a status by attribute key. The following rules are verified: <br>
+     * <ul>
+     * <li>The {@link ClientApplication} must be authorized to perform the merge</li>
+     * </ul>
+     *
+     * @param request
+     *            {@link IdentityMergeRequest} with list of attributes
+     * @param serviceContract
+     *            service contract of the client requesting the change
+     * @throws ClientAuthorizationException
+     */
+    public void validateMergeAuthorization( final IdentityMergeRequest request, final ServiceContract serviceContract ) throws ClientAuthorizationException
+    {
+        if ( !serviceContract.getAuthorizedMerge( ) )
+        {
+            throw new ClientAuthorizationException( "The client application is not authorized to merge identities",
+                    Constants.PROPERTY_REST_ERROR_MERGE_UNAUTHORIZED );
+        }
+        if ( request.getIdentity( ) != null )
+        {
+            if ( !serviceContract.getAuthorizedUpdate( ) )
+            {
+                throw new ClientAuthorizationException( "The service contract of the sent client code doesn't allow updating identities",
+                        Constants.PROPERTY_REST_ERROR_CLIENT_AUTHORIZATION_UPDATE );
+            }
+            this.validateWritableAndCertifiableAttributes( request.getIdentity( ).getAttributes( ), serviceContract );
+        }
+    }
+
+    /**
+     * checks if the service contract grants the right to delete identities
+     * 
+     * @param serviceContract
+     *            the service contract
+     * @throws ClientAuthorizationException
+     *             if the service contract does not grant the delete authorization
+     */
+    public void validateDeleteAuthorization( final ServiceContract serviceContract ) throws ClientAuthorizationException
+    {
+        if ( !serviceContract.getAuthorizedDeletion( ) )
+        {
+            throw new ClientAuthorizationException( "The client application is not authorized to request the deletion of an identity.",
+                    Constants.PROPERTY_REST_ERROR_DELETE_UNAUTHORIZED );
+
+        }
+    }
+
+    /**
+     * Validates the {@link IdentityChangeRequest} against the {@link ServiceContract} associated to the {@link ClientApplication} requesting the change. Each
+     * violation is listed in the {@link IdentityChangeResponse} with a status by attribute key. The following rules are verified: <br>
+     * <ul>
+     * <li>The {@link ClientApplication} must be authorized to perform the import</li>
+     * <li>The attribute must be writable</li>
+     * <li>The certification processus, if given in the request, must be in the list of authorized processus</li>
+     * </ul>
+     *
+     * @param request
+     *            {@link IdentityChangeRequest} with list of attributes
+     * @param serviceContract
+     *            the service contract of the client requesting the change
+     * @throws ClientAuthorizationException
+     *             in case of error
+     */
+    public void validateImportAuthorization( final IdentityChangeRequest request, final ServiceContract serviceContract ) throws ClientAuthorizationException
+    {
+        if ( !serviceContract.getAuthorizedImport( ) )
+        {
+            throw new ClientAuthorizationException( "The client application is not authorized to import identities ",
+                    Constants.PROPERTY_REST_ERROR_IMPORT_UNAUTHORIZED );
+        }
+        this.validateWritableAndCertifiableAttributes( request.getIdentity( ).getAttributes( ), serviceContract );
+    }
+
+    /**
+     * Checks if the service contract grants the right to uncertify an identity
+     * 
+     * @param serviceContract
+     *            the service contract
+     * @throws ClientAuthorizationException
+     */
+    public void validateUncertifyAuthorization( final ServiceContract serviceContract ) throws ClientAuthorizationException
+    {
+        if ( !serviceContract.getAuthorizedDecertification( ) )
+        {
+            throw new ClientAuthorizationException( "Unauthorized operation", Constants.PROPERTY_REST_ERROR_UNAUTHORIZED_OPERATION );
+        }
+    }
+
+    /**
+     * Checks if the service contract grants the right to export identities
+     * 
+     * @param serviceContract
+     *            the service contract
+     * @throws ClientAuthorizationException
+     */
+    public void validateExportAuthorization( final ServiceContract serviceContract ) throws ClientAuthorizationException
+    {
+        if ( !serviceContract.getAuthorizedExport( ) )
+        {
+            throw new ClientAuthorizationException( "Unauthorized operation", Constants.PROPERTY_REST_ERROR_UNAUTHORIZED_OPERATION );
+        }
+    }
+
+    private void validateWritableAndCertifiableAttributes( final List<AttributeDto> attributes, final ServiceContract serviceContract )
+            throws ClientAuthorizationException
+    {
+        final List<AttributeStatus> attrStatusList = new ArrayList<>( );
+        for ( final AttributeDto attributeDto : attributes )
+        {
+            boolean canWriteAttribute = serviceContract.getAttributeRights( ).stream( )
+                    .anyMatch( attributeRight -> StringUtils.equals( attributeRight.getAttributeKey( ).getKeyName( ), attributeDto.getKey( ) )
+                            && attributeRight.isWritable( ) );
+            if ( !canWriteAttribute )
+            {
+                attrStatusList.add( this.buildAttributeStatus( attributeDto, AttributeChangeStatus.UNAUTHORIZED ) );
+                continue;
+            }
+
+            if ( attributeDto.getCertifier( ) != null )
+            {
+                canWriteAttribute = serviceContract.getAttributeCertifications( ).stream( ).anyMatch(
+                        attributeCertification -> StringUtils.equals( attributeCertification.getAttributeKey( ).getKeyName( ), attributeDto.getKey( ) )
+                                && attributeCertification.getRefAttributeCertificationProcessus( ).stream( )
+                                        .anyMatch( processus -> StringUtils.equals( processus.getCode( ), attributeDto.getCertifier( ) ) ) );
+                if ( !canWriteAttribute )
+                {
+                    attrStatusList.add( this.buildAttributeStatus( attributeDto, AttributeChangeStatus.INSUFFICIENT_RIGHTS ) );
+                }
+            }
+        }
+
+        if ( !attrStatusList.isEmpty( ) )
+        {
+            final ClientAuthorizationException exception = new ClientAuthorizationException( "The request violates service contract definition",
+                    Constants.PROPERTY_REST_ERROR_SERVICE_CONTRACT_VIOLATION );
+            exception.getResponse( ).getStatus( ).setAttributeStatuses( attrStatusList );
+            throw exception;
+        }
+    }
+
+    /**
+     * Exports all service contracts
+     * 
+     * @throws IdentityStoreException
+     *             in case of error
+     */
+    public List<ServiceContractDto> exportAllServiceContracts( ) throws IdentityStoreException
+    {
+        return this.exportAllServiceContracts( null );
+    }
+
+    /**
+     * Exports all service contracts associated with the provided client code
+     * 
+     * @param clientCode
+     *            the client code
+     * @throws IdentityStoreException
+     *             in case of error
+     */
+    public List<ServiceContractDto> exportAllServiceContracts( final String clientCode ) throws IdentityStoreException
+    {
+        final List<ServiceContractDto> result = new ArrayList<>( );
+        final List<ServiceContract> serviceContracts = clientCode == null ? ServiceContractHome.getAllServiceContractsList( )
+                : ClientApplicationHome.selectServiceContracts( ClientApplicationHome.findByCode( clientCode ).getId( ) );
+
+        if ( CollectionUtils.isEmpty( serviceContracts ) )
+        {
+            throw new ResourceNotFoundException( "No service contract found", Constants.PROPERTY_REST_ERROR_NO_SERVICE_CONTRACT_FOUND );
+        }
+        serviceContracts.forEach( serviceContract -> result.add( this.enrichAndConvertToDto( serviceContract ) ) );
+        return result;
+    }
+
+    public ServiceContractDto exportServiceContract( final int serviceContractId ) throws IdentityStoreException
+    {
+        final Optional<ServiceContract> result = ServiceContractHome.findByPrimaryKey( serviceContractId );
+        if ( !result.isPresent( ) )
+        {
+            throw new ResourceNotFoundException( "Service contract not found", Constants.PROPERTY_REST_ERROR_SERVICE_CONTRACT_NOT_FOUND );
+        }
+        return this.enrichAndConvertToDto( result.get( ) );
+    }
+
+    private ServiceContractDto enrichAndConvertToDto( final ServiceContract serviceContract )
+    {
+        serviceContract.setAttributeRights( ServiceContractHome.selectApplicationRights( serviceContract ) );
+        serviceContract.setAttributeCertifications( ServiceContractHome.selectAttributeCertifications( serviceContract ) );
+        serviceContract.setAttributeRequirements( ServiceContractHome.selectAttributeRequirements( serviceContract ) );
+        // TODO amélioration générale à mener sur ce point
+        for ( final AttributeCertification certification : serviceContract.getAttributeCertifications( ) )
+        {
+            for ( final RefAttributeCertificationProcessus processus : certification.getRefAttributeCertificationProcessus( ) )
+            {
+                processus.setLevel(
+                        AttributeCertificationDefinitionService.instance( ).get( processus.getCode( ), certification.getAttributeKey( ).getKeyName( ) ) );
+            }
+        }
+        return DtoConverter.convertContractToDto( serviceContract );
+    }
 }

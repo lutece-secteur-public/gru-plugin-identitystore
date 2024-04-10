@@ -33,18 +33,30 @@
  */
 package fr.paris.lutece.plugins.identitystore.v3.web.request.identity;
 
+import fr.paris.lutece.plugins.identitystore.business.contract.ServiceContract;
 import fr.paris.lutece.plugins.identitystore.service.contract.ServiceContractService;
 import fr.paris.lutece.plugins.identitystore.service.identity.IdentityService;
-import fr.paris.lutece.plugins.identitystore.v3.web.rs.AbstractIdentityStoreRequest;
+import fr.paris.lutece.plugins.identitystore.v3.web.request.AbstractIdentityStoreAppCodeRequest;
+import fr.paris.lutece.plugins.identitystore.v3.web.request.validator.IdentityAttributeValidator;
+import fr.paris.lutece.plugins.identitystore.v3.web.request.validator.IdentityDuplicateValidator;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.IdentityRequestValidator;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.crud.IdentityChangeRequest;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.crud.IdentityChangeResponse;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.ResponseStatusFactory;
+import fr.paris.lutece.plugins.identitystore.web.exception.ClientAuthorizationException;
+import fr.paris.lutece.plugins.identitystore.web.exception.DuplicatesConsistencyException;
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
+import fr.paris.lutece.plugins.identitystore.web.exception.RequestContentFormattingException;
+import fr.paris.lutece.plugins.identitystore.web.exception.RequestFormatException;
+import fr.paris.lutece.plugins.identitystore.web.exception.ResourceConsistencyException;
+import fr.paris.lutece.plugins.identitystore.web.exception.ResourceNotFoundException;
 
-public class IdentityStoreImportRequest extends AbstractIdentityStoreRequest
+public class IdentityStoreImportRequest extends AbstractIdentityStoreAppCodeRequest
 {
     private final IdentityChangeRequest _identityChangeRequest;
+
+    private ServiceContract serviceContract;
+    private String strictDuplicateCustomerId;
 
     /**
      * Constructor of IdentityStoreImportRequest
@@ -52,29 +64,62 @@ public class IdentityStoreImportRequest extends AbstractIdentityStoreRequest
      * @param identityChangeRequest
      *            the dto of identity's change
      */
-    public IdentityStoreImportRequest( IdentityChangeRequest identityChangeRequest, String strClientAppCode, String authorName, String authorType )
-            throws IdentityStoreException
+    public IdentityStoreImportRequest( final IdentityChangeRequest identityChangeRequest, final String strClientCode, final String strAppCode,
+            final String authorName, final String authorType ) throws IdentityStoreException
     {
-        super( strClientAppCode, authorName, authorType );
+        super( strClientCode, strAppCode, authorName, authorType );
         this._identityChangeRequest = identityChangeRequest;
     }
 
     @Override
-    protected void validateSpecificRequest( ) throws IdentityStoreException
+    protected void fetchResources( ) throws ResourceNotFoundException
     {
-        IdentityRequestValidator.instance( ).checkIdentityChange( _identityChangeRequest, false );
+        serviceContract = ServiceContractService.instance( ).getActiveServiceContract( _strClientCode );
     }
 
     @Override
-    public IdentityChangeResponse doSpecificRequest( ) throws IdentityStoreException
+    protected void validateRequestFormat( ) throws RequestFormatException
     {
-        final IdentityChangeResponse response = ServiceContractService.instance( ).validateIdentityImport( _identityChangeRequest, _strClientCode );
+        IdentityRequestValidator.instance( ).checkIdentityChange( _identityChangeRequest, false );
 
-        // Création de l'identité avec les attributs autorisés par le contrat.
-        if ( !ResponseStatusFactory.failure( ).equals( response.getStatus( ) ) )
+    }
+
+    @Override
+    protected void validateClientAuthorization( ) throws ClientAuthorizationException
+    {
+        ServiceContractService.instance( ).validateImportAuthorization( _identityChangeRequest, serviceContract );
+    }
+
+    @Override
+    protected void validateResourcesConsistency( ) throws ResourceConsistencyException
+    {
+        // do nothing, it will be done in subsequent request (create or update)
+    }
+
+    @Override
+    protected void formatRequestContent( ) throws RequestContentFormattingException
+    {
+        // do nothing, it will be done in subsequent request (create or update)
+    }
+
+    @Override
+    protected void checkDuplicatesConsistency( ) throws DuplicatesConsistencyException
+    {
+        strictDuplicateCustomerId = IdentityDuplicateValidator.instance( ).checkDuplicateExistenceForImport( _identityChangeRequest );
+    }
+
+    @Override
+    protected IdentityChangeResponse doSpecificRequest( ) throws IdentityStoreException
+    {
+        if ( strictDuplicateCustomerId == null )
         {
-            IdentityService.instance( ).importIdentity( _identityChangeRequest, _author, _strClientCode, response );
+            return (IdentityChangeResponse) new IdentityStoreCreateRequest( _identityChangeRequest, _strClientCode, _strAppCode, _author.getName( ),
+                    _author.getType( ).name( ) ).doRequest( );
         }
-        return response;
+        else
+        {
+            return (IdentityChangeResponse) new IdentityStoreUpdateRequest( strictDuplicateCustomerId, _identityChangeRequest, _strClientCode, _strAppCode,
+                    _author.getName( ), _author.getType( ).name( ) ).doRequest( );
+        }
     }
 }

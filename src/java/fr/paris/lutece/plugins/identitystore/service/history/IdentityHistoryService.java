@@ -35,24 +35,20 @@ package fr.paris.lutece.plugins.identitystore.service.history;
 
 import fr.paris.lutece.plugins.identitystore.business.contract.AttributeRight;
 import fr.paris.lutece.plugins.identitystore.business.contract.ServiceContract;
-import fr.paris.lutece.plugins.identitystore.business.identity.Identity;
 import fr.paris.lutece.plugins.identitystore.business.identity.IdentityAttributeHome;
 import fr.paris.lutece.plugins.identitystore.business.identity.IdentityHome;
-import fr.paris.lutece.plugins.identitystore.service.contract.ServiceContractNotFoundException;
-import fr.paris.lutece.plugins.identitystore.service.contract.ServiceContractService;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.history.AttributeChange;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.history.AttributeHistory;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.history.IdentityChange;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.history.IdentityChangeType;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.history.IdentityHistory;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.history.IdentityHistorySearchRequest;
-import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.history.IdentityHistorySearchResponse;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
-import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.ResponseStatusFactory;
-import fr.paris.lutece.plugins.identitystore.web.exception.IdentityNotFoundException;
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
+import fr.paris.lutece.plugins.identitystore.web.exception.ResourceNotFoundException;
 import org.apache.commons.lang3.tuple.Pair;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -72,18 +68,8 @@ public class IdentityHistoryService
         return _instance;
     }
 
-    public IdentityHistory get( final String customerId, final String clientCode ) throws IdentityStoreException
+    public IdentityHistory get( final String customerId, final ServiceContract serviceContract ) throws IdentityStoreException
     {
-        final Identity identity = IdentityHome.findByCustomerId( customerId );
-        if ( identity == null )
-        {
-            throw new IdentityNotFoundException( "CustomerId = " + customerId );
-        }
-        final ServiceContract serviceContract = ServiceContractService.instance( ).getActiveServiceContract( clientCode );
-        if ( serviceContract == null )
-        {
-            throw new ServiceContractNotFoundException( "Client App Code = " + clientCode );
-        }
         final Set<String> readableAttributeKeys = serviceContract.getAttributeRights( ).stream( ).filter( AttributeRight::isReadable )
                 .map( ar -> ar.getAttributeKey( ).getKeyName( ) ).collect( Collectors.toSet( ) );
 
@@ -92,20 +78,18 @@ public class IdentityHistoryService
         {
             identityChangeList.removeIf( identityChange -> Objects.equals( identityChange.getChangeType( ), IdentityChangeType.READ ) );
         }
-        final List<AttributeChange> attributeChangeList = IdentityAttributeHome.getAttributeChangeHistory( identity.getId( ) );
+        final List<AttributeChange> attributeChangeList = IdentityAttributeHome.getAttributeChangeHistory( customerId );
+        if ( identityChangeList.isEmpty( ) && attributeChangeList.isEmpty( ) )
+        {
+            throw new ResourceNotFoundException( "No history found", Constants.PROPERTY_REST_ERROR_NO_HISTORY_FOUND );
+        }
 
         return toHistory( customerId, identityChangeList, attributeChangeList, readableAttributeKeys );
     }
 
-    public IdentityHistorySearchResponse search( final IdentityHistorySearchRequest request, final String clientCode ) throws IdentityStoreException
+    public List<IdentityHistory> search( final IdentityHistorySearchRequest request, final ServiceContract serviceContract ) throws IdentityStoreException
     {
-
-        final IdentityHistorySearchResponse response = new IdentityHistorySearchResponse( );
-        final ServiceContract serviceContract = ServiceContractService.instance( ).getActiveServiceContract( clientCode );
-        if ( serviceContract == null )
-        {
-            throw new ServiceContractNotFoundException( "Client App Code = " + clientCode );
-        }
+        final List<IdentityHistory> resultList = new ArrayList<>( );
         final Set<String> readableAttributeKeys = serviceContract.getAttributeRights( ).stream( ).filter( AttributeRight::isReadable )
                 .map( ar -> ar.getAttributeKey( ).getKeyName( ) ).collect( Collectors.toSet( ) );
 
@@ -122,19 +106,15 @@ public class IdentityHistoryService
         for ( final String customerId : identityChangeMap.keySet( ) )
         {
             final List<AttributeChange> attributeChangeList = IdentityAttributeHome.getAttributeChangeHistory( customerId );
-            response.getHistories( ).add( this.toHistory( customerId, identityChangeMap.get( customerId ), attributeChangeList, readableAttributeKeys ) );
+            resultList.add( this.toHistory( customerId, identityChangeMap.get( customerId ), attributeChangeList, readableAttributeKeys ) );
         }
 
-        if ( response.getHistories( ).isEmpty( ) )
+        if ( resultList.isEmpty( ) )
         {
-            response.setStatus( ResponseStatusFactory.noResult( ).setMessageKey( Constants.PROPERTY_REST_ERROR_NO_HISTORY_FOUND ) );
-        }
-        else
-        {
-            response.setStatus( ResponseStatusFactory.ok( ).setMessageKey( Constants.PROPERTY_REST_INFO_SUCCESSFUL_OPERATION ) );
+            throw new ResourceNotFoundException( "No history found", Constants.PROPERTY_REST_ERROR_NO_HISTORY_FOUND );
         }
 
-        return response;
+        return resultList;
     }
 
     private IdentityHistory toHistory( final String customerId, final List<IdentityChange> identityChangeList, final List<AttributeChange> attributeChangeList,

@@ -35,7 +35,8 @@ package fr.paris.lutece.plugins.identitystore.cache;
 
 import fr.paris.lutece.plugins.identitystore.business.attribute.AttributeKey;
 import fr.paris.lutece.plugins.identitystore.business.attribute.AttributeKeyHome;
-import fr.paris.lutece.plugins.identitystore.service.identity.IdentityAttributeNotFoundException;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
+import fr.paris.lutece.plugins.identitystore.web.exception.ResourceNotFoundException;
 import fr.paris.lutece.portal.service.cache.AbstractCacheableService;
 import fr.paris.lutece.portal.service.util.AppLogService;
 
@@ -91,9 +92,9 @@ public class AttributeKeyCache extends AbstractCacheableService
             {
                 allAttributeKeys.add( this.get( key ) );
             }
-            catch( final IdentityAttributeNotFoundException e )
+            catch( final ResourceNotFoundException e )
             {
-                // Do nothing
+                // this shouldn't happen : do nothing.
             }
         }
         // If cache is not activated, get from db
@@ -104,7 +105,7 @@ public class AttributeKeyCache extends AbstractCacheableService
         return allAttributeKeys;
     }
 
-    public AttributeKey get( final String keyName ) throws IdentityAttributeNotFoundException
+    public AttributeKey get( final String keyName ) throws ResourceNotFoundException
     {
         AttributeKey attributeKey = (AttributeKey) this.getFromCache( keyName );
         if ( attributeKey == null )
@@ -115,12 +116,12 @@ public class AttributeKeyCache extends AbstractCacheableService
         return attributeKey;
     }
 
-    public AttributeKey getFromDatabase( final String keyName ) throws IdentityAttributeNotFoundException
+    public AttributeKey getFromDatabase( final String keyName ) throws ResourceNotFoundException
     {
         final AttributeKey attributeKey = AttributeKeyHome.findByKey( keyName, true );
         if ( attributeKey == null )
         {
-            throw new IdentityAttributeNotFoundException( "No attribute key could be found with key " + keyName );
+            throw new ResourceNotFoundException( "No attribute key could be found with key " + keyName, Constants.PROPERTY_REST_ERROR_UNKNOWN_ATTRIBUTE_KEY );
         }
         return attributeKey;
     }

@@ -33,7 +33,6 @@
  */
 package fr.paris.lutece.plugins.identitystore.v3.web.rs;
 
-import fr.paris.lutece.plugins.identitystore.service.IdentityStoreService;
 import fr.paris.lutece.plugins.identitystore.v3.web.request.application.ClientCreateRequest;
 import fr.paris.lutece.plugins.identitystore.v3.web.request.application.ClientGetRequest;
 import fr.paris.lutece.plugins.identitystore.v3.web.request.application.ClientUpdateRequest;
@@ -41,19 +40,29 @@ import fr.paris.lutece.plugins.identitystore.v3.web.request.application.ClientsG
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.application.ClientApplicationDto;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.application.ClientChangeResponse;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.application.ClientSearchResponse;
-import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.application.ClientsSearchResponse;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.swagger.SwaggerConstants;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
 import fr.paris.lutece.plugins.rest.service.RestConstants;
-import io.swagger.annotations.*;
-import org.apache.commons.lang3.StringUtils;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
 
-import javax.ws.rs.*;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DefaultValue;
+import javax.ws.rs.GET;
+import javax.ws.rs.HeaderParam;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-import static fr.paris.lutece.plugins.identitystore.v3.web.rs.error.UncaughtServiceContractNotFoundExceptionMapper.ERROR_NO_SERVICE_CONTRACT_FOUND;
+import static fr.paris.lutece.plugins.identitystore.v3.web.rs.error.UncaughtResourceNotFoundExceptionMapper.ERROR_RESOURCE_NOT_FOUND;
 import static fr.paris.lutece.plugins.rest.service.mapper.GenericUncaughtExceptionMapper.ERROR_DURING_TREATMENT;
 
 /**
@@ -61,7 +70,7 @@ import static fr.paris.lutece.plugins.rest.service.mapper.GenericUncaughtExcepti
  */
 @Path( RestConstants.BASE_PATH + Constants.PLUGIN_PATH + Constants.VERSION_PATH_V3 )
 @Api( RestConstants.BASE_PATH + Constants.PLUGIN_PATH + Constants.VERSION_PATH_V3 )
-public class ClientRestService
+public class ClientRestService implements IRestService
 {
     /**
      * Get all Clients
@@ -76,7 +85,7 @@ public class ClientRestService
     @ApiOperation( value = "Get all Clients", response = ClientSearchResponse.class )
     @ApiResponses( value = {
             @ApiResponse( code = 200, message = "Identity Found" ), @ApiResponse( code = 400, message = ERROR_DURING_TREATMENT + " with explanation message" ),
-            @ApiResponse( code = 403, message = "Failure" ), @ApiResponse( code = 404, message = ERROR_NO_SERVICE_CONTRACT_FOUND )
+            @ApiResponse( code = 403, message = "Failure" ), @ApiResponse( code = 404, message = ERROR_RESOURCE_NOT_FOUND )
     } )
     public Response getClients(
             @ApiParam( name = Constants.PARAM_CLIENT_CODE, value = SwaggerConstants.PARAM_CLIENT_CODE_DESCRIPTION ) @HeaderParam( Constants.PARAM_CLIENT_CODE ) String clientCode,
@@ -114,10 +123,8 @@ public class ClientRestService
             @ApiParam( name = Constants.PARAM_APPLICATION_CODE, value = SwaggerConstants.PARAM_APPLICATION_CODE_DESCRIPTION ) @HeaderParam( Constants.PARAM_APPLICATION_CODE ) @DefaultValue( "" ) String strHeaderAppCode )
             throws IdentityStoreException
     {
-        final String trustedClientCode = IdentityStoreService.getTrustedClientCode( clientCode, StringUtils.EMPTY, strHeaderAppCode );
-        final ClientsGetRequest request = new ClientsGetRequest( trustedClientCode, applicationCode, authorName, authorType );
-        final ClientsSearchResponse entity = (ClientsSearchResponse) request.doRequest( );
-        return Response.status( entity.getStatus( ).getHttpCode( ) ).entity( entity ).type( MediaType.APPLICATION_JSON_TYPE ).build( );
+        final ClientsGetRequest request = new ClientsGetRequest( applicationCode, clientCode, strHeaderAppCode, authorName, authorType );
+        return this.buildJsonResponse( request.doRequest( ) );
     }
 
     /**
@@ -133,7 +140,7 @@ public class ClientRestService
     @ApiOperation( value = "Get a client by its client code", response = ClientSearchResponse.class )
     @ApiResponses( value = {
             @ApiResponse( code = 200, message = "Identity Found" ), @ApiResponse( code = 400, message = ERROR_DURING_TREATMENT + " with explanation message" ),
-            @ApiResponse( code = 403, message = "Failure" ), @ApiResponse( code = 404, message = "No service contract found" )
+            @ApiResponse( code = 403, message = "Failure" ), @ApiResponse( code = 404, message = ERROR_RESOURCE_NOT_FOUND )
     } )
     public Response getClient(
             @ApiParam( name = Constants.PARAM_TARGET_CLIENT_CODE, value = SwaggerConstants.PARAM_TARGET_CLIENT_CODE_DESCRIPTION ) @PathParam( Constants.PARAM_TARGET_CLIENT_CODE ) String targetClientCode,
@@ -143,10 +150,8 @@ public class ClientRestService
             @ApiParam( name = Constants.PARAM_APPLICATION_CODE, value = SwaggerConstants.PARAM_APPLICATION_CODE_DESCRIPTION ) @HeaderParam( Constants.PARAM_APPLICATION_CODE ) @DefaultValue( "" ) String strHeaderAppCode )
             throws IdentityStoreException
     {
-        final String trustedCode = IdentityStoreService.getTrustedClientCode( headerClientCode, StringUtils.EMPTY, strHeaderAppCode );
-        final ClientGetRequest request = new ClientGetRequest( targetClientCode, trustedCode, authorName, authorType );
-        final ClientSearchResponse entity = (ClientSearchResponse) request.doRequest( );
-        return Response.status( entity.getStatus( ).getHttpCode( ) ).entity( entity ).type( MediaType.APPLICATION_JSON_TYPE ).build( );
+        final ClientGetRequest request = new ClientGetRequest( targetClientCode, headerClientCode, strHeaderAppCode, authorName, authorType );
+        return this.buildJsonResponse( request.doRequest( ) );
     }
 
     /**
@@ -174,10 +179,8 @@ public class ClientRestService
             @ApiParam( name = Constants.PARAM_APPLICATION_CODE, value = SwaggerConstants.PARAM_APPLICATION_CODE_DESCRIPTION ) @HeaderParam( Constants.PARAM_APPLICATION_CODE ) @DefaultValue( "" ) String strHeaderAppCode )
             throws IdentityStoreException
     {
-        final String trustedClientCode = IdentityStoreService.getTrustedClientCode( clientCode, StringUtils.EMPTY, strHeaderAppCode );
-        final ClientCreateRequest identityStoreRequest = new ClientCreateRequest( clientDto, trustedClientCode, authorName, authorType );
-        final ClientChangeResponse entity = (ClientChangeResponse) identityStoreRequest.doRequest( );
-        return Response.status( entity.getStatus( ).getHttpCode( ) ).entity( entity ).type( MediaType.APPLICATION_JSON_TYPE ).build( );
+        final ClientCreateRequest request = new ClientCreateRequest( clientDto, clientCode, strHeaderAppCode, authorName, authorType );
+        return this.buildJsonResponse( request.doRequest( ) );
     }
 
     /**
@@ -207,8 +210,7 @@ public class ClientRestService
             @ApiParam( name = Constants.PARAM_APPLICATION_CODE, value = SwaggerConstants.PARAM_APPLICATION_CODE_DESCRIPTION ) @HeaderParam( Constants.PARAM_APPLICATION_CODE ) @DefaultValue( "" ) String strHeaderAppCode )
             throws IdentityStoreException
     {
-        final ClientUpdateRequest identityStoreRequest = new ClientUpdateRequest( clientDto, clientCode, authorName, authorType );
-        final ClientChangeResponse entity = (ClientChangeResponse) identityStoreRequest.doRequest( );
-        return Response.status( entity.getStatus( ).getHttpCode( ) ).entity( entity ).type( MediaType.APPLICATION_JSON_TYPE ).build( );
+        final ClientUpdateRequest request = new ClientUpdateRequest( clientDto, clientCode, strHeaderAppCode, authorName, authorType );
+        return this.buildJsonResponse( request.doRequest( ) );
     }
 }

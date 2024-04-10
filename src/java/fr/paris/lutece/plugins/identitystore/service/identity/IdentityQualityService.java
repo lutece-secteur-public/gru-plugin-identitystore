@@ -53,6 +53,7 @@ import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.duplicate.IdentityDup
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.duplicate.IdentityDuplicateExclusion;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.duplicate.IdentityDuplicateSuspicion;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.search.SearchAttribute;
+import fr.paris.lutece.plugins.identitystore.web.exception.ResourceNotFoundException;
 import fr.paris.lutece.portal.service.spring.SpringContextService;
 import fr.paris.lutece.portal.service.util.AppPropertiesService;
 import org.apache.commons.collections4.CollectionUtils;
@@ -255,7 +256,7 @@ public class IdentityQualityService
                 {
                     refKey = IdentityAttributeService.instance( ).getAttributeKey( searchAttribute.getKey( ) );
                 }
-                catch( IdentityAttributeNotFoundException e )
+                catch( final ResourceNotFoundException e )
                 {
                     // do nothing, we check if attribute exists
                 }

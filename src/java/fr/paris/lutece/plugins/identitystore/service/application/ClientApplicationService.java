@@ -40,6 +40,7 @@ import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.application.ClientApp
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.application.ClientChangeResponse;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.ResponseStatusFactory;
+import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
 import fr.paris.lutece.util.sql.TransactionManager;
 
 public class ClientApplicationService
@@ -55,60 +56,37 @@ public class ClientApplicationService
         return _instance;
     }
 
-    public void create( final ClientApplicationDto clientApplicationDto, final ClientChangeResponse response )
+    public ClientApplication create( final ClientApplicationDto clientApplicationDto ) throws IdentityStoreException
     {
         TransactionManager.beginTransaction( null );
         try
         {
-            final ClientApplication clientApplication = ClientApplicationHome.findByCode( clientApplicationDto.getClientCode( ) );
-            if ( clientApplication != null )
-            {
-                response.setStatus( ResponseStatusFactory.conflict( ).setMessage( "A client exists with the code " + clientApplicationDto.getClientCode( ) )
-                        .setMessageKey( Constants.PROPERTY_REST_ERROR_CLIENT_ALREADY_EXISTS ) );
-            }
-            else
-            {
-                final ClientApplication client = DtoConverter.convertDtoToClient( clientApplicationDto );
-                ClientApplicationHome.create( client );
-                response.setClientApplication( DtoConverter.convertClientToDto( client ) );
-                response.setStatus( ResponseStatusFactory.success( ).setMessageKey( Constants.PROPERTY_REST_INFO_SUCCESSFUL_OPERATION ) );
-            }
+            final ClientApplication client = DtoConverter.convertDtoToClient( clientApplicationDto );
+            final ClientApplication createdClientApplication = ClientApplicationHome.create( client );
             TransactionManager.commitTransaction( null );
+            return createdClientApplication;
         }
-        catch( Exception e )
+        catch( final Exception e )
         {
-            response.setStatus(
-                    ResponseStatusFactory.failure( ).setMessage( e.getMessage( ) ).setMessageKey( Constants.PROPERTY_REST_ERROR_DURING_TREATMENT ) );
             TransactionManager.rollBack( null );
+            throw new IdentityStoreException( e.getMessage( ), e, Constants.PROPERTY_REST_ERROR_DURING_TREATMENT );
         }
     }
 
-    public void update( ClientApplicationDto clientApplicationDto, ClientChangeResponse response )
+    public ClientApplication update( final ClientApplicationDto clientApplicationDto ) throws IdentityStoreException
     {
         TransactionManager.beginTransaction( null );
         try
         {
-            final ClientApplication clientApplication = ClientApplicationHome.findByCode( clientApplicationDto.getClientCode( ) );
-            if ( clientApplication == null )
-            {
-                response.setStatus(
-                        ResponseStatusFactory.notFound( ).setMessage( "No client could be found with the code " + clientApplicationDto.getClientCode( ) )
-                                .setMessageKey( Constants.PROPERTY_REST_ERROR_NO_CLIENT_FOUND ) );
-            }
-            else
-            {
-                final ClientApplication client = DtoConverter.convertDtoToClient( clientApplicationDto );
-                ClientApplicationHome.update( client );
-                response.setClientApplication( DtoConverter.convertClientToDto( client ) );
-                response.setStatus( ResponseStatusFactory.success( ).setMessageKey( Constants.PROPERTY_REST_INFO_SUCCESSFUL_OPERATION ) );
-            }
+            final ClientApplication client = DtoConverter.convertDtoToClient( clientApplicationDto );
+            final ClientApplication updatedClientApp = ClientApplicationHome.update( client );
             TransactionManager.commitTransaction( null );
+            return updatedClientApp;
         }
-        catch( Exception e )
+        catch( final Exception e )
         {
-            response.setStatus(
-                    ResponseStatusFactory.failure( ).setMessage( e.getMessage( ) ).setMessageKey( Constants.PROPERTY_REST_ERROR_DURING_TREATMENT ) );
             TransactionManager.rollBack( null );
+            throw new IdentityStoreException( e.getMessage( ), e, Constants.PROPERTY_REST_ERROR_DURING_TREATMENT );
         }
     }
 }

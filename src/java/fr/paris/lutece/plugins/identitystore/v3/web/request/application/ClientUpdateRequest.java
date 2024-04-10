@@ -33,17 +33,28 @@
  */
 package fr.paris.lutece.plugins.identitystore.v3.web.request.application;
 
+import fr.paris.lutece.plugins.identitystore.business.application.ClientApplication;
+import fr.paris.lutece.plugins.identitystore.business.application.ClientApplicationHome;
 import fr.paris.lutece.plugins.identitystore.service.application.ClientApplicationService;
-import fr.paris.lutece.plugins.identitystore.v3.web.rs.AbstractIdentityStoreRequest;
+import fr.paris.lutece.plugins.identitystore.v3.web.request.AbstractIdentityStoreAppCodeRequest;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.DtoConverter;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.IdentityRequestValidator;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.application.ClientApplicationDto;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.application.ClientChangeResponse;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.ResponseStatusFactory;
+import fr.paris.lutece.plugins.identitystore.web.exception.ClientAuthorizationException;
+import fr.paris.lutece.plugins.identitystore.web.exception.DuplicatesConsistencyException;
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
+import fr.paris.lutece.plugins.identitystore.web.exception.RequestContentFormattingException;
+import fr.paris.lutece.plugins.identitystore.web.exception.RequestFormatException;
+import fr.paris.lutece.plugins.identitystore.web.exception.ResourceConsistencyException;
+import fr.paris.lutece.plugins.identitystore.web.exception.ResourceNotFoundException;
 
 /**
  * This class represents a create request for IdentityStoreRestServive
  */
-public class ClientUpdateRequest extends AbstractIdentityStoreRequest
+public class ClientUpdateRequest extends AbstractIdentityStoreAppCodeRequest
 {
     private final ClientApplicationDto _clientApplicationDto;
 
@@ -53,24 +64,67 @@ public class ClientUpdateRequest extends AbstractIdentityStoreRequest
      * @param clientApplicationDto
      *            the dto of client's change
      */
-    public ClientUpdateRequest( ClientApplicationDto clientApplicationDto, String strClientAppCode, final String authorName, final String authorType )
-            throws IdentityStoreException
+    public ClientUpdateRequest( final ClientApplicationDto clientApplicationDto, final String strClientCode, final String strAppCode, final String authorName,
+            final String authorType ) throws IdentityStoreException
     {
-        super( strClientAppCode, authorName, authorType );
+        super( strClientCode, strAppCode, authorName, authorType );
+        if ( clientApplicationDto == null )
+        {
+            throw new RequestFormatException( "Provided client is null", Constants.PROPERTY_REST_ERROR_CLIENT_APPLICATION_NULL );
+        }
         this._clientApplicationDto = clientApplicationDto;
+
     }
 
     @Override
-    protected void validateSpecificRequest( ) throws IdentityStoreException
+    protected void fetchResources( ) throws ResourceNotFoundException
+    {
+        if ( ClientApplicationHome.findByCode( _clientApplicationDto.getClientCode( ) ) == null )
+        {
+            throw new ResourceNotFoundException( "No client could be found with the code " + _clientApplicationDto.getClientCode( ),
+                    Constants.PROPERTY_REST_ERROR_NO_CLIENT_FOUND );
+        }
+    }
+
+    @Override
+    protected void validateRequestFormat( ) throws RequestFormatException
     {
         IdentityRequestValidator.instance( ).checkClientApplicationDto( _clientApplicationDto );
     }
 
     @Override
-    public ClientChangeResponse doSpecificRequest( )
+    protected void validateClientAuthorization( ) throws ClientAuthorizationException
+    {
+        // do nothing
+    }
+
+    @Override
+    protected void validateResourcesConsistency( ) throws ResourceConsistencyException
+    {
+        // do nothing
+    }
+
+    @Override
+    protected void formatRequestContent( ) throws RequestContentFormattingException
+    {
+        // do nothing
+    }
+
+    @Override
+    protected void checkDuplicatesConsistency( ) throws DuplicatesConsistencyException
+    {
+        // do nothing
+    }
+
+    @Override
+    protected ClientChangeResponse doSpecificRequest( ) throws IdentityStoreException
     {
         final ClientChangeResponse response = new ClientChangeResponse( );
-        ClientApplicationService.instance( ).update( _clientApplicationDto, response );
+        final ClientApplication updatedClientApp = ClientApplicationService.instance( ).update( _clientApplicationDto );
+
+        response.setClientApplication( DtoConverter.convertClientToDto( updatedClientApp ) );
+        response.setStatus( ResponseStatusFactory.success( ).setMessageKey( Constants.PROPERTY_REST_INFO_SUCCESSFUL_OPERATION ) );
+
         return response;
     }
 

@@ -31,23 +31,39 @@
  *
  * License 1.0
  */
-package fr.paris.lutece.plugins.identitystore.service.identity;
+package fr.paris.lutece.plugins.identitystore.v3.web.request.validator;
 
-import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
-import fr.paris.lutece.portal.service.util.AppLogService;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.exporting.IdentityExportRequest;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
+import fr.paris.lutece.plugins.identitystore.web.exception.RequestFormatException;
+import fr.paris.lutece.portal.service.util.AppPropertiesService;
 
-public class IdentityAttributeNotFoundException extends IdentityStoreException
+public class IdentityExportValidator
 {
+    private final int exportLimit = AppPropertiesService.getPropertyInt( "identitystore.identity.export.size.limit", 500 );
 
-    /**
-     * Constructor
-     *
-     * @param strMessage
-     *            The message
-     */
-    public IdentityAttributeNotFoundException( String strMessage )
+    private static IdentityExportValidator instance;
+
+    public static IdentityExportValidator instance( )
     {
-        super( strMessage );
-        AppLogService.error( strMessage );
+        if ( instance == null )
+        {
+            instance = new IdentityExportValidator( );
+        }
+        return instance;
     }
+
+    private IdentityExportValidator( )
+    {
+    }
+
+    public void validateExportRequest( final IdentityExportRequest request ) throws RequestFormatException
+    {
+        if ( request.getCuidList( ).size( ) > exportLimit )
+        {
+            throw new RequestFormatException( "Provided CUID list exceeds the allowed export limit of " + exportLimit,
+                    Constants.PROPERTY_REST_ERROR_EXPORT_LIMIT_EXCEEDED );
+        }
+    }
+
 }

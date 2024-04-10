@@ -33,13 +33,12 @@
  */
 package fr.paris.lutece.plugins.identitystore.cache;
 
-import fr.paris.lutece.plugins.identitystore.business.contract.ServiceContract;
 import fr.paris.lutece.plugins.identitystore.business.rules.duplicate.DuplicateRule;
 import fr.paris.lutece.plugins.identitystore.business.rules.duplicate.DuplicateRuleHome;
-import fr.paris.lutece.plugins.identitystore.service.duplicate.DuplicateRuleNotFoundException;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
+import fr.paris.lutece.plugins.identitystore.web.exception.ResourceNotFoundException;
 import fr.paris.lutece.portal.service.cache.AbstractCacheableService;
 import fr.paris.lutece.portal.service.util.AppLogService;
-import org.apache.log4j.Logger;
 
 import java.util.Objects;
 
@@ -80,7 +79,7 @@ public class DuplicateRulesCache extends AbstractCacheableService
     }
 
     /**
-     * Deletes a {@link ServiceContract} by its id in the database
+     * Deletes a {@link DuplicateRule} by its id in the database
      *
      * @param id
      */
@@ -95,14 +94,14 @@ public class DuplicateRulesCache extends AbstractCacheableService
                     this.removeKey( key );
                 }
             }
-            catch( DuplicateRuleNotFoundException e )
+            catch( final ResourceNotFoundException e )
             {
-                AppLogService.error( "Cannot delete service contract with id" + id + " : {}", e );
+                AppLogService.error( "Cannot delete duplicate rule with id" + id + " : {}", e );
             }
         } );
     }
 
-    public DuplicateRule get( final String ruleCode ) throws DuplicateRuleNotFoundException
+    public DuplicateRule get( final String ruleCode ) throws ResourceNotFoundException
     {
         DuplicateRule duplicateRule = (DuplicateRule) this.getFromCache( ruleCode );
         if ( duplicateRule == null )
@@ -113,12 +112,11 @@ public class DuplicateRulesCache extends AbstractCacheableService
         return duplicateRule;
     }
 
-    public DuplicateRule getFromDatabase( final String ruleCode ) throws DuplicateRuleNotFoundException
-    {
+    public DuplicateRule getFromDatabase( final String ruleCode ) throws ResourceNotFoundException {
         final DuplicateRule duplicateRule = DuplicateRuleHome.findByCode( ruleCode );
         if ( duplicateRule == null )
         {
-            throw new DuplicateRuleNotFoundException( "No duplicate rule could be found with code " + ruleCode );
+            throw new ResourceNotFoundException("No duplicate rule could be found with code " + ruleCode, Constants.PROPERTY_REST_ERROR_UNKNOWN_DUPLICATE_RULE_CODE);
         }
         return duplicateRule;
     }

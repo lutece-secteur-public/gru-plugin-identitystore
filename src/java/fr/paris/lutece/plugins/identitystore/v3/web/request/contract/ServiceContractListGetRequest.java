@@ -33,21 +33,21 @@
  */
 package fr.paris.lutece.plugins.identitystore.v3.web.request.contract;
 
-import fr.paris.lutece.plugins.identitystore.business.application.ClientApplicationHome;
-import fr.paris.lutece.plugins.identitystore.business.contract.AttributeCertification;
-import fr.paris.lutece.plugins.identitystore.business.contract.ServiceContract;
-import fr.paris.lutece.plugins.identitystore.business.contract.ServiceContractHome;
-import fr.paris.lutece.plugins.identitystore.business.referentiel.RefAttributeCertificationProcessus;
-import fr.paris.lutece.plugins.identitystore.service.contract.AttributeCertificationDefinitionService;
-import fr.paris.lutece.plugins.identitystore.v3.web.rs.AbstractIdentityStoreRequest;
-import fr.paris.lutece.plugins.identitystore.v3.web.rs.DtoConverter;
+import fr.paris.lutece.plugins.identitystore.service.contract.ServiceContractService;
+import fr.paris.lutece.plugins.identitystore.v3.web.request.AbstractIdentityStoreAppCodeRequest;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.IdentityRequestValidator;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.contract.ServiceContractDto;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.contract.ServiceContractsSearchResponse;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.ResponseStatusFactory;
+import fr.paris.lutece.plugins.identitystore.web.exception.ClientAuthorizationException;
+import fr.paris.lutece.plugins.identitystore.web.exception.DuplicatesConsistencyException;
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
+import fr.paris.lutece.plugins.identitystore.web.exception.RequestContentFormattingException;
+import fr.paris.lutece.plugins.identitystore.web.exception.RequestFormatException;
+import fr.paris.lutece.plugins.identitystore.web.exception.ResourceConsistencyException;
+import fr.paris.lutece.plugins.identitystore.web.exception.ResourceNotFoundException;
 import fr.paris.lutece.portal.service.util.AppException;
-import org.apache.commons.collections.CollectionUtils;
 
 import java.util.List;
 
@@ -55,7 +55,7 @@ import java.util.List;
  * This class represents a get request for ServiceContractRestService
  *
  */
-public class ServiceContractListGetRequest extends AbstractIdentityStoreRequest
+public class ServiceContractListGetRequest extends AbstractIdentityStoreAppCodeRequest
 {
     private final String _strTargetClientCode;
 
@@ -65,16 +65,47 @@ public class ServiceContractListGetRequest extends AbstractIdentityStoreRequest
      * @param strClientCode
      *            the client application Code
      */
-    public ServiceContractListGetRequest( String strTargetClientCode, String strClientCode, String authorName, String authorType ) throws IdentityStoreException
+    public ServiceContractListGetRequest( final String strTargetClientCode, final String strClientCode, final String strAppCode, final String authorName,
+            final String authorType ) throws IdentityStoreException
     {
-        super( strClientCode, authorName, authorType );
+        super( strClientCode, strAppCode, authorName, authorType );
         this._strTargetClientCode = strTargetClientCode;
     }
 
     @Override
-    protected void validateSpecificRequest( ) throws IdentityStoreException
+    protected void fetchResources( ) throws ResourceNotFoundException
+    {
+        // do nothing
+    }
+
+    @Override
+    protected void validateRequestFormat( ) throws RequestFormatException
     {
         IdentityRequestValidator.instance( ).checkTargetClientCode( this._strTargetClientCode );
+    }
+
+    @Override
+    protected void validateClientAuthorization( ) throws ClientAuthorizationException
+    {
+        // TODO no authorization in service contract for that
+    }
+
+    @Override
+    protected void validateResourcesConsistency( ) throws ResourceConsistencyException
+    {
+        // do nothing
+    }
+
+    @Override
+    protected void formatRequestContent( ) throws RequestContentFormattingException
+    {
+        // do nothing
+    }
+
+    @Override
+    protected void checkDuplicatesConsistency( ) throws DuplicatesConsistencyException
+    {
+        // do nothing
     }
 
     /**
@@ -84,37 +115,14 @@ public class ServiceContractListGetRequest extends AbstractIdentityStoreRequest
      *             if there is an exception during the treatment
      */
     @Override
-    public ServiceContractsSearchResponse doSpecificRequest( )
+    protected ServiceContractsSearchResponse doSpecificRequest( ) throws IdentityStoreException
     {
         final ServiceContractsSearchResponse response = new ServiceContractsSearchResponse( );
 
-        final List<ServiceContract> serviceContracts = ClientApplicationHome.selectServiceContracts( ClientApplicationHome.findByCode( _strTargetClientCode ) );
-        if ( CollectionUtils.isEmpty( serviceContracts ) )
-        {
-            response.setStatus( ResponseStatusFactory.noResult( ).setMessageKey( Constants.PROPERTY_REST_ERROR_NO_SERVICE_CONTRACT_FOUND ) );
-        }
-        else
-        {
-            for ( final ServiceContract serviceContract : serviceContracts )
-            {
-                serviceContract.setAttributeRights( ServiceContractHome.selectApplicationRights( serviceContract ) );
-                serviceContract.setAttributeCertifications( ServiceContractHome.selectAttributeCertifications( serviceContract ) );
-                serviceContract.setAttributeRequirements( ServiceContractHome.selectAttributeRequirements( serviceContract ) );
-                // TODO amélioration générale à mener sur ce point
-                for ( final AttributeCertification certification : serviceContract.getAttributeCertifications( ) )
-                {
-                    for ( final RefAttributeCertificationProcessus processus : certification.getRefAttributeCertificationProcessus( ) )
-                    {
-                        processus.setLevel( AttributeCertificationDefinitionService.instance( ).get( processus.getCode( ),
-                                certification.getAttributeKey( ).getKeyName( ) ) );
-                    }
-                }
+        final List<ServiceContractDto> result = ServiceContractService.instance( ).exportAllServiceContracts( _strTargetClientCode );
 
-                response.getServiceContracts( ).add( DtoConverter.convertContractToDto( serviceContract ) );
-            }
-
-            response.setStatus( ResponseStatusFactory.ok( ).setMessageKey( Constants.PROPERTY_REST_INFO_SUCCESSFUL_OPERATION ) );
-        }
+        response.setStatus( ResponseStatusFactory.ok( ).setMessageKey( Constants.PROPERTY_REST_INFO_SUCCESSFUL_OPERATION ) );
+        response.getServiceContracts( ).addAll( result );
 
         return response;
     }

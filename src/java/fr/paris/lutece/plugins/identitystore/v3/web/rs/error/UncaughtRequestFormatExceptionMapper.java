@@ -33,37 +33,46 @@
  */
 package fr.paris.lutece.plugins.identitystore.v3.web.rs.error;
 
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.ResponseDto;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.error.ErrorResponse;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.ResponseStatusFactory;
-import fr.paris.lutece.plugins.identitystore.web.exception.IdentityNotFoundException;
+import fr.paris.lutece.plugins.identitystore.web.exception.RequestFormatException;
 import fr.paris.lutece.plugins.rest.service.mapper.GenericUncaughtExceptionMapper;
 
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.Provider;
 
-import static javax.ws.rs.core.Response.Status;
-
 /**
- * Exception mapper designed to intercept uncaught {@link IdentityNotFoundException}.<br/>
+ * Exception mapper designed to intercept uncaught {@link RequestFormatException}.<br/>
  */
 @Provider
-public class UncaughtIdentityNotFoundExceptionMapper extends GenericUncaughtExceptionMapper<IdentityNotFoundException, ErrorResponse>
+public class UncaughtRequestFormatExceptionMapper extends GenericUncaughtExceptionMapper<RequestFormatException, ResponseDto>
 {
-    public static final String ERROR_NO_IDENTITY_FOUND = "No identity found.";
+
+    public static final String ERROR_REQUEST_BAD_FORMAT = "The sent request is not properly formatted";
 
     @Override
-    protected Status getStatus( )
+    protected Response.Status getStatus( final RequestFormatException e )
     {
-        return Status.NOT_FOUND;
+        if ( e.getResponse( ) != null )
+        {
+            return Response.Status.fromStatusCode( e.getResponse( ).getStatus( ).getHttpCode( ) );
+        }
+        return Response.Status.BAD_REQUEST;
     }
 
     @Override
-    protected ErrorResponse buildEntity( final IdentityNotFoundException e )
+    protected ResponseDto getBody( final RequestFormatException e )
     {
+        if ( e.getResponse( ) != null )
+        {
+            return e.getResponse( );
+        }
         final ErrorResponse response = new ErrorResponse( );
-        response.setStatus( ResponseStatusFactory.notFound( ).setMessage( ERROR_NO_IDENTITY_FOUND + " :: " + e.getMessage( ) )
-                .setMessageKey( Constants.PROPERTY_REST_ERROR_NO_IDENTITY_FOUND ) );
+        response.setStatus( ResponseStatusFactory.badRequest( ).setMessage( ERROR_REQUEST_BAD_FORMAT + " :: " + e.getMessage( ) )
+                .setMessageKey( Constants.PROPERTY_REST_ERROR_REQUEST_BAD_FORMAT ) );
         return response;
     }
 

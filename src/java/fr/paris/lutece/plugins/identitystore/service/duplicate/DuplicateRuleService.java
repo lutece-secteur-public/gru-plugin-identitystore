@@ -38,6 +38,7 @@ import fr.paris.lutece.plugins.identitystore.business.rules.duplicate.DuplicateR
 import fr.paris.lutece.plugins.identitystore.business.rules.duplicate.DuplicateRuleHome;
 import fr.paris.lutece.plugins.identitystore.cache.DuplicateRulesCache;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.duplicate.DuplicateRuleSummaryDto;
+import fr.paris.lutece.plugins.identitystore.web.exception.ResourceNotFoundException;
 import fr.paris.lutece.portal.service.spring.SpringContextService;
 
 import java.util.ArrayList;
@@ -68,9 +69,9 @@ public class DuplicateRuleService
     /**
      *
      * @return
-     * @throws DuplicateRuleNotFoundException
+     * @throws ResourceNotFoundException
      */
-    public List<DuplicateRule> findAll( ) throws DuplicateRuleNotFoundException
+    public List<DuplicateRule> findAll( ) throws ResourceNotFoundException
     {
         final List<String> allCodes = DuplicateRuleHome.findAllCodes( );
         final List<DuplicateRule> list = new ArrayList<>( );
@@ -88,9 +89,9 @@ public class DuplicateRuleService
      * @param priority
      *            the min priority
      * @return a list of rule summaries
-     * @throws DuplicateRuleNotFoundException
+     * @throws ResourceNotFoundException
      */
-    public List<DuplicateRuleSummaryDto> findSummaries( final Integer priority ) throws DuplicateRuleNotFoundException
+    public List<DuplicateRuleSummaryDto> findSummaries( final Integer priority ) throws ResourceNotFoundException
     {
         return this.findAll( ).stream( ).filter( rule -> priority == null || rule.getPriority( ) <= priority ).map( rule -> {
             final DuplicateRuleSummaryDto ruleDto = new DuplicateRuleSummaryDto( );
@@ -111,10 +112,10 @@ public class DuplicateRuleService
      * @param ruleCode
      *            the rule code
      * @return DuplicateRule
-     * @throws DuplicateRuleNotFoundException
+     * @throws ResourceNotFoundException
      *             if the rule is not found for the provided code
      */
-    public DuplicateRule get( final String ruleCode ) throws DuplicateRuleNotFoundException
+    public DuplicateRule get( final String ruleCode ) throws ResourceNotFoundException
     {
         return _cache.get( ruleCode );
     }
@@ -132,7 +133,7 @@ public class DuplicateRuleService
         {
             return _cache.get( ruleCode );
         }
-        catch( final DuplicateRuleNotFoundException e )
+        catch( final ResourceNotFoundException e )
         {
             return null;
         }

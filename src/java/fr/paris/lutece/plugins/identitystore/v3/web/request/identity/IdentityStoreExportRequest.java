@@ -33,35 +33,90 @@
  */
 package fr.paris.lutece.plugins.identitystore.v3.web.request.identity;
 
+import fr.paris.lutece.plugins.identitystore.business.contract.ServiceContract;
+import fr.paris.lutece.plugins.identitystore.service.contract.ServiceContractService;
 import fr.paris.lutece.plugins.identitystore.service.identity.IdentityExportService;
 import fr.paris.lutece.plugins.identitystore.service.identity.IdentityService;
+import fr.paris.lutece.plugins.identitystore.v3.web.request.AbstractIdentityStoreAppCodeRequest;
+import fr.paris.lutece.plugins.identitystore.v3.web.request.validator.IdentityExportValidator;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.AbstractIdentityStoreRequest;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.IdentityRequestValidator;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.IdentityDto;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.exporting.IdentityExportRequest;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.exporting.IdentityExportResponse;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.ResponseStatusFactory;
+import fr.paris.lutece.plugins.identitystore.web.exception.ClientAuthorizationException;
+import fr.paris.lutece.plugins.identitystore.web.exception.DuplicatesConsistencyException;
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
+import fr.paris.lutece.plugins.identitystore.web.exception.RequestContentFormattingException;
+import fr.paris.lutece.plugins.identitystore.web.exception.RequestFormatException;
+import fr.paris.lutece.plugins.identitystore.web.exception.ResourceConsistencyException;
+import fr.paris.lutece.plugins.identitystore.web.exception.ResourceNotFoundException;
 
-public class IdentityStoreExportRequest extends AbstractIdentityStoreRequest
+import java.util.List;
+
+public class IdentityStoreExportRequest extends AbstractIdentityStoreAppCodeRequest
 {
 
     private final IdentityExportRequest _request;
 
-    public IdentityStoreExportRequest( final IdentityExportRequest request, final String strClientCode, final String authorName, final String authorType )
-            throws IdentityStoreException
+    private ServiceContract serviceContract;
+
+    public IdentityStoreExportRequest( final IdentityExportRequest request, final String strClientCode, final String strAppCode, final String authorName,
+            final String authorType ) throws IdentityStoreException
     {
-        super( strClientCode, authorName, authorType );
+        super( strClientCode, strAppCode, authorName, authorType );
         this._request = request;
     }
 
     @Override
-    protected void validateSpecificRequest( ) throws IdentityStoreException
+    protected void fetchResources( ) throws ResourceNotFoundException
+    {
+        serviceContract = ServiceContractService.instance( ).getActiveServiceContract( _strClientCode );
+    }
+
+    @Override
+    protected void validateRequestFormat( ) throws RequestFormatException
     {
         IdentityRequestValidator.instance( ).checkExportRequest( _request );
+        IdentityExportValidator.instance( ).validateExportRequest( _request );
+    }
+
+    @Override
+    protected void validateClientAuthorization( ) throws ClientAuthorizationException
+    {
+        ServiceContractService.instance( ).validateExportAuthorization( serviceContract );
+    }
+
+    @Override
+    protected void validateResourcesConsistency( ) throws ResourceConsistencyException
+    {
+        // do nothing
+    }
+
+    @Override
+    protected void formatRequestContent( ) throws RequestContentFormattingException
+    {
+        // do nothing
+    }
+
+    @Override
+    protected void checkDuplicatesConsistency( ) throws DuplicatesConsistencyException
+    {
+        // do nothing
     }
 
     @Override
     protected IdentityExportResponse doSpecificRequest( ) throws IdentityStoreException
     {
-        return IdentityExportService.instance( ).export( _request, _strClientCode );
+        final IdentityExportResponse response = new IdentityExportResponse( );
+
+        final List<IdentityDto> result = IdentityExportService.instance( ).export( _request, serviceContract );
+
+        response.setStatus( ResponseStatusFactory.ok( ).setMessage( "Export completed" ).setMessageKey( Constants.PROPERTY_REST_INFO_SUCCESSFUL_OPERATION ) );
+        response.getIdentities( ).addAll( result );
+
+        return response;
     }
 }

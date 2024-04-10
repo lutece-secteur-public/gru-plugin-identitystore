@@ -33,7 +33,10 @@
  */
 package fr.paris.lutece.plugins.identitystore.service.duplicate;
 
+import fr.paris.lutece.plugins.identitystore.business.rules.duplicate.DuplicateRule;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.IdentityDto;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.search.DuplicateSearchResponse;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.search.QualifiedIdentitySearchResult;
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
 
 import java.util.List;
@@ -41,6 +44,6 @@ import java.util.Map;
 
 public interface IDuplicateService
 {
-    DuplicateSearchResponse findDuplicates( final Map<String, String> attributeValues, final String customerId, final List<String> ruleCodes,
-            final List<String> attributesFilter ) throws IdentityStoreException;
+    Map<String, QualifiedIdentitySearchResult> findDuplicates(final Map<String, String> attributeValues, final String customerId, final List<DuplicateRule> duplicateRules,
+                                                              final List<String> attributesFilter) throws IdentityStoreException;
 }

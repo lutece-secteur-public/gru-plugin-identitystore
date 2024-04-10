@@ -33,14 +33,23 @@
  */
 package fr.paris.lutece.plugins.identitystore.v3.web.request.identity;
 
+import fr.paris.lutece.plugins.identitystore.business.contract.ServiceContract;
 import fr.paris.lutece.plugins.identitystore.service.contract.ServiceContractService;
 import fr.paris.lutece.plugins.identitystore.service.identity.IdentityService;
-import fr.paris.lutece.plugins.identitystore.v3.web.rs.AbstractIdentityStoreRequest;
+import fr.paris.lutece.plugins.identitystore.v3.web.request.AbstractIdentityStoreAppCodeRequest;
+import fr.paris.lutece.plugins.identitystore.v3.web.request.validator.IdentitySearchRequestValidator;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.IdentityRequestValidator;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.search.IdentitySearchRequest;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.search.IdentitySearchResponse;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.ResponseStatusFactory;
+import fr.paris.lutece.plugins.identitystore.web.exception.ClientAuthorizationException;
+import fr.paris.lutece.plugins.identitystore.web.exception.DuplicatesConsistencyException;
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
+import fr.paris.lutece.plugins.identitystore.web.exception.RequestContentFormattingException;
+import fr.paris.lutece.plugins.identitystore.web.exception.RequestFormatException;
+import fr.paris.lutece.plugins.identitystore.web.exception.ResourceConsistencyException;
+import fr.paris.lutece.plugins.identitystore.web.exception.ResourceNotFoundException;
 import fr.paris.lutece.portal.service.util.AppException;
 import org.apache.commons.lang3.StringUtils;
 
@@ -48,22 +57,61 @@ import org.apache.commons.lang3.StringUtils;
  * This class represents a get request for IdentityStoreRestServive
  *
  */
-public class IdentityStoreSearchRequest extends AbstractIdentityStoreRequest
+public class IdentityStoreSearchRequest extends AbstractIdentityStoreAppCodeRequest
 {
     private final IdentitySearchRequest _identitySearchRequest;
+    private ServiceContract serviceContract;
 
-    public IdentityStoreSearchRequest( IdentitySearchRequest identitySearchRequest, String strClientAppCode, String authorName, String authorType )
-            throws IdentityStoreException
+    public IdentityStoreSearchRequest( final IdentitySearchRequest identitySearchRequest, final String strClientCode, final String strAppCode,
+            final String authorName, final String authorType ) throws RequestFormatException
     {
-        super( strClientAppCode, authorName, authorType );
+        super( strClientCode, strAppCode, authorName, authorType );
         this._identitySearchRequest = identitySearchRequest;
     }
 
     @Override
-    protected void validateSpecificRequest( ) throws IdentityStoreException
+    protected void fetchResources( ) throws ResourceNotFoundException
     {
-        // Vérification de la consistence des paramètres
+        serviceContract = ServiceContractService.instance( ).getActiveServiceContract( _strClientCode );
+    }
+
+    @Override
+    protected void validateRequestFormat( ) throws RequestFormatException
+    {
         IdentityRequestValidator.instance( ).checkIdentitySearch( _identitySearchRequest );
+        IdentitySearchRequestValidator.instance( ).checkRequiredAttributes( _identitySearchRequest );
+    }
+
+    @Override
+    protected void validateClientAuthorization( ) throws ClientAuthorizationException
+    {
+        final boolean guidSearch = StringUtils.isNotEmpty( _identitySearchRequest.getConnectionId( ) );
+        if ( guidSearch )
+        {
+            ServiceContractService.instance( ).validateGetAuthorization( serviceContract );
+        }
+        else
+        {
+            ServiceContractService.instance( ).validateSearchAuthorization( _identitySearchRequest, serviceContract );
+        }
+    }
+
+    @Override
+    protected void validateResourcesConsistency( ) throws ResourceConsistencyException
+    {
+        // do nothing because GET request does not create or update any resource
+    }
+
+    @Override
+    protected void formatRequestContent( ) throws RequestContentFormattingException
+    {
+        // do nothing because GET request does not create or update any resource
+    }
+
+    @Override
+    protected void checkDuplicatesConsistency( ) throws DuplicatesConsistencyException
+    {
+        // do nothing because GET request does not create or update any resource
     }
 
     /**
@@ -73,23 +121,20 @@ public class IdentityStoreSearchRequest extends AbstractIdentityStoreRequest
      *             if there is an exception during the treatment
      */
     @Override
-    public IdentitySearchResponse doSpecificRequest( ) throws IdentityStoreException
+    protected IdentitySearchResponse doSpecificRequest( ) throws IdentityStoreException
     {
         final boolean guidSearch = StringUtils.isNotEmpty( _identitySearchRequest.getConnectionId( ) );
-        final IdentitySearchResponse response = ServiceContractService.instance( ).validateIdentitySearch( _identitySearchRequest, _strClientCode,
-                !guidSearch );
-
-        if ( !ResponseStatusFactory.failure( ).equals( response.getStatus( ) ) )
+        final IdentitySearchResponse response = new IdentitySearchResponse( );
+        if ( guidSearch )
         {
-            if ( guidSearch )
-            {
-                IdentityService.instance( ).search( StringUtils.EMPTY, _identitySearchRequest.getConnectionId( ), response, _strClientCode, _author );
-            }
-            else
-            {
-                IdentityService.instance( ).search( _identitySearchRequest, _author, response, _strClientCode );
-            }
+            response.getIdentities( )
+                    .add( IdentityService.instance( ).search( StringUtils.EMPTY, _identitySearchRequest.getConnectionId( ), serviceContract, _author ) );
         }
+        else
+        {
+            response.getIdentities( ).addAll( IdentityService.instance( ).search( _identitySearchRequest, _author, serviceContract ) );
+        }
+        response.setStatus( ResponseStatusFactory.ok( ).setMessageKey( Constants.PROPERTY_REST_INFO_SUCCESSFUL_OPERATION ) );
 
         return response;
     }

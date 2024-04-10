@@ -35,12 +35,18 @@ package fr.paris.lutece.plugins.identitystore.v3.web.request.referentiel;
 
 import fr.paris.lutece.plugins.identitystore.business.referentiel.RefCertificationLevel;
 import fr.paris.lutece.plugins.identitystore.business.referentiel.RefCertificationLevelHome;
-import fr.paris.lutece.plugins.identitystore.v3.web.rs.AbstractIdentityStoreRequest;
+import fr.paris.lutece.plugins.identitystore.v3.web.request.AbstractIdentityStoreAppCodeRequest;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.DtoConverter;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.referentiel.LevelSearchResponse;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.ResponseStatusFactory;
+import fr.paris.lutece.plugins.identitystore.web.exception.ClientAuthorizationException;
+import fr.paris.lutece.plugins.identitystore.web.exception.DuplicatesConsistencyException;
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
+import fr.paris.lutece.plugins.identitystore.web.exception.RequestContentFormattingException;
+import fr.paris.lutece.plugins.identitystore.web.exception.RequestFormatException;
+import fr.paris.lutece.plugins.identitystore.web.exception.ResourceConsistencyException;
+import fr.paris.lutece.plugins.identitystore.web.exception.ResourceNotFoundException;
 import fr.paris.lutece.portal.service.util.AppException;
 import org.apache.commons.collections.CollectionUtils;
 
@@ -50,7 +56,7 @@ import java.util.List;
  * This class represents a get request for IdentityStoreRestServive
  *
  */
-public class LevelListGetRequest extends AbstractIdentityStoreRequest
+public class LevelListGetRequest extends AbstractIdentityStoreAppCodeRequest
 {
 
     /**
@@ -59,14 +65,46 @@ public class LevelListGetRequest extends AbstractIdentityStoreRequest
      * @param strClientCode
      *            the client application Code
      */
-    public LevelListGetRequest( String strClientCode, String authorName, String authorType ) throws IdentityStoreException
+    public LevelListGetRequest( final String strClientCode, final String strAppCode, final String authorName, final String authorType )
+            throws IdentityStoreException
     {
-        super( strClientCode, authorName, authorType );
+        super( strClientCode, strAppCode, authorName, authorType );
     }
 
     @Override
-    protected void validateSpecificRequest( )
+    protected void fetchResources( ) throws ResourceNotFoundException
     {
+        // do nothing
+    }
+
+    @Override
+    protected void validateRequestFormat( ) throws RequestFormatException
+    {
+        // do nothing
+    }
+
+    @Override
+    protected void validateClientAuthorization( ) throws ClientAuthorizationException
+    {
+        // do nothing
+    }
+
+    @Override
+    protected void validateResourcesConsistency( ) throws ResourceConsistencyException
+    {
+        // do nothing
+    }
+
+    @Override
+    protected void formatRequestContent( ) throws RequestContentFormattingException
+    {
+        // do nothing
+    }
+
+    @Override
+    protected void checkDuplicatesConsistency( ) throws DuplicatesConsistencyException
+    {
+        // do nothing
     }
 
     /**
@@ -76,21 +114,19 @@ public class LevelListGetRequest extends AbstractIdentityStoreRequest
      *             if there is an exception during the treatment
      */
     @Override
-    public LevelSearchResponse doSpecificRequest( )
+    public LevelSearchResponse doSpecificRequest( ) throws IdentityStoreException
     {
         final LevelSearchResponse response = new LevelSearchResponse( );
 
         final List<RefCertificationLevel> refCertificationLevelsList = RefCertificationLevelHome.getRefCertificationLevelsList( );
 
-        if ( refCertificationLevelsList == null || CollectionUtils.isEmpty( refCertificationLevelsList ) )
+        if ( CollectionUtils.isEmpty( refCertificationLevelsList ) )
         {
-            response.setStatus( ResponseStatusFactory.noResult( ).setMessageKey( Constants.PROPERTY_REST_ERROR_NO_CERTIFICATION_LEVEL_FOUND ) );
+            throw new ResourceNotFoundException( "No certification level found", Constants.PROPERTY_REST_ERROR_NO_CERTIFICATION_LEVEL_FOUND );
         }
-        else
-        {
-            response.setLevels( DtoConverter.convertRefLevelsToListDto( refCertificationLevelsList ) );
-            response.setStatus( ResponseStatusFactory.ok( ).setMessageKey( Constants.PROPERTY_REST_INFO_SUCCESSFUL_OPERATION ) );
-        }
+
+        response.setLevels( DtoConverter.convertRefLevelsToListDto( refCertificationLevelsList ) );
+        response.setStatus( ResponseStatusFactory.ok( ).setMessageKey( Constants.PROPERTY_REST_INFO_SUCCESSFUL_OPERATION ) );
 
         return response;
     }

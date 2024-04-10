@@ -33,27 +33,45 @@
  */
 package fr.paris.lutece.plugins.identitystore.v3.web.request.identity;
 
+import fr.paris.lutece.plugins.identitystore.business.contract.ServiceContract;
+import fr.paris.lutece.plugins.identitystore.business.identity.Identity;
 import fr.paris.lutece.plugins.identitystore.service.attribute.IdentityAttributeFormatterService;
-import fr.paris.lutece.plugins.identitystore.service.attribute.IdentityAttributeValidationService;
+import fr.paris.lutece.plugins.identitystore.service.attribute.IdentityAttributeGeocodesAdjustmentService;
 import fr.paris.lutece.plugins.identitystore.service.contract.ServiceContractService;
 import fr.paris.lutece.plugins.identitystore.service.identity.IdentityService;
-import fr.paris.lutece.plugins.identitystore.v3.web.rs.AbstractIdentityStoreRequest;
+import fr.paris.lutece.plugins.identitystore.v3.web.request.AbstractIdentityStoreAppCodeRequest;
+import fr.paris.lutece.plugins.identitystore.v3.web.request.validator.IdentityAttributeValidator;
+import fr.paris.lutece.plugins.identitystore.v3.web.request.validator.IdentityChangeRequestValidator;
+import fr.paris.lutece.plugins.identitystore.v3.web.request.validator.IdentityDuplicateValidator;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.IdentityRequestValidator;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.AttributeChangeStatus;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.AttributeStatus;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.ResponseStatus;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.crud.IdentityChangeRequest;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.crud.IdentityChangeResponse;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.ResponseStatusFactory;
+import fr.paris.lutece.plugins.identitystore.web.exception.ClientAuthorizationException;
+import fr.paris.lutece.plugins.identitystore.web.exception.DuplicatesConsistencyException;
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
+import fr.paris.lutece.plugins.identitystore.web.exception.RequestContentFormattingException;
+import fr.paris.lutece.plugins.identitystore.web.exception.RequestFormatException;
+import fr.paris.lutece.plugins.identitystore.web.exception.ResourceConsistencyException;
+import fr.paris.lutece.plugins.identitystore.web.exception.ResourceNotFoundException;
+import org.apache.commons.lang3.tuple.Pair;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
  * This class represents a create request for IdentityStoreRestServive
  */
-public class IdentityStoreCreateRequest extends AbstractIdentityStoreRequest
+public class IdentityStoreCreateRequest extends AbstractIdentityStoreAppCodeRequest
 {
 
     private final IdentityChangeRequest _identityChangeRequest;
+    private final List<AttributeStatus> formatStatuses;
+    private ServiceContract serviceContract;
 
     /**
      * Constructor of IdentityStoreCreateRequest
@@ -61,55 +79,73 @@ public class IdentityStoreCreateRequest extends AbstractIdentityStoreRequest
      * @param identityChangeRequest
      *            the dto of identity's change
      */
-    public IdentityStoreCreateRequest( IdentityChangeRequest identityChangeRequest, String strClientAppCode, String authorName, String authorType )
-            throws IdentityStoreException
+    public IdentityStoreCreateRequest( final IdentityChangeRequest identityChangeRequest, final String strClientCode, final String strAppCode,
+            final String authorName, final String authorType ) throws IdentityStoreException
     {
-        super( strClientAppCode, authorName, authorType );
+        super( strClientCode, strAppCode, authorName, authorType );
         this._identityChangeRequest = identityChangeRequest;
+        this.formatStatuses = new ArrayList<>( );
     }
 
     @Override
-    protected void validateSpecificRequest( ) throws IdentityStoreException
+    protected void fetchResources( ) throws ResourceNotFoundException
+    {
+        serviceContract = ServiceContractService.instance( ).getActiveServiceContract( _strClientCode );
+    }
+
+    @Override
+    protected void validateRequestFormat( ) throws RequestFormatException
     {
         IdentityRequestValidator.instance( ).checkIdentityChange( _identityChangeRequest, false );
+        IdentityAttributeValidator.instance( ).checkAttributeExistence( _identityChangeRequest.getIdentity( ) );
+        IdentityChangeRequestValidator.instance( ).checkRequiredAttributesForCreation( _identityChangeRequest, serviceContract );
+        IdentityAttributeValidator.instance( ).validatePivotAttributesIntegrity( null, _identityChangeRequest.getIdentity( ), true );
     }
 
     @Override
-    public IdentityChangeResponse doSpecificRequest( ) throws IdentityStoreException
+    protected void validateClientAuthorization( ) throws ClientAuthorizationException
     {
-        // quality checks
-        final IdentityChangeResponse response = ServiceContractService.instance( ).validateIdentityChange( _identityChangeRequest, _strClientCode );
-        if ( ResponseStatusFactory.failure( ).equals( response.getStatus( ) ) )
-        {
-            return response;
-        }
+        ServiceContractService.instance( ).validateCreateAuthorization( _identityChangeRequest, serviceContract );
+    }
 
-        // data content checks
-        final List<AttributeStatus> formatStatuses = IdentityAttributeFormatterService.instance( )
-                .formatIdentityChangeRequestAttributeValues( _identityChangeRequest );
+    @Override
+    protected void validateResourcesConsistency( ) throws ResourceConsistencyException
+    {
+        // do nothing because CREATE request does not update any resource
+    }
 
-        IdentityAttributeValidationService.instance( ).validateIdentityAttributeValues( _identityChangeRequest.getIdentity( ), response );
-        if ( ResponseStatusFactory.failure( ).equals( response.getStatus( ) ) )
-        {
-            return response;
-        }
+    @Override
+    protected void formatRequestContent( ) throws RequestContentFormattingException
+    {
+        formatStatuses.addAll( IdentityAttributeFormatterService.instance( ).formatIdentityChangeRequestAttributeValues( _identityChangeRequest ) );
+        formatStatuses.addAll( IdentityAttributeGeocodesAdjustmentService.instance( ).adjustGeocodesAttributes( _identityChangeRequest ) );
+        IdentityAttributeValidator.instance( ).validateIdentityAttributeValues( _identityChangeRequest.getIdentity( ) );
+    }
 
-        // Integrity checks
-        IdentityAttributeValidationService.instance( ).validatePivotAttributesIntegrity( null, _strClientCode, _identityChangeRequest.getIdentity( ), true,
-                response );
-        if ( ResponseStatusFactory.failure( ).equals( response.getStatus( ) ) )
-        {
-            return response;
-        }
+    @Override
+    protected void checkDuplicatesConsistency( ) throws DuplicatesConsistencyException
+    {
+        IdentityDuplicateValidator.instance( ).checkConnectionIdUniquenessForCreate( _identityChangeRequest );
+        IdentityDuplicateValidator.instance( ).checkDuplicateExistenceForCreation( _identityChangeRequest );
+    }
 
-        // perform create
-        IdentityService.instance( ).create( _identityChangeRequest, _author, _strClientCode, response );
+    @Override
+    protected IdentityChangeResponse doSpecificRequest( ) throws IdentityStoreException
+    {
+        final IdentityChangeResponse response = new IdentityChangeResponse( );
 
-        // if request is accepted and treatment successful, add the formatting statuses
-        if ( ResponseStatusFactory.success( ).equals( response.getStatus( ) ) || ResponseStatusFactory.incompleteSuccess( ).equals( response.getStatus( ) ) )
-        {
-            response.getStatus( ).getAttributeStatuses( ).addAll( formatStatuses );
-        }
+        final Pair<Identity, List<AttributeStatus>> result = IdentityService.instance( ).create( _identityChangeRequest, _author, serviceContract,
+                formatStatuses );
+        final Identity createdIdentity = result.getKey( );
+        final List<AttributeStatus> attrStatusList = result.getValue( );
+        attrStatusList.addAll( formatStatuses );
+
+        response.setCustomerId( createdIdentity.getCustomerId( ) );
+        response.setCreationDate( createdIdentity.getCreationDate( ) );
+
+        final boolean incompleteCreation = attrStatusList.stream( ).anyMatch( s -> s.getStatus( ).equals( AttributeChangeStatus.NOT_CREATED ) );
+        final ResponseStatus status = incompleteCreation ? ResponseStatusFactory.incompleteSuccess( ) : ResponseStatusFactory.success( );
+        response.setStatus( status.setAttributeStatuses( attrStatusList ).setMessageKey( Constants.PROPERTY_REST_INFO_SUCCESSFUL_OPERATION ) );
 
         return response;
     }

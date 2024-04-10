@@ -107,7 +107,7 @@ public final class ClientApplicationHome
      */
     public static void removeContracts( ClientApplication clientApplication )
     {
-        List<ServiceContract> serviceContracts = selectServiceContracts( clientApplication );
+        List<ServiceContract> serviceContracts = selectServiceContracts( clientApplication.getId( ) );
         for ( ServiceContract serviceContract : serviceContracts )
         {
             ServiceContractHome.remove( serviceContract.getId( ) );
@@ -116,13 +116,13 @@ public final class ClientApplicationHome
 
     /**
      * find service contracts of a client app
-     * 
-     * @param clientApplication
+     *
+     * @param clientApplicationId
      * @return the service contract list
      */
-    public static List<ServiceContract> selectServiceContracts( ClientApplication clientApplication )
+    public static List<ServiceContract> selectServiceContracts( final int clientApplicationId )
     {
-        return _daoServiceContract.loadFromClientApplication( clientApplication.getId( ), _plugin );
+        return _daoServiceContract.loadFromClientApplication( clientApplicationId, _plugin );
     }
 
     /**

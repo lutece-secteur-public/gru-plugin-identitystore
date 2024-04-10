@@ -35,7 +35,8 @@ package fr.paris.lutece.plugins.identitystore.cache;
 
 import fr.paris.lutece.plugins.identitystore.business.attribute.AttributeKey;
 import fr.paris.lutece.plugins.identitystore.business.attribute.AttributeKeyHome;
-import fr.paris.lutece.plugins.identitystore.service.identity.IdentityAttributeNotFoundException;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
+import fr.paris.lutece.plugins.identitystore.web.exception.ResourceNotFoundException;
 import fr.paris.lutece.portal.service.cache.AbstractCacheableService;
 import fr.paris.lutece.portal.service.util.AppLogService;
 
@@ -78,7 +79,7 @@ public class IdentityAttributeValidationCache extends AbstractCacheableService
         AppLogService.debug( "Validation Pattern removed from cache: " + keyName );
     }
 
-    public Pattern get( final String keyName ) throws IdentityAttributeNotFoundException
+    public Pattern get( final String keyName ) throws ResourceNotFoundException
     {
         Pattern validationPattern = (Pattern) this.getFromCache( keyName );
         if ( validationPattern == null )
@@ -89,12 +90,12 @@ public class IdentityAttributeValidationCache extends AbstractCacheableService
         return validationPattern;
     }
 
-    public Pattern getFromDatabase( final String keyName ) throws IdentityAttributeNotFoundException
+    public Pattern getFromDatabase( final String keyName ) throws ResourceNotFoundException
     {
         final AttributeKey attributeKey = AttributeKeyHome.findByKey( keyName, false );
         if ( attributeKey == null )
         {
-            throw new IdentityAttributeNotFoundException( "No attribute key could be found with key " + keyName );
+            throw new ResourceNotFoundException( "No attribute key could be found with key " + keyName, Constants.PROPERTY_REST_ERROR_UNKNOWN_ATTRIBUTE_KEY );
         }
         return Pattern.compile( attributeKey.getValidationRegex( ) );
     }

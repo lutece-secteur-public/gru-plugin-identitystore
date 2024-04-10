@@ -35,10 +35,10 @@ package fr.paris.lutece.plugins.identitystore.service.search;
 
 import fr.paris.lutece.plugins.identitystore.business.attribute.AttributeKey;
 import fr.paris.lutece.plugins.identitystore.service.attribute.IdentityAttributeService;
-import fr.paris.lutece.plugins.identitystore.service.identity.IdentityAttributeNotFoundException;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.search.QualifiedIdentitySearchResult;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.search.SearchAttribute;
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
+import fr.paris.lutece.plugins.identitystore.web.exception.ResourceNotFoundException;
 import org.apache.commons.collections4.CollectionUtils;
 
 import java.util.ArrayList;
@@ -121,7 +121,7 @@ public interface ISearchIdentityService
                 {
                     refKey = IdentityAttributeService.instance( ).getAttributeKey( dto.getKey( ) );
                 }
-                catch( IdentityAttributeNotFoundException e )
+                catch( final ResourceNotFoundException e )
                 {
                     // do nothing, we want to identify if the key exists
                 }
