@@ -46,6 +46,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -123,21 +124,32 @@ public class InnerSearchRequest
         this.sourceFilters = sourceFilters;
     }
 
-    public void addMatch( final SearchAttribute attribute, final boolean must )
+    /**
+     * Create a match container
+     * @param treatmentType the attribute treatment type
+     * @param attributeKey the attribute key to be searched
+     * @param value the value to be searched
+     * @return a {@link MatchContainer}
+     */
+    public MatchContainer createMatch( final AttributeTreatmentType treatmentType, final String value, final String attributeKey )
     {
         final Match match = new Match( );
-        final String attributeKey = attribute.getOutputKeys( ).get( 0 );
         match.setName( "attributes." + attributeKey + ".value" );
-        match.setQuery( attribute.getValue( ) );
-        if ( AttributeTreatmentType.APPROXIMATED.equals( attribute.getTreatmentType( ) ) )
+        match.setQuery( value );
+        if ( AttributeTreatmentType.APPROXIMATED.equals( treatmentType ) )
         {
             match.setFuzziness( "1" );
         }
-        this.addMetadata( attribute.getTreatmentType( ).name( ), Collections.singletonList( attributeKey ) );
-        this.addContainer( new MatchContainer( match ), must );
+        this.addMetadata( treatmentType.name( ), Collections.singletonList( attributeKey ) );
+        return new MatchContainer( match );
     }
 
-    public void addMultiMatch( final SearchAttribute attribute, final boolean must )
+    /**
+     * Create a multi match query
+     * @param attribute the searched attribute
+     * @return a {@link MultiMatchContainer}
+     */
+    public MultiMatchContainer createMultiMatch( final SearchAttribute attribute )
     {
         final MultiMatch match = new MultiMatch( );
         match.setFields( attribute.getOutputKeys( ).stream( ).map( outputKey -> "attributes." + outputKey + ".value" ).collect( Collectors.toList( ) ) );
@@ -147,61 +159,136 @@ public class InnerSearchRequest
             match.setFuzziness( "1" );
         }
         this.addMetadata( attribute.getTreatmentType( ).name( ), attribute.getOutputKeys( ) );
-        this.addContainer( new MultiMatchContainer( match ), must );
+        return new MultiMatchContainer( match );
     }
 
-    public void addMatchPhrase( final SearchAttribute attribute, final boolean must )
+    /**
+     * Create a match phrase query
+     * @param treatmentType the attribute treatment type
+     * @param attributeKey the attribute key
+     * @param value the value to be searched
+     * @param raw if true the search is performed on the raw value instead of the tokenized value
+     */
+    public AbstractContainer createMatchPhrase( final AttributeTreatmentType treatmentType, final String attributeKey, final String value, final boolean raw )
     {
         final MatchPhrase match = new MatchPhrase( );
-        final String attributeKey = attribute.getOutputKeys( ).get( 0 );
-        match.setName( "attributes." + attributeKey + ".value" );
-        match.setQuery( attribute.getValue( ) );
-        this.addMetadata( attribute.getTreatmentType( ).name( ), Collections.singletonList( attributeKey ) );
-        this.addContainer( new MatchPhraseContainer( match ), must );
+        match.setName( "attributes." + attributeKey + ".value" + (raw ? ".raw" : "") );
+        match.setQuery( value );
+        this.addMetadata( treatmentType.name( ), Collections.singletonList( attributeKey ) );
+        return new MatchPhraseContainer( match );
     }
 
-    public void addSpanNear( final SearchAttribute attribute, final boolean must )
+    /**
+     * Creates a particular match for approximated search on multi token fields (as first name), following the given rules:
+     * <ul>
+     *     <li>There is at least one searched value in the targeted field (can be fuzzy)</li>
+     *     <li>There is only one fuzzy value at a time in the targeted field among the searched values</li>
+     * </ul>
+     *
+     * @param attributeTreatment the attribute treatment type
+     * @param attributeKey the attribute key
+     * @param values the list of values to be searched
+     * @return a {@link BoolContainer}
+     */
+    public BoolContainer createMultiTokenApproximatedBoolQuery( final AttributeTreatmentType attributeTreatment, final String attributeKey, final String [ ] values)
     {
-        final SpanNear spanNear = new SpanNear( );
-        final String [ ] splitSearchValue = attribute.getValue( ).split( " " );
-        spanNear.setSlop( splitSearchValue.length - 1 );
-        Arrays.stream( splitSearchValue ).forEach( word -> spanNear.getClauses( )
-                .add( new SpanMultiContainer( new SpanMulti( new SpanMultiFuzzyMatchContainer( this.createSpanMultiFuzzyMatch( attribute, word ) ) ) ) ) );
-        spanNear.setInOrder( true );
-        spanNear.setBoost( 1 );
-        this.addMetadata( attribute.getTreatmentType( ).name( ), Collections.singletonList( attribute.getKey( ) ) );
-        this.addContainer( new SpanNearContainer( spanNear ), must );
+        this.addMetadata( attributeTreatment.name( ), Collections.singletonList( attributeKey ) );
+
+        /* Create a bool container to be added in a clause, to hold the should clause that will contain all combinations of approximated rules */
+        return this.createMutliTokenApproximatedShouldContainer(values, attributeKey );
     }
 
-    private SpanMultiFuzzyMatch createSpanMultiFuzzyMatch( SearchAttribute attribute, String value )
+    /**
+     * Creates a particular match for different search on multi token fields (as first name), following the given rules:
+     * <ul>
+     *     <li>There is no match</li>
+     *     <li>There is at least one searched value not matching any token</li>
+     *     <li>There is more than one fuzzy match</li>
+     * </ul>
+     * If one of these rules is matching, this is a difference.
+     *
+     * @param attributeTreatment the attribute treatment type
+     * @return a {@link BoolContainer}
+     */
+    public BoolContainer createMultiTokenDifferentBoolQuery( final AttributeTreatmentType attributeTreatment, final String value, final String attributeKey, final String [ ] splitSearchValue )
     {
-        final SpanMultiFuzzyMatch multiMatch = new SpanMultiFuzzyMatch( );
-        multiMatch.setName( "attributes." + attribute.getKey( ) + ".value" );
-        multiMatch.setFuzziness( "1" );
-        multiMatch.setValue( value );
-        return multiMatch;
+        /* Create a bool container to be added in must clause, to hold the should clause that will contain all combinations of approximated rules */
+        final BoolContainer shouldContainer = this.createMutliTokenApproximatedShouldContainer( splitSearchValue, attributeKey );
+
+        /* Remove strict matches */
+        final BoolContainer strictMatchContainer = new BoolContainer( new Bool( ) );
+        shouldContainer.getBool( ).getShould( ).add( strictMatchContainer );
+        final Match strictMatch = new Match( );
+        strictMatchContainer.getBool( ).getMust( ).add( new MatchContainer( strictMatch ) );
+        strictMatch.setName( "attributes." + attributeKey + ".value.raw" );
+        strictMatch.setQuery( value );
+
+        this.addMetadata( attributeTreatment.name( ), Collections.singletonList( attributeKey ) );
+
+        return shouldContainer;
     }
 
-    public void addExists( final SearchAttribute attribute, final boolean must )
+    /**
+     * Creates all combination of approximated searches on multi tokenized attribute
+     * @param splitSearchValue the list of searched values
+     * @param attributeKey the searched attribute key
+     * @return a {@link BoolContainer}
+     */
+    private BoolContainer createMutliTokenApproximatedShouldContainer(final String [ ] splitSearchValue, final String attributeKey )
+    {
+        final BoolContainer shouldContainer = new BoolContainer( new Bool( ) );
+        for ( final String currentValue : splitSearchValue )
+        {
+            /* Create combinations of fuzziness on a single token, and strict on others */
+            final BoolContainer combinations = new BoolContainer( new Bool( ) );
+            shouldContainer.getBool().getShould().add(combinations);
+            final List<MatchContainer> must = Arrays.stream( splitSearchValue ).map( value -> {
+                final Match match = new Match( );
+                match.setName( "attributes." + attributeKey + ".value" );
+                match.setQuery( value );
+                if ( Objects.equals( value, currentValue ) )
+                {
+                    match.setFuzziness( "1" );
+                }
+                return new MatchContainer( match );
+            } ).collect( Collectors.toList( ) );
+            combinations.getBool( ).getMust( ).addAll( must );
+
+            /* Create raw fuzziness match on current token  */
+            if( splitSearchValue.length > 1 )
+            {
+                final BoolContainer single = new BoolContainer( new Bool( ) );
+                shouldContainer.getBool( ).getShould( ).add( single );
+                final Match rawMatch = new Match( );
+                single.getBool( ).getMust( ).add( new MatchContainer( rawMatch ) );
+                rawMatch.setName( "attributes." + attributeKey + ".value.raw" );
+                rawMatch.setFuzziness( "1" );
+                rawMatch.setQuery( currentValue );
+            }
+        }
+
+        return shouldContainer;
+    }
+
+    /**
+     * Create an exists query
+     * @param attributeTreatment the attribute treatment
+     * @param attributeKey the attribute key to be checked
+     * @return an {@link ExistsContainer}
+     */
+    public ExistsContainer createExists( final AttributeTreatmentType attributeTreatment, final String attributeKey )
     {
         final Exists exists = new Exists( );
-        exists.setField( "attributes." + attribute.getKey( ) + ".value" );
-        this.addMetadata( attribute.getTreatmentType( ).name( ), Collections.singletonList( attribute.getKey( ) ) );
-        this.addContainer( new ExistsContainer( exists ), must );
+        exists.setField( "attributes." + attributeKey + ".value" );
+        this.addMetadata( attributeTreatment.name( ), Collections.singletonList( attributeKey ) );
+        return new ExistsContainer( exists );
     }
 
-    private void addContainer( final AbstractContainer container, final boolean must )
-    {
-        if ( must )
-        {
-            query.getBool( ).getMust( ).add( container );
-        }
-        else
-        {
-            query.getBool( ).getMustNot( ).add( container );
-        }
-    }
-
+    /**
+     * Add a metadata describing the given key, such as the type of match in the request for each attribute
+     * @param key the subject
+     * @param newValues the description of the subject
+     */
     private void addMetadata( final String key, final List<String> newValues )
     {
         final String value = metadata.get( key );

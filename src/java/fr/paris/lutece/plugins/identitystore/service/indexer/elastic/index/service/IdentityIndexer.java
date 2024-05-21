@@ -37,6 +37,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.client.ElasticClient;
 import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.client.ElasticClientException;
 import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.business.IndexAction;
@@ -46,6 +48,7 @@ import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.model
 import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.model.internal.BulkAction;
 import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.model.internal.alias.AliasAction;
 import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.model.internal.alias.AliasActions;
+import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
 import fr.paris.lutece.portal.service.util.AppException;
 import fr.paris.lutece.portal.service.util.AppLogService;
 import fr.paris.lutece.portal.service.util.AppPropertiesService;
@@ -62,6 +65,7 @@ import java.util.stream.Collectors;
 public class IdentityIndexer implements IIdentityIndexer
 {
     private final String CURRENT_INDEX_ALIAS = AppPropertiesService.getProperty( "identitystore.elastic.client.identities.alias", "identities-alias" );
+    private final String PROPERTY_COUNT = "count";
 
     private final static ObjectMapper _mapper = new ObjectMapper( ).disable( DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES );
     private final ElasticClient _elasticClient;
@@ -99,7 +103,7 @@ public class IdentityIndexer implements IIdentityIndexer
     }
 
     @Override
-    public boolean bulk( final List<BulkAction> bulkActions, final String index )
+    public boolean bulk( final List<BulkAction> bulkActions, final String index ) throws IdentityStoreException
     {
         try
         {
@@ -108,8 +112,7 @@ public class IdentityIndexer implements IIdentityIndexer
         }
         catch( final ElasticClientException e )
         {
-            AppLogService.error( "Failed to bulk index ", e );
-            return false;
+            throw new IdentityStoreException( e.getMessage( ), e );
         }
     }
 
@@ -178,6 +181,23 @@ public class IdentityIndexer implements IIdentityIndexer
     {
         final String settings = "{ \"index.blocks.write\": false }";
         this._elasticClient.updateSettings( index, settings );
+    }
+
+    @Override
+    public String getIndexedIdentitiesNumber( String index ) throws ElasticClientException
+    {
+        try
+        {
+            String countIndexed =  this._elasticClient.getIndexedIdentitiesNumber(index);
+            JsonObject jsonObject = JsonParser.parseString(countIndexed).getAsJsonObject();
+
+            return jsonObject.get(PROPERTY_COUNT).getAsString();
+        }
+        catch(ElasticClientException e )
+        {
+            AppLogService.error( "Unexpected error occurred while managing ES alias.", e );
+            throw new AppException( "Unexpected error occurred while managing ES alias.", e );
+        }
     }
 
     @Override

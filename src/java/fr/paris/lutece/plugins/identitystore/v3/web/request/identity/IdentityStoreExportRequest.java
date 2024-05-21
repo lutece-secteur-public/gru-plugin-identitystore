@@ -33,13 +33,19 @@
  */
 package fr.paris.lutece.plugins.identitystore.v3.web.request.identity;
 
+import fr.paris.lutece.plugins.identitystore.service.contract.ServiceContractService;
 import fr.paris.lutece.plugins.identitystore.service.identity.IdentityExportService;
 import fr.paris.lutece.plugins.identitystore.service.identity.IdentityService;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.AbstractIdentityStoreRequest;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.IdentityRequestValidator;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.ResponseStatus;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.ResponseStatusType;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.exporting.IdentityExportRequest;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.exporting.IdentityExportResponse;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.search.IdentitySearchResponse;
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
+
+import java.util.Objects;
 
 public class IdentityStoreExportRequest extends AbstractIdentityStoreRequest
 {
@@ -62,6 +68,10 @@ public class IdentityStoreExportRequest extends AbstractIdentityStoreRequest
     @Override
     protected IdentityExportResponse doSpecificRequest( ) throws IdentityStoreException
     {
+        final IdentityExportResponse response = ServiceContractService.instance().validateIdentityExport(_request, _strClientCode);
+        if(response.getStatus() != null && Objects.equals(ResponseStatusType.FAILURE, response.getStatus().getType())) {
+            return response;
+        }
         return IdentityExportService.instance( ).export( _request, _strClientCode );
     }
 }

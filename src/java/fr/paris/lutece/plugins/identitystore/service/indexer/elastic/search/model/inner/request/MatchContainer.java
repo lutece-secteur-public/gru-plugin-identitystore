@@ -35,12 +35,12 @@ package fr.paris.lutece.plugins.identitystore.service.indexer.elastic.search.mod
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.search.model.CustomSerializer;
+import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.search.model.AbstractMatchSerializer;
 
 public class MatchContainer extends AbstractContainer
 {
     @JsonProperty( "match" )
-    @JsonSerialize( using = CustomSerializer.class )
+    @JsonSerialize( using = AbstractMatchSerializer.class )
     protected Match match;
 
     public MatchContainer( Match match )

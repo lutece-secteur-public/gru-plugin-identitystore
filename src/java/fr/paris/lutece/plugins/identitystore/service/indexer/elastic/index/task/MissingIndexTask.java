@@ -33,6 +33,7 @@
  */
 package fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.task;
 
+import fr.paris.lutece.plugins.identitystore.service.daemon.LoggingDaemon;
 import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.business.IndexAction;
 import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.business.IndexActionHome;
 import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.model.IdentityObject;
@@ -40,11 +41,10 @@ import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.model
 import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.model.internal.BulkActionType;
 import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.service.IIdentityIndexer;
 import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.service.IdentityObjectHome;
-import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.service.RetryService;
+import fr.paris.lutece.plugins.identitystore.service.network.DelayedNetworkService;
 import fr.paris.lutece.plugins.identitystore.utils.Batch;
-import fr.paris.lutece.portal.service.daemon.Daemon;
+import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
 import fr.paris.lutece.portal.service.spring.SpringContextService;
-import fr.paris.lutece.portal.service.util.AppLogService;
 import fr.paris.lutece.portal.service.util.AppPropertiesService;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.time.DurationFormatUtils;
@@ -52,15 +52,16 @@ import org.apache.commons.lang3.time.StopWatch;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
-public class MissingIndexTask extends Daemon
+public class MissingIndexTask extends LoggingDaemon implements UsingElasticConnection
 {
     private final String CURRENT_INDEX_ALIAS = AppPropertiesService.getProperty( "identitystore.elastic.client.identities.alias", "identities-alias" );
     private final IIdentityIndexer _identityIndexer = SpringContextService.getBean( "identitystore.elasticsearch.identityIndexer" );
-    private final RetryService _retryService = SpringContextService.getBean( "identitystore.elasticsearch.retryService" );
+    private final DelayedNetworkService<Boolean> booleanDelayedNetworkService = new DelayedNetworkService<>();
 
     @Override
-    public void run( )
+    public void doTask( )
     {
 
         final StopWatch stopWatch = new StopWatch( );
@@ -69,7 +70,7 @@ public class MissingIndexTask extends Daemon
         final List<BulkAction> bulkActions = new ArrayList<>( );
         if ( _identityIndexer.isIndexWriteable( CURRENT_INDEX_ALIAS ) )
         {
-            AppLogService.debug( "ES available :: indexing" );
+            this.debug( "ES available :: indexing" );
             final List<IndexAction> indexActions = IndexActionHome.selectAll( );
             for ( final IndexAction indexAction : indexActions )
             {
@@ -78,45 +79,55 @@ public class MissingIndexTask extends Daemon
                 {
                     case CREATE:
                     case UPDATE:
-                        bulkActions.add( new BulkAction( identityObject.getCustomerId( ), identityObject, BulkActionType.INDEX ) );
+                        bulkActions.add( new BulkAction( indexAction.getId(), identityObject.getCustomerId( ), identityObject, BulkActionType.INDEX ) );
                         break;
                     case DELETE:
-                        bulkActions.add( new BulkAction( identityObject.getCustomerId( ), identityObject, BulkActionType.DELETE ) );
+                        bulkActions.add( new BulkAction( indexAction.getId(), identityObject.getCustomerId( ), identityObject, BulkActionType.DELETE ) );
                         break;
                     default:
                         break;
                 }
             }
-            AppLogService.debug( "NB identies to be indexed : " + bulkActions.size( ) );
-            AppLogService.debug( "Size of indexing batches : " + batchSize );
+            this.debug( "NB identies to be indexed : " + bulkActions.size( ) );
+            this.debug( "Size of indexing batches : " + batchSize );
             final Batch<BulkAction> batch = Batch.ofSize( bulkActions, batchSize );
-            AppLogService.debug( "NB of indexing batches : " + batch.size( ) );
+            this.debug( "NB of indexing batches : " + batch.size( ) );
             int batchCounter = 0;
             for ( final List<BulkAction> batchActions : batch )
             {
-                AppLogService.debug( "Processing batch : " + ++batchCounter );
-                // TODO handle bulk error
-                _retryService.callBulkWithRetry( batchActions, CURRENT_INDEX_ALIAS );
+                this.debug( "Processing batch : " + ++batchCounter );
+                boolean bulked = false;
+                try {
+                    bulked = this.booleanDelayedNetworkService.call(() -> this.createIdentityIndexer().bulk(batchActions, CURRENT_INDEX_ALIAS), "Process missing identities index by bulk", this);
+                } catch (final IdentityStoreException e) {
+                    this.error("An error occurred while bulking: " + e.getMessage( ) );
+                }
+
+                if( bulked )
+                {
+                    IndexActionHome.delete(batchActions.stream().map(BulkAction::getInternalId).collect(Collectors.toList()));
+                }
             }
 
             // Clean processed actions
-            AppLogService.debug( "Indexing over, clean processed actions in database " );
-            indexActions.forEach( IndexActionHome::delete );
+            this.debug( "Indexing over, clean processed actions in database " );
         }
         else
         {
-            AppLogService.error( "[ERROR] ES not available" );
+            this.error( "[ERROR] ES not available" );
         }
         stopWatch.stop( );
         final String duration = DurationFormatUtils.formatDurationWords( stopWatch.getTime( ), true, true );
 
         if ( CollectionUtils.isNotEmpty( bulkActions ) )
         {
-            AppLogService.debug( "Indexed  " + bulkActions.size( ) + " identities in " + duration );
+            this.debug( "Indexed  " + bulkActions.size( ) + " identities in " + duration );
         }
         else
         {
-            AppLogService.debug( "No missing index to process" );
+            this.debug( "No missing index to process" );
         }
     }
+
+
 }

@@ -36,6 +36,7 @@ package fr.paris.lutece.plugins.identitystore.business.identity;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.crud.UpdatedIdentityDto;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.history.IdentityChange;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.history.IdentityChangeType;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.search.SearchAttribute;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.search.SearchUpdatedAttribute;
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
 import fr.paris.lutece.portal.service.plugin.Plugin;
@@ -166,15 +167,15 @@ public interface IIdentityDAO
      * Find by a combination of Attribute values. Search for identities that match the conditions defined for each of the selected attributes, that is on each
      * of these attributes the exact value is in a list of expected values (no wildcards).
      *
-     * @param mapAttributes
-     *            A map that associates the id of each attributes selected with the list of values
+     * @param searchAttributes
+     *            The list of searched attributes selected with the list of values
      * @param maxNbIdentityReturned
      *            The maximum number of Identity returned in the list
      * @param plugin
      *            The plugin
      * @return The identity
      */
-    List<Identity> selectByAttributesValueForApiSearch( Map<String, List<String>> mapAttributes, int maxNbIdentityReturned, Plugin plugin );
+    List<Identity> selectByAttributesValueForApiSearch(final List<SearchAttribute> searchAttributes, int maxNbIdentityReturned, Plugin plugin );
 
     /**
      * Find all identities that have all attributes specified in the list in parameters.<br/>
@@ -186,6 +187,8 @@ public interface IIdentityDAO
      *            if the returned identities have to be not merged
      * @param notSuspicious
      *            if the returned identities have to not be suspicious
+     * @param rulePriority
+     *            when suspicions are not filtered ( notSuspicious = false ), return only lower priority suspicions
      * @param nbFilledAttributes
      *            minimum number of filled attributes over idAttributeList
      * @param plugin
@@ -193,7 +196,7 @@ public interface IIdentityDAO
      * @return A list of matching identities
      */
     List<String> selectByAttributeExisting( final List<Integer> idAttributeList, final int nbFilledAttributes, final boolean notMerged,
-            final boolean notSuspicious, final Plugin plugin );
+            final boolean notSuspicious, final int rulePriority, final Plugin plugin );
 
     /**
      * log changes
@@ -272,7 +275,7 @@ public interface IIdentityDAO
      * @return
      */
     List<IdentityChange> selectIdentityHistoryBySearchParameters( String strCustomerId, String clientCode, String authorName, IdentityChangeType changeType,
-            String changeStatus, Map<String, String> metadata, Integer nbDaysFrom, Pair<Date, Date> modificationDateInterval, Plugin plugin )
+            String changeStatus, final String authorType, final Date modificationDate, Map<String, String> metadata, Integer nbDaysFrom, Pair<Date, Date> modificationDateInterval, Plugin plugin, int nMaxNbIdentityReturned )
             throws IdentityStoreException;
 
     /**
@@ -317,4 +320,48 @@ public interface IIdentityDAO
      * @return the last update date or null if the identity doesn't exist for the provided CUID
      */
     Timestamp getIdentityLastUpdateDate( final String customerId, final Plugin plugin );
+
+    /**
+     * Count All Identities.
+     */
+    Integer getCountIdentities( final Plugin plugin );
+
+    /**
+     * Count All identities that has been deleted or not.
+     *
+     * @param deleted
+     *            define if the dao count deleted or not deleted identities
+     */
+    Integer getCountDeletedIdentities(final boolean deleted, final Plugin plugin );
+
+    /**
+     * Count All identities that has been merged or not.
+     *
+     * @param merged
+     *            define if the dao count merged or not merged identities
+     */
+    Integer getCountMergedIdentities(final boolean merged, final Plugin plugin );
+
+    /**
+     * Count All identities that has been connected or not.
+     *
+     * @param monParisActive
+     *            define if the dao count connected or not connected identities
+     */
+    Integer getCountActiveMonParisdentities(final boolean monParisActive, final Plugin plugin );
+
+    /**
+     * Count how many attributes each entity has.
+     */
+    Map<Integer, Integer> getCountAttributesByIdentities(final Plugin plugin );
+
+    /**
+     * Count how many attributes has no attribute and isn't merged.
+     */
+    Integer getCountUnmergedIdentitiesWithoutAttributes(final Plugin plugin );
+
+    /**
+     * Count how many actions and their type were done during an delimited time.
+     */
+    List<IndicatorsActionsType> getActionsTypesDuringInterval(int interval, final Plugin plugin );
 }

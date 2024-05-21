@@ -500,9 +500,7 @@ class Tags {
     if (!firstOption || !this._config.autoselectFirst) {
       return "";
     }
-    if (firstOption.hasAttribute("selected")) {
-      firstOption.removeAttribute("selected");
-    }
+
     return !firstOption.value ? firstOption.textContent : "";
   }
 

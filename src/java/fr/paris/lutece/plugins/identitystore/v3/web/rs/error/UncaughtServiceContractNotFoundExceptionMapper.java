@@ -53,13 +53,13 @@ public class UncaughtServiceContractNotFoundExceptionMapper extends GenericUncau
     public static final String ERROR_NO_SERVICE_CONTRACT_FOUND = "No service contract found.";
 
     @Override
-    protected Status getStatus( )
+    protected Status getStatus( final ServiceContractNotFoundException e )
     {
         return Status.NOT_FOUND;
     }
 
     @Override
-    protected ErrorResponse buildEntity( final ServiceContractNotFoundException e )
+    protected ErrorResponse getBody( final ServiceContractNotFoundException e )
     {
         final ErrorResponse response = new ErrorResponse( );
         response.setStatus( ResponseStatusFactory.notFound( ).setMessage( ERROR_NO_SERVICE_CONTRACT_FOUND + " :: " + e.getMessage( ) )

@@ -33,7 +33,6 @@
  */
 package fr.paris.lutece.plugins.identitystore.service.search;
 
-import com.google.common.collect.Lists;
 import fr.paris.lutece.plugins.identitystore.business.identity.Identity;
 import fr.paris.lutece.plugins.identitystore.business.identity.IdentityAttribute;
 import fr.paris.lutece.plugins.identitystore.business.identity.IdentityAttributeHome;
@@ -46,12 +45,7 @@ import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreExceptio
 import fr.paris.lutece.portal.service.util.AppLogService;
 import org.apache.commons.collections.CollectionUtils;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.*;
 
 public class DatabaseSearchIdentityService implements ISearchIdentityService
 {
@@ -66,14 +60,13 @@ public class DatabaseSearchIdentityService implements ISearchIdentityService
     /**
      * {@inheritDoc }
      */
+    @Override
     public QualifiedIdentitySearchResult getQualifiedIdentities( final List<SearchAttribute> attributes, final int max, final boolean connected,
             final List<String> attributesFilter )
     {
-        final Map<String, List<String>> mapAttributeValues = attributes.stream( )
-                .collect( Collectors.toMap( SearchAttribute::getKey, searchAttribute -> Lists.newArrayList( searchAttribute.getValue( ) ) ) );
         try
         {
-            final List<Identity> listIdentity = IdentityHome.findByAttributesValueForApiSearch( mapAttributeValues, max );
+            final List<Identity> listIdentity = IdentityHome.findByAttributesValueForApiSearch( this.computeOutputKeys( attributes ), max );
             if ( listIdentity != null && !listIdentity.isEmpty( ) )
             {
                 return new QualifiedIdentitySearchResult( this.getEntities( listIdentity ) );
@@ -105,6 +98,24 @@ public class DatabaseSearchIdentityService implements ISearchIdentityService
     }
 
     @Override
+    public QualifiedIdentitySearchResult getQualifiedIdentitiesByConnectionId( final String connectionId, final List<String> attributesFilter)
+    {
+        try
+        {
+            final Identity identity = IdentityHome.findByConnectionId( connectionId );
+            if ( identity != null )
+            {
+                return new QualifiedIdentitySearchResult( this.getEntities( Collections.singletonList( identity ) ) );
+            }
+        }
+        catch( final IdentityStoreException e )
+        {
+            AppLogService.error( "An error occurred during database search: ", e );
+        }
+        return new QualifiedIdentitySearchResult( );
+    }
+
+    @Override
     public QualifiedIdentitySearchResult getQualifiedIdentities( List<String> customerIds, final List<String> attributesFilter )
     {
         // not to be used
@@ -122,9 +133,7 @@ public class DatabaseSearchIdentityService implements ISearchIdentityService
         }
         try
         {
-            final Map<String, List<String>> mapAttributeValues = attributes.stream( )
-                    .collect( Collectors.toMap( SearchAttribute::getKey, searchAttribute -> Lists.newArrayList( searchAttribute.getValue( ) ) ) );
-            final List<Identity> listIdentity = IdentityHome.findByAttributesValueForApiSearch( mapAttributeValues, max );
+            final List<Identity> listIdentity = IdentityHome.findByAttributesValueForApiSearch( this.computeOutputKeys( attributes ), max );
             if ( listIdentity != null && !listIdentity.isEmpty( ) )
             {
                 return new QualifiedIdentitySearchResult( this.getEntities( listIdentity ) );

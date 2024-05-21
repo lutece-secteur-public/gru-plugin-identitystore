@@ -101,6 +101,8 @@ public class DuplicateRuleService
             ruleDto.setPriority( rule.getPriority( ) );
             ruleDto.setDaemonLastExecDate( rule.getDaemonLastExecDate( ) );
             ruleDto.setDuplicateCount( SuspiciousIdentityHome.countSuspiciousIdentity( rule.getId( ) ) );
+            ruleDto.setActive( rule.isActive( ) );
+            ruleDto.setDaemon( rule.isDaemon( ) );
             return ruleDto;
         } ).sorted( Comparator.comparing( DuplicateRuleSummaryDto::getPriority ) ).collect( Collectors.toList( ) );
     }

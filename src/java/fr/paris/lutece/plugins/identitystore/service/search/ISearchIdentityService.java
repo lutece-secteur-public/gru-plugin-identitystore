@@ -91,12 +91,23 @@ public interface ISearchIdentityService
      * returns a list of qualified identities from its customer ID
      *
      * @param customerId
-     *            the customer ID
+     *            the customer ID (CUID)
      * @param attributesFilter
      *            the list of attributes that must be included in the response
      * @return a list of identities satisfying the criteria of the {@link SearchAttribute} list
      */
     QualifiedIdentitySearchResult getQualifiedIdentities( final String customerId, final List<String> attributesFilter ) throws IdentityStoreException;
+
+    /**
+     * returns a list of qualified identities from its customer ID
+     *
+     * @param connectionId
+     *            the connection ID (GUID)
+     * @param attributesFilter
+     *            the list of attributes that must be included in the response
+     * @return a list of identities satisfying the criteria of the {@link SearchAttribute} list
+     */
+    QualifiedIdentitySearchResult getQualifiedIdentitiesByConnectionId( final String connectionId, final List<String> attributesFilter ) throws IdentityStoreException;
 
     /**
      * returns a list of qualified identities from its customer ID

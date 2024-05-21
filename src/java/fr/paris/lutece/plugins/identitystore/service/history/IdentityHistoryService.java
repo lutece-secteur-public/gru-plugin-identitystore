@@ -110,8 +110,8 @@ public class IdentityHistoryService
                 .map( ar -> ar.getAttributeKey( ).getKeyName( ) ).collect( Collectors.toSet( ) );
 
         final List<IdentityChange> identityChangeList = IdentityHome.findHistoryBySearchParameters( request.getCustomerId( ), request.getClientCode( ),
-                request.getAuthorName( ), request.getIdentityChangeType( ), request.getChangeStatus( ), request.getMetadata( ), request.getNbDaysFrom( ),
-                Pair.of( request.getModificationDateIntervalStart( ), request.getModificationDateIntervalEnd( ) ) );
+                request.getAuthorName( ), request.getIdentityChangeType( ), request.getChangeStatus( ), null, null, request.getMetadata( ), request.getNbDaysFrom( ),
+                Pair.of( request.getModificationDateIntervalStart( ), request.getModificationDateIntervalEnd( ) ), 0 );
         if ( !serviceContract.getAuthorizedAgentHistoryRead( ) )
         {
             identityChangeList.removeIf( identityChange -> Objects.equals( identityChange.getChangeType( ), IdentityChangeType.READ ) );
@@ -119,6 +119,7 @@ public class IdentityHistoryService
         final Map<String, List<IdentityChange>> identityChangeMap = identityChangeList.stream( )
                 .collect( Collectors.groupingBy( IdentityChange::getCustomerId ) );
 
+        // TODO refactorer dans le cas d'une recherche par metadata la liste est beaucoup trop grande pour faire des appels successifs à la BDD.
         for ( final String customerId : identityChangeMap.keySet( ) )
         {
             final List<AttributeChange> attributeChangeList = IdentityAttributeHome.getAttributeChangeHistory( customerId );

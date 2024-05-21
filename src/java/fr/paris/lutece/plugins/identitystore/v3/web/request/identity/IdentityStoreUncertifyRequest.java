@@ -33,25 +33,35 @@
  */
 package fr.paris.lutece.plugins.identitystore.v3.web.request.identity;
 
+import fr.paris.lutece.plugins.identitystore.business.attribute.AttributeKey;
+import fr.paris.lutece.plugins.identitystore.service.attribute.IdentityAttributeService;
 import fr.paris.lutece.plugins.identitystore.service.contract.ServiceContractService;
 import fr.paris.lutece.plugins.identitystore.service.identity.IdentityService;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.AbstractIdentityStoreRequest;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.IdentityRequestValidator;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.AttributeChangeStatus;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.AttributeStatus;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.crud.IdentityChangeResponse;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.crud.UncertifyIdentityRequest;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.ResponseStatusFactory;
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class IdentityStoreUncertifyRequest extends AbstractIdentityStoreRequest
 {
 
     private final String _strCustomerId;
+    private final UncertifyIdentityRequest request;
 
-    public IdentityStoreUncertifyRequest( final String strClientCode, final String strCustomerId, String strAuthorName, String strAuthorType )
+    public IdentityStoreUncertifyRequest(final UncertifyIdentityRequest request, final String strClientCode, final String strCustomerId, String strAuthorName, String strAuthorType)
             throws IdentityStoreException
     {
         super( strClientCode, strAuthorName, strAuthorType );
         this._strCustomerId = strCustomerId;
+        this.request = request;
     }
 
     @Override
@@ -70,6 +80,29 @@ public class IdentityStoreUncertifyRequest extends AbstractIdentityStoreRequest
                     .setMessageKey( Constants.PROPERTY_REST_ERROR_UNAUTHORIZED_OPERATION ) );
             return response;
         }
-        return IdentityService.instance( ).uncertifyIdentity( _strCustomerId, _strClientCode, _author );
+        final List<AttributeKey> attributeKeys = new ArrayList<>( );
+        if(request != null && !request.getAttributeKeyList().isEmpty()) {
+            final List<AttributeStatus> statusList = new ArrayList<>();
+            for( final String key : request.getAttributeKeyList( ) ) {
+                final AttributeKey attributeKey = IdentityAttributeService.instance().getAttributeKey(key);
+                if (attributeKey == null) {
+                    final AttributeStatus attributeStatus = new AttributeStatus( );
+                    attributeStatus.setKey( key );
+                    attributeStatus.setStatus( AttributeChangeStatus.NOT_FOUND );
+                    statusList.add( attributeStatus );
+                }else{
+                    attributeKeys.add( attributeKey );
+                }
+            }
+            if (!statusList.isEmpty()) {
+                final IdentityChangeResponse response = new IdentityChangeResponse();
+                response.setStatus(ResponseStatusFactory.notFound().setMessage("Unknown attribute key.")
+                                                        .setMessageKey(Constants.PROPERTY_REST_ERROR_UNKNOWN_ATTRIBUTE_KEY)
+                                                        .setAttributeStatuses(statusList));
+                return response;
+            }
+        }
+
+        return IdentityService.instance( ).uncertifyIdentity( _strCustomerId, attributeKeys, _strClientCode, _author );
     }
 }

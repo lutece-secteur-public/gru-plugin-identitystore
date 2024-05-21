@@ -53,13 +53,13 @@ public class UncaughtIdentityNotFoundExceptionMapper extends GenericUncaughtExce
     public static final String ERROR_NO_IDENTITY_FOUND = "No identity found.";
 
     @Override
-    protected Status getStatus( )
+    protected Status getStatus( final IdentityNotFoundException e )
     {
         return Status.NOT_FOUND;
     }
 
     @Override
-    protected ErrorResponse buildEntity( final IdentityNotFoundException e )
+    protected ErrorResponse getBody( final IdentityNotFoundException e )
     {
         final ErrorResponse response = new ErrorResponse( );
         response.setStatus( ResponseStatusFactory.notFound( ).setMessage( ERROR_NO_IDENTITY_FOUND + " :: " + e.getMessage( ) )

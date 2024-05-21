@@ -40,12 +40,14 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 public class IndexActionDao implements IIndexActionDao
 {
 
     private static final String SQL_QUERY_INSERT = "INSERT INTO identitystore_index_action ( customer_id, action_type, date_index ) VALUES ( ?, ?, ? ) ";
-    private static final String SQL_QUERY_DELETE = "DELETE FROM identitystore_index_action WHERE id_index_action = ? ";
+    private static final String SQL_QUERY_DELETE = "DELETE FROM identitystore_index_action WHERE id_index_action IN ";
     private static final String SQL_QUERY_SELECTALL = "SELECT id_index_action, customer_id, action_type, date_index FROM identitystore_index_action ORDER BY date_index asc";
     private static final String SQL_QUERY_SELECTALL_WITH_LIMIT = SQL_QUERY_SELECTALL + " LIMIT ?";
 
@@ -63,11 +65,11 @@ public class IndexActionDao implements IIndexActionDao
     }
 
     @Override
-    public void delete( IndexAction indexAction, Plugin plugin )
+    public void delete( final List<Integer> ids, Plugin plugin )
     {
-        try ( final DAOUtil daoUtil = new DAOUtil( SQL_QUERY_DELETE, plugin ) )
+        final String sqlQueryDelete = SQL_QUERY_DELETE + " (" + ids.stream().filter(Objects::nonNull).map(Object::toString).collect(Collectors.joining(",")) + ")" ;
+        try (final DAOUtil daoUtil = new DAOUtil(sqlQueryDelete, plugin ) )
         {
-            daoUtil.setInt( 1, indexAction.getId( ) );
             daoUtil.executeUpdate( );
         }
     }

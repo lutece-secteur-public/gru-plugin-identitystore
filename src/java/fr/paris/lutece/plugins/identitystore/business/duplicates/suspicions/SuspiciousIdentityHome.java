@@ -290,6 +290,11 @@ public final class SuspiciousIdentityHome
         return _dao.selectByCustomerID( customerId, _plugin );
     }
 
+    public static List<SuspiciousIdentity> selectByCustomerIDs( List<String> customerIds )
+    {
+        return _dao.selectByCustomerIDs( customerIds, _plugin );
+    }
+
     public static void purge( )
     {
         _dao.purge( _plugin );
@@ -298,6 +303,11 @@ public final class SuspiciousIdentityHome
     public static int countSuspiciousIdentity( final int ruleId )
     {
         return _dao.countSuspiciousIdentities( ruleId, _plugin );
+    }
+
+    public static int countSuspiciousIdentity( )
+    {
+        return _dao.countSuspiciousIdentities( _plugin );
     }
 
     public static boolean manageLock( String customerId, String authorName, String authorType, boolean lock ) throws IdentityStoreException

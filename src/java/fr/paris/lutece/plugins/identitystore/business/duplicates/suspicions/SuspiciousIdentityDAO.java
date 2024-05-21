@@ -84,7 +84,9 @@ public final class SuspiciousIdentityDAO implements ISuspiciousIdentityDAO
     private static final String SQL_QUERY_SELECTALL_ID = "SELECT id_suspicious_identity FROM identitystore_quality_suspicious_identity";
     private static final String SQL_QUERY_SELECTALL_BY_IDS = "SELECT i.id_suspicious_identity, i.customer_id, i.id_duplicate_rule, r.code, l.date_lock_end, l.is_locked, l.author_type, l.author_name FROM identitystore_quality_suspicious_identity i LEFT JOIN identitystore_quality_suspicious_identity_lock l ON i.customer_id = l.customer_id  LEFT JOIN identitystore_duplicate_rule r ON r.id_rule = i.id_duplicate_rule WHERE id_suspicious_identity IN (  ";
     private static final String SQL_QUERY_SELECT_BY_CUSTOMER_ID = "SELECT i.id_suspicious_identity, i.customer_id, i.date_create, i.id_duplicate_rule, r.code, l.date_lock_end, l.is_locked, l.author_type, l.author_name FROM identitystore_quality_suspicious_identity i LEFT JOIN identitystore_quality_suspicious_identity_lock l ON i.customer_id = l.customer_id LEFT JOIN identitystore_duplicate_rule r ON r.id_rule = i.id_duplicate_rule WHERE i.customer_id = ? ";
-    private static final String SQL_QUERY_SELECT_COUNT_BY_RULE_ID = "SELECT count(id_suspicious_identity) FROM identitystore_quality_suspicious_identity WHERE id_duplicate_rule = ? ";
+    private static final String SQL_QUERY_SELECT_BY_CUSTOMER_IDs = "SELECT i.id_suspicious_identity, i.customer_id, i.date_create, i.id_duplicate_rule, r.code, l.date_lock_end, l.is_locked, l.author_type, l.author_name FROM identitystore_quality_suspicious_identity i LEFT JOIN identitystore_quality_suspicious_identity_lock l ON i.customer_id = l.customer_id LEFT JOIN identitystore_duplicate_rule r ON r.id_rule = i.id_duplicate_rule WHERE i.customer_id IN ";
+    private static final String SQL_QUERY_SELECT_COUNT = "SELECT count(id_suspicious_identity) FROM identitystore_quality_suspicious_identity ";
+    private static final String SQL_QUERY_SELECT_COUNT_BY_RULE_ID = SQL_QUERY_SELECT_COUNT + " WHERE id_duplicate_rule = ? ";
     private static final String SQL_QUERY_REMOVE_EXCLUDED_IDENTITIES = "DELETE FROM identitystore_quality_suspicious_identity_excluded WHERE first_customer_id = ? AND second_customer_id = ?";
     private static final String SQL_QUERY_REMOVE_EXCLUDED_IDENTITIES_ONE_CUID = "DELETE FROM identitystore_quality_suspicious_identity_excluded WHERE first_customer_id = ? OR second_customer_id = ?";
 
@@ -202,6 +204,50 @@ public final class SuspiciousIdentityDAO implements ISuspiciousIdentityDAO
             }
 
             return suspiciousIdentity;
+        }
+    }
+
+    /**
+     * {@inheritDoc }
+     */
+    @Override
+    public List<SuspiciousIdentity> selectByCustomerIDs( List<String> customerIds, Plugin plugin )
+    {
+        final String sqlQuerySelectByCustomerIDs = SQL_QUERY_SELECT_BY_CUSTOMER_IDs + " ( '" + String.join("', '", customerIds) + "' )";
+        final List<SuspiciousIdentity> suspicions = new ArrayList<>( );
+        try (final DAOUtil daoUtil = new DAOUtil(sqlQuerySelectByCustomerIDs, plugin ) )
+        {
+            daoUtil.executeQuery( );
+
+            while ( daoUtil.next() )
+            {
+                final SuspiciousIdentity suspiciousIdentity = new SuspiciousIdentity( );
+                suspicions.add(suspiciousIdentity);
+
+                int nIndex = 1;
+
+                suspiciousIdentity.setId( daoUtil.getInt( nIndex++ ) );
+                suspiciousIdentity.setCustomerId( daoUtil.getString( nIndex++ ) );
+                suspiciousIdentity.setCreationDate( daoUtil.getTimestamp( nIndex++ ) );
+                suspiciousIdentity.setIdDuplicateRule( daoUtil.getInt( nIndex++ ) );
+                suspiciousIdentity.setDuplicateRuleCode( daoUtil.getString( nIndex++ ) );
+                final SuspiciousIdentityLock lock = new SuspiciousIdentityLock( );
+                suspiciousIdentity.setLock( lock );
+                lock.setLockEndDate( daoUtil.getTimestamp( nIndex++ ) );
+                if ( lock.getLockEndDate( ) != null )
+                {
+                    lock.setLocked( daoUtil.getBoolean( nIndex++ ) );
+                    lock.setAuthorType( daoUtil.getString( nIndex++ ) );
+                    lock.setAuthorName( daoUtil.getString( nIndex ) );
+                }
+                else
+                {
+                    lock.setLocked( false );
+                }
+                suspiciousIdentity.setLock( lock );
+            }
+
+            return suspicions;
         }
     }
 
@@ -521,6 +567,23 @@ public final class SuspiciousIdentityDAO implements ISuspiciousIdentityDAO
         {
             daoUtil.executeUpdate( );
         }
+    }
+
+    /**
+     * {@inheritDoc }
+     */
+    @Override
+    public int countSuspiciousIdentities( final Plugin plugin )
+    {
+        try ( final DAOUtil daoUtil = new DAOUtil( SQL_QUERY_SELECT_COUNT, plugin ) )
+        {
+            daoUtil.executeQuery( );
+            if ( daoUtil.next( ) )
+            {
+                return daoUtil.getInt( 1 );
+            }
+        }
+        return 0;
     }
 
     /**

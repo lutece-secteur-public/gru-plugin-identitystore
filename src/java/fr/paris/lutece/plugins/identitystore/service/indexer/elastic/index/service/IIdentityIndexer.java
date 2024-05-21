@@ -36,6 +36,7 @@ package fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.serv
 import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.client.ElasticClientException;
 import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.model.IdentityObject;
 import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.model.internal.BulkAction;
+import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
 
 import java.util.List;
 
@@ -45,7 +46,7 @@ public interface IIdentityIndexer
     /* Documents API */
     void create( final IdentityObject identity, final String index );
 
-    boolean bulk( final List<BulkAction> bulkActions, final String index );
+    boolean bulk( final List<BulkAction> bulkActions, final String index ) throws IdentityStoreException;
 
     void update( final IdentityObject identity, final String index );
 
@@ -72,4 +73,6 @@ public interface IIdentityIndexer
     void makeIndexReadOnly( final String index ) throws ElasticClientException;
 
     void removeIndexReadOnly( final String index ) throws ElasticClientException;
+
+    String getIndexedIdentitiesNumber( final String index ) throws ElasticClientException;
 }

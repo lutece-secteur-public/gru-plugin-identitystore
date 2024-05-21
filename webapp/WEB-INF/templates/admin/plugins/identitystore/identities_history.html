@@ -1,0 +1,147 @@
+<#include "manageidentities_tabs.html" />
+<@tabs tab="historyidentities"/>
+<@rowBox>
+    <@boxHeader i18nTitleKey="identitystore.manage_identities.title">
+
+        <@headerButtons>
+            <form class="form-inline pull-right" method="post" name="identities_history" action="jsp/admin/plugins/identitystore/IdentitiesHistory.jsp">
+                <@button type='submit' name='action_exportIdentities' buttonIcon='plus' title='#i18n{identitystore.manage_identities.buttonExport}' />
+            </form>
+        </@headerButtons>
+    </@boxHeader>
+    <@boxBody>
+        <@messages infos=infos />
+        <@messages errors=errors />
+        <div style="padding: .5rem .5rem;">
+            <a class="btn btn-primary btn-empty" title="#i18n{identitystore.manage_identities.emptyFields}">
+                <i class="fa fa-trash"></i>
+            </a>
+        </div>
+        <form class="form-inline" action="jsp/admin/plugins/identitystore/IdentitiesHistory.jsp">
+            <@table id="search-history-table" params='style="width: 100%;"'>
+                <tr>
+                    <th>#i18n{identitystore.view_change_history.customerId}</th>
+                    <th>#i18n{identitystore.view_change_history.type}</th>
+                    <th>#i18n{identitystore.view_change_history.date}</th>
+                    <th>#i18n{identitystore.view_change_history.author.type}</th>
+                    <th>#i18n{identitystore.view_change_history.author.name}</th>
+                    <th>#i18n{identitystore.view_change_history.client.code}</th>
+                    <th></th>
+                </tr>
+                <@tableHeadBodySeparator />
+                <tr>
+                    <td>
+                        <input class="form-control search-field" type="text" name="cuid"
+                               placeholder="#i18n{identitystore.view_change_history.customerId}" value="${cuid!''}" />
+                    </td>
+                    <td>
+                        <label for="type" />
+                        <select class="search-field form-select select-type" id="type" name="type" value="${type!''}" >
+                            <option value="">#i18n{identitystore.view_change_history.no.type}</option>
+                            <#list type_list as form_type>
+                                <option value="${form_type!}" <#if typr! == form_type!> selected="selected"</#if>>${form_type!}</option>
+                            </#list>
+                        </select>
+                    </td>
+                    <td>
+                        <input class="form-control search-field" type="date" name="date"
+                               placeholder="DD/MM/YYYY" value="${date!''}" />
+                    </td>
+                    <td>
+                        <input class="form-control search-field" type="text" name="author_type"
+                               placeholder="#i18n{identitystore.view_change_history.author.type}" value="${author_type!''}"/>
+                    </td>
+                    <td>
+                        <input class="form-control search-field" type="text" name="author_name"
+                               placeholder="#i18n{identitystore.view_change_history.author.name}" value="${author_name!''}" />
+                    </td>
+                    <td>
+                        <input class="form-control search-field" type="text" name="client_code"
+                               placeholder="#i18n{identitystore.view_change_history.client.code}" value="${client_code!''}" />
+                    </td>
+                    <td>
+                        <span class="input-group-btn">
+                            <button class="btn btn-default" type="submit">
+                                <span class="fa fa-search"></span>
+                            </button>
+                        </span>
+                    </td>
+                </tr>
+            </@table>
+        </form>
+
+        <@paginationAdmin paginator=paginator combo=1 />
+        <table id="search-result-table" class="table table-condensed table-striped">
+            <tr>
+                <th onclick="sortTable(0, 'search-result-table')">#i18n{identitystore.view_change_history.customerId}</th>
+                <th onclick="sortTable(1, 'search-result-table')">#i18n{identitystore.view_change_history.type}</th>
+                <th onclick="sortTable(2, 'search-result-table')">#i18n{identitystore.view_change_history.status}</th>
+                <th onclick="sortTable(3, 'search-result-table')">#i18n{identitystore.view_change_history.date}</th>
+                <th onclick="sortTable(4, 'search-result-table')">#i18n{identitystore.view_change_history.author.type}</th>
+                <th onclick="sortTable(5, 'search-result-table')">#i18n{identitystore.view_change_history.author.name}</th>
+                <th onclick="sortTable(6, 'search-result-table')">#i18n{identitystore.view_change_history.client.code}</th>
+            </tr>
+            <#if identity_change_list??  && identity_change_list?has_content>
+                <#list identity_change_list as change>
+                    <tr>
+                        <td>${change.customerId!}</td>
+                        <td>
+                            <#if change.changeType.name() == "CREATE">
+                                <span class="badge bg-success"> ${change.changeType.name()!} </span>
+                            <#elseif change.changeType.name() == "UPDATE">
+                                <span class="badge bg-warning"> ${change.changeType.name()!} </span>
+                            <#elseif change.changeType.name() == "DELETE">
+                                <span class="badge bg-danger"> ${change.changeType.name()!} </span>
+                            <#elseif change.changeType.name() == "MERGED">
+                                <span class="badge bg-primary"> ${change.changeType.name()!} </span>
+                            <#elseif change.changeType.name() == "CONSOLIDATED">
+                                <span class="badge bg-primary"> ${change.changeType.name()!} </span>
+                            <#elseif change.changeType.name() == "CONSOLIDATION_CANCELLED">
+                                <span class="badge bg-danger"> ${change.changeType.name()!} </span>
+                            <#elseif change.changeType.name() == "MERGE_CANCELLED">
+                                <span class="badge bg-danger"> ${change.changeType.name()!} </span>
+                            <#elseif change.changeType.name() == "EXCLUDED">
+                                <span class="badge bg-warning"> ${change.changeType.name()!} </span>
+                            <#elseif change.changeType.name() == "EXCLUSION_CANCELLED">
+                                <span class="badge bg-danger"> ${change.changeType.name()!} </span>
+                            <#elseif change.changeType.name() == "MARKED_SUSPICIOUS">
+                                <span class="badge bg-warning"> ${change.changeType.name()!} </span>
+                            <#elseif change.changeType.name() == "READ">
+                                <span class="badge bg-success"> ${change.changeType.name()!} </span>
+                            <#else>
+                                ${change.changeType.name()!}
+                            </#if>
+                        </td>
+                        <td>
+                            <#if change.changeStatus == "CONFLICT"
+                            || change.changeStatus == "NOT_FOUND"
+                            || change.changeStatus == "FAILURE">
+                                <span class="custom-tooltip"> <i class="fa fa-times" style="color: red"> </i> ${change.changeStatus!}
+                                    <span class="custom-tooltiptext">${change.changeMessage!}</span>
+                                </span>
+                            <#else>
+                                <i class="fa fa-check" style="color: green"> </i> ${change.changeStatus!}
+                            </#if>
+                        </td>
+                        <td>${change.modificationDate!}</td>
+                        <td>${change.author.type.name()!}</td>
+                        <td>${change.author.name!}</td>
+                        <td>${change.clientCode!}</td>
+                    </tr>
+                </#list>
+            </#if>
+        </table>
+        <@paginationAdmin paginator=paginator />
+    </@boxBody>
+</@rowBox>
+<script src="./js/admin/plugins/identitystore/table.js"></script>
+<script>
+    $('.btn-empty').click(function () {
+        $('.search-field').val('');
+    });
+
+    function checkDateFormat()
+    {
+
+    }
+</script>

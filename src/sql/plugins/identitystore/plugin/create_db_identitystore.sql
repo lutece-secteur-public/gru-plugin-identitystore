@@ -184,6 +184,8 @@ CREATE TABLE identitystore_identity_attribute_history
     PRIMARY KEY (id_history)
 );
 
+CREATE  INDEX IDX_ID_IDENTITY_ATTRIBUTE_HISTORY ON identitystore_identity_attribute_history (id_identity);
+
 --
 -- Structure for table identitystore_service_contract
 --

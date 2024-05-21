@@ -65,16 +65,24 @@ public abstract class ManageIdentitiesJspBean extends MVCAdminJspBean
     // Infos
     public static final String QUERY_PARAM_CUID = "cuid";
     public static final String QUERY_PARAM_GUID = "guid";
+    public static final String QUERY_PARAM_INSEE_CITY = "insee_city";
+    public static final String QUERY_PARAM_INSEE_COUNTRY = "insee_country";
     public static final String QUERY_PARAM_EMAIL = "email";
     public static final String QUERY_PARAM_GENDER = "gender";
-    public static final String QUERY_PARAM_FAMILY_NAME = "family_name";
-    public static final String QUERY_PARAM_PREFERRED_USERNAME = "preferred_username";
+    public static final String QUERY_PARAM_COMMON_LASTNAME = "common_lastname";
     public static final String QUERY_PARAM_FIRST_NAME = "first_name";
     public static final String QUERY_PARAM_BIRTHDATE = "birthdate";
     public static final String QUERY_PARAM_INSEE_BIRTHPLACE_LABEL = "insee_birthplace_label";
     public static final String QUERY_PARAM_INSEE_BIRTHCOUNTRY_LABEL = "insee_birthcountry_label";
     public static final String QUERY_PARAM_PHONE = "phone";
     public static final String QUERY_PARAM_DATASOURCE = "datasource";
+    public static final String QUERY_PARAM_TYPE = "type";
+    public static final String QUERY_PARAM_DATE = "date";
+    public static final String QUERY_PARAM_AUTHOR_TYPE = "author_type";
+    public static final String QUERY_PARAM_AUTHOR_NAME = "author_name";
+    public static final String QUERY_PARAM_CLIENT_CODE = "client_code";
+    public static final String QUERY_PARAM_STATUS_LIST = "status_list";
+    public static final String QUERY_PARAM_TYPE_LIST = "type_list";
 
     // Variables
     private final int _nDefaultItemsPerPage = AppPropertiesService.getPropertyInt( PROPERTY_DEFAULT_LIST_ITEM_PER_PAGE, 50 );
@@ -139,15 +147,10 @@ public abstract class ManageIdentitiesJspBean extends MVCAdminJspBean
         {
             parameters.put( QUERY_PARAM_GENDER, gender );
         }
-        final String family_name = request.getParameter( QUERY_PARAM_FAMILY_NAME );
+        final String family_name = request.getParameter(QUERY_PARAM_COMMON_LASTNAME);
         if ( family_name != null )
         {
-            parameters.put( QUERY_PARAM_FAMILY_NAME, family_name );
-        }
-        final String preferred_username = request.getParameter( QUERY_PARAM_PREFERRED_USERNAME );
-        if ( preferred_username != null )
-        {
-            parameters.put( QUERY_PARAM_PREFERRED_USERNAME, preferred_username );
+            parameters.put(QUERY_PARAM_COMMON_LASTNAME, family_name );
         }
         final String first_name = request.getParameter( QUERY_PARAM_FIRST_NAME );
         if ( first_name != null )
@@ -179,6 +182,41 @@ public abstract class ManageIdentitiesJspBean extends MVCAdminJspBean
         {
             parameters.put( QUERY_PARAM_DATASOURCE, datasource );
         }
+        final String insee_city = request.getParameter( QUERY_PARAM_INSEE_CITY );
+        if ( insee_city != null )
+        {
+            parameters.put( QUERY_PARAM_INSEE_CITY, insee_city );
+        }
+        final String insee_country = request.getParameter( QUERY_PARAM_INSEE_COUNTRY );
+        if ( insee_country != null )
+        {
+            parameters.put( QUERY_PARAM_INSEE_COUNTRY, insee_country );
+        }
+        final String type = request.getParameter( QUERY_PARAM_TYPE );
+        if ( type != null )
+        {
+            parameters.put( QUERY_PARAM_TYPE, type );
+        }
+        final String date = request.getParameter( QUERY_PARAM_DATE );
+        if ( date != null )
+        {
+            parameters.put( QUERY_PARAM_DATE, date );
+        }
+        final String author_type = request.getParameter( QUERY_PARAM_AUTHOR_TYPE );
+        if ( author_type != null )
+        {
+            parameters.put( QUERY_PARAM_AUTHOR_TYPE, author_type );
+        }
+        final String author_name = request.getParameter( QUERY_PARAM_AUTHOR_NAME );
+        if ( author_name != null )
+        {
+            parameters.put( QUERY_PARAM_AUTHOR_NAME, author_name );
+        }
+        final String client_code = request.getParameter( QUERY_PARAM_CLIENT_CODE );
+        if ( client_code != null )
+        {
+            parameters.put( QUERY_PARAM_CLIENT_CODE, client_code );
+        }
         return parameters;
     }
 
@@ -204,15 +242,10 @@ public abstract class ManageIdentitiesJspBean extends MVCAdminJspBean
         {
             request.removeAttribute( QUERY_PARAM_GENDER );
         }
-        final String family_name = request.getParameter( QUERY_PARAM_FAMILY_NAME );
+        final String family_name = request.getParameter(QUERY_PARAM_COMMON_LASTNAME);
         if ( family_name != null )
         {
-            request.removeAttribute( QUERY_PARAM_FAMILY_NAME );
-        }
-        final String preferred_username = request.getParameter( QUERY_PARAM_PREFERRED_USERNAME );
-        if ( preferred_username != null )
-        {
-            request.removeAttribute( QUERY_PARAM_PREFERRED_USERNAME );
+            request.removeAttribute(QUERY_PARAM_COMMON_LASTNAME);
         }
         final String first_name = request.getParameter( QUERY_PARAM_FIRST_NAME );
         if ( first_name != null )
@@ -243,6 +276,41 @@ public abstract class ManageIdentitiesJspBean extends MVCAdminJspBean
         if ( datasource != null )
         {
             request.removeAttribute( QUERY_PARAM_DATASOURCE );
+        }
+        final String insee_city = request.getParameter( QUERY_PARAM_INSEE_CITY );
+        if ( insee_city != null )
+        {
+            request.removeAttribute( QUERY_PARAM_INSEE_CITY );
+        }
+        final String insee_country = request.getParameter( QUERY_PARAM_INSEE_COUNTRY );
+        if ( insee_country != null )
+        {
+            request.removeAttribute( QUERY_PARAM_INSEE_COUNTRY );
+        }
+        final String type = request.getParameter( QUERY_PARAM_TYPE );
+        if ( type != null )
+        {
+            request.removeAttribute( QUERY_PARAM_TYPE );
+        }
+        final String date = request.getParameter( QUERY_PARAM_DATE );
+        if ( date != null )
+        {
+            request.removeAttribute( QUERY_PARAM_DATE );
+        }
+        final String author_type = request.getParameter( QUERY_PARAM_AUTHOR_TYPE );
+        if ( author_type != null )
+        {
+            request.removeAttribute( QUERY_PARAM_AUTHOR_TYPE );
+        }
+        final String author_name = request.getParameter( QUERY_PARAM_AUTHOR_NAME );
+        if ( author_name != null )
+        {
+            request.removeAttribute( QUERY_PARAM_AUTHOR_NAME );
+        }
+        final String client_code = request.getParameter( QUERY_PARAM_CLIENT_CODE );
+        if ( client_code != null )
+        {
+            request.removeAttribute( QUERY_PARAM_CLIENT_CODE );
         }
     }
 }

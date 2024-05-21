@@ -106,6 +106,5 @@ public class IndexStatus implements Serializable
             _sbLogs = new StringBuilder( );
         }
         _sbLogs.append( message ).append( "\n" );
-        AppLogService.debug( message );
     }
 }

@@ -320,7 +320,7 @@ public class ElasticClient
         }
         catch( final ElasticConnexionException | JsonProcessingException ex )
         {
-            AppLogService.error( "ElasticLibrary : Error trying to determine if index" + strIndex + " is writeable : " + ex.getMessage( ), ex );
+            AppLogService.error( "ElasticLibrary : Error trying to determine if index " + strIndex + " is writeable : " + ex.getMessage( ), ex );
             return false;
         }
         return true;
@@ -511,6 +511,19 @@ public class ElasticClient
             throw new ElasticClientException( "ElasticLibrary : Error deleting alias : " + ex.getMessage( ), ex );
         }
 
+    }
+
+    public String getIndexedIdentitiesNumber(String strIndex) throws ElasticClientException
+    {
+        try
+        {
+            final String strURI = getURI( strIndex ) + Constants.PATH_QUERY_COUNT;
+            return this._connexion.GET( strURI );
+        }
+        catch( final ElasticConnexionException ex )
+        {
+            throw new ElasticClientException( "ElasticLibrary : Error updating settings : " + ex.getMessage( ), ex );
+        }
     }
 
     /**

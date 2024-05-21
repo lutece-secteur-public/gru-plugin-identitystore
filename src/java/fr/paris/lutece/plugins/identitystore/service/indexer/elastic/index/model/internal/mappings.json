@@ -1,9 +1,24 @@
 {
     "settings" : {
         "analysis" : {
+            "char_filter": {
+                "hyphen_filter": {
+                    "type": "mapping",
+                    "mappings": [
+                        "- =>"
+                    ]
+                }
+            },
             "analyzer" : {
                 "default" : {
-                    "type" : "keyword",
+                    "tokenizer": "standard",
+                    "filter" : [
+                        "lowercase",
+                        "asciifolding"
+                    ]
+                },
+                "default_search" : {
+                    "tokenizer": "standard",
                     "filter" : [
                         "lowercase",
                         "asciifolding"
@@ -21,6 +36,9 @@
                     "filter" : [
                         "lowercase",
                         "asciifolding"
+                    ],
+                    "char_filter" : [
+                        "hyphen_filter"
                     ]
                 },
                 "last_name_analyzer" : {
@@ -30,6 +48,12 @@
                         "asciifolding",
                         "hyphen_to_whitespace",
                         "whitespace_to_hyphen"
+                    ]
+                },
+                "id_analyser" : {
+                    "tokenizer" : "keyword",
+                    "filter" : [
+                        "lowercase"
                     ]
                 }
             },
@@ -58,27 +82,64 @@
         "properties" : {
             "attributes.email.value" : {
                 "type" : "text",
-                "analyzer" : "email_analyzer"
+                "analyzer" : "email_analyzer",
+                "search_analyzer" : "email_analyzer"
             },
             "attributes.login.value" : {
                 "type" : "text",
-                "analyzer" : "keyword"
+                "analyzer" : "keyword",
+                "search_analyzer" : "keyword"
             },
             "attributes.birthdate.value" : {
                 "type" : "text",
-                "analyzer" : "keyword"
+                "analyzer" : "keyword",
+                "search_analyzer" : "keyword"
             },
             "attributes.first_name.value" : {
                 "type" : "text",
-                "analyzer" : "first_name_analyzer"
+                "analyzer" : "first_name_analyzer",
+                "search_analyzer" : "first_name_analyzer",
+                "fields": {
+                    "raw": {
+                        "type": "text",
+                        "analyzer": "keyword",
+                        "search_analyzer": "keyword"
+                    }
+                }
             },
             "attributes.family_name.value" : {
                 "type" : "text",
-                "analyzer" : "last_name_analyzer"
+                "analyzer" : "last_name_analyzer",
+                "search_analyzer" : "last_name_analyzer",
+                "fields": {
+                    "raw": {
+                        "type": "text",
+                        "analyzer": "keyword",
+                        "search_analyzer": "keyword"
+                    }
+                }
             },
             "attributes.preferred_username.value" : {
                 "type" : "text",
-                "analyzer" : "last_name_analyzer"
+                "analyzer" : "last_name_analyzer",
+                "search_analyzer" : "last_name_analyzer",
+                "fields": {
+                    "raw": {
+                        "type": "text",
+                        "analyzer": "keyword",
+                        "search_analyzer": "keyword"
+                    }
+                }
+            },
+            "customerId" : {
+                "type" : "text",
+                "analyzer" : "id_analyser",
+                "search_analyzer" : "id_analyser"
+            },
+            "connectionId" : {
+                "type" : "text",
+                "analyzer" : "id_analyser",
+                "search_analyzer" : "id_analyser"
             }
         }
     }

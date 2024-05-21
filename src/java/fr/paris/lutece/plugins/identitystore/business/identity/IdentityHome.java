@@ -37,6 +37,7 @@ import fr.paris.lutece.plugins.identitystore.service.IdentityStorePlugin;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.crud.UpdatedIdentityDto;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.history.IdentityChange;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.history.IdentityChangeType;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.search.SearchAttribute;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.search.SearchUpdatedAttribute;
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
 import fr.paris.lutece.portal.service.plugin.Plugin;
@@ -200,11 +201,12 @@ public final class IdentityHome
      * @return The Identity
      */
     public static List<IdentityChange> findHistoryBySearchParameters( final String strCustomerId, final String clientCode, final String authorName,
-            final IdentityChangeType changeType, final String changeStatus, final Map<String, String> metadata, final Integer nbDaysFrom,
-            final Pair<Date, Date> modificationDateInterval ) throws IdentityStoreException
+            final IdentityChangeType changeType, final String changeStatus, final String authorType, final Date modificationDate, final Map<String, String> metadata, final Integer nbDaysFrom,
+            final Pair<Date, Date> modificationDateInterval, final int max ) throws IdentityStoreException
     {
-        return _dao.selectIdentityHistoryBySearchParameters( strCustomerId, clientCode, authorName, changeType, changeStatus, metadata, nbDaysFrom,
-                modificationDateInterval, _plugin );
+        int nMaxNbIdentityReturned = ( max > 0 ) ? max : AppPropertiesService.getPropertyInt( PROPERTY_MAX_NB_IDENTITY_RETURNED, 100 );
+        return _dao.selectIdentityHistoryBySearchParameters( strCustomerId, clientCode, authorName, changeType, changeStatus, authorType, modificationDate, metadata, nbDaysFrom,
+                modificationDateInterval, _plugin, nMaxNbIdentityReturned );
     }
 
     /**
@@ -309,10 +311,10 @@ public final class IdentityHome
      *            A map that associates the id of each attributes selected with the list of values
      * @return list of Identity
      */
-    public static List<Identity> findByAttributesValueForApiSearch( Map<String, List<String>> mapAttributes, final int max )
+    public static List<Identity> findByAttributesValueForApiSearch(final List<SearchAttribute> searchAttributes, final int max )
     {
         int nMaxNbIdentityReturned = ( max > 0 ) ? max : AppPropertiesService.getPropertyInt( PROPERTY_MAX_NB_IDENTITY_RETURNED, 100 );
-        return _dao.selectByAttributesValueForApiSearch( mapAttributes, nMaxNbIdentityReturned, _plugin );
+        return _dao.selectByAttributesValueForApiSearch( searchAttributes, nMaxNbIdentityReturned, _plugin );
     }
 
     /**
@@ -330,9 +332,9 @@ public final class IdentityHome
      * @return A list of matching customer IDs
      */
     public static List<String> findByAttributeExisting( final List<Integer> idAttributeList, final int nbFilledAttributes, final boolean notMerged,
-            final boolean notSuspicious )
+            final boolean notSuspicious, final int rulePriority )
     {
-        return _dao.selectByAttributeExisting( idAttributeList, nbFilledAttributes, notMerged, notSuspicious, _plugin );
+        return _dao.selectByAttributeExisting( idAttributeList, nbFilledAttributes, notMerged, notSuspicious, rulePriority, _plugin );
     }
 
     /**
@@ -432,5 +434,67 @@ public final class IdentityHome
     public static void deleteAttributeHistory( final int identityId )
     {
         _dao.deleteAttributeHistory( identityId, _plugin );
+    }
+
+    /**
+     * Count All Identities.
+     */
+    public static Integer getCountIdentities( )
+    {
+        return _dao.getCountIdentities( _plugin );
+    }
+
+    /**
+     * Count All identities that has been deleted or not.
+     *
+     * @param deleted
+     *            define if the dao count deleted or not deleted identities
+     */
+    public static Integer getCountDeletedIdentities( final boolean deleted )
+    {
+        return _dao.getCountDeletedIdentities( deleted, _plugin) ;
+    }
+
+    /**
+     * Count All identities that has been merged or not.
+     *
+     * @param merged
+     *            define if the dao count merged or not merged identities
+     */
+    public static Integer getCountMergedIdentities( final boolean merged )
+    {
+        return _dao.getCountMergedIdentities( merged, _plugin );
+    }
+
+    /**
+     * Count All identities that has been connected or not.
+     *
+     * @param monParisActive
+     *            define if the dao count connected or not connected identities
+     */
+    public static Integer getCountActiveMonParisdentities( final boolean monParisActive )
+    {
+        return _dao.getCountActiveMonParisdentities( monParisActive, _plugin );
+    }
+
+    /**
+     * Count how many attributes each entity has.
+     */
+    public static Map<Integer, Integer> getCountAttributesByIdentities( )
+    {
+        return _dao.getCountAttributesByIdentities( _plugin );
+    }
+
+    /**
+     * Count how many attributes has no attribute and isn't merged.
+     */
+    public static Integer getCountUnmergedIdentitiesWithoutAttributes( )
+    {
+        return _dao.getCountUnmergedIdentitiesWithoutAttributes( _plugin );
+    }
+
+    public static List<IndicatorsActionsType> getActionsTypesDuringInterval(int interval)
+    {
+        return _dao.getActionsTypesDuringInterval(interval, _plugin);
     }
 }

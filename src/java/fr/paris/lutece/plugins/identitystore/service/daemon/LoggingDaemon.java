@@ -33,10 +33,11 @@
  */
 package fr.paris.lutece.plugins.identitystore.service.daemon;
 
+import fr.paris.lutece.plugins.identitystore.utils.LoggingTask;
 import fr.paris.lutece.portal.service.daemon.Daemon;
 import fr.paris.lutece.portal.service.util.AppLogService;
 
-public abstract class LoggingDaemon extends Daemon
+public abstract class LoggingDaemon extends Daemon implements LoggingTask
 {
     private StringBuilder logs;
 
@@ -47,14 +48,24 @@ public abstract class LoggingDaemon extends Daemon
         this.doTask( );
     }
 
-    protected void info( final String log )
+    @Override
+    public void debug( final String log )
+    {
+        AppLogService.debug( log );
+        logs.append( log ).append( "\n" );
+        this.setLastRunLogs( logs.toString( ) );
+    }
+
+    @Override
+    public void info( final String log )
     {
         AppLogService.info( log );
         logs.append( log ).append( "\n" );
         this.setLastRunLogs( logs.toString( ) );
     }
 
-    protected void error( final String log )
+    @Override
+    public void error( final String log )
     {
         AppLogService.error( log );
         logs.append( log ).append( "\n" );

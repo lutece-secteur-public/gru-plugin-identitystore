@@ -53,6 +53,7 @@ public final class IdentityConstants
     // Security
     public static final String PROPERTY_SECURE_MODE = "identitystore.secureMode";
     public static final String PROPERTY_JWT_CLAIM_APP_CODE = "identitystore.jwt.appCode.claimName";
+    public static final String PROPERTY_IDENTITY_ATTRIBUTE_ORDER = "identitystore.identity.attribute.order";
 
     public static final String ALL_ATTRIBUTES_FILTER = "all";
     public static final String GUID_FILTER = "guid";

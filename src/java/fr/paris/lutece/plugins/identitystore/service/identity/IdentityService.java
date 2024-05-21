@@ -52,7 +52,9 @@ import fr.paris.lutece.plugins.identitystore.business.rules.search.IdentitySearc
 import fr.paris.lutece.plugins.identitystore.business.rules.search.IdentitySearchRuleHome;
 import fr.paris.lutece.plugins.identitystore.business.rules.search.SearchRuleType;
 import fr.paris.lutece.plugins.identitystore.cache.IdentityDtoCache;
+import fr.paris.lutece.plugins.identitystore.service.attribute.IdentityAttributeFormatterService;
 import fr.paris.lutece.plugins.identitystore.service.attribute.IdentityAttributeService;
+import fr.paris.lutece.plugins.identitystore.service.contract.AttributeCertificationDefinitionService;
 import fr.paris.lutece.plugins.identitystore.service.contract.ServiceContractNotFoundException;
 import fr.paris.lutece.plugins.identitystore.service.contract.ServiceContractService;
 import fr.paris.lutece.plugins.identitystore.service.duplicate.IDuplicateService;
@@ -114,6 +116,7 @@ public class IdentityService
 {
     // Conf
     private static final String PIVOT_CERTIF_LEVEL_THRESHOLD = "identitystore.identity.attribute.update.pivot.certif.level.threshold";
+    private static final String PIVOT_UNCERTIF_LEVEL_THRESHOLD = "identitystore.identity.uncertify.attribute.pivot.level.threshold";
 
     // EVENTS FOR ACCESS LOGGING
     public static final String CREATE_IDENTITY_EVENT_CODE = "CREATE_IDENTITY";
@@ -259,9 +262,7 @@ public class IdentityService
             TransactionManager.commitTransaction( null );
 
             /* Historique des modifications */
-            final List<AttributeStatus> createdAttributes = attrStatusList.stream( ).filter( s -> s.getStatus( ).equals( AttributeChangeStatus.CREATED ) )
-                    .collect( Collectors.toList( ) );
-            for ( AttributeStatus attributeStatus : createdAttributes )
+            for ( AttributeStatus attributeStatus : attrStatusList )
             {
                 _identityStoreNotifyListenerService.notifyListenersAttributeChange( AttributeChangeType.CREATE, identity, attributeStatus, author, clientCode );
             }
@@ -401,7 +402,7 @@ public class IdentityService
         try
         {
             if ( _serviceContractService.canModifyConnectedIdentity( clientCode )
-                    && !StringUtils.equals( identity.getConnectionId( ), request.getIdentity( ).getConnectionId( ) )
+                    && !StringUtils.equalsIgnoreCase( identity.getConnectionId( ), request.getIdentity( ).getConnectionId( ) )
                     && request.getIdentity( ).getConnectionId( ) != null )
             {
                 final Identity byConnectionId = IdentityHome.findByConnectionId( request.getIdentity( ).getConnectionId( ) );
@@ -862,11 +863,13 @@ public class IdentityService
     {
         AccessLogService.getInstance( ).info( AccessLoggerConstants.EVENT_TYPE_READ, SEARCH_IDENTITY_EVENT_CODE,
                 _internalUserService.getApiUser( author, clientCode ), SecurityUtil.logForgingProtect( request.toString( ) ), SPECIFIC_ORIGIN );
+        final List<AttributeStatus> formatStatuses = IdentityAttributeFormatterService.instance( )
+                .formatIdentitySearchRequestAttributeValues( request );
         final List<SearchAttribute> providedAttributes = request.getSearch( ).getAttributes( );
         final Set<String> providedKeys = commonKeytoKey( providedAttributes.stream( ).map( SearchAttribute::getKey ).collect( Collectors.toSet( ) ) );
 
-        boolean hasRequirements = false;
         final List<IdentitySearchRule> searchRules = IdentitySearchRuleHome.findAll( );
+        boolean hasRequirements = searchRules.isEmpty();
         final Iterator<IdentitySearchRule> iterator = searchRules.iterator( );
         while ( !hasRequirements && iterator.hasNext( ) )
         {
@@ -931,6 +934,7 @@ public class IdentityService
             if ( CollectionUtils.isNotEmpty( response.getIdentities( ) ) )
             {
                 response.setStatus( ResponseStatusFactory.ok( ).setMessageKey( Constants.PROPERTY_REST_INFO_SUCCESSFUL_OPERATION ) );
+                response.getStatus( ).getAttributeStatuses( ).addAll( formatStatuses );
                 for ( final IdentityDto identity : response.getIdentities( ) )
                 {
                     AccessLogService.getInstance( ).info( AccessLoggerConstants.EVENT_TYPE_READ, SEARCH_IDENTITY_EVENT_CODE,
@@ -1026,6 +1030,13 @@ public class IdentityService
         {
             response.setIdentities( Collections.singletonList( identityDto ) );
             response.setStatus( ResponseStatusFactory.ok( ).setMessageKey( Constants.PROPERTY_REST_INFO_SUCCESSFUL_OPERATION ) );
+            // #27998 : Dans le cas d'une interrogation sur un CUID/GUID rapproché, ajouter une ligne dans le bloc "Alerte" dans la réponse de l'identité consolidée
+            if ((StringUtils.isNotBlank(customerId) && !identityDto.getCustomerId().equals(customerId)) ||
+                (StringUtils.isNotBlank(connectionId) && !identityDto.getConnectionId().equals(connectionId))) {
+                final IdentitySearchMessage alert = new IdentitySearchMessage();
+                alert.setMessage("Le CUID ou GUID demandé correspond à une identité rapprochée. Cette réponse contient l'identité consilidée.");
+                response.getAlerts().add(alert);
+            }
             if ( author != null )
             {
                 AccessLogService.getInstance( ).info( AccessLoggerConstants.EVENT_TYPE_READ, SEARCH_IDENTITY_EVENT_CODE,
@@ -1322,12 +1333,14 @@ public class IdentityService
      *
      * @param rule
      *            the rule used to get matching identities
+     * @param batchSize the size of the batches
+     * @param includeSuspicions filter CUIDs, to include or not, the CUIDs that are identified as suspicions
      * @return the list of identities
      */
-    public Batch<String> getCUIDsBatchForPotentialDuplicate(final DuplicateRule rule, final int batchSize )
+    public Batch<String> getCUIDsBatchForPotentialDuplicate(final DuplicateRule rule, final int batchSize, final boolean includeSuspicions )
     {
         final List<Integer> attributes = rule.getCheckedAttributes( ).stream( ).map( AttributeKey::getId ).collect( Collectors.toList( ) );
-        final List<String> customerIdsList = IdentityHome.findByAttributeExisting( attributes, rule.getNbFilledAttributes( ), true, true );
+        final List<String> customerIdsList = IdentityHome.findByAttributeExisting( attributes, rule.getNbFilledAttributes( ), true, !includeSuspicions, rule.getPriority() );
         if ( customerIdsList.isEmpty( ) )
         {
             return Batch.ofSize( Collections.emptyList( ), 0 );
@@ -1418,17 +1431,20 @@ public class IdentityService
     private DuplicateSearchResponse checkDuplicates( final Map<String, String> attributes, final String ruleCodeProperty, final String customerId )
             throws IdentityStoreException
     {
-        final List<String> ruleCodes = Arrays.asList( AppPropertiesService.getProperty( ruleCodeProperty ).split( "," ) );
-        final DuplicateSearchResponse esDuplicates = _duplicateServiceElasticSearch.findDuplicates( attributes, customerId, ruleCodes,
-                Collections.emptyList( ) );
-        if ( esDuplicates != null )
+        final List<String> ruleCodes = Arrays.stream(AppPropertiesService.getProperty( ruleCodeProperty, "" ).split( "," )).filter(StringUtils::isNotEmpty).collect(Collectors.toList());
+        if( !ruleCodes.isEmpty( ) )
         {
-            return esDuplicates;
-        }
-        final boolean checkDatabase = AppPropertiesService.getPropertyBoolean( PROPERTY_DUPLICATES_CHECK_DATABASE_ACTIVATED, false );
-        if ( checkDatabase )
-        {
-            return _duplicateServiceDatabase.findDuplicates( attributes, "", ruleCodes, Collections.emptyList( ) );
+            final DuplicateSearchResponse esDuplicates = _duplicateServiceElasticSearch.findDuplicates( attributes, customerId, ruleCodes,
+                    Collections.emptyList( ) );
+            if ( esDuplicates != null )
+            {
+                return esDuplicates;
+            }
+            final boolean checkDatabase = AppPropertiesService.getPropertyBoolean( PROPERTY_DUPLICATES_CHECK_DATABASE_ACTIVATED, false );
+            if ( checkDatabase )
+            {
+                return _duplicateServiceDatabase.findDuplicates( attributes, "", ruleCodes, Collections.emptyList( ) );
+            }
         }
         return null;
     }
@@ -1441,7 +1457,7 @@ public class IdentityService
      * @return the response
      * @see IdentityAttributeService#uncertifyAttribute
      */
-    public IdentityChangeResponse uncertifyIdentity( final String strCustomerId, final String strClientCode, final RequestAuthor author )
+    public IdentityChangeResponse uncertifyIdentity(final String strCustomerId, final List<AttributeKey> requestedAttributesKeys, final String strClientCode, final RequestAuthor author)
     {
         final IdentityChangeResponse response = new IdentityChangeResponse( );
 
@@ -1453,11 +1469,33 @@ public class IdentityService
             return response;
         }
 
+        final Collection<IdentityAttribute> attributesToDecertify;
+        if (!requestedAttributesKeys.isEmpty()) {
+            final List<String> requestedAttributeKeysStr = requestedAttributesKeys.stream().map(AttributeKey::getKeyName).collect(Collectors.toList());
+            // #27794 - if pivot requested to be decertified, and one of them is leveled >= PIVOT_UNCERTIF_LEVEL_THRESHOLD
+            //          -> decertify all pivots
+            final int pivotUncertifyLevelThreshold = AppPropertiesService.getPropertyInt(PIVOT_UNCERTIF_LEVEL_THRESHOLD, 400);
+            final List<IdentityAttribute> pivotAttributes =
+                    identity.getAttributes().values().stream().filter(a -> a.getAttributeKey().getPivot()).collect(Collectors.toList());
+            if (requestedAttributesKeys.stream().anyMatch(AttributeKey::getPivot) && pivotAttributes.stream().anyMatch(a -> AttributeCertificationDefinitionService.instance().getLevelAsInteger( a.getCertificate( ).getCertifierCode( ), a.getAttributeKey().getKeyName() ) >= pivotUncertifyLevelThreshold)) {
+                attributesToDecertify = identity.getAttributes().values().stream().filter(a -> a.getAttributeKey().getPivot() || requestedAttributeKeysStr.contains(a.getAttributeKey().getKeyName())).collect(Collectors.toList());
+            } else {
+                attributesToDecertify = identity.getAttributes().values().stream().filter(a -> requestedAttributeKeysStr.contains(a.getAttributeKey().getKeyName())).collect(Collectors.toList());
+            }
+        } else {
+            attributesToDecertify = identity.getAttributes().values();
+        }
+
+        if (attributesToDecertify.isEmpty()) {
+            response.setStatus( ResponseStatusFactory.badRequest().setMessage("No attributes to decertify").setMessageKey( Constants.PROPERTY_REST_INFO_SUCCESSFUL_OPERATION ) );
+            return response;
+        }
+
         TransactionManager.beginTransaction( null );
         try
         {
             final List<AttributeStatus> attrStatusList = new ArrayList<>( );
-            for ( final IdentityAttribute attribute : identity.getAttributes( ).values( ) )
+            for ( final IdentityAttribute attribute : attributesToDecertify)
             {
                 final AttributeStatus status = _identityAttributeService.uncertifyAttribute( attribute );
                 attrStatusList.add( status );

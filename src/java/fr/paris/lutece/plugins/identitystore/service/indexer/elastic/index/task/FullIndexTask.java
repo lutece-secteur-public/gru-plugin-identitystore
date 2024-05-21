@@ -38,10 +38,10 @@ import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.model
 import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.model.internal.BulkAction;
 import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.model.internal.BulkActionType;
 import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.service.IIdentityIndexer;
-import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.service.IdentityIndexer;
 import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.service.IdentityObjectHome;
-import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.service.RetryService;
+import fr.paris.lutece.plugins.identitystore.service.network.DelayedNetworkService;
 import fr.paris.lutece.plugins.identitystore.utils.Batch;
+import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
 import fr.paris.lutece.portal.service.util.AppLogService;
 import fr.paris.lutece.portal.service.util.AppPropertiesService;
 import org.apache.commons.lang3.StringUtils;
@@ -54,14 +54,11 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-public class FullIndexTask extends AbstractIndexTask
+public class FullIndexTask extends AbstractIndexTask implements UsingElasticConnection
 {
     private final String CURRENT_INDEX_ALIAS = AppPropertiesService.getProperty( "identitystore.elastic.client.identities.alias", "identities-alias" );
     private final int BATCH_SIZE = AppPropertiesService.getPropertyInt( "identitystore.task.reindex.batch.size", 1000 );
     private final boolean ACTIVE = AppPropertiesService.getPropertyBoolean( "identitystore.task.reindex.active", false );
-    private final String ELASTIC_URL = AppPropertiesService.getProperty( "elasticsearch.url" );
-    private final String ELASTIC_USER = AppPropertiesService.getProperty( "elasticsearch.user", "" );
-    private final String ELASTIC_PWD = AppPropertiesService.getProperty( "elasticsearch.pwd", "" );
 
     public FullIndexTask( )
     {
@@ -88,45 +85,45 @@ public class FullIndexTask extends AbstractIndexTask
         final List<Integer> identityIdsList = new ArrayList<>( IdentityObjectHome.getEligibleIdListForIndex( ) );
         if ( !identityIdsList.isEmpty( ) )
         {
-            this.getStatus( ).log( "Starting identities full reindex at " + DateFormatUtils.format( stopWatch.getStartTime( ), "dd-MM-yyyy'T'HH:mm:ss" ) );
+            this.debug( "Starting identities full reindex at " + DateFormatUtils.format( stopWatch.getStartTime( ), "dd-MM-yyyy'T'HH:mm:ss" ) );
             final IIdentityIndexer identityIndexer = this.createIdentityIndexer( );
             if ( identityIndexer.isAlive( ) )
             {
                 final String newIndex = "identities-" + UUID.randomUUID( );
-                this.getStatus( ).log( "ES available :: indexing" );
+                this.debug( "ES available :: indexing" );
                 try
                 {
-                    this.getStatus( ).log( "Creating new index : " + newIndex );
+                    this.debug( "Creating new index : " + newIndex );
                     identityIndexer.initIndex( newIndex );
 
                     if ( identityIndexer.indexExists( CURRENT_INDEX_ALIAS ) )
                     {
-                        this.getStatus( ).log( "Set current index READ-ONLY" );
+                        this.debug( "Set current index READ-ONLY" );
                         identityIndexer.makeIndexReadOnly( CURRENT_INDEX_ALIAS );
                     }
                     else
                     {
-                        this.getStatus( ).log( "Create alias" );
+                        this.debug( "Create alias" );
                         identityIndexer.addAliasOnIndex( newIndex, CURRENT_INDEX_ALIAS );
                     }
 
                     this.getStatus( ).setNbTotalIdentities( identityIdsList.size( ) );
-                    this.getStatus( ).log( "NB identities to be indexed : " + this.getStatus( ).getNbTotalIdentities( ) );
-                    this.getStatus( ).log( "Size of indexing batches : " + BATCH_SIZE );
+                    this.debug( "NB identities to be indexed : " + this.getStatus( ).getNbTotalIdentities( ) );
+                    this.debug( "Size of indexing batches : " + BATCH_SIZE );
                     final Batch<Integer> batch = Batch.ofSize( identityIdsList, BATCH_SIZE );
-                    this.getStatus( ).log( "NB of indexing batches : " + batch.size( ) );
+                    this.debug( "NB of indexing batches : " + batch.size( ) );
                     batch.stream( ).parallel( ).forEach( identityIdList -> {
                         this.process( identityIdList, newIndex );
                     } );
-                    this.getStatus( ).log( "All batches processed, now switch alias to publish new index.." );
+                    this.debug( "All batches processed, now switch alias to publish new index.." );
                     final String oldIndex = identityIndexer.getIndexBehindAlias( CURRENT_INDEX_ALIAS );
                     if ( !StringUtils.equals( oldIndex, newIndex ) )
                     {
-                        this.getStatus( ).log( "Old index id: " + oldIndex );
+                        this.debug( "Old index id: " + oldIndex );
                         identityIndexer.addAliasOnIndex( newIndex, CURRENT_INDEX_ALIAS );
                         if ( oldIndex != null )
                         {
-                            this.getStatus( ).log( "Delete old index : " + oldIndex );
+                            this.debug( "Delete old index : " + oldIndex );
                             identityIndexer.removeIndexReadOnly( oldIndex );
                             identityIndexer.deleteIndex( oldIndex );
                         }
@@ -134,52 +131,47 @@ public class FullIndexTask extends AbstractIndexTask
                 }
                 catch( final ElasticClientException e )
                 {
-                    this.getStatus( ).log( "Failed to reindex " + e.getMessage( ) );
+                    this.debug( "Failed to reindex " + e.getMessage( ) );
                     final String oldIndex = identityIndexer.getIndexBehindAlias( CURRENT_INDEX_ALIAS );
                     this.rollbackIndexCreation( oldIndex, newIndex, identityIndexer );
                 }
             }
             else
             {
-                this.getStatus( ).log( "[ERROR] ES not available" );
+                this.debug( "[ERROR] ES not available" );
             }
             stopWatch.stop( );
             final String duration = DurationFormatUtils.formatDurationWords( stopWatch.getTime( ), true, true );
-            this.getStatus( ).log( "Re-indexed  " + this.getStatus( ).getNbTotalIdentities( ) + " identities in " + duration );
+            this.debug( "Re-indexed  " + this.getStatus( ).getCurrentNbIndexedIdentities( ) + " identities in " + duration );
         }
         else
         {
             stopWatch.stop( );
-            this.getStatus( ).log( "No index in database" );
+            this.debug( "No index in database" );
         }
         this.close( );
     }
 
     private void process( final List<Integer> identityIdList, final String newIndex )
     {
-        final RetryService _retryService = new RetryService( );
         final List<IdentityObject> identityObjects = IdentityObjectHome.loadEligibleIdentitiesForIndex( identityIdList );
         final List<BulkAction> actions = identityObjects.stream( )
                 .map( identityObject -> new BulkAction( identityObject.getCustomerId( ), identityObject, BulkActionType.INDEX ) )
                 .collect( Collectors.toList( ) );
-        final boolean bulked = _retryService.callBulkWithRetry( actions, newIndex );
+
+        boolean bulked = false;
+        try
+        {
+            bulked = new DelayedNetworkService<Boolean>().call( ( ) -> this.createIdentityIndexer( ).bulk( actions, newIndex ), "Index identities by bulk", this);
+        }
+        catch ( final IdentityStoreException e )
+        {
+            AppLogService.error("An error occurred while bulking: " + e.getMessage( ) );
+        }
+
         if ( bulked )
         {
             this.getStatus( ).incrementCurrentNbIndexedIdentities( identityObjects.size( ) );
-        }
-    }
-
-    public IIdentityIndexer createIdentityIndexer( )
-    {
-        if ( StringUtils.isAnyBlank( ELASTIC_USER, ELASTIC_PWD ) )
-        {
-            AppLogService.debug( "Creating elastic connection without authentification" );
-            return new IdentityIndexer( ELASTIC_URL );
-        }
-        else
-        {
-            AppLogService.debug( "Creating elastic connection with authentification" );
-            return new IdentityIndexer( ELASTIC_URL, ELASTIC_USER, ELASTIC_PWD );
         }
     }
 
@@ -192,7 +184,7 @@ public class FullIndexTask extends AbstractIndexTask
         }
         catch( ElasticClientException e )
         {
-            this.getStatus( ).log( "Failed to rollback " + e.getMessage( ) );
+            this.debug( "Failed to rollback " + e.getMessage( ) );
         }
         finally {
             this.close();

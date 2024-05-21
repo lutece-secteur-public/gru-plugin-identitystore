@@ -48,7 +48,7 @@ import javax.ws.rs.ext.Provider;
 public class UncaughtJerseyExceptionMapper extends GenericUncaughtJerseyExceptionMapper<WebApplicationException, ErrorResponse>
 {
     @Override
-    protected ErrorResponse buildEntity( final WebApplicationException e )
+    protected ErrorResponse getBody( final WebApplicationException e )
     {
         final ErrorResponse response = new ErrorResponse( );
         response.setStatus( ResponseStatusFactory.fromHttpCode( e.getResponse( ).getStatus( ) ).setMessage( e.getMessage( ) )

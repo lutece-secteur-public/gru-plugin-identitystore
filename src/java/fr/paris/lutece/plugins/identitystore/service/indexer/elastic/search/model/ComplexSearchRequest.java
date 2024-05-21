@@ -33,15 +33,21 @@
  */
 package fr.paris.lutece.plugins.identitystore.service.indexer.elastic.search.model;
 
+import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.search.model.inner.request.Bool;
+import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.search.model.inner.request.BoolContainer;
 import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.search.model.inner.request.Exists;
 import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.search.model.inner.request.ExistsContainer;
 import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.search.model.inner.request.InnerSearchRequest;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.AttributeTreatmentType;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.search.SearchAttribute;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
+/**
+ * An Elastic search bool request based on specific use cases for IdentityStore.
+ */
 public class ComplexSearchRequest extends ASearchRequest
 {
     private final boolean connected;
@@ -58,114 +64,7 @@ public class ComplexSearchRequest extends ASearchRequest
     {
         final InnerSearchRequest body = new InnerSearchRequest( );
 
-        this.getSearchAttributes( ).forEach( searchAttribute -> {
-            switch( searchAttribute.getKey( ) )
-            {
-                case Constants.PARAM_FAMILY_NAME:
-                    switch( searchAttribute.getTreatmentType( ) )
-                    {
-                        case STRICT:
-                            body.addMatchPhrase( searchAttribute, true );
-                            break;
-                        case APPROXIMATED:
-                            final String multipleHyphenToOne = searchAttribute.getValue( ).trim( ).replaceAll( "(-)\\1+", "$1" );
-                            final String multipleSpacesToONe = multipleHyphenToOne.replaceAll( " +", " " );
-                            final String trimmedHyphens = multipleSpacesToONe.replaceAll( " - ", "-" );
-                            searchAttribute.setValue( trimmedHyphens );
-                            body.addMatch( searchAttribute, true );
-                            break;
-                        case DIFFERENT:
-                            body.addMatchPhrase( searchAttribute, false );
-                            break;
-                        case ABSENT:
-                            body.addExists( searchAttribute, false );
-                        default:
-                            break;
-                    }
-                    break;
-                case Constants.PARAM_FIRST_NAME:
-                    switch( searchAttribute.getTreatmentType( ) )
-                    {
-                        case STRICT:
-                            body.addMatchPhrase( searchAttribute, true );
-                            break;
-                        case APPROXIMATED:
-                            searchAttribute.setValue( searchAttribute.getValue( ).trim( ).replaceAll( " +", " " ).toLowerCase( ) );
-                            final String [ ] splitSearchValue = searchAttribute.getValue( ).split( " " );
-                            if ( splitSearchValue.length > 1 )
-                            {
-                                body.addSpanNear( searchAttribute, true );
-                            }
-                            else
-                            {
-                                body.addMatch( searchAttribute, true );
-                            }
-                            break;
-                        case DIFFERENT:
-                            body.addMatchPhrase( searchAttribute, false );
-                            break;
-                        case ABSENT:
-                            body.addExists( searchAttribute, false );
-                        default:
-                            break;
-                    }
-                    break;
-                case Constants.PARAM_PREFERRED_USERNAME:
-                    switch( searchAttribute.getTreatmentType( ) )
-                    {
-                        case STRICT:
-                            body.addMatchPhrase( searchAttribute, true );
-                            break;
-                        case APPROXIMATED:
-                            body.addMatch( searchAttribute, true );
-                            break;
-                        case DIFFERENT:
-                            body.addMatchPhrase( searchAttribute, false );
-                            break;
-                        case ABSENT:
-                            body.addExists( searchAttribute, false );
-                        default:
-                            break;
-                    }
-                    break;
-                default:
-                    if ( searchAttribute.getOutputKeys( ).size( ) == 1 )
-                    {
-                        switch( searchAttribute.getTreatmentType( ) )
-                        {
-                            case DIFFERENT:
-                                body.addMatch( searchAttribute, false );
-                                break;
-                            case STRICT:
-                            case APPROXIMATED:
-                                body.addMatch( searchAttribute, true );
-                                break;
-                            case ABSENT:
-                                body.addExists( searchAttribute, false );
-                            default:
-                                break;
-                        }
-                    }
-                    else
-                    {
-                        switch( searchAttribute.getTreatmentType( ) )
-                        {
-                            case DIFFERENT:
-                                body.addMultiMatch( searchAttribute, false );
-                                break;
-                            case STRICT:
-                            case APPROXIMATED:
-                                body.addMultiMatch( searchAttribute, true );
-                                break;
-                            case ABSENT:
-                                body.addExists( searchAttribute, false );
-                            default:
-                                break;
-                        }
-                    }
-                    break;
-            }
-        } );
+        this.getSearchAttributes( ).forEach( searchAttribute -> this.addToRequestBody( searchAttribute, body ) );
 
         if ( this.isConnected( ) )
         {
@@ -178,6 +77,154 @@ public class ComplexSearchRequest extends ASearchRequest
         }
 
         return body;
+    }
+
+    private void addToRequestBody( final SearchAttribute searchAttribute, final InnerSearchRequest body )
+    {
+        if( searchAttribute.getOutputKeys( ).size( ) > 1 )
+        {
+            this.handleMultiAttributeSearch( searchAttribute, body );
+        }
+        else
+        {
+            this.handleSingleAttributeSearch( searchAttribute, body );
+        }
+    }
+
+    private void handleMultiAttributeSearch( final SearchAttribute searchAttribute, final InnerSearchRequest body )
+    {
+        if( searchAttribute.getOutputKeys( ).stream().anyMatch( this::isSpecialAttributeKey ) )
+        {
+            final BoolContainer shouldContainer = new BoolContainer( new Bool( ) );
+            for( final String key : searchAttribute.getOutputKeys( ) )
+            {
+                final BoolContainer attributeCondition = new BoolContainer( new Bool( ) );
+                this.addBoolCondition( key, searchAttribute.getValue(), searchAttribute.getTreatmentType(), attributeCondition.getBool(), body );
+                shouldContainer.getBool().getShould().add(attributeCondition);
+            }
+            switch( searchAttribute.getTreatmentType( ) )
+            {
+                case DIFFERENT:
+                case ABSENT:
+                    body.getQuery( ).getBool( ).getMustNot( ).add( shouldContainer );
+                    break;
+                case STRICT:
+                case APPROXIMATED:
+                    body.getQuery( ).getBool( ).getMust( ).add( shouldContainer );
+                    break;
+                default:
+                    break;
+            }
+        }
+        else
+        {
+            switch( searchAttribute.getTreatmentType( ) )
+            {
+                case DIFFERENT:
+                    body.getQuery( ).getBool( ).getMustNot( ).add( body.createMultiMatch( searchAttribute ) );
+                    break;
+                case STRICT:
+                case APPROXIMATED:
+                    body.getQuery( ).getBool( ).getMust( ).add( body.createMultiMatch( searchAttribute ) );
+                    break;
+                case ABSENT:
+                    body.getQuery( ).getBool( ).getMustNot( ).add( body.createExists( searchAttribute.getTreatmentType( ), searchAttribute.getKey( ) ) );
+                default:
+                    break;
+            }
+        }
+    }
+
+    private void handleSingleAttributeSearch( final SearchAttribute searchAttribute, final InnerSearchRequest body )
+    {
+        this.addBoolCondition( searchAttribute.getKey(), searchAttribute.getValue(), searchAttribute.getTreatmentType(), body.getQuery().getBool(), body );
+    }
+
+    private void addBoolCondition( final String key, final String value, final AttributeTreatmentType treatmentType, final Bool boolContainer, final InnerSearchRequest body )
+    {
+        switch( key )
+        {
+            case Constants.PARAM_FAMILY_NAME:
+                switch( treatmentType )
+                {
+                    case STRICT:
+                        boolContainer.getMust( ).add( body.createMatchPhrase( treatmentType, key, value, true ) );
+                        break;
+                    case APPROXIMATED:
+                        final String multipleHyphenToOne = value.trim( ).replaceAll( "(-)\\1+", "$1" );
+                        final String multipleSpacesToONe = multipleHyphenToOne.replaceAll( " +", " " );
+                        final String trimmedHyphens = multipleSpacesToONe.replaceAll( " - ", "-" );
+                        boolContainer.getMust( ).add( body.createMatch( treatmentType, trimmedHyphens, key ) );
+                        break;
+                    case DIFFERENT:
+                        boolContainer.getMustNot( ).add( body.createMatchPhrase( treatmentType, key, value, false ) );
+                        break;
+                    case ABSENT:
+                        boolContainer.getMustNot( ).add( body.createExists( treatmentType, key ) );
+                    default:
+                        break;
+                }
+                break;
+            case Constants.PARAM_FIRST_NAME:
+                switch( treatmentType )
+                {
+                    case STRICT:
+                        boolContainer.getMust( ).add( body.createMatchPhrase( treatmentType, key, value, true ) );
+                        break;
+                    case APPROXIMATED:
+                        final BoolContainer multiTokenApproximatedBoolQuery = body.createMultiTokenApproximatedBoolQuery( treatmentType, key, value.split( " " ) );
+                        boolContainer.getMust( ).add(multiTokenApproximatedBoolQuery);
+                        break;
+                    case DIFFERENT:
+                        final BoolContainer multiTokenDifferentBoolQuery = body.createMultiTokenDifferentBoolQuery( treatmentType, value, key, value.split( " " ) );
+                        boolContainer.getMustNot( ).add( multiTokenDifferentBoolQuery );
+                        break;
+                    case ABSENT:
+                        boolContainer.getMustNot( ).add( body.createExists( treatmentType, key ) );
+                    default:
+                        break;
+                }
+                break;
+            case Constants.PARAM_PREFERRED_USERNAME:
+                switch( treatmentType )
+                {
+                    case STRICT:
+                        boolContainer.getMust( ).add( body.createMatchPhrase( treatmentType, key, value, true ) );
+                        break;
+                    case APPROXIMATED:
+                        boolContainer.getMust( ).add( body.createMatch( treatmentType, value, key ) );
+                        break;
+                    case DIFFERENT:
+                        boolContainer.getMustNot( ).add( body.createMatchPhrase( treatmentType, key, value, false ) );
+                        break;
+                    case ABSENT:
+                        boolContainer.getMustNot( ).add( body.createExists( treatmentType, key ) );
+                    default:
+                        break;
+                }
+                break;
+            default:
+                switch( treatmentType )
+                {
+                    case DIFFERENT:
+                        boolContainer.getMustNot( ).add( body.createMatch( treatmentType, value, key ) );
+                        break;
+                    case STRICT:
+                    case APPROXIMATED:
+                        boolContainer.getMust( ).add( body.createMatch( treatmentType, value, key ) );
+                        break;
+                    case ABSENT:
+                        boolContainer.getMustNot( ).add( body.createExists( treatmentType, key ) );
+                    default:
+                        break;
+                }
+                break;
+        }
+    }
+
+    private boolean isSpecialAttributeKey ( final String key )
+    {
+        return StringUtils.equalsAny( key, Constants.PARAM_FAMILY_NAME, Constants.PARAM_FIRST_NAME, Constants.PARAM_PREFERRED_USERNAME );
     }
 
     public boolean isConnected( )

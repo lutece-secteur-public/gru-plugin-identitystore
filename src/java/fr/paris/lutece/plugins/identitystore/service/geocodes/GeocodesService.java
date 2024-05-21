@@ -720,7 +720,7 @@ public class GeocodesService
 
                 // create city label attribute
                 // Geocodes label value is used, regardless if a label is provided or not
-                final String cityGeocodesLabel = city != null ? city.getValue( ) : "commune inconnue";
+                final String cityGeocodesLabel = city != null ? city.getValueMinComplete( ) : "commune inconnue";
                 final AttributeChangeStatus labelStatus;
                 final String attrStatusMessageKey;
                 if ( cityLabelToCreate == null || cityLabelToCreate.getValue( ).equals( cityGeocodesLabel ) )
@@ -879,7 +879,7 @@ public class GeocodesService
 
                 // create city label attribute if it doesn't already exist in the identity
                 // Geocodes label value is used, regardless if a label is provided or not
-                final String cityGeocodesLabel = city != null ? city.getValue( ) : "commune inconnue";
+                final String cityGeocodesLabel = city != null ? city.getValueMinComplete( ) : "commune inconnue";
                 if ( !identity.getAttributes( ).containsKey( Constants.PARAM_BIRTH_PLACE ) )
                 {
                     final AttributeChangeStatus labelStatus;
@@ -982,7 +982,7 @@ public class GeocodesService
 
                         // create city label attribute if it doesn't already exist in the identity
                         // Geocodes label value is used, regardless if a label is provided or not
-                        final String cityGeocodesLabel = city != null ? city.getValue( ) : "commune inconnue";
+                        final String cityGeocodesLabel = city != null ? city.getValueMinComplete( ) : "commune inconnue";
                         if ( !identity.getAttributes( ).containsKey( Constants.PARAM_BIRTH_PLACE ) )
                         {
                             final AttributeChangeStatus labelStatus;
