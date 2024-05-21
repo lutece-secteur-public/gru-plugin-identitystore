@@ -49,6 +49,7 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DefaultValue;
@@ -75,9 +76,7 @@ public class ClientRestService implements IRestService
     /**
      * Get all Clients
      *
-     * @param applicationCode
-     *            application code
-     * @return the Client
+     * @return the Clients
      */
     @Path( Constants.CLIENTS_PATH )
     @GET
@@ -94,10 +93,8 @@ public class ClientRestService implements IRestService
             @ApiParam( name = Constants.PARAM_APPLICATION_CODE, value = SwaggerConstants.PARAM_APPLICATION_CODE_DESCRIPTION ) @HeaderParam( Constants.PARAM_APPLICATION_CODE ) @DefaultValue( "" ) String strHeaderAppCode )
             throws IdentityStoreException
     {
-        final String trustedClientCode = IdentityStoreService.getTrustedClientCode( clientCode, StringUtils.EMPTY, strHeaderAppCode );
-        final ClientsGetRequest request = new ClientsGetRequest( trustedClientCode, null, authorName, authorType );
-        final ClientsSearchResponse entity = (ClientsSearchResponse) request.doRequest( );
-        return Response.status( entity.getStatus( ).getHttpCode( ) ).entity( entity ).type( MediaType.APPLICATION_JSON_TYPE ).build( );
+        final ClientsGetRequest request = new ClientsGetRequest(StringUtils.EMPTY, clientCode, strHeaderAppCode, authorName, authorType );
+        return this.buildJsonResponse( request.doRequest( ) );
     }
 
     /**
@@ -113,7 +110,7 @@ public class ClientRestService implements IRestService
     @ApiOperation( value = "Get Clients by app code", response = ClientSearchResponse.class )
     @ApiResponses( value = {
             @ApiResponse( code = 200, message = "Identity Found" ), @ApiResponse( code = 400, message = ERROR_DURING_TREATMENT + " with explanation message" ),
-            @ApiResponse( code = 403, message = "Failure" ), @ApiResponse( code = 404, message = ERROR_NO_SERVICE_CONTRACT_FOUND )
+            @ApiResponse( code = 403, message = "Failure" ), @ApiResponse( code = 404, message = ERROR_RESOURCE_NOT_FOUND )
     } )
     public Response getClientsByAppCode(
             @ApiParam( name = Constants.PARAM_APPLICATION_CODE, value = SwaggerConstants.CLIENT_APPLICATION_CODE_DESCRIPTION ) @PathParam( Constants.PARAM_APPLICATION_CODE ) String applicationCode,
