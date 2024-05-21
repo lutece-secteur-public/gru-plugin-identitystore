@@ -1418,7 +1418,7 @@ public class IdentityService
     private DuplicateSearchResponse checkDuplicates( final Map<String, String> attributes, final String ruleCodeProperty, final String customerId )
             throws IdentityStoreException
     {
-        final List<String> ruleCodes = Arrays.asList( AppPropertiesService.getProperty( ruleCodeProperty ).split( "," ) );
+        final List<String> ruleCodes = Arrays.asList( AppPropertiesService.getProperty( ruleCodeProperty, "" ).split( "," ) );
         final DuplicateSearchResponse esDuplicates = _duplicateServiceElasticSearch.findDuplicates( attributes, customerId, ruleCodes,
                 Collections.emptyList( ) );
         if ( esDuplicates != null )
