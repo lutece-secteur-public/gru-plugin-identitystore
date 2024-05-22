@@ -1418,17 +1418,20 @@ public class IdentityService
     private DuplicateSearchResponse checkDuplicates( final Map<String, String> attributes, final String ruleCodeProperty, final String customerId )
             throws IdentityStoreException
     {
-        final List<String> ruleCodes = Arrays.asList( AppPropertiesService.getProperty( ruleCodeProperty, "" ).split( "," ) );
-        final DuplicateSearchResponse esDuplicates = _duplicateServiceElasticSearch.findDuplicates( attributes, customerId, ruleCodes,
-                Collections.emptyList( ) );
-        if ( esDuplicates != null )
+        final List<String> ruleCodes = Arrays.stream(AppPropertiesService.getProperty( ruleCodeProperty, "" ).split( "," )).filter(StringUtils::isNotEmpty).collect(Collectors.toList());
+        if( !ruleCodes.isEmpty( ) )
         {
-            return esDuplicates;
-        }
-        final boolean checkDatabase = AppPropertiesService.getPropertyBoolean( PROPERTY_DUPLICATES_CHECK_DATABASE_ACTIVATED, false );
-        if ( checkDatabase )
-        {
-            return _duplicateServiceDatabase.findDuplicates( attributes, "", ruleCodes, Collections.emptyList( ) );
+            final DuplicateSearchResponse esDuplicates = _duplicateServiceElasticSearch.findDuplicates( attributes, customerId, ruleCodes,
+                    Collections.emptyList( ) );
+            if ( esDuplicates != null )
+            {
+                return esDuplicates;
+            }
+            final boolean checkDatabase = AppPropertiesService.getPropertyBoolean( PROPERTY_DUPLICATES_CHECK_DATABASE_ACTIVATED, false );
+            if ( checkDatabase )
+            {
+                return _duplicateServiceDatabase.findDuplicates( attributes, "", ruleCodes, Collections.emptyList( ) );
+            }
         }
         return null;
     }
