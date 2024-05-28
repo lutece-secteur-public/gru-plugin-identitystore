@@ -42,6 +42,7 @@ import fr.paris.lutece.plugins.identitystore.v3.web.request.validator.IdentityAt
 import fr.paris.lutece.plugins.identitystore.service.contract.ServiceContractService;
 import fr.paris.lutece.plugins.identitystore.service.identity.IdentityService;
 import fr.paris.lutece.plugins.identitystore.v3.web.request.validator.IdentityValidator;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.DtoConverter;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.IdentityRequestValidator;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.AttributeChangeStatus;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.AttributeChangeStatusType;
@@ -172,8 +173,11 @@ public class IdentityStoreMergeRequest extends AbstractIdentityStoreAppCodeReque
     {
         final IdentityMergeResponse response = new IdentityMergeResponse( );
 
-        final Pair<Identity, List<AttributeStatus>> result = IdentityService.instance( ).merge( _identityMergeRequest, _author, _strClientCode,
-                formatStatuses );
+        final Pair<Identity, List<AttributeStatus>> result = IdentityService.instance().merge(DtoConverter.convertDtoToIdentity(primaryIdentity),
+                                                                                              DtoConverter.convertDtoToIdentity(secondaryIdentity),
+                                                                                              _identityMergeRequest.getIdentity(),
+                                                                                              _identityMergeRequest.getDuplicateRuleCode(), _author,
+                                                                                              _strClientCode, formatStatuses);
         final Identity updatedPrimaryIdentity = result.getKey( );
         final List<AttributeStatus> attrStatuses = result.getValue( );
         attrStatuses.addAll( formatStatuses );

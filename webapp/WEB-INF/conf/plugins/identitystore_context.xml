@@ -97,6 +97,7 @@
     <bean id="identitystore.uncaughtRequestContentFormattingExceptionMapper"  class="fr.paris.lutece.plugins.identitystore.v3.web.rs.error.UncaughtRequestContentFormattingExceptionMapper" />
     <bean id="identitystore.uncaughtRequestFormatExceptionMapper"  class="fr.paris.lutece.plugins.identitystore.v3.web.rs.error.UncaughtRequestFormatExceptionMapper" />
     <bean id="identitystore.uncaughtResourceNotFoundExceptionMapper"  class="fr.paris.lutece.plugins.identitystore.v3.web.rs.error.UncaughtResourceNotFoundExceptionMapper" />
+    <bean id="identitystore.uncaughtResourceConsistencyExceptionMapper"  class="fr.paris.lutece.plugins.identitystore.v3.web.rs.error.UncaughtResourceConsistencyExceptionMapper" />
     <bean id="identitystore.uncaughtJerseyExceptionMapper"  class="fr.paris.lutece.plugins.identitystore.v3.web.rs.error.UncaughtJerseyExceptionMapper" />
 
     <bean id="identitystore.v3.identityStoreRestService"  class="fr.paris.lutece.plugins.identitystore.v3.web.rs.IdentityStoreRestService" />

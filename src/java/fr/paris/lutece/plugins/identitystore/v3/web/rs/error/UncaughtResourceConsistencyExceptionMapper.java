@@ -9,7 +9,9 @@ import fr.paris.lutece.plugins.rest.service.mapper.GenericUncaughtExceptionMappe
 
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.ext.Provider;
 
+@Provider
 public class UncaughtResourceConsistencyExceptionMapper extends GenericUncaughtExceptionMapper<ResourceConsistencyException, ResponseDto> {
 
     public static final String ERROR_REQUEST_RESOURCE_CONFLICT = "The sent request is conflicting with existing resources";

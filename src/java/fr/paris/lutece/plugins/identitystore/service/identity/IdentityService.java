@@ -296,30 +296,30 @@ public class IdentityService
      * </li>
      * </ul>
      *
-     * @param request
-     *            the {@link IdentityMergeRequest} holding the parameters of the request
+     * @param primaryIdentity the primary identity (master)
+     * @param secondaryIdentity the secondary identity (merged)
+     * @param identityForConsolidate the identityDto holding the attributes for consolidation
+     * @param duplicateRuleCode the duplicate rule code
      * @param author
      *            the author of the request
      * @param clientCode
      *            code of the {@link ClientApplication} requesting the change
+     * @param formatStatuses the format statuses (only for history)
      * @return the merged {@link Identity}
      * @throws IdentityStoreException
      *             in case of error
      */
     // TODO: récupérer la plus haute date d'expiration des deux identités
-    public Pair<Identity, List<AttributeStatus>> merge( final IdentityMergeRequest request, final RequestAuthor author, final String clientCode,
+    public Pair<Identity, List<AttributeStatus>> merge( final Identity primaryIdentity, final Identity secondaryIdentity, final IdentityDto identityForConsolidate, final String duplicateRuleCode, final RequestAuthor author, final String clientCode,
             final List<AttributeStatus> formatStatuses ) throws IdentityStoreException
     {
-        final Identity primaryIdentity = IdentityHome.findByCustomerId( request.getPrimaryCuid( ) );
-        final Identity secondaryIdentity = IdentityHome.findByCustomerId( request.getSecondaryCuid( ) );
-
         TransactionManager.beginTransaction( null );
         try
         {
             final List<AttributeStatus> attrStatusList = new ArrayList<>( );
-            if ( request.getIdentity( ) != null )
+            if ( identityForConsolidate != null )
             {
-                attrStatusList.addAll( this.updateIdentity( primaryIdentity, request.getIdentity( ), clientCode ) );
+                attrStatusList.addAll( this.updateIdentity( primaryIdentity, identityForConsolidate, clientCode ) );
             }
 
             /* Tag de l'identité secondaire */
@@ -345,7 +345,7 @@ public class IdentityService
 
             final Map<String, String> primaryMetadata = new HashMap<>( );
             primaryMetadata.put( Constants.METADATA_MERGED_MASTER_IDENTITY_CUID, primaryIdentity.getCustomerId( ) );
-            primaryMetadata.put( Constants.METADATA_DUPLICATE_RULE_CODE, request.getDuplicateRuleCode( ) );
+            primaryMetadata.put( Constants.METADATA_DUPLICATE_RULE_CODE, duplicateRuleCode );
             _identityStoreNotifyListenerService.notifyListenersIdentityChange( IdentityChangeType.MERGED, secondaryIdentity, statusType.name( ), statusMessage,
                     author, clientCode, primaryMetadata );
 
@@ -355,7 +355,7 @@ public class IdentityService
 
             final Map<String, String> secondaryMetadata = new HashMap<>( );
             secondaryMetadata.put( Constants.METADATA_MERGED_CHILD_IDENTITY_CUID, secondaryIdentity.getCustomerId( ) );
-            secondaryMetadata.put( Constants.METADATA_DUPLICATE_RULE_CODE, request.getDuplicateRuleCode( ) );
+            secondaryMetadata.put( Constants.METADATA_DUPLICATE_RULE_CODE, duplicateRuleCode );
             _identityStoreNotifyListenerService.notifyListenersIdentityChange( IdentityChangeType.CONSOLIDATED, primaryIdentity, statusType.name( ),
                     statusMessage, author, clientCode, secondaryMetadata );
 
