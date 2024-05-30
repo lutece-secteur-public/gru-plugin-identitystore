@@ -33,18 +33,18 @@
  */
 package fr.paris.lutece.plugins.identitystore.v3.service;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import fr.paris.lutece.plugins.identitystore.v3.web.request.validator.IdentityAttributeValidator;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.AttributeDto;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.AttributeStatus;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.IdentityDto;
-import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.ResponseStatus;
-import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.ResponseStatusType;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.crud.IdentityChangeResponse;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
+import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
+import fr.paris.lutece.plugins.identitystore.web.exception.RequestFormatException;
 import fr.paris.lutece.test.LuteceTestCase;
+
+import java.util.ArrayList;
+import java.util.List;
 
 // import static fr.paris.lutece.plugins.identitystore.web.rs.dto.MockIdentityChangeDto.createIdentityChangeDtoFor;
 
@@ -126,29 +126,29 @@ public class IdentityStoreControlsTest extends LuteceTestCase
     public void testControlAttributesIntegrityCreateKO( )
     {
         IdentityDto newIdentity = getMockIdentityDto( null, 0, "Dupoon", NUM1, "Marcel", NUM1, "01/01/2000", NUM1, "75112", NUM1, "99100", NUM1 );
-        tryPivotAttributesIntegrity( null, newIdentity, ResponseStatusType.FORBIDDEN, "3.1. Create Identity with all attributes at level 400, without gender" );
+        tryPivotAttributesIntegrity( null, newIdentity, RequestFormatException.class, "3.1. Create Identity with all attributes at level 400, without gender" );
 
         newIdentity = getMockIdentityDto( "1", NUM1, null, 0, "Marcel", NUM1, "01/01/2000", NUM1, "75112", NUM1, "99100", NUM1 );
-        tryPivotAttributesIntegrity( null, newIdentity, ResponseStatusType.FORBIDDEN, "3.2. Create Identity with all attributes at level 400, without name" );
+        tryPivotAttributesIntegrity( null, newIdentity, RequestFormatException.class, "3.2. Create Identity with all attributes at level 400, without name" );
 
         newIdentity = getMockIdentityDto( "1", NUM1, "Dupoon", NUM1, null, 0, "01/01/2000", NUM1, "75112", NUM1, "99100", NUM1 );
-        tryPivotAttributesIntegrity( null, newIdentity, ResponseStatusType.FORBIDDEN,
+        tryPivotAttributesIntegrity( null, newIdentity, RequestFormatException.class,
                 "3.3. Create Identity with all attributes at level 400, without firstname" );
 
         newIdentity = getMockIdentityDto( "1", NUM1, "Dupoon", NUM1, "Marcel", NUM1, null, 0, "75112", NUM1, "99100", NUM1 );
-        tryPivotAttributesIntegrity( null, newIdentity, ResponseStatusType.FORBIDDEN,
+        tryPivotAttributesIntegrity( null, newIdentity, RequestFormatException.class,
                 "3.4. Create Identity with all attributes at level 400, without birthdate" );
 
         newIdentity = getMockIdentityDto( "1", NUM1, "Dupoon", NUM1, "Marcel", NUM1, "01/01/2000", NUM1, null, 0, "99100", NUM1 );
-        tryPivotAttributesIntegrity( null, newIdentity, ResponseStatusType.FORBIDDEN,
+        tryPivotAttributesIntegrity( null, newIdentity, RequestFormatException.class,
                 "3.5. Create Identity with all attributes at level 400, without birthplace" );
 
         newIdentity = getMockIdentityDto( "1", NUM1, "Dupoon", NUM1, "Marcel", NUM1, "01/01/2000", NUM1, "75112", NUM1, null, 0 );
-        tryPivotAttributesIntegrity( null, newIdentity, ResponseStatusType.FORBIDDEN,
+        tryPivotAttributesIntegrity( null, newIdentity, RequestFormatException.class,
                 "3.6. Create Identity with all attributes at level 400, without birthcountry" );
 
         newIdentity = getMockIdentityDto( "1", NUM1, "Dupoon", ORIG1, "Marcel", NUM1, "01/01/2000", NUM1, "75112", NUM1, "99100", NUM1 );
-        tryPivotAttributesIntegrity( null, newIdentity, ResponseStatusType.FORBIDDEN, "3.7. Create Identity with 5 attributes at level 400, and 1 at level 500" );
+        tryPivotAttributesIntegrity( null, newIdentity, RequestFormatException.class, "3.7. Create Identity with 5 attributes at level 400, and 1 at level 500" );
     }
 
     /**
@@ -160,11 +160,11 @@ public class IdentityStoreControlsTest extends LuteceTestCase
         IdentityDto existingIdentity_NUM1 = getMockIdentityDto( "1", NUM1, "Dupoon", NUM1, "Marcel", NUM1, "01/01/2000", NUM1, "75112", NUM1, "99100", NUM1 );
 
         IdentityDto udpatedIdentity = getMockIdentityDto( null, 0, "Dupoon", ORIG1, null, 0, null, 0, null, 0, null, 0 );
-        tryPivotAttributesIntegrity( existingIdentity_NUM1, udpatedIdentity, ResponseStatusType.FORBIDDEN,
+        tryPivotAttributesIntegrity( existingIdentity_NUM1, udpatedIdentity, RequestFormatException.class,
                 "4.1. Update  existing Identity (level 400)  with 1 attribute at level 500" );
 
         udpatedIdentity = getMockIdentityDto( null, 0, "Dupoon", ORIG1, null, 0, null, 0, null, 0, null, 0 );
-        tryPivotAttributesIntegrity( existingIncompleteIdentity_NUM1, udpatedIdentity, ResponseStatusType.FORBIDDEN,
+        tryPivotAttributesIntegrity( existingIncompleteIdentity_NUM1, udpatedIdentity, RequestFormatException.class,
                 "4.2. Update  existing incomplete Identity (level 100)  with 1 attribute at level 500" );
 
     }
@@ -181,38 +181,25 @@ public class IdentityStoreControlsTest extends LuteceTestCase
     }
 
     /**
-     * Tests that expect required ResponsStatusType
-     * 
-     * @param cuid
-     * @param identity
+     * Pivot attributes integrity test
      */
-    private void tryPivotAttributesIntegrity( IdentityDto existingIdentity, IdentityDto requestIdentity, ResponseStatusType expectedStatus, String strTestCase )
+    private void tryPivotAttributesIntegrity(final IdentityDto existingIdentity, final IdentityDto requestIdentity,
+                                             final Class<? extends IdentityStoreException> expectedException, final String strTestCase)
     {
         try
         {
-            final IdentityChangeResponse response = new IdentityChangeResponse( );
-
-            // set default response status
-            response.setStatus( new ResponseStatus( 200, ResponseStatusType.OK ) );
-
             // test
             IdentityAttributeValidator.instance( ).validatePivotAttributesIntegrity( existingIdentity, requestIdentity, false );
 
-            // assert response status
-            if ( expectedStatus != null )
-            {
-                assertEquals( strTestCase + " : " + EOL + getIdentityToString( existingIdentity ) + getIdentityToString( requestIdentity )
-                        + getFullResponseStatusAsString( response ), expectedStatus, response.getStatus( ).getType( ) );
-            }
-            else
-            {
-                assertEquals( strTestCase + " : " + EOL + getIdentityToString( existingIdentity ) + getIdentityToString( requestIdentity )
-                        + getFullResponseStatusAsString( response ), ResponseStatusType.OK, response.getStatus( ).getType( ) );
-            }
+            // if no exception, the validation has passed successfully
+            assertNull(strTestCase + " : expected to fail pivot attributes integrity validation, but validation passed successfully.",
+                       expectedException);
         }
-        catch( Exception e )
+        catch( final Exception e )
         {
-            fail( strTestCase + " : " + e.getMessage( ) );
+            assertEquals(strTestCase + " : " + e.getMessage( ),
+                         expectedException,
+                         e.getClass());
         }
     }
 
