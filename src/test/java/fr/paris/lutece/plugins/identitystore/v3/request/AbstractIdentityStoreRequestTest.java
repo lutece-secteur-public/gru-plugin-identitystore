@@ -4,31 +4,35 @@ import fr.paris.lutece.plugins.identitystore.v3.web.rs.AbstractIdentityStoreRequ
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.ResponseDto;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.ResponseStatusType;
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
+import fr.paris.lutece.test.LuteceTestCase;
 
-import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertNull;
+public abstract class AbstractIdentityStoreRequestTest extends LuteceTestCase {
 
-public interface IdentityStoreRequestTest {
+    protected static final String H_CLIENT_CODE = "TEST";
+    protected static final String H_APP_CODE = "TEST";
+    protected static final String H_AUTHOR_NAME = "test";
+    protected static final String H_AUTHOR_TYPE = "admin";
 
-    void test_1_RequestOK() throws Exception;
+    public abstract void test_1_RequestOK() throws Exception;
 
-    void test_2_RequestKO() throws Exception;
+    public abstract void test_2_RequestKO() throws Exception;
 
-    default void executeRequestKO(final AbstractIdentityStoreRequest request, final String strTestCase, final Class<? extends IdentityStoreException> expectedException) {
+    protected void executeRequestKO(final AbstractIdentityStoreRequest request, final String strTestCase, final Class<? extends IdentityStoreException> expectedException) {
         executeRequest(request, strTestCase, null, expectedException);
     }
 
-    default ResponseDto executeRequestOK(final AbstractIdentityStoreRequest request, final String strTestCase, final ResponseStatusType expectedResponseStatus) {
+    protected ResponseDto executeRequestOK(final AbstractIdentityStoreRequest request, final String strTestCase, final ResponseStatusType expectedResponseStatus) {
         return executeRequest(request, strTestCase, expectedResponseStatus, null);
     }
 
-    default ResponseDto executeRequest(final AbstractIdentityStoreRequest request, final String strTestCase, final ResponseStatusType expectedResponseStatus,
+    private ResponseDto executeRequest(final AbstractIdentityStoreRequest request, final String strTestCase, final ResponseStatusType expectedResponseStatus,
                                 final Class<? extends IdentityStoreException> expectedException) {
         try {
             // Execute request
             final ResponseDto response = request.doRequest();
 
             // If no exception, the request was successfull.
+            assertNotNull( strTestCase + " : response is null", response );
             final ResponseStatusType responseStatus = response.getStatus().getType();
 
             // Checking if no exception was expected
@@ -55,19 +59,6 @@ public interface IdentityStoreRequestTest {
                          e.getClass());
         }
         return null;
-    }
-
-    default String getClientCode() {
-        return "TEST";
-    }
-    default String getAppCode() {
-        return "TEST";
-    }
-    default String getAuthorName() {
-        return "test";
-    }
-    default String getAuthorType() {
-        return "admin";
     }
 
 }

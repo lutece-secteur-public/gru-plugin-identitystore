@@ -33,6 +33,7 @@
  */
 package fr.paris.lutece.plugins.identitystore.v3.web.request.contract;
 
+import fr.paris.lutece.plugins.identitystore.business.application.ClientApplicationHome;
 import fr.paris.lutece.plugins.identitystore.service.contract.ServiceContractService;
 import fr.paris.lutece.plugins.identitystore.v3.web.request.AbstractIdentityStoreAppCodeRequest;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.IdentityRequestValidator;
@@ -48,6 +49,7 @@ import fr.paris.lutece.plugins.identitystore.web.exception.RequestFormatExceptio
 import fr.paris.lutece.plugins.identitystore.web.exception.ResourceConsistencyException;
 import fr.paris.lutece.plugins.identitystore.web.exception.ResourceNotFoundException;
 import fr.paris.lutece.portal.service.util.AppException;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.List;
 
@@ -75,7 +77,9 @@ public class ServiceContractListGetRequest extends AbstractIdentityStoreAppCodeR
     @Override
     protected void fetchResources( ) throws ResourceNotFoundException
     {
-        // do nothing
+        if (StringUtils.isNotBlank(_strTargetClientCode) && ClientApplicationHome.findByCode(_strTargetClientCode) == null) {
+            throw new ResourceNotFoundException( "No application could be found with code " + _strTargetClientCode, Constants.PROPERTY_REST_ERROR_APPLICATION_NOT_FOUND );
+        }
     }
 
     @Override

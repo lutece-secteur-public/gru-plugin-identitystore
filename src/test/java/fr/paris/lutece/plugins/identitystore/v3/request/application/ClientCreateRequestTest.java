@@ -1,38 +1,37 @@
 package fr.paris.lutece.plugins.identitystore.v3.request.application;
 
 import fr.paris.lutece.plugins.identitystore.business.application.ClientApplicationHome;
-import fr.paris.lutece.plugins.identitystore.v3.request.IdentityStoreRequestTest;
+import fr.paris.lutece.plugins.identitystore.v3.request.AbstractIdentityStoreRequestTest;
 import fr.paris.lutece.plugins.identitystore.v3.web.request.application.ClientCreateRequest;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.DtoConverter;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.application.ClientApplicationDto;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.application.ClientChangeResponse;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.ResponseStatusType;
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
 import fr.paris.lutece.plugins.identitystore.web.exception.RequestFormatException;
 import fr.paris.lutece.plugins.identitystore.web.exception.ResourceConsistencyException;
-import fr.paris.lutece.test.LuteceTestCase;
 
 import java.util.concurrent.TimeUnit;
 
-public class ClientCreateRequestTest extends LuteceTestCase implements IdentityStoreRequestTest {
-
-    private static final String CLIENT_CODE_TO_CREATE = "ClientCreateRequestTest";
-    private static final String APP_CODE_TO_CREATE = "ClientCreateRequestTest";
-    private static final String NAME_TO_CREATE = "ClientCreateRequestTest";
+public class ClientCreateRequestTest extends AbstractIdentityStoreRequestTest {
 
     @Override
     public void test_1_RequestOK() throws Exception {
         String strTestCase = "1.1. Create client application with all fields";
-        final ClientApplicationDto clientApplicationDto = new ClientApplicationDto();
-        clientApplicationDto.setClientCode(CLIENT_CODE_TO_CREATE);
-        clientApplicationDto.setApplicationCode(APP_CODE_TO_CREATE);
-        clientApplicationDto.setName(NAME_TO_CREATE);
+        final ClientApplicationDto clientApplicationDto = getClientApplicationDtoForCreate();
         try {
-            final ClientCreateRequest request = new ClientCreateRequest(clientApplicationDto, getClientCode(), getAppCode(), getAuthorName(), getAuthorType());
-            this.executeRequestOK(request, strTestCase, ResponseStatusType.SUCCESS);
+            final ClientCreateRequest request = new ClientCreateRequest(clientApplicationDto, H_CLIENT_CODE, H_APP_CODE, H_AUTHOR_NAME, H_AUTHOR_TYPE);
+            final ClientChangeResponse response = (ClientChangeResponse) this.executeRequestOK(request, strTestCase, ResponseStatusType.SUCCESS);
+            assertNotNull(strTestCase + ": client application in response is null", response.getClientApplication());
+
+            TimeUnit.SECONDS.sleep(1);
+            assertNotNull(strTestCase + " : could not find the new client application in database after creation", ClientApplicationHome.findByPrimaryKey(response.getClientApplication().getId()));
+
+            ClientApplicationHome.remove(DtoConverter.convertDtoToClient(response.getClientApplication()));
         } catch (final IdentityStoreException e) {
             fail(strTestCase + " : FAIL : " + e.getMessage());
         }
 
-        TimeUnit.SECONDS.sleep(2);
     }
 
     @Override
@@ -40,39 +39,39 @@ public class ClientCreateRequestTest extends LuteceTestCase implements IdentityS
         String strTestCase = "2.1. Create client application without clientApplicationDto";
         ClientApplicationDto clientApplicationDto = null;
         try {
-            final ClientCreateRequest request = new ClientCreateRequest(clientApplicationDto, getClientCode(), getAppCode(), getAuthorName(), getAuthorType());
+            final ClientCreateRequest request = new ClientCreateRequest(clientApplicationDto, H_CLIENT_CODE, H_APP_CODE, H_AUTHOR_NAME, H_AUTHOR_TYPE);
             this.executeRequestKO(request, strTestCase, RequestFormatException.class);
         } catch (final IdentityStoreException e) {
             fail(strTestCase + " : FAIL : " + e.getMessage());
         }
 
         strTestCase = "2.2. Create client application without client code";
-        clientApplicationDto = new ClientApplicationDto();
-        clientApplicationDto.setApplicationCode(APP_CODE_TO_CREATE);
-        clientApplicationDto.setName(NAME_TO_CREATE);
+        clientApplicationDto = getClientApplicationDtoForCreate();
+        clientApplicationDto.setClientCode(null);
         try {
-            final ClientCreateRequest request = new ClientCreateRequest(clientApplicationDto, getClientCode(), getAppCode(), getAuthorName(), getAuthorType());
+            final ClientCreateRequest request = new ClientCreateRequest(clientApplicationDto, H_CLIENT_CODE, H_APP_CODE, H_AUTHOR_NAME, H_AUTHOR_TYPE);
             this.executeRequestKO(request, strTestCase, RequestFormatException.class);
         } catch (final IdentityStoreException e) {
             fail(strTestCase + " : FAIL : " + e.getMessage());
         }
 
         strTestCase = "2.3. Create client application with existing client code";
-        clientApplicationDto = new ClientApplicationDto();
-        clientApplicationDto.setClientCode(CLIENT_CODE_TO_CREATE);
-        clientApplicationDto.setApplicationCode(APP_CODE_TO_CREATE);
-        clientApplicationDto.setName(NAME_TO_CREATE);
+        clientApplicationDto = getClientApplicationDtoForCreate();
+        clientApplicationDto.setClientCode(H_CLIENT_CODE);
         try {
-            final ClientCreateRequest request = new ClientCreateRequest(clientApplicationDto, getClientCode(), getAppCode(), getAuthorName(), getAuthorType());
+            final ClientCreateRequest request = new ClientCreateRequest(clientApplicationDto, H_CLIENT_CODE, H_APP_CODE, H_AUTHOR_NAME, H_AUTHOR_TYPE);
             this.executeRequestKO(request, strTestCase, ResourceConsistencyException.class);
         } catch (final IdentityStoreException e) {
             fail(strTestCase + " : FAIL : " + e.getMessage());
         }
 
-        try {
-            ClientApplicationHome.remove(ClientApplicationHome.findByCode(CLIENT_CODE_TO_CREATE));
-        } catch (final Throwable e) {
-            // no-op
-        }
+    }
+
+    public static ClientApplicationDto getClientApplicationDtoForCreate( ) {
+        final ClientApplicationDto clientApplicationDto = new ClientApplicationDto();
+        clientApplicationDto.setClientCode("ClientCodeMock");
+        clientApplicationDto.setApplicationCode("AppCodeMock");
+        clientApplicationDto.setName("NameMock");
+        return clientApplicationDto;
     }
 }

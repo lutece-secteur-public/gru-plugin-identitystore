@@ -33,8 +33,6 @@
  */
 package fr.paris.lutece.plugins.identitystore.v3.web.request.contract;
 
-import fr.paris.lutece.plugins.identitystore.business.application.ClientApplication;
-import fr.paris.lutece.plugins.identitystore.business.application.ClientApplicationHome;
 import fr.paris.lutece.plugins.identitystore.business.contract.ServiceContract;
 import fr.paris.lutece.plugins.identitystore.business.contract.ServiceContractHome;
 import fr.paris.lutece.plugins.identitystore.service.contract.ServiceContractService;
@@ -53,8 +51,6 @@ import fr.paris.lutece.plugins.identitystore.web.exception.RequestFormatExceptio
 import fr.paris.lutece.plugins.identitystore.web.exception.ResourceConsistencyException;
 import fr.paris.lutece.plugins.identitystore.web.exception.ResourceNotFoundException;
 
-import java.util.Optional;
-
 /**
  * This class represents a put end date request for ServiceContractRestService
  */
@@ -62,6 +58,8 @@ public class ServiceContractPutEndDateRequest extends AbstractIdentityStoreAppCo
 {
     private final ServiceContractDto _serviceContractDto;
     private final Integer _serviceContractId;
+
+    private ServiceContract existingContract;
 
     /**
      * Constructor of ServiceContractPutEndDateRequest
@@ -77,10 +75,6 @@ public class ServiceContractPutEndDateRequest extends AbstractIdentityStoreAppCo
             final String strAppCode, final String authorName, final String authorType ) throws IdentityStoreException
     {
         super( strClientCode, strAppCode, authorName, authorType );
-        if ( serviceContractDto == null )
-        {
-            throw new RequestFormatException( "Provided service contract is null", Constants.PROPERTY_REST_ERROR_PROVIDED_SERVICE_CONTRACT_NULL );
-        }
         this._serviceContractDto = serviceContractDto;
         this._serviceContractId = serviceContractId;
     }
@@ -88,15 +82,13 @@ public class ServiceContractPutEndDateRequest extends AbstractIdentityStoreAppCo
     @Override
     protected void fetchResources( ) throws ResourceNotFoundException
     {
-        if ( ClientApplicationHome.findByCode( _serviceContractDto.getClientCode( ) ) == null )
+        if ( _serviceContractId != null )
         {
-            throw new ResourceNotFoundException( "No application could be found with code " + _serviceContractDto.getClientCode( ),
-                    Constants.PROPERTY_REST_ERROR_APPLICATION_NOT_FOUND );
-        }
-        if ( !ServiceContractHome.findByPrimaryKey( _serviceContractId ).isPresent( ) )
-        {
-            throw new ResourceNotFoundException( "No service contract could be found with code " + _serviceContractId,
-                    Constants.PROPERTY_REST_ERROR_SERVICE_CONTRACT_NOT_FOUND );
+            existingContract = ServiceContractHome.findByPrimaryKey( _serviceContractId ).orElse(null);
+            if (existingContract == null) {
+                throw new ResourceNotFoundException("No service contract could be found with id " + _serviceContractId,
+                                                    Constants.PROPERTY_REST_ERROR_SERVICE_CONTRACT_NOT_FOUND);
+            }
         }
     }
 
@@ -116,7 +108,9 @@ public class ServiceContractPutEndDateRequest extends AbstractIdentityStoreAppCo
     @Override
     protected void validateResourcesConsistency( ) throws ResourceConsistencyException
     {
-        // do nothing
+        if(_serviceContractDto.getEndingDate().before(existingContract.getStartingDate())){
+            throw new ResourceConsistencyException("The new end date cannot be before the start date of the service contract", Constants.PROPERTY_REST_ERROR_END_DATE_BEFORE_START_DATE);
+        }
     }
 
     @Override
@@ -136,8 +130,9 @@ public class ServiceContractPutEndDateRequest extends AbstractIdentityStoreAppCo
     {
         final ServiceContractChangeResponse response = new ServiceContractChangeResponse( );
         _serviceContractDto.setId( _serviceContractId );
-        ServiceContractService.instance( ).close( DtoConverter.convertDtoToContract( _serviceContractDto ) );
+        final ServiceContract closedContract = ServiceContractService.instance().close(DtoConverter.convertDtoToContract(_serviceContractDto));
         response.setStatus( ResponseStatusFactory.success( ).setMessageKey( Constants.PROPERTY_REST_INFO_SUCCESSFUL_OPERATION ) );
+        response.setServiceContract(DtoConverter.convertContractToDto(closedContract));
 
         return response;
     }

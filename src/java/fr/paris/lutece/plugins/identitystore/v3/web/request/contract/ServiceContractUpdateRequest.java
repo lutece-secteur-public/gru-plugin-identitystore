@@ -68,7 +68,6 @@ public class ServiceContractUpdateRequest extends AbstractIdentityStoreAppCodeRe
 
     private ClientApplication clientApplication;
     private ServiceContract sentServiceContract;
-    private ServiceContract existingServiceContractToUpdate;
 
     /**
      * Constructor of ServiceContractUpdateRequest
@@ -84,10 +83,6 @@ public class ServiceContractUpdateRequest extends AbstractIdentityStoreAppCodeRe
             final String strAppCode, final String authorName, final String authorType ) throws IdentityStoreException
     {
         super( strClientCode, strAppCode, authorName, authorType );
-        if ( serviceContractDto == null )
-        {
-            throw new RequestFormatException( "Provided service contract is null", Constants.PROPERTY_REST_ERROR_PROVIDED_SERVICE_CONTRACT_NULL );
-        }
         this._serviceContractDto = serviceContractDto;
         this._serviceContractId = serviceContractId;
     }
@@ -95,22 +90,25 @@ public class ServiceContractUpdateRequest extends AbstractIdentityStoreAppCodeRe
     @Override
     protected void fetchResources( ) throws ResourceNotFoundException
     {
-        clientApplication = ClientApplicationHome.findByCode( _serviceContractDto.getClientCode( ) );
-        if ( clientApplication == null )
-        {
-            throw new ResourceNotFoundException( "No application could be found with code " + _serviceContractDto.getClientCode( ),
-                    Constants.PROPERTY_REST_ERROR_APPLICATION_NOT_FOUND );
+        if (_serviceContractId != null) {
+            final Optional<ServiceContract> serviceContractToUpdate = ServiceContractHome.findByPrimaryKey(_serviceContractId);
+            if (!serviceContractToUpdate.isPresent()) {
+                throw new ResourceNotFoundException("No service contract could be found with ID " + _serviceContractId,
+                                                    Constants.PROPERTY_REST_ERROR_SERVICE_CONTRACT_NOT_FOUND);
+            }
         }
-        final Optional<ServiceContract> serviceContractToUpdate = ServiceContractHome.findByPrimaryKey( _serviceContractId );
-        if ( !serviceContractToUpdate.isPresent( ) )
-        {
-            throw new ResourceNotFoundException( "No service contract could be found with code " + _serviceContractId,
-                    Constants.PROPERTY_REST_ERROR_SERVICE_CONTRACT_NOT_FOUND );
+        if (_serviceContractDto != null) {
+            clientApplication = ClientApplicationHome.findByCode(_serviceContractDto.getClientCode());
+            if (clientApplication == null) {
+                throw new ResourceNotFoundException("No application could be found with code " + _serviceContractDto.getClientCode(),
+                                                    Constants.PROPERTY_REST_ERROR_APPLICATION_NOT_FOUND);
+            }
+            if (_serviceContractId != null) {
+                _serviceContractDto.setId(_serviceContractId);
+                sentServiceContract = DtoConverter.convertDtoToContract(_serviceContractDto);
+            }
         }
-        existingServiceContractToUpdate = serviceContractToUpdate.get( );
 
-        _serviceContractDto.setId( _serviceContractId );
-        sentServiceContract = DtoConverter.convertDtoToContract( _serviceContractDto );
     }
 
     @Override

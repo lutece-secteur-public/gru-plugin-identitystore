@@ -79,11 +79,13 @@ public class ClientUpdateRequest extends AbstractIdentityStoreAppCodeRequest
     @Override
     protected void fetchResources( ) throws ResourceNotFoundException
     {
-        if ( ClientApplicationHome.findByCode( _clientApplicationDto.getClientCode( ) ) == null )
+        final ClientApplication existingClientApp = ClientApplicationHome.findByCode(_clientApplicationDto.getClientCode());
+        if (existingClientApp == null )
         {
             throw new ResourceNotFoundException( "No client could be found with the code " + _clientApplicationDto.getClientCode( ),
                     Constants.PROPERTY_REST_ERROR_NO_CLIENT_FOUND );
         }
+        _clientApplicationDto.setId(existingClientApp.getId());
     }
 
     @Override
