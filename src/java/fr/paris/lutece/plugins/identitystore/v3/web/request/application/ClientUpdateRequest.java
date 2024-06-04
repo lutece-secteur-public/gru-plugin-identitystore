@@ -68,24 +68,20 @@ public class ClientUpdateRequest extends AbstractIdentityStoreAppCodeRequest
             final String authorType ) throws IdentityStoreException
     {
         super( strClientCode, strAppCode, authorName, authorType );
-        if ( clientApplicationDto == null )
-        {
-            throw new RequestFormatException( "Provided client is null", Constants.PROPERTY_REST_ERROR_CLIENT_APPLICATION_NULL );
-        }
         this._clientApplicationDto = clientApplicationDto;
-
     }
 
     @Override
     protected void fetchResources( ) throws ResourceNotFoundException
     {
-        final ClientApplication existingClientApp = ClientApplicationHome.findByCode(_clientApplicationDto.getClientCode());
-        if (existingClientApp == null )
-        {
-            throw new ResourceNotFoundException( "No client could be found with the code " + _clientApplicationDto.getClientCode( ),
-                    Constants.PROPERTY_REST_ERROR_NO_CLIENT_FOUND );
+        if (_clientApplicationDto != null && _clientApplicationDto.getClientCode() != null) {
+            final ClientApplication existingClientApp = ClientApplicationHome.findByCode(_clientApplicationDto.getClientCode());
+            if (existingClientApp == null) {
+                throw new ResourceNotFoundException("No client could be found with the code " + _clientApplicationDto.getClientCode(),
+                                                    Constants.PROPERTY_REST_ERROR_NO_CLIENT_FOUND);
+            }
+            _clientApplicationDto.setId(existingClientApp.getId());
         }
-        _clientApplicationDto.setId(existingClientApp.getId());
     }
 
     @Override

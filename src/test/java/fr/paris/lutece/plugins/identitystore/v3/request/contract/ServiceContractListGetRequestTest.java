@@ -4,6 +4,7 @@ import fr.paris.lutece.plugins.identitystore.v3.request.AbstractIdentityStoreReq
 import fr.paris.lutece.plugins.identitystore.v3.web.request.contract.ServiceContractListGetRequest;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.ResponseStatusType;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.contract.ServiceContractsSearchResponse;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
 import fr.paris.lutece.plugins.identitystore.web.exception.RequestFormatException;
 import fr.paris.lutece.plugins.identitystore.web.exception.ResourceNotFoundException;
@@ -31,7 +32,7 @@ public class ServiceContractListGetRequestTest extends AbstractIdentityStoreRequ
         String targetClientCode = null;
         try{
             final ServiceContractListGetRequest request = new ServiceContractListGetRequest(targetClientCode, H_CLIENT_CODE, H_APP_CODE, H_AUTHOR_NAME, H_AUTHOR_TYPE);
-            this.executeRequestKO(request, strTestCase, RequestFormatException.class);
+            this.executeRequestKO(request, strTestCase, RequestFormatException.class, Constants.PROPERTY_REST_ERROR_MISSING_TARGET_CLIENT_CODE);
         } catch (final IdentityStoreException e) {
             fail(strTestCase + " : FAIL : " + e.getMessage());
         }
@@ -40,7 +41,7 @@ public class ServiceContractListGetRequestTest extends AbstractIdentityStoreRequ
         targetClientCode = "";
         try{
             final ServiceContractListGetRequest request = new ServiceContractListGetRequest(targetClientCode, H_CLIENT_CODE, H_APP_CODE, H_AUTHOR_NAME, H_AUTHOR_TYPE);
-            this.executeRequestKO(request, strTestCase, RequestFormatException.class);
+            this.executeRequestKO(request, strTestCase, RequestFormatException.class, Constants.PROPERTY_REST_ERROR_MISSING_TARGET_CLIENT_CODE);
         } catch (final IdentityStoreException e) {
             fail(strTestCase + " : FAIL : " + e.getMessage());
         }
@@ -49,7 +50,7 @@ public class ServiceContractListGetRequestTest extends AbstractIdentityStoreRequ
         targetClientCode = "UnknownClientCode";
         try{
             final ServiceContractListGetRequest request = new ServiceContractListGetRequest(targetClientCode, H_CLIENT_CODE, H_APP_CODE, H_AUTHOR_NAME, H_AUTHOR_TYPE);
-            this.executeRequestKO(request, strTestCase, ResourceNotFoundException.class);
+            this.executeRequestKO(request, strTestCase, ResourceNotFoundException.class, Constants.PROPERTY_REST_ERROR_APPLICATION_NOT_FOUND);
         } catch (final IdentityStoreException e) {
             fail(strTestCase + " : FAIL : " + e.getMessage());
         }

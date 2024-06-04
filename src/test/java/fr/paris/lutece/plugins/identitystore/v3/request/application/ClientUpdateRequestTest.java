@@ -8,6 +8,7 @@ import fr.paris.lutece.plugins.identitystore.v3.web.rs.DtoConverter;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.application.ClientApplicationDto;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.application.ClientChangeResponse;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.ResponseStatusType;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
 import fr.paris.lutece.plugins.identitystore.web.exception.RequestFormatException;
 import fr.paris.lutece.plugins.identitystore.web.exception.ResourceNotFoundException;
@@ -42,17 +43,16 @@ public class ClientUpdateRequestTest extends AbstractIdentityStoreRequestTest {
     public void test_2_RequestKO() throws Exception {
         String strTestCase = "2.1. Update request without client application";
         try {
-            // exception is expected on constructor here
             final ClientUpdateRequest request = new ClientUpdateRequest(null, H_CLIENT_CODE, H_APP_CODE, H_AUTHOR_NAME, H_AUTHOR_TYPE);
-            fail(strTestCase + " : FAIL : constructor of request was expected to throw exception but didn't");
+            this.executeRequestKO(request, strTestCase, RequestFormatException.class, Constants.PROPERTY_REST_ERROR_CLIENT_APPLICATION_NULL);
         } catch (final IdentityStoreException e) {
-            assertEquals(strTestCase + " : thrown exception is not of the expected type", e.getClass(), RequestFormatException.class);
+            fail(strTestCase + " : FAIL : " + e.getMessage());
         }
 
         strTestCase = "2.2. Update request with empty client application";
         try {
             final ClientUpdateRequest request = new ClientUpdateRequest(new ClientApplicationDto(), H_CLIENT_CODE, H_APP_CODE, H_AUTHOR_NAME, H_AUTHOR_TYPE);
-            this.executeRequestKO(request, strTestCase, ResourceNotFoundException.class);
+            this.executeRequestKO(request, strTestCase, RequestFormatException.class, Constants.PROPERTY_REST_ERROR_CLIENT_APPLICATION_WITHOUT_CLIENT_CODE);
         } catch (final IdentityStoreException e) {
             fail(strTestCase + " : FAIL : " + e.getMessage());
         }
@@ -62,7 +62,7 @@ public class ClientUpdateRequestTest extends AbstractIdentityStoreRequestTest {
         clientApp.setClientCode("unknownClientCode");
         try {
             final ClientUpdateRequest request = new ClientUpdateRequest(clientApp, H_CLIENT_CODE, H_APP_CODE, H_AUTHOR_NAME, H_AUTHOR_TYPE);
-            this.executeRequestKO(request, strTestCase, ResourceNotFoundException.class);
+            this.executeRequestKO(request, strTestCase, ResourceNotFoundException.class, Constants.PROPERTY_REST_ERROR_NO_CLIENT_FOUND);
         } catch (final IdentityStoreException e) {
             fail(strTestCase + " : FAIL : " + e.getMessage());
         }

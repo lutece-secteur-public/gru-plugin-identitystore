@@ -4,6 +4,7 @@ import fr.paris.lutece.plugins.identitystore.v3.request.AbstractIdentityStoreReq
 import fr.paris.lutece.plugins.identitystore.v3.web.request.application.ClientGetRequest;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.application.ClientSearchResponse;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.ResponseStatusType;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
 import fr.paris.lutece.plugins.identitystore.web.exception.RequestFormatException;
 import fr.paris.lutece.plugins.identitystore.web.exception.ResourceNotFoundException;
@@ -29,7 +30,7 @@ public class ClientGetRequestTest extends AbstractIdentityStoreRequestTest {
         String strTestCase = "2.1. Get client application without client code";
         try {
             final ClientGetRequest request = new ClientGetRequest(null, H_CLIENT_CODE, H_APP_CODE, H_AUTHOR_NAME, H_AUTHOR_TYPE);
-            this.executeRequestKO(request, strTestCase, RequestFormatException.class);
+            this.executeRequestKO(request, strTestCase, RequestFormatException.class, Constants.PROPERTY_REST_ERROR_MISSING_TARGET_CLIENT_CODE);
         } catch (final IdentityStoreException e) {
             fail(strTestCase + " : FAIL : " + e.getMessage());
         }
@@ -37,7 +38,7 @@ public class ClientGetRequestTest extends AbstractIdentityStoreRequestTest {
         strTestCase = "2.2. Get client application with non existing client code";
         try {
             final ClientGetRequest request = new ClientGetRequest("NonExistingClientCode", H_CLIENT_CODE, H_APP_CODE, H_AUTHOR_NAME, H_AUTHOR_TYPE);
-            this.executeRequestKO(request, strTestCase, ResourceNotFoundException.class);
+            this.executeRequestKO(request, strTestCase, ResourceNotFoundException.class, Constants.PROPERTY_REST_ERROR_NO_CLIENT_FOUND);
         } catch (final IdentityStoreException e) {
             fail(strTestCase + " : FAIL : " + e.getMessage());
         }

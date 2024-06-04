@@ -6,6 +6,8 @@ import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.ResponseStatus
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
 import fr.paris.lutece.test.LuteceTestCase;
 
+import static org.junit.Assert.assertThrows;
+
 public abstract class AbstractIdentityStoreRequestTest extends LuteceTestCase {
 
     protected static final String H_CLIENT_CODE = "TEST";
@@ -17,46 +19,25 @@ public abstract class AbstractIdentityStoreRequestTest extends LuteceTestCase {
 
     public abstract void test_2_RequestKO() throws Exception;
 
-    protected void executeRequestKO(final AbstractIdentityStoreRequest request, final String strTestCase, final Class<? extends IdentityStoreException> expectedException) {
-        executeRequest(request, strTestCase, null, expectedException);
+    protected void executeRequestKO(final AbstractIdentityStoreRequest request, final String strTestCase, final Class<? extends IdentityStoreException> expectedException, final String expectedExceptionMessageKey) {
+        final Exception e = assertThrows(strTestCase + " : request was expected to fail, but it was successfull.", Exception.class, request::doRequest);
+        assertEquals(strTestCase + " : the exception that occured is not of the expected type. Exception message : " + e.getMessage(), e.getClass(), expectedException);
+        if (expectedExceptionMessageKey != null) {
+            final String exceptionMsgKey = ((IdentityStoreException) e).getLocaleMessageKey();
+            assertEquals(strTestCase + " : the exception message key does not match the expected key. Exception message key : " + exceptionMsgKey, expectedExceptionMessageKey, exceptionMsgKey);
+        }
     }
 
-    protected ResponseDto executeRequestOK(final AbstractIdentityStoreRequest request, final String strTestCase, final ResponseStatusType expectedResponseStatus) {
-        return executeRequest(request, strTestCase, expectedResponseStatus, null);
-    }
-
-    private ResponseDto executeRequest(final AbstractIdentityStoreRequest request, final String strTestCase, final ResponseStatusType expectedResponseStatus,
-                                final Class<? extends IdentityStoreException> expectedException) {
+    protected ResponseDto executeRequestOK(final AbstractIdentityStoreRequest request, final String strTestCase, final ResponseStatusType expectedResponseStatusType) {
         try {
-            // Execute request
             final ResponseDto response = request.doRequest();
-
-            // If no exception, the request was successfull.
             assertNotNull( strTestCase + " : response is null", response );
-            final ResponseStatusType responseStatus = response.getStatus().getType();
 
-            // Checking if no exception was expected
-            assertNull(strTestCase + " : request was expected to fail, but it was successfull. Response status : " + responseStatus,
-                       expectedException);
-
-            // Checking if the response has the expected status
-            assertEquals(strTestCase + " : response doesn't have the expected status. Response status : " + responseStatus,
-                         expectedResponseStatus,
-                         responseStatus);
-
+            final ResponseStatusType responseStatusType = response.getStatus().getType();
+            assertEquals(strTestCase + " : response doesn't have the expected status. Response status : " + responseStatusType, expectedResponseStatusType, responseStatusType);
             return response;
-
         } catch (final IdentityStoreException e) {
-            // If exception, the request wasn't successfull.
-
-            // Checking if no response status was expected
-            assertNull(strTestCase + " : request was expected to succeed, but it failed. Exception message : " + e.getMessage(),
-                       expectedResponseStatus);
-
-            // Checking if the exception is of the expected type
-            assertEquals(strTestCase + " : the exception that occured is not of the expected type. Exception message : " + e.getMessage(),
-                         expectedException,
-                         e.getClass());
+            fail(strTestCase + " : request was expected to succeed, but it failed. Exception message : " + e.getMessage());
         }
         return null;
     }

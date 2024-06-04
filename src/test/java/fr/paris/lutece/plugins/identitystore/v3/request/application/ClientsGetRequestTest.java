@@ -4,6 +4,7 @@ import fr.paris.lutece.plugins.identitystore.v3.request.AbstractIdentityStoreReq
 import fr.paris.lutece.plugins.identitystore.v3.web.request.application.ClientsGetRequest;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.application.ClientsSearchResponse;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.ResponseStatusType;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
 import fr.paris.lutece.plugins.identitystore.web.exception.ResourceNotFoundException;
 
@@ -37,7 +38,7 @@ public class ClientsGetRequestTest extends AbstractIdentityStoreRequestTest {
         final String strTestCase = "2.1. Get client applications with non existing application code";
         try {
             final ClientsGetRequest request = new ClientsGetRequest("NonExistingAppCode", H_CLIENT_CODE, H_APP_CODE, H_AUTHOR_NAME, H_AUTHOR_TYPE);
-            this.executeRequestKO(request, strTestCase, ResourceNotFoundException.class);
+            this.executeRequestKO(request, strTestCase, ResourceNotFoundException.class, Constants.PROPERTY_REST_ERROR_NO_CLIENT_FOUND);
         } catch (final IdentityStoreException e) {
             fail(strTestCase + " : FAIL : " + e.getMessage());
         }

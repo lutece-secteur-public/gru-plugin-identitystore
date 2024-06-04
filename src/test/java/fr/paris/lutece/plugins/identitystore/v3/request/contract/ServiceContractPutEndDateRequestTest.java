@@ -7,6 +7,7 @@ import fr.paris.lutece.plugins.identitystore.v3.web.request.contract.ServiceCont
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.ResponseStatusType;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.contract.ServiceContractChangeResponse;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.contract.ServiceContractDto;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
 import fr.paris.lutece.plugins.identitystore.web.exception.RequestFormatException;
 import fr.paris.lutece.plugins.identitystore.web.exception.ResourceConsistencyException;
@@ -48,9 +49,8 @@ public class ServiceContractPutEndDateRequestTest extends AbstractIdentityStoreR
         try {
             String strTestCase = "2.1. Close service contract without ID and contract";
             try {
-                final ServiceContractPutEndDateRequest request =
-                        new ServiceContractPutEndDateRequest(null, null, H_CLIENT_CODE, H_APP_CODE, H_AUTHOR_NAME, H_AUTHOR_TYPE);
-                this.executeRequestKO(request, strTestCase, RequestFormatException.class);
+                final ServiceContractPutEndDateRequest request = new ServiceContractPutEndDateRequest(null, null, H_CLIENT_CODE, H_APP_CODE, H_AUTHOR_NAME, H_AUTHOR_TYPE);
+                this.executeRequestKO(request, strTestCase, RequestFormatException.class, Constants.PROPERTY_REST_ERROR_PROVIDED_SERVICE_CONTRACT_NULL);
             } catch (final IdentityStoreException e) {
                 fail(strTestCase + " : FAIL : " + e.getMessage());
             }
@@ -61,7 +61,7 @@ public class ServiceContractPutEndDateRequestTest extends AbstractIdentityStoreR
             try {
                 final ServiceContractPutEndDateRequest request =
                         new ServiceContractPutEndDateRequest(contract, null, H_CLIENT_CODE, H_APP_CODE, H_AUTHOR_NAME, H_AUTHOR_TYPE);
-                this.executeRequestKO(request, strTestCase, RequestFormatException.class);
+                this.executeRequestKO(request, strTestCase, RequestFormatException.class, Constants.PROPERTY_REST_ERROR_MISSING_SERVICE_CONTRACT_ID);
             } catch (final IdentityStoreException e) {
                 fail(strTestCase + " : FAIL : " + e.getMessage());
             }
@@ -70,7 +70,7 @@ public class ServiceContractPutEndDateRequestTest extends AbstractIdentityStoreR
             try {
                 final ServiceContractPutEndDateRequest request =
                         new ServiceContractPutEndDateRequest(null, mockContract.getId(), H_CLIENT_CODE, H_APP_CODE, H_AUTHOR_NAME, H_AUTHOR_TYPE);
-                this.executeRequestKO(request, strTestCase, RequestFormatException.class);
+                this.executeRequestKO(request, strTestCase, RequestFormatException.class, Constants.PROPERTY_REST_ERROR_PROVIDED_SERVICE_CONTRACT_NULL);
             } catch (final IdentityStoreException e) {
                 fail(strTestCase + " : FAIL : " + e.getMessage());
             }
@@ -80,7 +80,7 @@ public class ServiceContractPutEndDateRequestTest extends AbstractIdentityStoreR
             try {
                 final ServiceContractPutEndDateRequest request =
                         new ServiceContractPutEndDateRequest(contract, mockContract.getId(), H_CLIENT_CODE, H_APP_CODE, H_AUTHOR_NAME, H_AUTHOR_TYPE);
-                this.executeRequestKO(request, strTestCase, RequestFormatException.class);
+                this.executeRequestKO(request, strTestCase, RequestFormatException.class, Constants.PROPERTY_REST_ERROR_SERVICE_CONTRACT_WITHOUT_END_DATE);
             } catch (final IdentityStoreException e) {
                 fail(strTestCase + " : FAIL : " + e.getMessage());
             }
@@ -91,7 +91,7 @@ public class ServiceContractPutEndDateRequestTest extends AbstractIdentityStoreR
             try {
                 final ServiceContractPutEndDateRequest request =
                         new ServiceContractPutEndDateRequest(contract, -99, H_CLIENT_CODE, H_APP_CODE, H_AUTHOR_NAME, H_AUTHOR_TYPE);
-                this.executeRequestKO(request, strTestCase, ResourceNotFoundException.class);
+                this.executeRequestKO(request, strTestCase, ResourceNotFoundException.class, Constants.PROPERTY_REST_ERROR_SERVICE_CONTRACT_NOT_FOUND);
             } catch (final IdentityStoreException e) {
                 fail(strTestCase + " : FAIL : " + e.getMessage());
             }
@@ -102,7 +102,7 @@ public class ServiceContractPutEndDateRequestTest extends AbstractIdentityStoreR
             try {
                 final ServiceContractPutEndDateRequest request =
                         new ServiceContractPutEndDateRequest(contract, mockContract.getId(), H_CLIENT_CODE, H_APP_CODE, H_AUTHOR_NAME, H_AUTHOR_TYPE);
-                this.executeRequestKO(request, strTestCase, ResourceConsistencyException.class);
+                this.executeRequestKO(request, strTestCase, ResourceConsistencyException.class, Constants.PROPERTY_REST_ERROR_END_DATE_BEFORE_START_DATE);
             } catch (final IdentityStoreException e) {
                 fail(strTestCase + " : FAIL : " + e.getMessage());
             }

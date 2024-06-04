@@ -69,8 +69,8 @@ public class IdentityStoreGetRequest extends AbstractIdentityStoreAppCodeRequest
      * @param strAuthorType
      * @param strAuthorName
      */
-    public IdentityStoreGetRequest( final String strCustomerId, final String strClientCode, final String strAppCode, final String strAuthorType,
-            final String strAuthorName ) throws IdentityStoreException
+    public IdentityStoreGetRequest( final String strCustomerId, final String strClientCode, final String strAppCode, final String strAuthorName,
+            final String strAuthorType ) throws IdentityStoreException
     {
         super( strClientCode, strAppCode, strAuthorName, strAuthorType );
         this._strCustomerId = strCustomerId;

@@ -6,6 +6,7 @@ import fr.paris.lutece.plugins.identitystore.v3.web.request.contract.ServiceCont
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.ResponseStatusType;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.contract.ServiceContractChangeResponse;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.contract.ServiceContractDto;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
 import fr.paris.lutece.plugins.identitystore.web.exception.RequestFormatException;
 import fr.paris.lutece.plugins.identitystore.web.exception.ResourceNotFoundException;
@@ -39,17 +40,16 @@ public class ServiceContractCreateRequestTest extends AbstractIdentityStoreReque
     public void test_2_RequestKO() throws Exception {
         String strTestCase = "2.1. Create request without service contract";
         try {
-            // exception is expected on constructor here
             final ServiceContractCreateRequest request = new ServiceContractCreateRequest(null, H_CLIENT_CODE, H_APP_CODE, H_AUTHOR_NAME, H_AUTHOR_TYPE);
-            fail(strTestCase + " : FAIL : constructor of request was expected to throw exception but didn't");
+            this.executeRequestKO(request, strTestCase, RequestFormatException.class, Constants.PROPERTY_REST_ERROR_PROVIDED_SERVICE_CONTRACT_NULL);
         } catch (final IdentityStoreException e) {
-            assertEquals(strTestCase + " : thrown exception is not of the expected type", e.getClass(), RequestFormatException.class);
+            fail(strTestCase + " : FAIL : " + e.getMessage());
         }
 
         strTestCase = "2.2. Create request with empty service contract";
         try {
             final ServiceContractCreateRequest request = new ServiceContractCreateRequest(new ServiceContractDto(), H_CLIENT_CODE, H_APP_CODE, H_AUTHOR_NAME, H_AUTHOR_TYPE);
-            this.executeRequestKO(request, strTestCase, ResourceNotFoundException.class);
+            this.executeRequestKO(request, strTestCase, RequestFormatException.class, Constants.PROPERTY_REST_ERROR_SERVICE_CONTRACT_WITHOUT_MANDATORY_FIELDS);
         } catch (final IdentityStoreException e) {
             fail(strTestCase + " : FAIL : " + e.getMessage());
         }
@@ -59,18 +59,7 @@ public class ServiceContractCreateRequestTest extends AbstractIdentityStoreReque
         contract.setClientCode("unknownClientCode");
         try {
             final ServiceContractCreateRequest request = new ServiceContractCreateRequest(contract, H_CLIENT_CODE, H_APP_CODE, H_AUTHOR_NAME, H_AUTHOR_TYPE);
-            this.executeRequestKO(request, strTestCase, ResourceNotFoundException.class);
-        } catch (final IdentityStoreException e) {
-            fail(strTestCase + " : FAIL : " + e.getMessage());
-        }
-
-
-        strTestCase = "2.3. Create request with unknown client code";
-        contract = new ServiceContractDto();
-        contract.setClientCode("unknownClientCode");
-        try {
-            final ServiceContractCreateRequest request = new ServiceContractCreateRequest(contract, H_CLIENT_CODE, H_APP_CODE, H_AUTHOR_NAME, H_AUTHOR_TYPE);
-            this.executeRequestKO(request, strTestCase, ResourceNotFoundException.class);
+            this.executeRequestKO(request, strTestCase, ResourceNotFoundException.class, Constants.PROPERTY_REST_ERROR_APPLICATION_NOT_FOUND);
         } catch (final IdentityStoreException e) {
             fail(strTestCase + " : FAIL : " + e.getMessage());
         }
@@ -80,7 +69,7 @@ public class ServiceContractCreateRequestTest extends AbstractIdentityStoreReque
         contract.setMoaContactName(null);
         try {
             final ServiceContractCreateRequest request = new ServiceContractCreateRequest(contract, H_CLIENT_CODE, H_APP_CODE, H_AUTHOR_NAME, H_AUTHOR_TYPE);
-            this.executeRequestKO(request, strTestCase, RequestFormatException.class);
+            this.executeRequestKO(request, strTestCase, RequestFormatException.class, Constants.PROPERTY_REST_ERROR_SERVICE_CONTRACT_WITHOUT_MANDATORY_FIELDS);
         } catch (final IdentityStoreException e) {
             fail(strTestCase + " : FAIL : " + e.getMessage());
         }

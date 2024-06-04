@@ -144,7 +144,7 @@ public class IdentityDuplicateValidator
     {
         final Map<String, String> attributes = request.getIdentity( ).getAttributes( ).stream( ).filter( a -> StringUtils.isNotBlank( a.getValue( ) ) )
                 .collect( Collectors.toMap( AttributeDto::getKey, AttributeDto::getValue ) );
-        this.checkDuplicates( attributes, PROPERTY_DUPLICATES_CREATION_RULES, "" );
+        this.checkDuplicates( attributes, PROPERTY_DUPLICATES_CREATION_RULES, StringUtils.EMPTY );
     }
 
     /**
@@ -217,7 +217,7 @@ public class IdentityDuplicateValidator
         }
         else
         {
-            this.checkDuplicates( attributes, PROPERTY_DUPLICATES_IMPORT_RULES_SUSPICION, "" );
+            this.checkDuplicates( attributes, PROPERTY_DUPLICATES_IMPORT_RULES_SUSPICION, StringUtils.EMPTY );
         }
 
         return null;

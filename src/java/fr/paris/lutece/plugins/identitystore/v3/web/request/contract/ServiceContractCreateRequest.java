@@ -77,23 +77,20 @@ public class ServiceContractCreateRequest extends AbstractIdentityStoreAppCodeRe
             final String authorName, final String authorType ) throws IdentityStoreException
     {
         super( strClientCode, strAppCode, authorName, authorType );
-        if ( serviceContractDto == null )
-        {
-            throw new RequestFormatException( "Provided service contract is null", Constants.PROPERTY_REST_ERROR_PROVIDED_SERVICE_CONTRACT_NULL );
-        }
         this._serviceContractDto = serviceContractDto;
     }
 
     @Override
     protected void fetchResources( ) throws ResourceNotFoundException
     {
-        clientApplication = ClientApplicationHome.findByCode( _serviceContractDto.getClientCode( ) );
-        if ( clientApplication == null )
-        {
-            throw new ResourceNotFoundException( "No application could be found with code " + _serviceContractDto.getClientCode( ),
-                    Constants.PROPERTY_REST_ERROR_APPLICATION_NOT_FOUND );
+        if (_serviceContractDto != null && _serviceContractDto.getClientCode() != null) {
+            clientApplication = ClientApplicationHome.findByCode(_serviceContractDto.getClientCode());
+            if (clientApplication == null) {
+                throw new ResourceNotFoundException("No application could be found with code " + _serviceContractDto.getClientCode(),
+                                                    Constants.PROPERTY_REST_ERROR_APPLICATION_NOT_FOUND);
+            }
+            serviceContractToCreate = DtoConverter.convertDtoToContract(_serviceContractDto);
         }
-        serviceContractToCreate = DtoConverter.convertDtoToContract( _serviceContractDto );
     }
 
     @Override

@@ -7,6 +7,7 @@ import fr.paris.lutece.plugins.identitystore.v3.web.rs.DtoConverter;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.application.ClientApplicationDto;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.application.ClientChangeResponse;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.ResponseStatusType;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
 import fr.paris.lutece.plugins.identitystore.web.exception.RequestFormatException;
 import fr.paris.lutece.plugins.identitystore.web.exception.ResourceConsistencyException;
@@ -40,7 +41,7 @@ public class ClientCreateRequestTest extends AbstractIdentityStoreRequestTest {
         ClientApplicationDto clientApplicationDto = null;
         try {
             final ClientCreateRequest request = new ClientCreateRequest(clientApplicationDto, H_CLIENT_CODE, H_APP_CODE, H_AUTHOR_NAME, H_AUTHOR_TYPE);
-            this.executeRequestKO(request, strTestCase, RequestFormatException.class);
+            this.executeRequestKO(request, strTestCase, RequestFormatException.class, Constants.PROPERTY_REST_ERROR_CLIENT_APPLICATION_NULL);
         } catch (final IdentityStoreException e) {
             fail(strTestCase + " : FAIL : " + e.getMessage());
         }
@@ -50,7 +51,7 @@ public class ClientCreateRequestTest extends AbstractIdentityStoreRequestTest {
         clientApplicationDto.setClientCode(null);
         try {
             final ClientCreateRequest request = new ClientCreateRequest(clientApplicationDto, H_CLIENT_CODE, H_APP_CODE, H_AUTHOR_NAME, H_AUTHOR_TYPE);
-            this.executeRequestKO(request, strTestCase, RequestFormatException.class);
+            this.executeRequestKO(request, strTestCase, RequestFormatException.class, Constants.PROPERTY_REST_ERROR_CLIENT_APPLICATION_WITHOUT_CLIENT_CODE);
         } catch (final IdentityStoreException e) {
             fail(strTestCase + " : FAIL : " + e.getMessage());
         }
@@ -60,7 +61,7 @@ public class ClientCreateRequestTest extends AbstractIdentityStoreRequestTest {
         clientApplicationDto.setClientCode(H_CLIENT_CODE);
         try {
             final ClientCreateRequest request = new ClientCreateRequest(clientApplicationDto, H_CLIENT_CODE, H_APP_CODE, H_AUTHOR_NAME, H_AUTHOR_TYPE);
-            this.executeRequestKO(request, strTestCase, ResourceConsistencyException.class);
+            this.executeRequestKO(request, strTestCase, ResourceConsistencyException.class, Constants.PROPERTY_REST_ERROR_CLIENT_ALREADY_EXISTS);
         } catch (final IdentityStoreException e) {
             fail(strTestCase + " : FAIL : " + e.getMessage());
         }

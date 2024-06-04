@@ -7,6 +7,7 @@ import fr.paris.lutece.plugins.identitystore.v3.web.request.contract.ServiceCont
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.ResponseStatusType;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.contract.ServiceContractChangeResponse;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.contract.ServiceContractDto;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
 import fr.paris.lutece.plugins.identitystore.web.exception.RequestFormatException;
 import fr.paris.lutece.plugins.identitystore.web.exception.ResourceNotFoundException;
@@ -45,7 +46,7 @@ public class ServiceContractUpdateRequestTest extends AbstractIdentityStoreReque
             try {
                 final ServiceContractUpdateRequest request =
                         new ServiceContractUpdateRequest(null, null, H_CLIENT_CODE, H_APP_CODE, H_AUTHOR_NAME, H_AUTHOR_TYPE);
-                this.executeRequestKO(request, strTestCase, RequestFormatException.class);
+                this.executeRequestKO(request, strTestCase, RequestFormatException.class, Constants.PROPERTY_REST_ERROR_PROVIDED_SERVICE_CONTRACT_NULL);
             } catch (final IdentityStoreException e) {
                 fail(strTestCase + " : FAIL : " + e.getMessage());
             }
@@ -55,7 +56,7 @@ public class ServiceContractUpdateRequestTest extends AbstractIdentityStoreReque
             try {
                 final ServiceContractUpdateRequest request =
                         new ServiceContractUpdateRequest(mockContract, null, H_CLIENT_CODE, H_APP_CODE, H_AUTHOR_NAME, H_AUTHOR_TYPE);
-                this.executeRequestKO(request, strTestCase, RequestFormatException.class);
+                this.executeRequestKO(request, strTestCase, RequestFormatException.class, Constants.PROPERTY_REST_ERROR_MISSING_SERVICE_CONTRACT_ID);
             } catch (final IdentityStoreException e) {
                 fail(strTestCase + " : FAIL : " + e.getMessage());
             }
@@ -64,7 +65,7 @@ public class ServiceContractUpdateRequestTest extends AbstractIdentityStoreReque
             try {
                 final ServiceContractUpdateRequest request =
                         new ServiceContractUpdateRequest(null, mockContract.getId(), H_CLIENT_CODE, H_APP_CODE, H_AUTHOR_NAME, H_AUTHOR_TYPE);
-                this.executeRequestKO(request, strTestCase, RequestFormatException.class);
+                this.executeRequestKO(request, strTestCase, RequestFormatException.class, Constants.PROPERTY_REST_ERROR_PROVIDED_SERVICE_CONTRACT_NULL);
             } catch (final IdentityStoreException e) {
                 fail(strTestCase + " : FAIL : " + e.getMessage());
             }
@@ -74,7 +75,7 @@ public class ServiceContractUpdateRequestTest extends AbstractIdentityStoreReque
             try {
                 final ServiceContractUpdateRequest request =
                         new ServiceContractUpdateRequest(mockContract, mockContract.getId(), H_CLIENT_CODE, H_APP_CODE, H_AUTHOR_NAME, H_AUTHOR_TYPE);
-                this.executeRequestKO(request, strTestCase, RequestFormatException.class);
+                this.executeRequestKO(request, strTestCase, RequestFormatException.class, Constants.PROPERTY_REST_ERROR_SERVICE_CONTRACT_WITHOUT_MANDATORY_FIELDS);
             } catch (final IdentityStoreException e) {
                 fail(strTestCase + " : FAIL : " + e.getMessage());
             }
@@ -84,7 +85,7 @@ public class ServiceContractUpdateRequestTest extends AbstractIdentityStoreReque
             try {
                 final ServiceContractUpdateRequest request =
                         new ServiceContractUpdateRequest(mockContract, -99, H_CLIENT_CODE, H_APP_CODE, H_AUTHOR_NAME, H_AUTHOR_TYPE);
-                this.executeRequestKO(request, strTestCase, ResourceNotFoundException.class);
+                this.executeRequestKO(request, strTestCase, ResourceNotFoundException.class, Constants.PROPERTY_REST_ERROR_SERVICE_CONTRACT_NOT_FOUND);
             } catch (final IdentityStoreException e) {
                 fail(strTestCase + " : FAIL : " + e.getMessage());
             }

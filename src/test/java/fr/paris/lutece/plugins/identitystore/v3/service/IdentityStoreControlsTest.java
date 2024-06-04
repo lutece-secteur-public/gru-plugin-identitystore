@@ -38,14 +38,14 @@ import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.AttributeDto;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.AttributeStatus;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.IdentityDto;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.crud.IdentityChangeResponse;
-import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
 import fr.paris.lutece.plugins.identitystore.web.exception.RequestFormatException;
 import fr.paris.lutece.test.LuteceTestCase;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import static fr.paris.lutece.plugins.identitystore.util.IdentityMockUtils.DEC;
+import static fr.paris.lutece.plugins.identitystore.util.IdentityMockUtils.NUM1;
+import static fr.paris.lutece.plugins.identitystore.util.IdentityMockUtils.ORIG1;
+import static fr.paris.lutece.plugins.identitystore.util.IdentityMockUtils.getMockIdentityDto;
 // import static fr.paris.lutece.plugins.identitystore.web.rs.dto.MockIdentityChangeDto.createIdentityChangeDtoFor;
 
 /**
@@ -58,10 +58,6 @@ import java.util.List;
 public class IdentityStoreControlsTest extends LuteceTestCase
 {
     String _strClientCode = "TEST";
-    private final int DEC = 100;
-    private final int ORIG1 = 500;
-    private final int NUM1 = 400;
-
     private final String EOL = System.lineSeparator( );
 
     /**
@@ -69,7 +65,7 @@ public class IdentityStoreControlsTest extends LuteceTestCase
      */
     public void testControlAttributesIntegrityCreateOK( )
     {
-        IdentityDto newIdentity = getMockIdentityDto( "1", NUM1, "Dupoon", NUM1, "Marcel", NUM1, "01/01/2000", NUM1, "75112", NUM1, "99100", NUM1 );
+        IdentityDto newIdentity = getMockIdentityDto("1", NUM1, "Dupoon", NUM1, "Marcel", NUM1, "01/01/2000", NUM1, "75112", NUM1, "99100", NUM1 );
         tryPivotAttributesIntegrity( null, newIdentity, "1.1. Create Identity with all attributes at level 400" );
 
         newIdentity = getMockIdentityDto( "1", DEC, "Dupoon", DEC, "Marcel", DEC, null, 0, null, 0, null, 0 );
@@ -201,87 +197,6 @@ public class IdentityStoreControlsTest extends LuteceTestCase
                          expectedException,
                          e.getClass());
         }
-    }
-
-    /**
-     * get Mock identity
-     * 
-     * @param gender
-     * @param genderLevel
-     * @param lastName
-     * @param lastNameLevel
-     * @param firstName
-     * @param firstNameLevel
-     * @param birthDate
-     * @param birthDateLevel
-     * @param birthPlaceCode
-     * @param birthPlaceCodeLevel
-     * @param birthCountryCode
-     * @param birthCountryCodeLevel
-     * @return identity
-     */
-    private IdentityDto getMockIdentityDto( String gender, int genderLevel, String lastName, int lastNameLevel, String firstName, int firstNameLevel,
-            String birthDate, int birthDateLevel, String birthPlaceCode, int birthPlaceCodeLevel, String birthCountryCode, int birthCountryCodeLevel )
-    {
-        IdentityDto identity = new IdentityDto( );
-        List<AttributeDto> attributeList = new ArrayList<>( );
-
-        if ( gender != null )
-            attributeList.add( getMockAttribute( Constants.PARAM_GENDER, gender, genderLevel ) );
-        if ( lastName != null )
-            attributeList.add( getMockAttribute( Constants.PARAM_FAMILY_NAME, lastName, lastNameLevel ) );
-        if ( firstName != null )
-            attributeList.add( getMockAttribute( Constants.PARAM_FIRST_NAME, firstName, firstNameLevel ) );
-        if ( birthDate != null )
-            attributeList.add( getMockAttribute( Constants.PARAM_BIRTH_DATE, birthDate, birthDateLevel ) );
-        if ( birthPlaceCode != null )
-            attributeList.add( getMockAttribute( Constants.PARAM_BIRTH_PLACE_CODE, birthPlaceCode, birthPlaceCodeLevel ) );
-        if ( birthCountryCode != null )
-            attributeList.add( getMockAttribute( Constants.PARAM_BIRTH_COUNTRY_CODE, birthCountryCode, birthCountryCodeLevel ) );
-
-        identity.setAttributes( attributeList );
-
-        return identity;
-    }
-
-    /**
-     * get mock attribute
-     * 
-     * @param key
-     * @param value
-     * @param level
-     * @return
-     */
-    private AttributeDto getMockAttribute( String key, String value, int level )
-    {
-        AttributeDto attribute = new AttributeDto( );
-        attribute.setKey( key );
-        attribute.setCertificationLevel( level );
-        attribute.setValue( value );
-        attribute.setCertifier( getCertifier( level ) );
-
-        return attribute;
-    }
-
-    /**
-     * get certifier from level
-     * 
-     * @param level
-     * @return the certifier
-     */
-    private String getCertifier( int level )
-    {
-        switch( level )
-        {
-            case DEC:
-                return "DEC";
-            case ORIG1:
-                return "ORIG1";
-            case NUM1:
-                return "NUM1";
-        }
-
-        return "?";
     }
 
     /**

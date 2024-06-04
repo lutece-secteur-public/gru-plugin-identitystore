@@ -84,10 +84,11 @@ public class IdentityStoreDeleteRequest extends AbstractIdentityStoreAppCodeRequ
     protected void fetchResources( ) throws ResourceNotFoundException
     {
         serviceContract = ServiceContractService.instance( ).getActiveServiceContract( _strClientCode );
-        existingIdentityToDelete = _identityDtoCache.getByCustomerId( _strCustomerId, serviceContract );
-        if ( existingIdentityToDelete == null )
-        {
-            throw new ResourceNotFoundException( "No matching identity could be found", Constants.PROPERTY_REST_ERROR_NO_MATCHING_IDENTITY );
+        if (_strCustomerId != null) {
+            existingIdentityToDelete = _identityDtoCache.getByCustomerId(_strCustomerId, serviceContract);
+            if (existingIdentityToDelete == null) {
+                throw new ResourceNotFoundException("No matching identity could be found", Constants.PROPERTY_REST_ERROR_NO_MATCHING_IDENTITY);
+            }
         }
     }
 
