@@ -124,13 +124,25 @@ public class IdentityStoreCreateRequestTest extends AbstractIdentityRequestTest 
 
         strTestCase = "2.8. Create request with an attribute without certification";
         identity = getIdentityDtoForCreate();
-        final AttributeDto attr = IdentityMockUtils.getMockAttribute(Constants.PARAM_EMAIL, "test@test.com", IdentityMockUtils.DEC);
+        AttributeDto attr = IdentityMockUtils.getMockAttribute(Constants.PARAM_EMAIL, "test@test.com", IdentityMockUtils.DEC);
         attr.setCertifier(null);
         identity.getAttributes().add(attr);
         req.setIdentity(identity);
         try {
             final IdentityStoreCreateRequest request = new IdentityStoreCreateRequest(req, H_CLIENT_CODE, H_APP_CODE, H_AUTHOR_NAME, H_AUTHOR_TYPE);
             this.executeRequestKO(request, strTestCase, RequestFormatException.class, Constants.PROPERTY_REST_ERROR_IDENTITY_ATTRIBUTE_NOT_CERTIFIED);
+        } catch (final IdentityStoreException e) {
+            fail(strTestCase + " : FAIL : " + e.getMessage());
+        }
+
+        strTestCase = "2.9. Create request with a single pivot attribute with high certification";
+        identity = getIdentityDtoForCreate();
+        attr = IdentityMockUtils.getMockAttribute(Constants.PARAM_BIRTH_COUNTRY_CODE, "99100", IdentityMockUtils.ORIG1);
+        identity.getAttributes().add(attr);
+        req.setIdentity(identity);
+        try {
+            final IdentityStoreCreateRequest request = new IdentityStoreCreateRequest(req, H_CLIENT_CODE, H_APP_CODE, H_AUTHOR_NAME, H_AUTHOR_TYPE);
+            this.executeRequestKO(request, strTestCase, RequestFormatException.class, Constants.PROPERTY_REST_ERROR_IDENTITY_ALL_PIVOT_ATTRIBUTE_SAME_CERTIFICATION);
         } catch (final IdentityStoreException e) {
             fail(strTestCase + " : FAIL : " + e.getMessage());
         }
