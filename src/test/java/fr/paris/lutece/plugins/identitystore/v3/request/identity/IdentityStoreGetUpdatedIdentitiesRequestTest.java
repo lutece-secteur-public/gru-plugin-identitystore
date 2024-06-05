@@ -1,7 +1,7 @@
 package fr.paris.lutece.plugins.identitystore.v3.request.identity;
 
 import fr.paris.lutece.plugins.identitystore.business.identity.Identity;
-import fr.paris.lutece.plugins.identitystore.business.identity.IdentityHome;
+import fr.paris.lutece.plugins.identitystore.service.identity.IdentityService;
 import fr.paris.lutece.plugins.identitystore.v3.web.request.identity.IdentityStoreGetUpdatedIdentitiesRequest;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.ResponseStatusType;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.history.IdentityChangeType;
@@ -30,7 +30,7 @@ public class IdentityStoreGetUpdatedIdentitiesRequestTest extends AbstractIdenti
         } catch (final IdentityStoreException e) {
             fail(strTestCase + " : FAIL : " + e.getMessage());
         } finally {
-            IdentityHome.hardRemove(mockIdentity.getId());
+            IdentityService.instance().delete(mockIdentity.getCustomerId());
         }
     }
 

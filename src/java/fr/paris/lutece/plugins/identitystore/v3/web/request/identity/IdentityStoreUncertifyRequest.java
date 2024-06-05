@@ -75,10 +75,12 @@ public class IdentityStoreUncertifyRequest extends AbstractIdentityStoreAppCodeR
     @Override
     protected void fetchResources( ) throws ResourceNotFoundException
     {
-        serviceContract = ServiceContractService.instance( ).getActiveServiceContract( _strClientCode );
-        if ( _identityDtoCache.getByCustomerId( _strCustomerId, serviceContract ) == null )
-        {
-            throw new ResourceNotFoundException( "No matching identity could be found", Constants.PROPERTY_REST_ERROR_NO_MATCHING_IDENTITY );
+        if (_strCustomerId != null) {
+            serviceContract = ServiceContractService.instance( ).getActiveServiceContract( _strClientCode );
+            if ( _identityDtoCache.getByCustomerId( _strCustomerId, serviceContract ) == null )
+            {
+                throw new ResourceNotFoundException( "No matching identity could be found", Constants.PROPERTY_REST_ERROR_NO_MATCHING_IDENTITY );
+            }
         }
     }
 

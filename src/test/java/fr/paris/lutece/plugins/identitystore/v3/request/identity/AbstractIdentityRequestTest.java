@@ -14,16 +14,24 @@ import java.util.concurrent.TimeUnit;
 public abstract class AbstractIdentityRequestTest extends AbstractIdentityStoreRequestTest {
 
     protected IdentityDto getIdentityDtoForCreate() {
-        return IdentityMockUtils.getMockIdentityDto("0", IdentityMockUtils.DEC,
-                                                    "IdentityStoreCreateRequestTestFamillyName", IdentityMockUtils.DEC,
-                                                    "IdentityStoreCreateRequestTestFirstName", IdentityMockUtils.DEC,
-                                                    "01/01/1999", IdentityMockUtils.DEC,
+        return getIdentityDtoForCreate(IdentityMockUtils.DEC);
+    }
+
+    protected IdentityDto getIdentityDtoForCreate(final int certifLevel) {
+        return IdentityMockUtils.getMockIdentityDto("0", certifLevel,
+                                                    "IdentityStoreCreateRequestTestFamillyName", certifLevel,
+                                                    "IdentityStoreCreateRequestTestFirstName", certifLevel,
+                                                    "01/01/1999", certifLevel,
                                                     null, 0,
                                                     null, 0);
     }
 
     protected Identity createMockIdentityInDB() throws Exception {
-        final IdentityDto mock = getIdentityDtoForCreate();
+        return createMockIdentityInDB(IdentityMockUtils.DEC);
+    }
+
+    protected Identity createMockIdentityInDB(final int certifLevel) throws Exception {
+        final IdentityDto mock = getIdentityDtoForCreate(certifLevel);
         final IdentityChangeRequest identityChangeRequest = new IdentityChangeRequest();
         identityChangeRequest.setIdentity(mock);
         final IdentityStoreCreateRequest request = new IdentityStoreCreateRequest(identityChangeRequest, H_CLIENT_CODE, H_APP_CODE, H_AUTHOR_NAME, H_AUTHOR_TYPE);

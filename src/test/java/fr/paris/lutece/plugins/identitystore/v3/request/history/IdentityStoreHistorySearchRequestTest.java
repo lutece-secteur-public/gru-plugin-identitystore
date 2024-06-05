@@ -1,7 +1,7 @@
 package fr.paris.lutece.plugins.identitystore.v3.request.history;
 
 import fr.paris.lutece.plugins.identitystore.business.identity.Identity;
-import fr.paris.lutece.plugins.identitystore.business.identity.IdentityHome;
+import fr.paris.lutece.plugins.identitystore.service.identity.IdentityService;
 import fr.paris.lutece.plugins.identitystore.v3.request.identity.AbstractIdentityRequestTest;
 import fr.paris.lutece.plugins.identitystore.v3.web.request.history.IdentityStoreHistorySearchRequest;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.ResponseStatusType;
@@ -14,7 +14,6 @@ import fr.paris.lutece.plugins.identitystore.web.exception.RequestFormatExceptio
 import fr.paris.lutece.plugins.identitystore.web.exception.ResourceNotFoundException;
 
 import java.text.SimpleDateFormat;
-import java.util.Date;
 
 public class IdentityStoreHistorySearchRequestTest extends AbstractIdentityRequestTest {
 
@@ -49,7 +48,7 @@ public class IdentityStoreHistorySearchRequestTest extends AbstractIdentityReque
                 fail(strTestCase + " : FAIL : " + e.getMessage());
             }
         } finally {
-            IdentityHome.hardRemove(mockIdentity.getId());
+            IdentityService.instance().delete(mockIdentity.getCustomerId());
         }
     }
 
@@ -108,7 +107,7 @@ public class IdentityStoreHistorySearchRequestTest extends AbstractIdentityReque
                 fail(strTestCase + " : FAIL : " + e.getMessage());
             }
         } finally {
-            IdentityHome.hardRemove(mockIdentity.getId());
+            IdentityService.instance().delete(mockIdentity.getCustomerId());
         }
     }
 }

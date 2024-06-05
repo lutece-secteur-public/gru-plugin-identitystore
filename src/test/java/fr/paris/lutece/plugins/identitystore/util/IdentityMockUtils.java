@@ -11,8 +11,9 @@ import java.util.List;
 public class IdentityMockUtils {
 
     public static final int DEC = 100;
-    public static final int ORIG1 = 500;
+    public static final int NUM2 = 330;
     public static final int NUM1 = 400;
+    public static final int ORIG1 = 500;
 
     public static IdentityDto getMockIdentityDto(final String gender, final int genderLevel, final String lastName, final int lastNameLevel,
                                                  final String firstName, final int firstNameLevel,
@@ -62,6 +63,8 @@ public class IdentityMockUtils {
                 return "ORIG1";
             case NUM1:
                 return "NUM1";
+            case NUM2:
+                return "NUM2";
         }
 
         return "?";

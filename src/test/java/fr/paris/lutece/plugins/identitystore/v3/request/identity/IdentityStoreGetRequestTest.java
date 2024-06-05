@@ -1,22 +1,14 @@
 package fr.paris.lutece.plugins.identitystore.v3.request.identity;
 
 import fr.paris.lutece.plugins.identitystore.business.identity.Identity;
-import fr.paris.lutece.plugins.identitystore.business.identity.IdentityHome;
-import fr.paris.lutece.plugins.identitystore.v3.request.AbstractIdentityStoreRequestTest;
-import fr.paris.lutece.plugins.identitystore.v3.web.request.identity.IdentityStoreCreateRequest;
-import fr.paris.lutece.plugins.identitystore.v3.web.request.identity.IdentityStoreDeleteRequest;
+import fr.paris.lutece.plugins.identitystore.service.identity.IdentityService;
 import fr.paris.lutece.plugins.identitystore.v3.web.request.identity.IdentityStoreGetRequest;
-import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.IdentityDto;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.ResponseStatusType;
-import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.crud.IdentityChangeRequest;
-import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.crud.IdentityChangeResponse;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.search.IdentitySearchResponse;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
 import fr.paris.lutece.plugins.identitystore.web.exception.RequestFormatException;
 import fr.paris.lutece.plugins.identitystore.web.exception.ResourceNotFoundException;
-
-import java.util.concurrent.TimeUnit;
 
 public class IdentityStoreGetRequestTest extends AbstractIdentityRequestTest {
 
@@ -34,7 +26,7 @@ public class IdentityStoreGetRequestTest extends AbstractIdentityRequestTest {
         } catch (final IdentityStoreException e) {
             fail(strTestCase + " : FAIL : " + e.getMessage());
         } finally {
-            IdentityHome.hardRemove(mockIdentity.getId());
+            IdentityService.instance().delete(mockIdentity.getCustomerId());
         }
 
     }
@@ -65,7 +57,7 @@ public class IdentityStoreGetRequestTest extends AbstractIdentityRequestTest {
         } catch (final IdentityStoreException e) {
             fail(strTestCase + " : FAIL : " + e.getMessage());
         } finally {
-            IdentityHome.hardRemove(mockIdentity.getId());
+            IdentityService.instance().delete(mockIdentity.getCustomerId());
         }
 
     }
