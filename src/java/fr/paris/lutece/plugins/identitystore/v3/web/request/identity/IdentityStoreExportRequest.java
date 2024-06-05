@@ -38,6 +38,7 @@ import fr.paris.lutece.plugins.identitystore.service.contract.ServiceContractSer
 import fr.paris.lutece.plugins.identitystore.service.identity.IdentityExportService;
 import fr.paris.lutece.plugins.identitystore.service.identity.IdentityService;
 import fr.paris.lutece.plugins.identitystore.v3.web.request.AbstractIdentityStoreAppCodeRequest;
+import fr.paris.lutece.plugins.identitystore.v3.web.request.validator.IdentityAttributeValidator;
 import fr.paris.lutece.plugins.identitystore.v3.web.request.validator.IdentityExportValidator;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.AbstractIdentityStoreRequest;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.IdentityRequestValidator;
@@ -81,6 +82,7 @@ public class IdentityStoreExportRequest extends AbstractIdentityStoreAppCodeRequ
     {
         IdentityRequestValidator.instance( ).checkExportRequest( _request );
         IdentityExportValidator.instance( ).validateExportRequest( _request );
+        IdentityAttributeValidator.instance().checkAttributeExistence(_request.getAttributeKeyList());
     }
 
     @Override
