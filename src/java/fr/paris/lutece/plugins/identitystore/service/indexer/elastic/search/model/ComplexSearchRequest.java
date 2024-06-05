@@ -40,7 +40,6 @@ import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.search.SearchAttribut
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class ComplexSearchRequest extends ASearchRequest
 {

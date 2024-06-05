@@ -54,7 +54,7 @@
 			<groupId>fr.paris.lutece.plugins</groupId>
 			<artifactId>library-identitybusiness</artifactId>
 			<!-- Attention : ne pas utiliser la property swagger pour spécifier la version-->
-			<version>3.1.5-SNAPSHOT</version>
+			<version>[3.0.1-SNAPSHOT,)</version>
 			<type>jar</type>
 		</dependency>
 

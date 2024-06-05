@@ -50,6 +50,8 @@ import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.AttributeDto;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.AttributeStatus;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.crud.IdentityChangeRequest;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.crud.IdentityChangeResponse;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.exporting.IdentityExportRequest;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.exporting.IdentityExportResponse;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.merge.IdentityMergeRequest;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.merge.IdentityMergeResponse;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.search.IdentitySearchMessage;
@@ -225,6 +227,56 @@ public class ServiceContractService
         else
         {
             return this.validateIdentityChange( identityChangeRequest, clientCode );
+        }
+
+        return response;
+    }
+
+    /**
+     * Validates the {@link IdentityExportRequest} against the {@link ServiceContract} associated to the {@link ClientApplication} requesting the export. Each
+     * violation is listed in the response with a status by attribute key. The following rules are verified: <br>
+     * <ul>
+     * <li>The attribute must be readable</li>
+     * </ul>
+     *
+     * @param identityExportRequest
+     *            {@link IdentityExportRequest} with list of attributes
+     * @param clientCode
+     *            code of the {@link ClientApplication} requesting the search
+     * @throws ServiceContractNotFoundException
+     */
+    public IdentityExportResponse validateIdentityExport(final IdentityExportRequest identityExportRequest, final String clientCode ) throws ServiceContractNotFoundException
+    {
+        final ServiceContract serviceContract = this.getActiveServiceContract( clientCode );
+        final IdentityExportResponse response = new IdentityExportResponse( );
+        if ( !serviceContract.getAuthorizedExport( ) )
+        {
+            response.setStatus( ResponseStatusFactory.failure( ).setMessage( "The client application is not authorized to export identities." )
+                    .setMessageKey( Constants.PROPERTY_REST_ERROR_EXPORT_UNAUTHORIZED ) );
+            return response;
+        }
+
+        if ( identityExportRequest.getAttributeKeyList( ) != null && !identityExportRequest.getAttributeKeyList( ).isEmpty( ) )
+        {
+
+            for ( final String searchAttributeKey : identityExportRequest.getAttributeKeyList( ) )
+            {
+                final Optional<AttributeRight> attributeRight = serviceContract.getAttributeRights( ).stream( )
+                        .filter( a -> StringUtils.equals( a.getAttributeKey( ).getKeyName( ), searchAttributeKey ) ).findFirst( );
+                if ( attributeRight.isPresent( ) )
+                {
+                    boolean canReadAttribute = attributeRight.get( ).isReadable( );
+
+                    if ( !canReadAttribute )
+                    {
+                        response.setStatus( ResponseStatusFactory.failure( ).setMessageKey( Constants.PROPERTY_REST_ERROR_SERVICE_CONTRACT_VIOLATION ).setMessage( searchAttributeKey + " key is not readable in service contract definition." ) );
+                    }
+                }
+                else
+                {
+                    response.setStatus( ResponseStatusFactory.failure( ).setMessageKey( Constants.PROPERTY_REST_ERROR_SERVICE_CONTRACT_VIOLATION ).setMessage( searchAttributeKey + " key does not exist in service contract definition." ) );
+                }
+            }
         }
 
         return response;
