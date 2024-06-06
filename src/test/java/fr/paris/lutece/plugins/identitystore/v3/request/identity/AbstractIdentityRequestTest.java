@@ -27,11 +27,22 @@ public abstract class AbstractIdentityRequestTest extends AbstractIdentityStoreR
     }
 
     protected Identity createMockIdentityInDB() throws Exception {
-        return createMockIdentityInDB(IdentityMockUtils.DEC);
+        return createMockIdentityInDB(IdentityMockUtils.DEC, null);
+    }
+
+    protected Identity createMockIdentityInDB(final String connectionId) throws Exception {
+        return createMockIdentityInDB(IdentityMockUtils.DEC, connectionId);
     }
 
     protected Identity createMockIdentityInDB(final int certifLevel) throws Exception {
+        return createMockIdentityInDB(certifLevel, null);
+    }
+
+    protected Identity createMockIdentityInDB(final int certifLevel, final String connectionId) throws Exception {
         final IdentityDto mock = getIdentityDtoForCreate(certifLevel);
+        if(connectionId != null) {
+            mock.setConnectionId(connectionId);
+        }
         final IdentityChangeRequest identityChangeRequest = new IdentityChangeRequest();
         identityChangeRequest.setIdentity(mock);
         final IdentityStoreCreateRequest request = new IdentityStoreCreateRequest(identityChangeRequest, H_CLIENT_CODE, H_APP_CODE, H_AUTHOR_NAME, H_AUTHOR_TYPE);
@@ -39,5 +50,6 @@ public abstract class AbstractIdentityRequestTest extends AbstractIdentityStoreR
         TimeUnit.SECONDS.sleep(1);
         return IdentityHome.findByCustomerId(response.getCustomerId());
     }
+
 
 }

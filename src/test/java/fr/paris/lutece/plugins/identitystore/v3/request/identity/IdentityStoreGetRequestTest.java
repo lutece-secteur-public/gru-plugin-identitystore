@@ -22,7 +22,7 @@ public class IdentityStoreGetRequestTest extends AbstractIdentityRequestTest {
             assertNotNull(strTestCase + " : identity list in response is null", response.getIdentities());
             assertFalse(strTestCase + " : identity list in response is empty", response.getIdentities().isEmpty());
             assertFalse(strTestCase + " : identity list in response contains more than one identty", response.getIdentities().size() > 1);
-            assertEquals(strTestCase + " : identity in response doesn't have the same customer ID as in the request", response.getIdentities().get(0).getCustomerId(), mockIdentity.getCustomerId());
+            assertEquals(strTestCase + " : identity in response doesn't have the same customer ID as in the request", mockIdentity.getCustomerId(), response.getIdentities().get(0).getCustomerId());
         } catch (final IdentityStoreException e) {
             fail(strTestCase + " : FAIL : " + e.getMessage());
         } finally {
