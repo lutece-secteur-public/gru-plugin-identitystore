@@ -21,7 +21,7 @@ public abstract class AbstractIdentityStoreRequestTest extends LuteceTestCase {
 
     protected void executeRequestKO(final AbstractIdentityStoreRequest request, final String strTestCase, final Class<? extends IdentityStoreException> expectedException, final String expectedExceptionMessageKey) {
         final Exception e = assertThrows(strTestCase + " : request was expected to fail, but it was successfull.", Exception.class, request::doRequest);
-        assertEquals(strTestCase + " : the exception that occured is not of the expected type. Exception message : " + e.getMessage(), e.getClass(), expectedException);
+        assertEquals(strTestCase + " : the exception that occured is not of the expected type. Exception message : " + e.getMessage(), expectedException, e.getClass() );
         if (expectedExceptionMessageKey != null) {
             final String exceptionMsgKey = ((IdentityStoreException) e).getLocaleMessageKey();
             assertEquals(strTestCase + " : the exception message key does not match the expected key. Exception message key : " + exceptionMsgKey, expectedExceptionMessageKey, exceptionMsgKey);

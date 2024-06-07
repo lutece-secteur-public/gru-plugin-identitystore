@@ -77,7 +77,7 @@ public class IdentityStoreCreateRequestTest extends AbstractIdentityRequestTest 
             fail(strTestCase + " : FAIL : " + e.getMessage());
         }
 
-        strTestCase = "2.4. Create request with an unknown attribute";
+        strTestCase = "2.5. Create request with an unknown attribute";
         identity = getIdentityDtoForCreate();
         identity.getAttributes().add(IdentityMockUtils.getMockAttribute("unknown_attribute_key", "test", IdentityMockUtils.DEC));
         req.setIdentity(identity);
@@ -88,7 +88,7 @@ public class IdentityStoreCreateRequestTest extends AbstractIdentityRequestTest 
             fail(strTestCase + " : FAIL : " + e.getMessage());
         }
 
-        strTestCase = "2.5. Create request with duplicate in attributes with different values";
+        strTestCase = "2.6. Create request with duplicate in attributes with different values";
         identity = getIdentityDtoForCreate();
         identity.getAttributes().add(IdentityMockUtils.getMockAttribute(Constants.PARAM_EMAIL, "test@test.fr", IdentityMockUtils.DEC));
         identity.getAttributes().add(IdentityMockUtils.getMockAttribute(Constants.PARAM_EMAIL, "test@test.com", IdentityMockUtils.DEC));
@@ -100,7 +100,7 @@ public class IdentityStoreCreateRequestTest extends AbstractIdentityRequestTest 
             fail(strTestCase + " : FAIL : " + e.getMessage());
         }
 
-        strTestCase = "2.6. Create request with null in attribute value";
+        strTestCase = "2.7. Create request with null in attribute value";
         identity = getIdentityDtoForCreate();
         identity.getAttributes().add(IdentityMockUtils.getMockAttribute(Constants.PARAM_EMAIL, null, IdentityMockUtils.DEC));
         req.setIdentity(identity);
@@ -111,7 +111,7 @@ public class IdentityStoreCreateRequestTest extends AbstractIdentityRequestTest 
             fail(strTestCase + " : FAIL : " + e.getMessage());
         }
 
-        strTestCase = "2.7. Create request with null in attribute key";
+        strTestCase = "2.8. Create request with null in attribute key";
         identity = getIdentityDtoForCreate();
         identity.getAttributes().add(IdentityMockUtils.getMockAttribute(null, "test", IdentityMockUtils.DEC));
         req.setIdentity(identity);
@@ -122,7 +122,7 @@ public class IdentityStoreCreateRequestTest extends AbstractIdentityRequestTest 
             fail(strTestCase + " : FAIL : " + e.getMessage());
         }
 
-        strTestCase = "2.8. Create request with an attribute without certification";
+        strTestCase = "2.9. Create request with an attribute without certification";
         identity = getIdentityDtoForCreate();
         AttributeDto attr = IdentityMockUtils.getMockAttribute(Constants.PARAM_EMAIL, "test@test.com", IdentityMockUtils.DEC);
         attr.setCertifier(null);
@@ -135,7 +135,7 @@ public class IdentityStoreCreateRequestTest extends AbstractIdentityRequestTest 
             fail(strTestCase + " : FAIL : " + e.getMessage());
         }
 
-        strTestCase = "2.9. Create request with a single pivot attribute with high certification";
+        strTestCase = "2.10. Create request with a single pivot attribute with high certification";
         identity = getIdentityDtoForCreate();
         attr = IdentityMockUtils.getMockAttribute(Constants.PARAM_BIRTH_COUNTRY_CODE, "99100", IdentityMockUtils.ORIG1);
         identity.getAttributes().add(attr);

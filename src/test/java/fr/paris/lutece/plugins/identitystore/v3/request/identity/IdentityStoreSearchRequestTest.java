@@ -124,7 +124,7 @@ public class IdentityStoreSearchRequestTest extends AbstractIdentityRequestTest 
                 fail(strTestCase + " : FAIL : " + e.getMessage());
             }
 
-            strTestCase = "2.6. Search identity with attributes no result";
+            strTestCase = "2.7. Search identity with attributes no result";
             req = new IdentitySearchRequest();
             req.setSearch(buildSearchDto("unknownfirstname", "unknownfamillyname", "30/04/1921"));
             try {
