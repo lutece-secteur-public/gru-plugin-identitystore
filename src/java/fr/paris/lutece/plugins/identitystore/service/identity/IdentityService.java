@@ -401,7 +401,7 @@ public class IdentityService
         try
         {
             if ( _serviceContractService.canModifyConnectedIdentity( clientCode )
-                    && !StringUtils.equals( identity.getConnectionId( ), request.getIdentity( ).getConnectionId( ) )
+                    && !StringUtils.equalsIgnoreCase( identity.getConnectionId( ), request.getIdentity( ).getConnectionId( ) )
                     && request.getIdentity( ).getConnectionId( ) != null )
             {
                 final Identity byConnectionId = IdentityHome.findByConnectionId( request.getIdentity( ).getConnectionId( ) );
