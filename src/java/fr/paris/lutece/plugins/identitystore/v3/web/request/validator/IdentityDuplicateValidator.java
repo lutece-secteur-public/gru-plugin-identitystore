@@ -119,7 +119,7 @@ public class IdentityDuplicateValidator
             throws DuplicatesConsistencyException
     {
         if ( StringUtils.isNotEmpty( request.getIdentity( ).getConnectionId( ) )
-                && !StringUtils.equals( existingIdentityToUpdate.getConnectionId( ), request.getIdentity( ).getConnectionId( ) ) )
+                && !StringUtils.equalsIgnoreCase( existingIdentityToUpdate.getConnectionId( ), request.getIdentity( ).getConnectionId( ) ) )
         {
             final Identity byConnectionId = IdentityHome.findByConnectionId( request.getIdentity( ).getConnectionId( ) );
             if ( byConnectionId != null )
