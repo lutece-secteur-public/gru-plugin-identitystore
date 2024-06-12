@@ -56,9 +56,9 @@ public class IndexActionHome
         return indexAction;
     }
 
-    public static void delete( final IndexAction indexAction )
+    public static void delete( final List<Integer> ids )
     {
-        _dao.delete( indexAction, _plugin );
+        _dao.delete( ids, _plugin );
     }
 
     public static List<IndexAction> selectWithLimit( final int limit )

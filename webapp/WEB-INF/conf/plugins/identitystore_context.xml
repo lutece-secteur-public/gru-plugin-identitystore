@@ -45,8 +45,6 @@
         <constructor-arg name="strLogin" value="${elasticsearch.user}"/>
         <constructor-arg name="strPassword" value="${elasticsearch.pwd}"/>
     </bean>
-    <bean id="identitystore.elasticsearch.retryService" class="fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.service.RetryService" >
-    </bean>
 
     <!-- Services recherche -->
     <bean id="identitystore.searchIdentityService.elasticsearch" class="fr.paris.lutece.plugins.identitystore.service.indexer.search.ElasticSearchIdentityService">

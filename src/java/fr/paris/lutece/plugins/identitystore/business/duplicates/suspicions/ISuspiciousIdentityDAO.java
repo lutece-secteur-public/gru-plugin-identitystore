@@ -209,6 +209,14 @@ public interface ISuspiciousIdentityDAO
     SuspiciousIdentity selectByCustomerID( String customerId, Plugin plugin );
 
     /**
+     * Get the {@link SuspiciousIdentity} list that has been marked for this list of CUIDs, if any
+     * @param customerIds the list of CUIDs to search for
+     * @param plugin the plugin
+     * @return the {@link SuspiciousIdentity} list that has been marked for this list of CUIDs, if any
+     */
+    List <SuspiciousIdentity> selectByCustomerIDs(List<String> customerIds, Plugin plugin);
+
+    /**
      * Truncates duplicate suspicions
      * 
      * @param plugin
@@ -216,8 +224,15 @@ public interface ISuspiciousIdentityDAO
     void purge( Plugin plugin );
 
     /**
+     * Return the number of pending suspicious identities
+     *
+     * @return the count
+     */
+    int countSuspiciousIdentities( final Plugin plugin );
+
+    /**
      * Return the number of pending suspicious identities for a given rule.
-     * 
+     *
      * @param ruleId
      *            the rule ID
      * @return the count

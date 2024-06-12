@@ -33,11 +33,23 @@
  */
 package fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.model.internal;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 public class BulkAction
 {
     protected String key;
     protected Object document;
     protected BulkActionType type;
+    @JsonIgnore
+    protected Integer internalId;
+
+    public BulkAction( final Integer internalId, String key, Object document, BulkActionType type )
+    {
+        this.internalId = internalId;
+        this.key = key;
+        this.document = document;
+        this.type = type;
+    }
 
     public BulkAction( String key, Object document, BulkActionType type )
     {
@@ -74,5 +86,13 @@ public class BulkAction
     public void setType( BulkActionType type )
     {
         this.type = type;
+    }
+
+    public Integer getInternalId() {
+        return internalId;
+    }
+
+    public void setInternalId(Integer internalId) {
+        this.internalId = internalId;
     }
 }

@@ -46,6 +46,7 @@ import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.model
 import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.model.internal.BulkAction;
 import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.model.internal.alias.AliasAction;
 import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.model.internal.alias.AliasActions;
+import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
 import fr.paris.lutece.portal.service.util.AppException;
 import fr.paris.lutece.portal.service.util.AppLogService;
 import fr.paris.lutece.portal.service.util.AppPropertiesService;
@@ -99,7 +100,7 @@ public class IdentityIndexer implements IIdentityIndexer
     }
 
     @Override
-    public boolean bulk( final List<BulkAction> bulkActions, final String index )
+    public boolean bulk( final List<BulkAction> bulkActions, final String index ) throws IdentityStoreException
     {
         try
         {
@@ -108,8 +109,7 @@ public class IdentityIndexer implements IIdentityIndexer
         }
         catch( final ElasticClientException e )
         {
-            AppLogService.error( "Failed to bulk index ", e );
-            return false;
+            throw new IdentityStoreException( e.getMessage( ), e );
         }
     }
 

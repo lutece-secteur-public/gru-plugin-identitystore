@@ -43,7 +43,7 @@ public interface IIndexActionDao
 
     void insert( final IndexAction indexAction, final Plugin plugin );
 
-    void delete( final IndexAction indexAction, final Plugin plugin );
+    void delete( final List<Integer> ids, final Plugin plugin );
 
     List<IndexAction> select( int limit, final Plugin plugin );
 

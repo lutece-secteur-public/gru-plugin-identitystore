@@ -33,7 +33,10 @@
  */
 package fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.task;
 
-public abstract class AbstractIndexTask
+import fr.paris.lutece.plugins.identitystore.utils.LoggingTask;
+import fr.paris.lutece.portal.service.util.AppLogService;
+
+public abstract class AbstractIndexTask implements LoggingTask
 {
     protected IndexStatus status = new IndexStatus( );
 
@@ -55,6 +58,26 @@ public abstract class AbstractIndexTask
         {
             this.status.setRunning( false );
         }
+    }
+
+    @Override
+    public void debug( final String log )
+    {
+        AppLogService.debug( log );
+    }
+
+    @Override
+    public void info( final String log )
+    {
+        AppLogService.info( log );
+        this.getStatus().log( log );
+    }
+
+    @Override
+    public void error( final String log )
+    {
+        AppLogService.error( log );
+        this.getStatus().log( log );
     }
 
     public IndexStatus getStatus( )
