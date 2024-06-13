@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?><plug-in>
     <name>identitystore</name>
     <class>fr.paris.lutece.plugins.identitystore.service.IdentityStorePlugin</class>
-    <version>3.1.5</version>
+    <version>3.1.6-SNAPSHOT</version>
     <documentation/>
     <installation/>
     <changes/>
