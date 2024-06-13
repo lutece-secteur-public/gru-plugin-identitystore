@@ -330,9 +330,9 @@ public final class IdentityHome
      * @return A list of matching customer IDs
      */
     public static List<String> findByAttributeExisting( final List<Integer> idAttributeList, final int nbFilledAttributes, final boolean notMerged,
-            final boolean notSuspicious )
+            final boolean notSuspicious, final int rulePriority )
     {
-        return _dao.selectByAttributeExisting( idAttributeList, nbFilledAttributes, notMerged, notSuspicious, _plugin );
+        return _dao.selectByAttributeExisting( idAttributeList, nbFilledAttributes, notMerged, notSuspicious, rulePriority, _plugin );
     }
 
     /**

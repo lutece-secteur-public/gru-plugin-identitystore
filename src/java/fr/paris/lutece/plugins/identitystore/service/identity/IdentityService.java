@@ -1322,12 +1322,14 @@ public class IdentityService
      *
      * @param rule
      *            the rule used to get matching identities
+     * @param batchSize the size of the batches
+     * @param includeSuspicions filter CUIDs, to include or not, the CUIDs that are identified as suspicions
      * @return the list of identities
      */
-    public Batch<String> getCUIDsBatchForPotentialDuplicate(final DuplicateRule rule, final int batchSize )
+    public Batch<String> getCUIDsBatchForPotentialDuplicate(final DuplicateRule rule, final int batchSize, final boolean includeSuspicions )
     {
         final List<Integer> attributes = rule.getCheckedAttributes( ).stream( ).map( AttributeKey::getId ).collect( Collectors.toList( ) );
-        final List<String> customerIdsList = IdentityHome.findByAttributeExisting( attributes, rule.getNbFilledAttributes( ), true, true );
+        final List<String> customerIdsList = IdentityHome.findByAttributeExisting( attributes, rule.getNbFilledAttributes( ), true, !includeSuspicions, rule.getPriority() );
         if ( customerIdsList.isEmpty( ) )
         {
             return Batch.ofSize( Collections.emptyList( ), 0 );

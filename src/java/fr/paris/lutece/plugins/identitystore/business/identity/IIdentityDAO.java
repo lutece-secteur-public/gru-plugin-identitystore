@@ -186,6 +186,8 @@ public interface IIdentityDAO
      *            if the returned identities have to be not merged
      * @param notSuspicious
      *            if the returned identities have to not be suspicious
+     * @param rulePriority
+     *            when suspicions are not filtered ( notSuspicious = false ), return only lower priority suspicions
      * @param nbFilledAttributes
      *            minimum number of filled attributes over idAttributeList
      * @param plugin
@@ -193,7 +195,7 @@ public interface IIdentityDAO
      * @return A list of matching identities
      */
     List<String> selectByAttributeExisting( final List<Integer> idAttributeList, final int nbFilledAttributes, final boolean notMerged,
-            final boolean notSuspicious, final Plugin plugin );
+            final boolean notSuspicious, final int rulePriority, final Plugin plugin );
 
     /**
      * log changes

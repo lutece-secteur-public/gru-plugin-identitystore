@@ -106,6 +106,7 @@ public final class IdentityDAO implements IIdentityDAO
             + " GROUP BY a.id_identity HAVING COUNT (b.id_attribute) >= ${count}";
     private static final String SQL_QUERY_FILTER_NOT_MERGED = "a.is_merged = 0 AND a.date_merge IS NULL";
     private static final String SQL_QUERY_FILTER_NOT_SUSPICIOUS = "NOT EXISTS (SELECT c.id_suspicious_identity FROM identitystore_quality_suspicious_identity c WHERE c.customer_id = a.customer_id)";
+    private static final String SQL_QUERY_FILTER_LOWER_SUSPICIOUS = "NOT EXISTS (SELECT c.id_suspicious_identity FROM identitystore_quality_suspicious_identity c JOIN identitystore_duplicate_rule r on c.id_duplicate_rule = r.id_rule WHERE c.customer_id = a.customer_id AND r.priority <= ${rule_priority})";
     private static final String SQL_QUERY_INSERT_HISTORY = "INSERT INTO identitystore_identity_history (change_type, change_status, change_message, author_type, author_name, client_code, customer_id, metadata) VALUES (?, ?, ?, ?, ?, ?, ?, to_json(?::json))";
     private static final String SQL_QUERY_UPSERT_HISTORY = "WITH tmp AS ( "
             + "    (SELECT ? AS change_type, ? AS change_status, ? AS change_message, ? AS author_type, ? AS author_name, ? AS client_code, ? AS customer_id, to_json(?::json) AS metadata) "
@@ -594,7 +595,7 @@ public final class IdentityDAO implements IIdentityDAO
      */
     @Override
     public List<String> selectByAttributeExisting( final List<Integer> idAttributeList, final int nbFilledAttributes, final boolean notMerged,
-            final boolean notSuspicious, final Plugin plugin )
+            final boolean notSuspicious, final int rulePriority, final Plugin plugin )
     {
         final List<String> listCuids = new ArrayList<>( );
         if ( idAttributeList == null || idAttributeList.isEmpty( ) )
@@ -604,7 +605,7 @@ public final class IdentityDAO implements IIdentityDAO
         String sql = SQL_QUERY_SELECT_BY_ATTRIBUTE_EXISTING
                 .replace( "${id_attribute_list}", idAttributeList.stream( ).map( Object::toString ).collect( Collectors.joining( ", " ) ) )
                 .replace( "${not_merged}", ( notMerged ? SQL_QUERY_FILTER_NOT_MERGED : "1=1" ) )
-                .replace( "${not_suspicious}", ( notSuspicious ? SQL_QUERY_FILTER_NOT_SUSPICIOUS : "1=1" ) )
+                .replace( "${not_suspicious}", ( notSuspicious ? SQL_QUERY_FILTER_NOT_SUSPICIOUS : SQL_QUERY_FILTER_LOWER_SUSPICIOUS.replace("${rule_priority}", String.valueOf( rulePriority ) ) ) )
                 .replace( "${count}", String.valueOf( nbFilledAttributes ) );
         try ( final DAOUtil daoUtil = new DAOUtil( sql, plugin ) )
         {
