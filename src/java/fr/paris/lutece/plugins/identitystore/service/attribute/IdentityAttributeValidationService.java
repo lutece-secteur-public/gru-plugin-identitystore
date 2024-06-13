@@ -87,6 +87,10 @@ public class IdentityAttributeValidationService
         return _instance;
     }
 
+    public boolean validateAttribute( final String key, final String value) throws IdentityAttributeNotFoundException {
+        return _cache.get( key ).matcher( value ).matches( );
+    }
+
     /**
      * Validates all attribute values stored in the provided identity, according to each attribute validation regex. Adds validation error statuses in the
      * response in case of invalid values, and put the status to FAILURE.
