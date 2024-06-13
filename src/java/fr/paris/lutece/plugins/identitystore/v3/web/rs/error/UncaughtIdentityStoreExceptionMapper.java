@@ -50,13 +50,13 @@ import javax.ws.rs.ext.Provider;
 public class UncaughtIdentityStoreExceptionMapper extends GenericUncaughtExceptionMapper<IdentityStoreException, ErrorResponse>
 {
     @Override
-    protected Response.Status getStatus( )
+    protected Response.Status getStatus( final IdentityStoreException e)
     {
         return Response.Status.BAD_REQUEST;
     }
 
     @Override
-    protected ErrorResponse buildEntity( final IdentityStoreException e )
+    protected ErrorResponse getBody( final IdentityStoreException e )
     {
         final ErrorResponse response = new ErrorResponse( );
         response.setStatus( ResponseStatusFactory.badRequest( ).setMessage( ERROR_DURING_TREATMENT + " :: " + e.getMessage( ) )
