@@ -46,6 +46,7 @@ import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreExceptio
 import fr.paris.lutece.portal.service.plugin.Plugin;
 import fr.paris.lutece.util.sql.DAOUtil;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.sql.Statement;
@@ -117,7 +118,7 @@ public final class IdentityDAO implements IIdentityDAO
             + "    JOIN identitystore_identity_history master ON master.change_type = tmp.change_type AND  master.customer_id = tmp.customer_id AND master.author_name = tmp.author_name "
             + "    WHERE date_trunc('day', master.modification_date) = date_trunc('day', CURRENT_TIMESTAMP)) ";
     private static final String SQL_QUERY_SELECT_IDENTITY_HISTORY = "SELECT change_type, change_status, change_message, author_type, author_name, client_code, customer_id, modification_date, metadata::text FROM identitystore_identity_history WHERE customer_id = ?  ORDER BY modification_date DESC";
-    private static final String SQL_QUERY_SEARCH_IDENTITY_HISTORY = "SELECT change_type, change_status, change_message, author_type, author_name, client_code, customer_id, modification_date, metadata::text FROM identitystore_identity_history WHERE ${client_code} AND ${customer_id} AND ${author_name} AND ${change_type} AND ${modification_date} AND ${metadata} AND ${change_status} ORDER BY modification_date DESC";
+    private static final String SQL_QUERY_SEARCH_IDENTITY_HISTORY = "SELECT change_type, change_status, change_message, author_type, author_name, client_code, customer_id, modification_date, metadata::text FROM identitystore_identity_history WHERE ${client_code} AND ${customer_id} AND ${author_name} AND ${change_type} AND ${nbDaysFrom} AND ${metadata} AND ${change_status} AND ${author_type} AND ${modification_date} ORDER BY modification_date DESC";
 
     private static final String SQL_QUERY_SELECT_UPDATED_IDENTITIES = "SELECT DISTINCT i.customer_id, i.last_update_date FROM identitystore_identity i JOIN identitystore_identity_history ih ON i.customer_id = ih.customer_id JOIN identitystore_identity_attribute_history iah ON i.id_identity = iah.id_identity WHERE 1=1";
     private static final String SQL_QUERY_SELECT_UPDATED_IDENTITIES_FROM_IDS = "SELECT i.customer_id, i.last_update_date FROM identitystore_identity i WHERE id_identity IN (${identity_id_list}) ORDER BY i.last_update_date DESC";
@@ -832,23 +833,34 @@ public final class IdentityDAO implements IIdentityDAO
      */
     @Override
     public List<IdentityChange> selectIdentityHistoryBySearchParameters( final String customerId, final String clientCode, final String authorName,
-            final IdentityChangeType changeType, final String changeStatus, final Map<String, String> metadata, final Integer nbDaysFrom,
+            final IdentityChangeType changeType, final String changeStatus, final String authorType, final Date modificationDate, final Map<String, String> metadata, final Integer nbDaysFrom,
             final Pair<Date, Date> modificationDateInterval, final Plugin plugin ) throws IdentityStoreException
     {
         final List<IdentityChange> identityChanges = new ArrayList<>( );
         // ${client_code} AND ${customer_id} AND ${author_name} AND ${change_type} AND ${modification_date} AND ${metadata} AND ${modification_date} AND
-        // ${change_status}
+        // ${change_status} AND ${nbDaysFrom} AND ${author_type}
         String sql = SQL_QUERY_SEARCH_IDENTITY_HISTORY
                 .replace( "${client_code}", ( StringUtils.isNotBlank( clientCode ) ? "client_code = '" + clientCode + "'" : "1=1" ) )
                 .replace( "${customer_id}", ( StringUtils.isNotBlank( customerId ) ? "customer_id = '" + customerId + "'" : "1=1" ) )
                 .replace( "${author_name}", ( StringUtils.isNotBlank( authorName ) ? "lower(author_name) = '" + authorName.toLowerCase( ) + "'" : "1=1" ) )
                 .replace( "${change_type}", ( changeType != null ? "change_type = " + changeType.getValue( ) : "1=1" ) )
                 .replace( "${change_status}", ( StringUtils.isNotBlank( changeStatus ) ? "change_status = '" + changeStatus + "'" : "1=1" ) )
+                .replace( "${author_type}", ( StringUtils.isNotBlank( authorType ) ? "author_type = '" + authorType + "'" : "1=1" ) )
                 .replace( "${metadata}", ( metadata != null && !metadata.isEmpty( ) ? this.computeMetadaQuery( metadata ) : "1=1" ) );
         final List<Date> sqlDateParameters = new ArrayList<>( );
+        if(modificationDate != null )
+        {
+            sql = sql.replace( "${modification_date}", "modification_date >= '" + modificationDate +
+                "' AND modification_date < '" + DateUtils.addDays(modificationDate, 1) + "'" );
+        }
+        else
+        {
+            sql = sql.replace( "${modification_date}",  "1=1" );
+        }
+
         if ( nbDaysFrom != null && nbDaysFrom != 0 )
         {
-            sql = sql.replace( "${modification_date}", "modification_date > now() - interval '" + nbDaysFrom + "' day" );
+            sql = sql.replace( "${nbDaysFrom}", "modification_date > now() - interval '" + nbDaysFrom + "' day" );
         }
         else
         {
@@ -867,11 +879,11 @@ public final class IdentityDAO implements IIdentityDAO
                     dateStatements.add( "modification_date < ?" );
                     sqlDateParameters.add( dateEnd );
                 }
-                sql = sql.replace( "${modification_date}", String.join( " AND ", dateStatements ) );
+                sql = sql.replace( "${nbDaysFrom}", String.join( " AND ", dateStatements ) );
             }
             else
             {
-                sql = sql.replace( "${modification_date}", "1=1" );
+                sql = sql.replace( "${nbDaysFrom}", "1=1" );
             }
         }
 

@@ -110,7 +110,7 @@ public class IdentityHistoryService
                 .map( ar -> ar.getAttributeKey( ).getKeyName( ) ).collect( Collectors.toSet( ) );
 
         final List<IdentityChange> identityChangeList = IdentityHome.findHistoryBySearchParameters( request.getCustomerId( ), request.getClientCode( ),
-                request.getAuthorName( ), request.getIdentityChangeType( ), request.getChangeStatus( ), request.getMetadata( ), request.getNbDaysFrom( ),
+                request.getAuthorName( ), request.getIdentityChangeType( ), request.getChangeStatus( ), null, null, request.getMetadata( ), request.getNbDaysFrom( ),
                 Pair.of( request.getModificationDateIntervalStart( ), request.getModificationDateIntervalEnd( ) ) );
         if ( !serviceContract.getAuthorizedAgentHistoryRead( ) )
         {

@@ -200,10 +200,10 @@ public final class IdentityHome
      * @return The Identity
      */
     public static List<IdentityChange> findHistoryBySearchParameters( final String strCustomerId, final String clientCode, final String authorName,
-            final IdentityChangeType changeType, final String changeStatus, final Map<String, String> metadata, final Integer nbDaysFrom,
+            final IdentityChangeType changeType, final String changeStatus, final String authorType, final Date modificationDate, final Map<String, String> metadata, final Integer nbDaysFrom,
             final Pair<Date, Date> modificationDateInterval ) throws IdentityStoreException
     {
-        return _dao.selectIdentityHistoryBySearchParameters( strCustomerId, clientCode, authorName, changeType, changeStatus, metadata, nbDaysFrom,
+        return _dao.selectIdentityHistoryBySearchParameters( strCustomerId, clientCode, authorName, changeType, changeStatus, authorType, modificationDate, metadata, nbDaysFrom,
                 modificationDateInterval, _plugin );
     }
 
