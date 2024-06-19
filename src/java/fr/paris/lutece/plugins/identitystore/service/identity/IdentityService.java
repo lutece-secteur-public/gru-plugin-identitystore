@@ -1026,6 +1026,13 @@ public class IdentityService
         {
             response.setIdentities( Collections.singletonList( identityDto ) );
             response.setStatus( ResponseStatusFactory.ok( ).setMessageKey( Constants.PROPERTY_REST_INFO_SUCCESSFUL_OPERATION ) );
+            // #27998 : Dans le cas d'une interrogation sur un CUID/GUID rapproché, ajouter une ligne dans le bloc "Alerte" dans la réponse de l'identité consolidée
+            if ((StringUtils.isNotBlank(customerId) && !identityDto.getCustomerId().equals(customerId)) ||
+                (StringUtils.isNotBlank(connectionId) && !identityDto.getConnectionId().equals(connectionId))) {
+                final IdentitySearchMessage alert = new IdentitySearchMessage();
+                alert.setMessage("Le CUID ou GUID demandé correspond à une identité rapprochée. Cette réponse contient l'identité consilidée.");
+                response.getAlerts().add(alert);
+            }
             if ( author != null )
             {
                 AccessLogService.getInstance( ).info( AccessLoggerConstants.EVENT_TYPE_READ, SEARCH_IDENTITY_EVENT_CODE,
