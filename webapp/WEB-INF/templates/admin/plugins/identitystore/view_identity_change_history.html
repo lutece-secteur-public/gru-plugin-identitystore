@@ -11,6 +11,7 @@
                 <th onclick="sortTable(4, 'identity-table')">#i18n{identitystore.view_change_history.author.type}</th>
                 <th onclick="sortTable(5, 'identity-table')">#i18n{identitystore.view_change_history.author.name}</th>
                 <th onclick="sortTable(6, 'identity-table')">#i18n{identitystore.view_change_history.client.code}</th>
+                <th onclick="sortTable(7, 'identity-table')">#i18n{identitystore.view_change_history.metadata}</th>
             </tr>
             <#if identity_change_list??  && identity_change_list?has_content>
                 <tbody>
@@ -48,6 +49,11 @@
                             <td>${change.author.type.name()!}</td>
                             <td>${change.author.name!}</td>
                             <td>${change.clientCode!}</td>
+                            <td>
+                                <#list change.metadata?keys as key>
+                                    ${key} : ${change.metadata[key]} <br/>
+                                </#list>
+                            </td>
                         </tr>
                     </#list>
                 </tbody>
