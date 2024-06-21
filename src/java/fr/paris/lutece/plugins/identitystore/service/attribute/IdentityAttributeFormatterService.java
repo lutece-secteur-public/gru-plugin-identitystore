@@ -208,7 +208,7 @@ public class IdentityAttributeFormatterService
      *            the value to format
      * @return the formatted value
      */
-    private String formatDateValue( final String value )
+    public String formatDateValue( final String value )
     {
         final StringBuilder sb = new StringBuilder( );
         final String [ ] splittedDate = value.split( "/" );
@@ -263,7 +263,7 @@ public class IdentityAttributeFormatterService
      *            the attribute key
      * @return the status
      */
-    private AttributeStatus buildAttributeValueFormattedStatus( final String attrStrKey, final String oldValue, final String newValue )
+    public AttributeStatus buildAttributeValueFormattedStatus( final String attrStrKey, final String oldValue, final String newValue )
     {
         final AttributeStatus status = new AttributeStatus( );
         status.setKey( attrStrKey );

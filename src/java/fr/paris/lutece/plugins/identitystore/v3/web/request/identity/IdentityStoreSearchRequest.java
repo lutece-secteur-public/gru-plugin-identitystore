@@ -33,16 +33,21 @@
  */
 package fr.paris.lutece.plugins.identitystore.v3.web.request.identity;
 
+import fr.paris.lutece.plugins.identitystore.service.attribute.IdentityAttributeFormatterService;
 import fr.paris.lutece.plugins.identitystore.service.contract.ServiceContractService;
 import fr.paris.lutece.plugins.identitystore.service.identity.IdentityService;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.AbstractIdentityStoreRequest;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.IdentityRequestValidator;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.search.IdentitySearchRequest;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.search.IdentitySearchResponse;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.search.SearchAttribute;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.ResponseStatusFactory;
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
 import fr.paris.lutece.portal.service.util.AppException;
 import org.apache.commons.lang3.StringUtils;
+
+import java.util.stream.Collectors;
 
 /**
  * This class represents a get request for IdentityStoreRestServive
@@ -87,6 +92,19 @@ public class IdentityStoreSearchRequest extends AbstractIdentityStoreRequest
             }
             else
             {
+                // #28070 - la date doit être formatée avant de lancer la recherche
+                final SearchAttribute birthdateSearch = _identitySearchRequest.getSearch().getAttributes().stream().filter(a -> a.getKey().equals(Constants.PARAM_BIRTH_DATE)).findFirst().orElse(null);
+                if ( birthdateSearch != null ) {
+                    final String formattedBirthdate = IdentityAttributeFormatterService.instance().formatDateValue(birthdateSearch.getValue());
+                    if (!formattedBirthdate.equals(birthdateSearch.getValue())) {
+                        response.getStatus().getAttributeStatuses().add(IdentityAttributeFormatterService.instance().buildAttributeValueFormattedStatus(birthdateSearch.getKey(), birthdateSearch.getValue(), formattedBirthdate));
+                        _identitySearchRequest.getSearch().setAttributes(_identitySearchRequest.getSearch().getAttributes().stream().peek(a -> {
+                            if (a.getKey().equals(Constants.PARAM_BIRTH_DATE)) {
+                                a.setValue(formattedBirthdate);
+                            }
+                        }).collect(Collectors.toList()));
+                    }
+                }
                 IdentityService.instance( ).search( _identitySearchRequest, _author, response, _strClientCode );
             }
         }
