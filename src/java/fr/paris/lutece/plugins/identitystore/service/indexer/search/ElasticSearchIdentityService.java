@@ -33,15 +33,20 @@
  */
 package fr.paris.lutece.plugins.identitystore.service.indexer.search;
 
+import fr.paris.lutece.plugins.identitystore.business.identity.Identity;
+import fr.paris.lutece.plugins.identitystore.business.identity.IdentityHome;
 import fr.paris.lutece.plugins.identitystore.service.contract.AttributeCertificationDefinitionService;
 import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.model.AttributeObject;
 import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.model.IdentityObject;
 import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.search.model.inner.response.Response;
 import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.search.service.IIdentitySearcher;
 import fr.paris.lutece.plugins.identitystore.service.search.ISearchIdentityService;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.DtoConverter;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.AttributeDto;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.ConsolidateDefinition;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.ExpirationDefinition;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.IdentityDto;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.MergeDefinition;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.search.QualifiedIdentitySearchResult;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.search.SearchAttribute;
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
@@ -134,6 +139,24 @@ public class ElasticSearchIdentityService implements ISearchIdentityService
             identity.getExpiration().setExpirationDate(identityObject.getExpirationDate());
             identity.getExpiration().setDeleted(false);
             identity.getExpiration().setDeleteDate(null);
+        }
+        Identity identityDetails = IdentityHome.findByCustomerId( identity.getCustomerId( ) );
+        if( identityDetails != null && identityDetails.isMerged( ) ) {
+            identity.setMerge( new MergeDefinition( ) );
+            identity.getMerge().setMasterCustomerId( identityDetails.getMasterIdentityId().toString( ) );
+            identity.getMerge().setMerged( true );
+            identity.getMerge().setMergeDate( identityDetails.getMergeDate( ));
+        }
+        List<Identity> mergedIdentities = IdentityHome.findMergedIdentities(identityDetails.getId());
+        if( mergedIdentities != null && !mergedIdentities.isEmpty() )
+        {
+            identity.setConsolidate(new ConsolidateDefinition());
+            List<IdentityDto> mergedIdentitiesDto = new ArrayList<>( );
+            for (Identity megedIdentity : mergedIdentities)
+            {
+                mergedIdentitiesDto.add(DtoConverter.convertIdentityToDto( megedIdentity ));
+            }
+            identity.getConsolidate().setMergedIdentities(mergedIdentitiesDto);
         }
         identity.setMonParisActive( identityObject.isMonParisActive( ) );
         for ( final Map.Entry<String, AttributeObject> entry : identityObject.getAttributes( ).entrySet( ) )
