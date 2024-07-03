@@ -105,7 +105,7 @@
                             <#elseif change.changeType.name() == "UPDATE">
                             <span class="badge bg-warning"> ${change.changeType.name()!} </span>
                             <#elseif change.changeType.name() == "DELETE">
-                            <span class="badge bg-error"> ${change.changeType.name()!} </span>
+                            <span class="badge bg-danger"> ${change.changeType.name()!} </span>
                             <#elseif change.changeType.name() == "MERGE">
                             <span class="badge bg-primary"> ${change.changeType.name()!} </span>
                             <#elseif change.changeType.name() == "CONSOLIDATED">
