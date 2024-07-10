@@ -38,6 +38,9 @@ import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.AttributeStatu
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.IdentityDto;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.crud.IdentityChangeRequest;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.merge.IdentityMergeRequest;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.search.IdentitySearchRequest;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.search.SearchAttribute;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.search.SearchDto;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
 import org.apache.commons.lang3.StringUtils;
 
@@ -104,6 +107,118 @@ public class IdentityAttributeFormatterService
     }
 
     /**
+     * Formats attribute values in the provided search request.
+     *
+     * @see IdentityAttributeFormatterService#formatAttribute(String, String, List)
+     * @param request
+     *            the identity change request
+     */
+    public List<AttributeStatus> formatIdentitySearchRequestAttributeValues( final IdentitySearchRequest request )
+    {
+        final List<AttributeStatus> statuses = new ArrayList<>( );
+        final SearchDto search = request.getSearch( );
+        if ( search != null )
+        {
+            search.getAttributes( ).stream( ).filter( attributeDto -> StringUtils.isNotBlank( attributeDto.getValue( ) ) )
+                    .forEach(attribute -> attribute.setValue( this.formatAttribute( attribute.getKey(), attribute.getValue(), statuses ) ));
+        }
+        return statuses;
+    }
+
+    /**
+     * Formats all attributes stored in the provided identity :
+     *
+     * @param identity
+     *            identity containing attributes to format
+     * @see IdentityAttributeFormatterService#formatAttribute(String, String, List)
+     * @return FORMATTED_VALUE statuses for attributes whose value has changed after the formatting.
+     */
+    private List<AttributeStatus> formatIdentityAttributeValues( final IdentityDto identity )
+    {
+        final List<AttributeStatus> statuses = new ArrayList<>( );
+        identity.getAttributes( ).stream( ).filter( attributeDto -> StringUtils.isNotBlank( attributeDto.getValue( ) ) ).forEach( attribute -> {
+            attribute.setValue( this.formatAttribute( attribute.getKey(), attribute.getValue(), statuses ) );
+        } );
+        return statuses;
+    }
+
+    /**
+     * Formats the provided list of attributes :
+     * <ul>
+     * <li>Remove leading and trailing spaces</li>
+     * <li>Replace all blank characters by an actual space</li>
+     * <li>Replace space successions with a single space</li>
+     * <li>For phone number attributes :
+     * <ul>
+     * <li>Remove all spaces, dots, dashes and parenthesis</li>
+     * <li>Replace leading indicative part (0033 or +33) by a single zero</li>
+     * </ul>
+     * </li>
+     * <li>For date attributes :
+     * <ul>
+     * <li>Put a leading zero in day and month parts if they contain only one character</li>
+     * </ul>
+     * </li>
+     * <li>For first name attributes :
+     * <ul>
+     * <li>Replace comas (,) by a single whitespace</li>
+     * <li>Force the first character of each group (space-separated) to be uppercase, the rest is forced to lowercase</li>
+     * </ul>
+     * </li>
+     * <li>For country label, family name and prefered name attributes :
+     * <ul>
+     * <li>force to uppercase</li>
+     * </ul>
+     * </li>
+     * <li>For login and email attributes :
+     * <ul>
+     * <li>force to lowercase</li>
+     * </ul>
+     * </li>
+     * </ul>
+     *
+     * @param key the attribute key
+     * @param value the attribute value
+     * @param statuses the status list that must be filled with formatting results
+     * @return FORMATTED_VALUE statuses for attributes whose value has changed after the formatting.
+     */
+    private String formatAttribute( final String key, final String value, final List<AttributeStatus> statuses )
+    {
+        // Suppression espaces avant et après, et uniformisation des espacements (tab, space, nbsp, successions d'espaces, ...) en les remplaçant tous par
+        // un espace
+        String formattedValue = value.trim( ).replaceAll( "\\s+", " " );
+
+        if ( PHONE_ATTR_KEYS.contains( key ) )
+        {
+            formattedValue = formatPhoneValue( formattedValue );
+        }
+        if ( DATE_ATTR_KEYS.contains( key ) )
+        {
+            formattedValue = formatDateValue( formattedValue );
+        }
+        if ( FIRSTNAME_ATTR_KEYS.contains( key ) )
+        {
+            formattedValue = formatFirstnameValue( formattedValue );
+        }
+        if ( UPPERCASE_ATTR_KEYS.contains( key ) )
+        {
+            formattedValue = StringUtils.upperCase( formattedValue );
+        }
+        if ( LOWERCASE_ATTR_KEYS.contains( key ) )
+        {
+            formattedValue = StringUtils.lowerCase( formattedValue );
+        }
+
+        // Si la valeur a été modifiée, on renvoie un status
+        if ( !formattedValue.equals( value ) )
+        {
+            statuses.add( buildAttributeValueFormattedStatus( key, value, formattedValue ) );
+        }
+
+        return formattedValue;
+    }
+
+    /**
      * Formats all attributes stored in the provided identity :
      * <ul>
      * <li>Remove leading and trailing spaces</li>
@@ -142,10 +257,10 @@ public class IdentityAttributeFormatterService
      *            identity containing attributes to format
      * @return FORMATTED_VALUE statuses for attributes whose value has changed after the formatting.
      */
-    private List<AttributeStatus> formatIdentityAttributeValues( final IdentityDto identity )
+    private List<AttributeStatus> formatSearchAttributeValues( final List<SearchAttribute> attributes )
     {
         final List<AttributeStatus> statuses = new ArrayList<>( );
-        identity.getAttributes( ).stream( ).filter( attributeDto -> StringUtils.isNotBlank( attributeDto.getValue( ) ) ).forEach( attribute -> {
+        attributes.stream( ).filter( attributeDto -> StringUtils.isNotBlank( attributeDto.getValue( ) ) ).forEach( attribute -> {
             // Suppression espaces avant et après, et uniformisation des espacements (tab, space, nbsp, successions d'espaces, ...) en les remplaçant tous par
             // un espace
             String formattedValue = attribute.getValue( ).trim( ).replaceAll( "\\s+", " " );
