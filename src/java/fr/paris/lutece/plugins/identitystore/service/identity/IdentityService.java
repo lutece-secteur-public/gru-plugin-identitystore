@@ -259,9 +259,7 @@ public class IdentityService
             TransactionManager.commitTransaction( null );
 
             /* Historique des modifications */
-            final List<AttributeStatus> createdAttributes = attrStatusList.stream( ).filter( s -> s.getStatus( ).equals( AttributeChangeStatus.CREATED ) )
-                    .collect( Collectors.toList( ) );
-            for ( AttributeStatus attributeStatus : createdAttributes )
+            for ( AttributeStatus attributeStatus : attrStatusList )
             {
                 _identityStoreNotifyListenerService.notifyListenersAttributeChange( AttributeChangeType.CREATE, identity, attributeStatus, author, clientCode );
             }
