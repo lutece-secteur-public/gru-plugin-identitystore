@@ -863,8 +863,8 @@ public class IdentityService
         final List<SearchAttribute> providedAttributes = request.getSearch( ).getAttributes( );
         final Set<String> providedKeys = commonKeytoKey( providedAttributes.stream( ).map( SearchAttribute::getKey ).collect( Collectors.toSet( ) ) );
 
-        boolean hasRequirements = false;
         final List<IdentitySearchRule> searchRules = IdentitySearchRuleHome.findAll( );
+        boolean hasRequirements = searchRules.isEmpty();
         final Iterator<IdentitySearchRule> iterator = searchRules.iterator( );
         while ( !hasRequirements && iterator.hasNext( ) )
         {
