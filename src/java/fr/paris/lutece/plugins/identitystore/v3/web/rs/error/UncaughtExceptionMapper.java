@@ -51,13 +51,13 @@ import static javax.ws.rs.core.Response.Status;
 public class UncaughtExceptionMapper extends GenericUncaughtExceptionMapper<Exception, ErrorResponse>
 {
     @Override
-    protected Status getStatus( )
+    protected Status getStatus( final Exception e )
     {
         return Status.INTERNAL_SERVER_ERROR;
     }
 
     @Override
-    protected ErrorResponse buildEntity( final Exception e )
+    protected ErrorResponse getBody( final Exception e )
     {
         final ErrorResponse response = new ErrorResponse( );
         response.setStatus( ResponseStatusFactory.internalServerError( ).setMessage( ERROR_DURING_TREATMENT + " :: " + e.getMessage( ) )
