@@ -320,7 +320,7 @@ public class ElasticClient
         }
         catch( final ElasticConnexionException | JsonProcessingException ex )
         {
-            AppLogService.error( "ElasticLibrary : Error trying to determine if index" + strIndex + " is writeable : " + ex.getMessage( ), ex );
+            AppLogService.error( "ElasticLibrary : Error trying to determine if index " + strIndex + " is writeable : " + ex.getMessage( ), ex );
             return false;
         }
         return true;
