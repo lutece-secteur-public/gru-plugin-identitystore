@@ -53,6 +53,7 @@ import fr.paris.lutece.plugins.identitystore.business.rules.search.IdentitySearc
 import fr.paris.lutece.plugins.identitystore.business.rules.search.SearchRuleType;
 import fr.paris.lutece.plugins.identitystore.cache.IdentityDtoCache;
 import fr.paris.lutece.plugins.identitystore.service.attribute.IdentityAttributeService;
+import fr.paris.lutece.plugins.identitystore.service.contract.AttributeCertificationDefinitionService;
 import fr.paris.lutece.plugins.identitystore.service.contract.ServiceContractNotFoundException;
 import fr.paris.lutece.plugins.identitystore.service.contract.ServiceContractService;
 import fr.paris.lutece.plugins.identitystore.service.duplicate.IDuplicateService;
@@ -114,6 +115,7 @@ public class IdentityService
 {
     // Conf
     private static final String PIVOT_CERTIF_LEVEL_THRESHOLD = "identitystore.identity.attribute.update.pivot.certif.level.threshold";
+    private static final String PIVOT_UNCERTIF_LEVEL_THRESHOLD = "identitystore.identity.uncertify.attribute.pivot.level.threshold";
 
     // EVENTS FOR ACCESS LOGGING
     public static final String CREATE_IDENTITY_EVENT_CODE = "CREATE_IDENTITY";
@@ -1451,7 +1453,7 @@ public class IdentityService
      * @return the response
      * @see IdentityAttributeService#uncertifyAttribute
      */
-    public IdentityChangeResponse uncertifyIdentity( final String strCustomerId, final String strClientCode, final RequestAuthor author )
+    public IdentityChangeResponse uncertifyIdentity(final String strCustomerId, final List<AttributeKey> requestedAttributesKeys, final String strClientCode, final RequestAuthor author)
     {
         final IdentityChangeResponse response = new IdentityChangeResponse( );
 
@@ -1463,11 +1465,33 @@ public class IdentityService
             return response;
         }
 
+        final Collection<IdentityAttribute> attributesToDecertify;
+        if (!requestedAttributesKeys.isEmpty()) {
+            final List<String> requestedAttributeKeysStr = requestedAttributesKeys.stream().map(AttributeKey::getKeyName).collect(Collectors.toList());
+            // #27794 - if pivot requested to be decertified, and one of them is leveled >= PIVOT_UNCERTIF_LEVEL_THRESHOLD
+            //          -> decertify all pivots
+            final int pivotUncertifyLevelThreshold = AppPropertiesService.getPropertyInt(PIVOT_UNCERTIF_LEVEL_THRESHOLD, 400);
+            final List<IdentityAttribute> pivotAttributes =
+                    identity.getAttributes().values().stream().filter(a -> a.getAttributeKey().getPivot()).collect(Collectors.toList());
+            if (requestedAttributesKeys.stream().anyMatch(AttributeKey::getPivot) && pivotAttributes.stream().anyMatch(a -> AttributeCertificationDefinitionService.instance().getLevelAsInteger( a.getCertificate( ).getCertifierCode( ), a.getAttributeKey().getKeyName() ) >= pivotUncertifyLevelThreshold)) {
+                attributesToDecertify = identity.getAttributes().values().stream().filter(a -> a.getAttributeKey().getPivot() || requestedAttributeKeysStr.contains(a.getAttributeKey().getKeyName())).collect(Collectors.toList());
+            } else {
+                attributesToDecertify = identity.getAttributes().values().stream().filter(a -> requestedAttributeKeysStr.contains(a.getAttributeKey().getKeyName())).collect(Collectors.toList());
+            }
+        } else {
+            attributesToDecertify = identity.getAttributes().values();
+        }
+
+        if (attributesToDecertify.isEmpty()) {
+            response.setStatus( ResponseStatusFactory.badRequest().setMessage("No attributes to decertify").setMessageKey( Constants.PROPERTY_REST_INFO_SUCCESSFUL_OPERATION ) );
+            return response;
+        }
+
         TransactionManager.beginTransaction( null );
         try
         {
             final List<AttributeStatus> attrStatusList = new ArrayList<>( );
-            for ( final IdentityAttribute attribute : identity.getAttributes( ).values( ) )
+            for ( final IdentityAttribute attribute : attributesToDecertify)
             {
                 final AttributeStatus status = _identityAttributeService.uncertifyAttribute( attribute );
                 attrStatusList.add( status );

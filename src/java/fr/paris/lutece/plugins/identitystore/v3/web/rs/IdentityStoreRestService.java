@@ -47,6 +47,7 @@ import fr.paris.lutece.plugins.identitystore.v3.web.request.identity.IdentitySto
 import fr.paris.lutece.plugins.identitystore.v3.web.request.identity.IdentityStoreUpdateRequest;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.crud.IdentityChangeRequest;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.crud.IdentityChangeResponse;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.crud.UncertifyIdentityRequest;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.exporting.IdentityExportRequest;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.exporting.IdentityExportResponse;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.merge.IdentityMergeRequest;
@@ -415,6 +416,7 @@ public final class IdentityStoreRestService
     } )
     public Response uncertifyIdentity(
             @ApiParam( name = Constants.PARAM_ID_CUSTOMER, value = "Customer ID of the identity" ) @PathParam( Constants.PARAM_ID_CUSTOMER ) String strCustomerId,
+            @ApiParam( name = "Request body", value = "An Uncertify Identity Request (optionnal)" ) UncertifyIdentityRequest uncertifyIdentityRequest,
             @ApiParam( name = Constants.PARAM_CLIENT_CODE, value = SwaggerConstants.PARAM_CLIENT_CODE_DESCRIPTION ) @HeaderParam( Constants.PARAM_CLIENT_CODE ) String clientCode,
             @ApiParam( name = Constants.PARAM_AUTHOR_NAME, value = SwaggerConstants.PARAM_AUTHOR_NAME_DESCRIPTION ) @HeaderParam( Constants.PARAM_AUTHOR_NAME ) String authorName,
             @ApiParam( name = Constants.PARAM_AUTHOR_TYPE, value = SwaggerConstants.PARAM_AUTHOR_TYPE_DESCRIPTION ) @HeaderParam( Constants.PARAM_AUTHOR_TYPE ) String authorType,
@@ -422,7 +424,7 @@ public final class IdentityStoreRestService
             throws IdentityStoreException
     {
         final String trustedClientCode = IdentityStoreService.getTrustedClientCode( clientCode, StringUtils.EMPTY, strHeaderAppCode );
-        final IdentityStoreUncertifyRequest identityStoreUncertifyRequest = new IdentityStoreUncertifyRequest( trustedClientCode, strCustomerId, authorName,
+        final IdentityStoreUncertifyRequest identityStoreUncertifyRequest = new IdentityStoreUncertifyRequest( uncertifyIdentityRequest, trustedClientCode, strCustomerId, authorName,
                 authorType );
         final IdentityChangeResponse entity = (IdentityChangeResponse) identityStoreUncertifyRequest.doRequest( );
         return Response.status( entity.getStatus( ).getHttpCode( ) ).entity( entity ).type( MediaType.APPLICATION_JSON_TYPE ).build( );
