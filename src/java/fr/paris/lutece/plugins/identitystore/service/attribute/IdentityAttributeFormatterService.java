@@ -368,7 +368,21 @@ public class IdentityAttributeFormatterService
             return value;
         }
         return Arrays.stream( value.replace( ",", " " ).trim( ).split( " " ) ).filter( StringUtils::isNotBlank ).map( String::trim )
-                .map( firstname -> firstname.substring( 0, 1 ).toUpperCase( ) + firstname.substring( 1 ).toLowerCase( ) ).collect( Collectors.joining( " " ) );
+                .map( firstname -> {
+                    if( firstname.contains("-") )
+                    {
+                        return Arrays.stream(firstname.split("-")).map( this::toFirstLetterUpperCased ).collect(Collectors.joining("-"));
+                    }
+                    else
+                    {
+                        return this.toFirstLetterUpperCased( firstname );
+                    }
+                } ).collect( Collectors.joining( " " ) );
+    }
+
+    private String toFirstLetterUpperCased ( final String value )
+    {
+        return value.substring( 0, 1 ).toUpperCase( ) + value.substring( 1 ).toLowerCase( );
     }
 
     /**
