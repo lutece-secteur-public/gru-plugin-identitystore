@@ -73,4 +73,6 @@ public interface IIdentityIndexer
     void makeIndexReadOnly( final String index ) throws ElasticClientException;
 
     void removeIndexReadOnly( final String index ) throws ElasticClientException;
+
+    String getIndexedIdentitiesNumber( final String index ) throws ElasticClientException;
 }

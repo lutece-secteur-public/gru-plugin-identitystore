@@ -319,4 +319,43 @@ public interface IIdentityDAO
      * @return the last update date or null if the identity doesn't exist for the provided CUID
      */
     Timestamp getIdentityLastUpdateDate( final String customerId, final Plugin plugin );
+
+    /**
+     * Count All Identities.
+     */
+    Integer getCountIdentities( final Plugin plugin );
+
+    /**
+     * Count All identities that has been deleted or not.
+     *
+     * @param deleted
+     *            define if the dao count deleted or not deleted identities
+     */
+    Integer getCountDeletedIdentities(final boolean deleted, final Plugin plugin );
+
+    /**
+     * Count All identities that has been merged or not.
+     *
+     * @param merged
+     *            define if the dao count merged or not merged identities
+     */
+    Integer getCountMergedIdentities(final boolean merged, final Plugin plugin );
+
+    /**
+     * Count All identities that has been connected or not.
+     *
+     * @param monParisActive
+     *            define if the dao count connected or not connected identities
+     */
+    Integer getCountActiveMonParisdentities(final boolean monParisActive, final Plugin plugin );
+
+    /**
+     * Count how many attributes each entity has.
+     */
+    Map<Integer, Integer> getCountAttributesByIdentities(final Plugin plugin );
+
+    /**
+     * Count how many attributes has no attribute and isn't merged.
+     */
+    Integer getCountUnmergedIdentitiesWithoutAttributes(final Plugin plugin );
 }

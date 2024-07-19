@@ -40,6 +40,7 @@ public final class Constants
     public static final String PATH_QUERY_BULK = "_bulk";
     public static final String PATH_QUERY_MULTI_SEARCH = "_msearch";
     public static final String PATH_QUERY_UPDATE = "_update";
+    public static final String PATH_QUERY_COUNT = "_count";
     public static final String PATH_QUERY_DELETE_BY_QUERY = "_delete_by_query";
 
     public static final String URL_PATH_SEPARATOR = "/";
