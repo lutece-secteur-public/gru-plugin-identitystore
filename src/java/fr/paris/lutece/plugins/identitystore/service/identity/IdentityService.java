@@ -52,6 +52,7 @@ import fr.paris.lutece.plugins.identitystore.business.rules.search.IdentitySearc
 import fr.paris.lutece.plugins.identitystore.business.rules.search.IdentitySearchRuleHome;
 import fr.paris.lutece.plugins.identitystore.business.rules.search.SearchRuleType;
 import fr.paris.lutece.plugins.identitystore.cache.IdentityDtoCache;
+import fr.paris.lutece.plugins.identitystore.service.attribute.IdentityAttributeFormatterService;
 import fr.paris.lutece.plugins.identitystore.service.attribute.IdentityAttributeService;
 import fr.paris.lutece.plugins.identitystore.service.contract.AttributeCertificationDefinitionService;
 import fr.paris.lutece.plugins.identitystore.service.contract.ServiceContractNotFoundException;
@@ -862,6 +863,8 @@ public class IdentityService
     {
         AccessLogService.getInstance( ).info( AccessLoggerConstants.EVENT_TYPE_READ, SEARCH_IDENTITY_EVENT_CODE,
                 _internalUserService.getApiUser( author, clientCode ), SecurityUtil.logForgingProtect( request.toString( ) ), SPECIFIC_ORIGIN );
+        final List<AttributeStatus> formatStatuses = IdentityAttributeFormatterService.instance( )
+                .formatIdentitySearchRequestAttributeValues( request );
         final List<SearchAttribute> providedAttributes = request.getSearch( ).getAttributes( );
         final Set<String> providedKeys = commonKeytoKey( providedAttributes.stream( ).map( SearchAttribute::getKey ).collect( Collectors.toSet( ) ) );
 
@@ -931,6 +934,7 @@ public class IdentityService
             if ( CollectionUtils.isNotEmpty( response.getIdentities( ) ) )
             {
                 response.setStatus( ResponseStatusFactory.ok( ).setMessageKey( Constants.PROPERTY_REST_INFO_SUCCESSFUL_OPERATION ) );
+                response.getStatus( ).getAttributeStatuses( ).addAll( formatStatuses );
                 for ( final IdentityDto identity : response.getIdentities( ) )
                 {
                     AccessLogService.getInstance( ).info( AccessLoggerConstants.EVENT_TYPE_READ, SEARCH_IDENTITY_EVENT_CODE,

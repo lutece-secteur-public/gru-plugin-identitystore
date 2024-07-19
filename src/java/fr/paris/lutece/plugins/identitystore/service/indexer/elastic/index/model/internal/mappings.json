@@ -1,6 +1,14 @@
 {
     "settings" : {
         "analysis" : {
+            "char_filter": {
+                "hyphen_filter": {
+                    "type": "mapping",
+                    "mappings": [
+                        "- =>"
+                    ]
+                }
+            },
             "analyzer" : {
                 "default" : {
                     "type" : "keyword",
@@ -21,6 +29,9 @@
                     "filter" : [
                         "lowercase",
                         "asciifolding"
+                    ],
+                    "char_filter" : [
+                        "hyphen_filter"
                     ]
                 },
                 "last_name_analyzer" : {
@@ -58,27 +69,54 @@
         "properties" : {
             "attributes.email.value" : {
                 "type" : "text",
-                "analyzer" : "email_analyzer"
+                "analyzer" : "email_analyzer",
+                "search_analyzer" : "email_analyzer"
             },
             "attributes.login.value" : {
                 "type" : "text",
-                "analyzer" : "keyword"
+                "analyzer" : "keyword",
+                "search_analyzer" : "keyword"
             },
             "attributes.birthdate.value" : {
                 "type" : "text",
-                "analyzer" : "keyword"
+                "analyzer" : "keyword",
+                "search_analyzer" : "keyword"
             },
             "attributes.first_name.value" : {
                 "type" : "text",
-                "analyzer" : "first_name_analyzer"
+                "analyzer" : "first_name_analyzer",
+                "search_analyzer" : "first_name_analyzer",
+                "fields": {
+                    "raw": {
+                        "type": "text",
+                        "analyzer": "keyword",
+                        "search_analyzer": "keyword"
+                    }
+                }
             },
             "attributes.family_name.value" : {
                 "type" : "text",
-                "analyzer" : "last_name_analyzer"
+                "analyzer" : "last_name_analyzer",
+                "search_analyzer" : "last_name_analyzer",
+                "fields": {
+                    "raw": {
+                        "type": "text",
+                        "analyzer": "keyword",
+                        "search_analyzer": "keyword"
+                    }
+                }
             },
             "attributes.preferred_username.value" : {
                 "type" : "text",
-                "analyzer" : "last_name_analyzer"
+                "analyzer" : "last_name_analyzer",
+                "search_analyzer" : "last_name_analyzer",
+                "fields": {
+                    "raw": {
+                        "type": "text",
+                        "analyzer": "keyword",
+                        "search_analyzer": "keyword"
+                    }
+                }
             }
         }
     }

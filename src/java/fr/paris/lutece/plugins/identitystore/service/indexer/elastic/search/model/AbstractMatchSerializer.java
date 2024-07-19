@@ -40,7 +40,7 @@ import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.search.mode
 
 import java.io.IOException;
 
-public class CustomSerializer extends JsonSerializer<AbstractMatch>
+public class AbstractMatchSerializer extends JsonSerializer<AbstractMatch>
 {
 
     @Override
