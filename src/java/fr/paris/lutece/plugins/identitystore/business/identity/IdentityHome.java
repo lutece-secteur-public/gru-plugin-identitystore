@@ -433,4 +433,61 @@ public final class IdentityHome
     {
         _dao.deleteAttributeHistory( identityId, _plugin );
     }
+
+    /**
+     * Count All Identities.
+     */
+    public static Integer getCountIdentities( )
+    {
+        return _dao.getCountIdentities( _plugin );
+    }
+
+    /**
+     * Count All identities that has been deleted or not.
+     *
+     * @param deleted
+     *            define if the dao count deleted or not deleted identities
+     */
+    public static Integer getCountDeletedIdentities( final boolean deleted )
+    {
+        return _dao.getCountDeletedIdentities( deleted, _plugin) ;
+    }
+
+    /**
+     * Count All identities that has been merged or not.
+     *
+     * @param merged
+     *            define if the dao count merged or not merged identities
+     */
+    public static Integer getCountMergedIdentities( final boolean merged )
+    {
+        return _dao.getCountMergedIdentities( merged, _plugin );
+    }
+
+    /**
+     * Count All identities that has been connected or not.
+     *
+     * @param monParisActive
+     *            define if the dao count connected or not connected identities
+     */
+    public static Integer getCountActiveMonParisdentities( final boolean monParisActive )
+    {
+        return _dao.getCountActiveMonParisdentities( monParisActive, _plugin );
+    }
+
+    /**
+     * Count how many attributes each entity has.
+     */
+    public static Map<Integer, Integer> getCountAttributesByIdentities( )
+    {
+        return _dao.getCountAttributesByIdentities( _plugin );
+    }
+
+    /**
+     * Count how many attributes has no attribute and isn't merged.
+     */
+    public static Integer getCountUnmergedIdentitiesWithoutAttributes( )
+    {
+        return _dao.getCountUnmergedIdentitiesWithoutAttributes( _plugin );
+    }
 }

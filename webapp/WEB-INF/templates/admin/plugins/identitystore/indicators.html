@@ -1,0 +1,71 @@
+<#include "manageidentities_tabs.html" />
+<@tabs tab="indicators" />
+<@rowBox>
+    <@boxHeader i18nTitleKey="identitystore.indicators.title">
+
+    </@boxHeader>
+    <@boxBody>
+        <@messages infos=infos />
+        <@messages errors=errors />
+        <@messages warnings=warnings />
+
+
+        <table id="indicators-table" class="table rounded rounded-3 overflow-hidden border table-condensed table-hover mb-0">
+            <tr>
+                <th onclick="sortTable(0, 'indicators-table')">#i18n{identitystore.indicators.identities.number}</th>
+                <th onclick="sortTable(1, 'indicators-table')">#i18n{identitystore.indicators.identities.number.deleted}</th>
+                <th onclick="sortTable(2, 'indicators-table')">#i18n{identitystore.indicators.identities.number.merged}</th>
+                <th onclick="sortTable(3, 'indicators-table')">#i18n{identitystore.indicators.identities.number.monparis}</th>
+                <th onclick="sortTable(4, 'indicators-table')">#i18n{identitystore.indicators.identities.number.attributes.unmerged}</th>
+                <th onclick="sortTable(5, 'indicators-table')">#i18n{identitystore.indicators.identities.number.indexed}</th>
+            </tr>
+            <tr>
+                <td><span>${count_identities!""}</span></td>
+                <td><span>${count_deleted_identities!""}</span></td>
+                <td><span>${count_merged_identities!""}</span></td>
+                <td><span>${count_monparis_identities!""}</span></td>
+                <td><span id="count_unmerged_no_attributes_identities"><div class="loader"></div></span></td>
+                <td><span>${count_indexed_identities!""}</span></td>
+            </tr>
+        </table>
+
+    </@boxBody>
+<@boxHeader i18nTitleKey="identitystore.indicators.identities.number.attributes"></@boxHeader>
+    <@boxBody>
+        <table id="attributes-by-identities-table" class="table rounded rounded-3 overflow-hidden border table-condensed table-hover mb-0" style="width: 20%;">
+            <tr>
+                <th onclick="sortTable(0, 'attributes-by-identities-table')">#i18n{identitystore.indicators.identities.number.attributes.number}</th>
+                <th onclick="sortTable(1, 'attributes-by-identities-table')">#i18n{identitystore.indicators.identities.number.attributes.identity}</th>
+            </tr>
+            <tr>
+                <td><div class="loader"></div></td>
+                <td><div class="loader"></div></td>
+            </tr>
+                <!--<#if list_attributes_identities??  && list_attributes_identities?has_content>
+                    <#list list_attributes_identities as key, value>
+                        <tr>
+                            <td><span>${key}</span></td>
+                            <td><span>${value}</span></td>
+                        </tr>
+                    </#list>
+                </#if>-->
+        </table>
+    </@boxBody>
+</@rowBox>
+<script src="./js/admin/plugins/identitystore/table.js"></script>
+<script>
+    $(document).ready( function( ) {
+        $.get("../../../../jsp/admin/plugins/identitystore/ajax/IndicatorsAttributesByIdentities.jsp", function (response) {
+            let div = document.getElementById("attributes-by-identities-table");
+            header = "<tr>\n" +
+                "                <th onclick=\"sortTable(0, 'attributes-by-identities-table')\">#i18n{identitystore.indicators.identities.number.attributes.number}</th>\n" +
+                "                <th onclick=\"sortTable(1, 'attributes-by-identities-table')\">#i18n{identitystore.indicators.identities.number.attributes.identity}</th>\n" +
+                "            </tr>"
+            div.innerHTML = header + response;
+        }, "html");
+        $.get("../../../../jsp/admin/plugins/identitystore/ajax/IndicatorsNoAttributesAjax.jsp", function (response) {
+            let span = document.getElementById("count_unmerged_no_attributes_identities");
+            span.innerHTML = response;
+        }, "json");
+    });
+</script>

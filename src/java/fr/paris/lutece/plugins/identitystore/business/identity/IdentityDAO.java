@@ -56,6 +56,7 @@ import java.time.ZonedDateTime;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
@@ -137,6 +138,12 @@ public final class IdentityDAO implements IIdentityDAO
             + " FROM identitystore_identity a WHERE a.is_merged = 1 AND a.id_master_identity = ?";
     private static final String SQL_QUERY_DELETE_ALL_ATTRIBUTE_HISTORY = "DELETE from identitystore_identity_attribute_history WHERE id_identity = ?";
     private static final String SQL_QUERY_SELECT_LAST_UPDATE_DATE_FROM_CUID = "SELECT last_update_date FROM identitystore_identity WHERE customer_id = ?";
+    private static final String SQL_QUERY_SELECT_COUNT_IDENTITIES = "SELECT COUNT(*) FROM identitystore_identity";
+    private static final String SQL_QUERY_SELECT_COUNT_DELETED_IDENTITIES = "SELECT COUNT(*) FROM identitystore_identity WHERE is_deleted = ?";
+    private static final String SQL_QUERY_SELECT_COUNT_MERGED_IDENTITIES = "SELECT COUNT(*) FROM identitystore_identity WHERE is_merged = ?";
+    private static final String SQL_QUERY_SELECT_COUNT_MONPARIS_ACTIVE_IDENTITIES = "SELECT COUNT(*) FROM identitystore_identity WHERE is_mon_paris_active = ?";
+    private static final String SQL_QUERY_SELECT_COUNT_ATTRIUTES_BY_IDENTITY = "SELECT v.nbattr, count(v.id_identity) as identities FROM (SELECT id_identity , count(id_identity) as nbattr FROM identitystore_identity_attribute GROUP BY id_identity) as v GROUP BY v.nbattr ORDER BY v.nbattr";
+    private static final String SQL_QUERY_SELECT_COUNT_IDENTITIES_NO_ATTRIBUTES_NOT_MERGED = "SELECT count(*) FROM identitystore_identity i WHERE is_merged = 0 AND i.id_identity NOT IN (SELECT a.id_identity FROM identitystore_identity_attribute a WHERE a.id_identity = i.id_identity)";
 
     private final ObjectMapper objectMapper = new ObjectMapper( );
 
@@ -971,6 +978,112 @@ public final class IdentityDAO implements IIdentityDAO
             if ( daoUtil.next( ) )
             {
                 return daoUtil.getTimestamp( 1 );
+            }
+            return null;
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Integer getCountIdentities(Plugin plugin)
+    {
+        try ( final DAOUtil daoUtil = new DAOUtil( SQL_QUERY_SELECT_COUNT_IDENTITIES, plugin ) )
+        {
+            daoUtil.executeQuery( );
+            if ( daoUtil.next( ) )
+            {
+                return daoUtil.getInt( 1 );
+            }
+            return null;
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Integer getCountDeletedIdentities(boolean deleted, Plugin plugin)
+    {
+        try ( final DAOUtil daoUtil = new DAOUtil( SQL_QUERY_SELECT_COUNT_DELETED_IDENTITIES, plugin ) )
+        {
+            daoUtil.setBoolean( 1, deleted );
+            daoUtil.executeQuery( );
+            if ( daoUtil.next( ) )
+            {
+                return daoUtil.getInt( 1 );
+            }
+            return null;
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Integer getCountMergedIdentities(boolean merged, Plugin plugin)
+    {
+        try ( final DAOUtil daoUtil = new DAOUtil( SQL_QUERY_SELECT_COUNT_MERGED_IDENTITIES, plugin ) )
+        {
+            daoUtil.setBoolean( 1, merged );
+            daoUtil.executeQuery( );
+            if ( daoUtil.next( ) )
+            {
+                return daoUtil.getInt( 1 );
+            }
+            return null;
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Integer getCountActiveMonParisdentities(boolean monParisActive, Plugin plugin)
+    {
+        try ( final DAOUtil daoUtil = new DAOUtil( SQL_QUERY_SELECT_COUNT_MONPARIS_ACTIVE_IDENTITIES, plugin ) )
+        {
+            daoUtil.setBoolean( 1, monParisActive );
+            daoUtil.executeQuery( );
+            if ( daoUtil.next( ) )
+            {
+                return daoUtil.getInt( 1 );
+            }
+            return null;
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Map<Integer, Integer> getCountAttributesByIdentities(Plugin plugin)
+    {
+        try ( final DAOUtil daoUtil = new DAOUtil( SQL_QUERY_SELECT_COUNT_ATTRIUTES_BY_IDENTITY, plugin ) )
+        {
+            daoUtil.executeQuery( );
+            Map<Integer, Integer> attributesByIdentities = new HashMap<>( );
+            while ( daoUtil.next( ) )
+            {
+                attributesByIdentities.put(daoUtil.getInt( 1 ), daoUtil.getInt( 2 ) );
+            }
+            return attributesByIdentities;
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Integer getCountUnmergedIdentitiesWithoutAttributes(Plugin plugin)
+    {
+        try ( final DAOUtil daoUtil = new DAOUtil( SQL_QUERY_SELECT_COUNT_IDENTITIES_NO_ATTRIBUTES_NOT_MERGED, plugin ) )
+        {
+            daoUtil.executeQuery( );
+            if ( daoUtil.next( ) )
+            {
+                return daoUtil.getInt( 1 );
             }
             return null;
         }
