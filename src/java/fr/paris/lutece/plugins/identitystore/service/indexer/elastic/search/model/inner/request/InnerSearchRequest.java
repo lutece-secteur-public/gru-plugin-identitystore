@@ -46,6 +46,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -150,11 +151,11 @@ public class InnerSearchRequest
         this.addContainer( new MultiMatchContainer( match ), must );
     }
 
-    public void addMatchPhrase( final SearchAttribute attribute, final boolean must )
+    public void addMatchPhrase( final SearchAttribute attribute, final boolean must, final boolean raw )
     {
         final MatchPhrase match = new MatchPhrase( );
         final String attributeKey = attribute.getOutputKeys( ).get( 0 );
-        match.setName( "attributes." + attributeKey + ".value" );
+        match.setName( "attributes." + attributeKey + ".value" + (raw ? ".raw" : "") );
         match.setQuery( attribute.getValue( ) );
         this.addMetadata( attribute.getTreatmentType( ).name( ), Collections.singletonList( attributeKey ) );
         this.addContainer( new MatchPhraseContainer( match ), must );
@@ -180,6 +181,92 @@ public class InnerSearchRequest
         multiMatch.setFuzziness( "1" );
         multiMatch.setValue( value );
         return multiMatch;
+    }
+
+    /**
+     * Creates a particular match for approximated search on multi token fields (as first name), following the given rules:
+     * <ul>
+     *     <li>There is at least one searched value in the targeted field (can be fuzzy)</li>
+     *     <li>There is only one fuzzy value at a time in the targeted field among the searched values</li>
+     * </ul>
+     * @param attribute the given attribute search
+     */
+    public void addApproximatedBoolQuery( final SearchAttribute attribute )
+    {
+        final String attributeKey = attribute.getOutputKeys( ).get( 0 );
+        final String [ ] splitSearchValue = attribute.getValue( ).split( " " );
+
+        /* Create a bool container to be added in must clause, to hold the should clause that will contain all combinations of approximated rules */
+        final BoolContainer shouldContainer = this.createApproximatedShouldContainer( splitSearchValue, attributeKey );
+        this.query.getBool( ).getMust( ).add( shouldContainer );
+
+        this.addMetadata( attribute.getTreatmentType( ).name( ), Collections.singletonList( attribute.getKey( ) ) );
+    }
+
+    /**
+     * Creates a particular match for different search on multi token fields (as first name), following the given rules:
+     * <ul>
+     *     <li>There is no match</li>
+     *     <li>There is at least one searched value not matching any token</li>
+     *     <li>There is more than one fuzzy match</li>
+     * </ul>
+     * If one of these rules is matching, this is a difference.
+     * @param attribute the given attribute search
+     */
+    public void addDifferentBoolQuery( final SearchAttribute attribute )
+    {
+        final String attributeKey = attribute.getOutputKeys( ).get( 0 );
+        final String [ ] splitSearchValue = attribute.getValue( ).split( " " );
+
+        /* Create a bool container to be added in must clause, to hold the should clause that will contain all combinations of approximated rules */
+        final BoolContainer shouldContainer = this.createApproximatedShouldContainer( splitSearchValue, attributeKey );
+        this.query.getBool( ).getMustNot( ).add(shouldContainer);
+
+        /* Remove strict matches */
+        final BoolContainer strictMatchContainer = new BoolContainer( new Bool( ) );
+        shouldContainer.getBool( ).getShould( ).add( strictMatchContainer );
+        final Match strictMatch = new Match( );
+        strictMatchContainer.getBool( ).getMust( ).add( new MatchContainer( strictMatch ) );
+        strictMatch.setName( "attributes." + attributeKey + ".value.raw" );
+        strictMatch.setQuery( attribute.getValue( ) );
+
+        this.addMetadata( attribute.getTreatmentType( ).name( ), Collections.singletonList( attribute.getKey( ) ) );
+    }
+
+    private BoolContainer createApproximatedShouldContainer( final String [ ] splitSearchValue, final String attributeKey )
+    {
+        final BoolContainer shouldContainer = new BoolContainer( new Bool( ) );
+        for ( final String currentValue : splitSearchValue )
+        {
+            /* Create combinations of fuzziness on a single token, and strict on others */
+            final BoolContainer combinations = new BoolContainer( new Bool( ) );
+            shouldContainer.getBool().getShould().add(combinations);
+            final List<MatchContainer> must = Arrays.stream( splitSearchValue ).map( value -> {
+                final Match match = new Match( );
+                match.setName( "attributes." + attributeKey + ".value" );
+                match.setQuery( value );
+                if ( Objects.equals( value, currentValue ) )
+                {
+                    match.setFuzziness( "1" );
+                }
+                return new MatchContainer( match );
+            } ).collect( Collectors.toList( ) );
+            combinations.getBool( ).getMust( ).addAll( must );
+
+            /* Create raw fuzziness match on current token  */
+            if( splitSearchValue.length > 1 )
+            {
+                final BoolContainer single = new BoolContainer( new Bool( ) );
+                shouldContainer.getBool( ).getShould( ).add( single );
+                final Match rawMatch = new Match( );
+                single.getBool( ).getMust( ).add( new MatchContainer( rawMatch ) );
+                rawMatch.setName( "attributes." + attributeKey + ".value.raw" );
+                rawMatch.setFuzziness( "1" );
+                rawMatch.setQuery( currentValue );
+            }
+        }
+
+        return shouldContainer;
     }
 
     public void addExists( final SearchAttribute attribute, final boolean must )

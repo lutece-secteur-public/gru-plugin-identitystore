@@ -64,7 +64,7 @@ public class ComplexSearchRequest extends ASearchRequest
                     switch( searchAttribute.getTreatmentType( ) )
                     {
                         case STRICT:
-                            body.addMatchPhrase( searchAttribute, true );
+                            body.addMatchPhrase( searchAttribute, true, true );
                             break;
                         case APPROXIMATED:
                             final String multipleHyphenToOne = searchAttribute.getValue( ).trim( ).replaceAll( "(-)\\1+", "$1" );
@@ -74,7 +74,7 @@ public class ComplexSearchRequest extends ASearchRequest
                             body.addMatch( searchAttribute, true );
                             break;
                         case DIFFERENT:
-                            body.addMatchPhrase( searchAttribute, false );
+                            body.addMatchPhrase( searchAttribute, false, false );
                             break;
                         case ABSENT:
                             body.addExists( searchAttribute, false );
@@ -86,22 +86,13 @@ public class ComplexSearchRequest extends ASearchRequest
                     switch( searchAttribute.getTreatmentType( ) )
                     {
                         case STRICT:
-                            body.addMatchPhrase( searchAttribute, true );
+                            body.addMatchPhrase( searchAttribute, true, true );
                             break;
                         case APPROXIMATED:
-                            searchAttribute.setValue( searchAttribute.getValue( ).trim( ).replaceAll( " +", " " ).toLowerCase( ) );
-                            final String [ ] splitSearchValue = searchAttribute.getValue( ).split( " " );
-                            if ( splitSearchValue.length > 1 )
-                            {
-                                body.addSpanNear( searchAttribute, true );
-                            }
-                            else
-                            {
-                                body.addMatch( searchAttribute, true );
-                            }
+                            body.addApproximatedBoolQuery( searchAttribute );
                             break;
                         case DIFFERENT:
-                            body.addMatchPhrase( searchAttribute, false );
+                            body.addDifferentBoolQuery( searchAttribute );
                             break;
                         case ABSENT:
                             body.addExists( searchAttribute, false );
@@ -113,13 +104,13 @@ public class ComplexSearchRequest extends ASearchRequest
                     switch( searchAttribute.getTreatmentType( ) )
                     {
                         case STRICT:
-                            body.addMatchPhrase( searchAttribute, true );
+                            body.addMatchPhrase( searchAttribute, true, true );
                             break;
                         case APPROXIMATED:
                             body.addMatch( searchAttribute, true );
                             break;
                         case DIFFERENT:
-                            body.addMatchPhrase( searchAttribute, false );
+                            body.addMatchPhrase( searchAttribute, false, false );
                             break;
                         case ABSENT:
                             body.addExists( searchAttribute, false );

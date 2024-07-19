@@ -34,27 +34,22 @@
 package fr.paris.lutece.plugins.identitystore.service.indexer.elastic.search.model.inner.request;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.search.model.AbstractMatchSerializer;
 
-public class MatchContainer extends AbstractContainer
+public class BoolContainer extends AbstractContainer
 {
-    @JsonProperty( "match" )
-    @JsonSerialize( using = AbstractMatchSerializer.class )
-    protected Match match;
+    @JsonProperty( "bool" )
+    protected Bool bool;
 
-    public MatchContainer( Match match )
+    public BoolContainer(Bool bool )
     {
-        this.match = match;
+        this.bool = bool;
     }
 
-    public Match getMatch( )
-    {
-        return match;
+    public Bool getBool() {
+        return bool;
     }
 
-    public void setMatch( Match match )
-    {
-        this.match = match;
+    public void setBool(Bool bool) {
+        this.bool = bool;
     }
 }
