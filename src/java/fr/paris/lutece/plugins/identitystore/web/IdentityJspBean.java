@@ -109,6 +109,7 @@ public class IdentityJspBean extends ManageIdentitiesJspBean
     // Markers
     private static final String MARK_IDENTITY_LIST = "identity_list";
     private static final String MARK_IDENTITY = "identity";
+    private static final String MARK_MERGED_IDENTITIES = "merged_identities";
     private static final String MARK_IDENTITY_IS_SUSPICIOUS = "identity_is_suspicious";
     private static final String MARK_IDENTITY_CHANGE_LIST = "identity_change_list";
     private static final String MARK_ATTRIBUTES_CHANGE_LIST = "attributes_change_list";
@@ -293,12 +294,17 @@ public class IdentityJspBean extends ManageIdentitiesJspBean
         final String nId = request.getParameter( PARAMETER_ID_IDENTITY );
 
         _identity = IdentityHome.findByCustomerId( nId );
+
+        List<Identity> mergedIdentities = IdentityHome.findMergedIdentities(_identity.getId());
+        _identity.setMerged(mergedIdentities != null && !mergedIdentities.isEmpty());
+
         final String filteredCustomerId = SecurityUtil.logForgingProtect( _identity.getCustomerId( ) );
         AccessLogService.getInstance( ).info( AccessLoggerConstants.EVENT_TYPE_READ, DISPLAY_IDENTITY_EVENT_CODE, getUser( ), filteredCustomerId,
                 IdentityService.SPECIFIC_ORIGIN );
 
         final Map<String, Object> model = getModel( );
         model.put( MARK_IDENTITY, _identity );
+        model.put( MARK_MERGED_IDENTITIES, mergedIdentities );
         model.put( MARK_IDENTITY_IS_SUSPICIOUS, SuspiciousIdentityHome.hasSuspicious( Collections.singletonList( _identity.getCustomerId( ) ) ) );
         model.put( MARK_HAS_ATTRIBUTS_HISTO_ROLE,
                 IdentityManagementResourceIdService.isAuthorized( IdentityManagementResourceIdService.PERMISSION_ATTRIBUTS_HISTO, getUser( ) ) );
