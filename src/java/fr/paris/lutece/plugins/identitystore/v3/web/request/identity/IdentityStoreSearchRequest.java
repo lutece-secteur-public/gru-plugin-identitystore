@@ -94,10 +94,6 @@ public class IdentityStoreSearchRequest extends AbstractIdentityStoreRequest
             }
             else
             {
-                // data content checks
-                final List<AttributeStatus> formatStatuses = IdentityAttributeFormatterService.instance( )
-                        .formatIdentitySearchRequestAttributeValues( _identitySearchRequest );
-                response.getStatus( ).getAttributeStatuses( ).addAll( formatStatuses );
                 IdentityService.instance( ).search( _identitySearchRequest, _author, response, _strClientCode );
             }
         }
