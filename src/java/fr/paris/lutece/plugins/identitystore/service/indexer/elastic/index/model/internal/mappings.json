@@ -11,7 +11,14 @@
             },
             "analyzer" : {
                 "default" : {
-                    "type" : "keyword",
+                    "tokenizer": "standard",
+                    "filter" : [
+                        "lowercase",
+                        "asciifolding"
+                    ]
+                },
+                "default_search" : {
+                    "tokenizer": "standard",
                     "filter" : [
                         "lowercase",
                         "asciifolding"
