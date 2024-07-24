@@ -24,70 +24,77 @@
     <form class="form-inline" action="jsp/admin/plugins/identitystore/ManageIdentities.jsp">
         <input type="hidden" name="datasource" value="${datasource}">
         <div class="input-group">
-            <@table>
-            <tr>
-                <th>CUID</th>
-                <th>GUID</th>
-                <th>Email</th>
-                <th>Civilité</th>
-                <th>Nom de naissance</th>
-                <th>Nom d'usage</th>
-                <th>Prénoms</th>
-                <th>Date de naissance</th>
-                <th>Ville de naissance</th>
-                <th>Pays de naissance</th>
-                <th>Téléphone</th>
-                <th></th>
-            </tr>
-            <@tableHeadBodySeparator />
-            <tr>
-                <td>
-                    <input class="form-control search-field" type="text" name="cuid" placeholder="Customer ID" value="${cuid!''}" />
-                </td>
-                <td>
-                    <input class="form-control search-field" type="text" name="guid" placeholder="Connection ID" value="${guid!''}" />
-                </td>
-                <td>
-                    <input class="form-control search-field" type="text" name="email" placeholder="Email ou email de login" value="${email!''}" />
-                </td>
-                <td>
-                    <label for="gender" />
-                    <select class="search-field form-select select-gender" id="gender" name="gender" value="${gender!''}" >
-                        <option value="">Aucun</option>
-                        <option value="0" <#if gender! == "0"> selected="selected"</#if>>0:Non défini</option>
-                        <option value="1" <#if gender! == "1"> selected="selected"</#if>>1:Femme</option>
-                        <option value="2" <#if gender! == "2"> selected="selected"</#if>>2:Homme</option>
-                    </select>
-                </td>
-                <td>
-                    <input class="form-control search-field" type="text" name="family_name" placeholder="Nom de famille" value="${family_name!''}" />
-                </td>
-                <td>
-                    <input class="form-control search-field" type="text" name="preferred_username" placeholder="Nom d'usage" value="${preferred_username!''}" />
-                </td>
-                <td>
-                    <input class="form-control search-field" type="text" name="first_name" placeholder="Prénoms usuels" value="${first_name!''}" />
-                </td>
-                <td>
-                    <input class="form-control search-field" type="text" name="birthdate" placeholder="Au format DD/MM/YYYY" value="${birthdate!''}" />
-                </td>
-                <td>
-                    <input class="form-control search-field" type="text" name="insee_birthplace_label" placeholder="Ville de naissance" value="${insee_birthplace_label!''}" />
-                </td>
-                <td>
-                    <input class="form-control search-field" type="text" name="insee_birthcountry_label" placeholder="Pays de naissance" value="${insee_birthcountry_label!''}" />
-                </td>
-                <td>
-                    <input class="form-control search-field" type="text" name="phone" placeholder="Téléphone fixe ou mobile" value="${phone!''}" />
-                </td>
-                <td>
-                    <span class="input-group-btn">
-                        <button class="btn btn-default" type="submit">
-                            <span class="fa fa-search"></span>
-                        </button>
-                    </span>
-                </td>
-            </tr>
+            <@table responsive=false params='style="width: 100%;"'>
+
+                <tr>
+                    <th>Email</th>
+                    <th>Nom de naissance</th>
+                    <th>Nom d'usage</th>
+                    <th>Prénoms</th>
+                    <th>Date de naissance</th>
+                    <th>Téléphone</th>
+                    <th></th>
+                </tr>
+                <@tableHeadBodySeparator />
+                <tr>
+
+                    <td>
+                        <input class="form-control search-field" type="text" name="email" placeholder="Email ou email de login" value="${email!''}" />
+                    </td>
+                    <td>
+                        <input class="form-control search-field" type="text" name="family_name" placeholder="Nom de famille" value="${family_name!''}" />
+                    </td>
+                    <td>
+                        <input class="form-control search-field" type="text" name="preferred_username" placeholder="Nom d'usage" value="${preferred_username!''}" />
+                    </td>
+                    <td>
+                        <input class="form-control search-field" type="text" name="first_name" placeholder="Prénoms usuels" value="${first_name!''}" />
+                    </td>
+                    <td>
+                        <input class="form-control search-field" type="text" name="birthdate" placeholder="Au format DD/MM/YYYY" value="${birthdate!''}" />
+                    </td>
+                    <td>
+                        <input class="form-control search-field" type="text" name="phone" placeholder="Téléphone fixe ou mobile" value="${phone!''}" />
+                    </td>
+                    <td>
+                        <span class="input-group-btn">
+                            <button class="btn btn-default" type="submit">
+                                <span class="fa fa-search"></span>
+                            </button>
+                        </span>
+                    </td>
+                </tr>
+                <tr>
+                    <th>Ville de naissance</th>
+                    <th>Code INSEE Commune</th>
+                    <th>Pays de naissance</th>
+                    <th>Code INSEE Pays</th>
+                    <th>CUID</th>
+                    <th>GUID</th>
+                    <th></th>
+                </tr>
+                <@tableHeadBodySeparator />
+                <tr>
+                    <td>
+                        <input class="form-control search-field" type="text" name="insee_birthplace_label" placeholder="Ville de naissance" value="${insee_birthplace_label!''}" />
+                    </td>
+                    <td>
+                        <input class="form-control search-field" type="text" name="insee_city" placeholder="Code INSEE Commune" value="${insee_city!''}" />
+                    </td>
+                    <td>
+                        <input class="form-control search-field" type="text" name="insee_birthcountry_label" placeholder="Pays de naissance" value="${insee_birthcountry_label!''}" />
+                    </td>
+                    <td>
+                        <input class="form-control search-field" type="text" name="insee_country" placeholder="Code INSEE Pays" value="${insee_country!''}" />
+                    </td>
+                    <td>
+                        <input class="form-control search-field" type="text" name="cuid" placeholder="Customer ID" value="${cuid!''}" />
+                    </td>
+                    <td>
+                        <input class="form-control search-field" type="text" name="guid" placeholder="Connection ID" value="${guid!''}" />
+                    </td>
+                    <td></td>
+                </tr>
             </@table>
         </div>
     </form>
@@ -98,63 +105,57 @@
     <@table id="search-result-table">
         <tr>
             <input type="hidden" id="id" name="id"/>
-            <th onclick="sortTable(0, 'search-result-table')">CUID</th>
-            <th onclick="sortTable(1, 'search-result-table')">GUID</th>
-            <th onclick="sortTable(2, 'search-result-table')">Email</th>
-            <th onclick="sortTable(3, 'search-result-table')">Civilité</th>
-            <th onclick="sortTable(4, 'search-result-table')">Nom de naissance</th>
-            <th onclick="sortTable(5, 'search-result-table')">Nom d'usage</th>
-            <th onclick="sortTable(6, 'search-result-table')">Prénoms</th>
-            <th onclick="sortTable(7, 'search-result-table')">Date de naissance</th>
-            <th onclick="sortTable(8, 'search-result-table')">Ville de naissance</th>
-            <th onclick="sortTable(9, 'search-result-table')">Pays de naissance</th>
-            <th onclick="sortTable(10, 'search-result-table')">Téléphone</th>
+            <th class="text-center">#</th>
+            <th onclick="sortTable(0, 'search-result-table')">#i18n{identitystore.search_identities.gender}</th>
+            <th onclick="sortTable(1, 'search-result-table')">#i18n{identitystore.search_identities.name}</th>
+            <th onclick="sortTable(2, 'search-result-table')">#i18n{identitystore.search_identities.birthplace}</th>
+            <th onclick="sortTable(3, 'search-result-table')">#i18n{identitystore.search_identities.contact}</th>
+            <th onclick="sortTable(4, 'search-result-table')">#i18n{identitystore.search_identities.login}</th>
+            <th onclick="sortTable(5, 'search-result-table')">#i18n{identitystore.search_identities.id}</th>
             <th>#i18n{portal.util.labelActions}</th>
         </tr>
         <@tableHeadBodySeparator />
-            <#list identity_list as identity >
-        <tr>
-            <input type="hidden" id="id" name="id"/>
-            <td>${identity.customerId!}</td>
-            <td>${identity.connectionId!}</td>
-            <td>
-                <#list identity.attributes?filter(a -> a.key == "email_login") as attr>${attr.value} </#list>
-            </td>
-            <td>
-                <#list identity.attributes?filter(a -> a.key == "gender") as attr>
-                    <#if attr.value == "0">Non défini</#if>
-                    <#if attr.value == "1">Femme</#if>
-                    <#if attr.value == "2">Homme</#if>
-                </#list>
-            </td>
-            <td>
-                <#list identity.attributes?filter(a -> a.key == "family_name") as attr>${attr.value} </#list>
-            </td>
-            <td>
-                <#list identity.attributes?filter(a -> a.key == "preferred_username") as attr>${attr.value} </#list>
-            </td>
-            <td>
-                <#list identity.attributes?filter(a -> a.key == "first_name") as attr>${attr.value} </#list>
-            </td>
-            <td>
-                <#list identity.attributes?filter(a -> a.key == "birthdate") as attr>${attr.value} </#list>
-            </td>
-            <td>
-                <#list identity.attributes?filter(a -> a.key == "birthplace") as attr>${attr.value} </#list>
-            </td>
-            <td>
-                <#list identity.attributes?filter(a -> a.key == "birthcountry") as attr>${attr.value} </#list>
-            </td>
-            <td>
-                <#list identity.attributes?filter(a -> a.key == "mobile_phone") as attr>${attr.value} </#list>
-            </td>
-        <td>
-            <a href="jsp/admin/plugins/identitystore/ManageIdentities.jsp?view=viewIdentity&id=${identity.customerId}"
-               class="btn btn-primary" title="#i18n{identitystore.manage_identities.buttonView}">
-                <i class="fa fa-user"></i>
-            </a>
-        </td>
-        </tr>
+        <#list identity_list as identity >
+            <tr>
+                <input type="hidden" id="id" name="id"/>
+                <td class="text-center">
+                    ${identity?index + 1 + (50 * (paginator.pageCurrent?number - 1))}
+                </td>
+                <td>
+                    <#list identity.attributes?filter(a -> a.key == "gender") as attr>
+                        <#if attr.value == "0">Non défini</#if>
+                        <#if attr.value == "1">Femme</#if>
+                        <#if attr.value == "2">Homme</#if>
+                    </#list>
+                </td>
+                <td>
+                    <strong><#list identity.attributes?filter(a -> a.key == "family_name") as attr>${attr.value} </#list></strong>
+                    <#list identity.attributes?filter(a -> a.key == "first_name") as attr>${attr.value} </#list>
+                    <br><i><#list identity.attributes?filter(a -> a.key == "preferred_username") as attr>${attr.value} </#list></i>
+                </td>
+                <td>
+                    <#list identity.attributes?filter(a -> a.key == "birthdate") as attr>${attr.value} </#list>
+                    <br><#list identity.attributes?filter(a -> a.key == "birthplace") as attr>${attr.value} </#list>
+                    <strong><#list identity.attributes?filter(a -> a.key == "birthcountry") as attr>${attr.value} </#list></strong>
+                </td>
+                <td>
+                    <#list identity.attributes?filter(a -> a.key == "email") as attr>${attr.value} </#list>
+                    <br><#list identity.attributes?filter(a -> a.key == "mobile_phone") as attr>${attr.value} </#list>
+                </td>
+                <td>
+                    <strong><#list identity.attributes?filter(a -> a.key == "login") as attr>${attr.value} </#list></strong>
+                </td>
+                <td>
+                    CUID : <strong>${identity.customerId!}</strong>
+                    <br> GUID : <strong>${identity.connectionId!}</strong>
+                </td>
+                <td>
+                    <a href="jsp/admin/plugins/identitystore/ManageIdentities.jsp?view=viewIdentity&id=${identity.customerId}"
+                       class="btn btn-primary" title="#i18n{identitystore.manage_identities.buttonView}">
+                        <i class="fa fa-user"></i>
+                    </a>
+                </td>
+            </tr>
         </#list>
     </@table>
 
@@ -172,14 +173,5 @@
 <style>
     table th{
         cursor: pointer;
-    }
-    .select-gender {
-        -webkit-appearance: none !important;
-        background-image: none !important;
-        background-repeat: no-repeat !important;
-        background-position: unset !important;
-        background-size: unset !important;
-        padding: .4375rem .75rem !important;
-        width: 110px;
     }
 </style>

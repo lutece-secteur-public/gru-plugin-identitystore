@@ -65,6 +65,8 @@ public abstract class ManageIdentitiesJspBean extends MVCAdminJspBean
     // Infos
     public static final String QUERY_PARAM_CUID = "cuid";
     public static final String QUERY_PARAM_GUID = "guid";
+    public static final String QUERY_PARAM_INSEE_CITY = "insee_city";
+    public static final String QUERY_PARAM_INSEE_COUNTRY = "insee_country";
     public static final String QUERY_PARAM_EMAIL = "email";
     public static final String QUERY_PARAM_GENDER = "gender";
     public static final String QUERY_PARAM_FAMILY_NAME = "family_name";
@@ -179,6 +181,16 @@ public abstract class ManageIdentitiesJspBean extends MVCAdminJspBean
         {
             parameters.put( QUERY_PARAM_DATASOURCE, datasource );
         }
+        final String insee_city = request.getParameter( QUERY_PARAM_INSEE_CITY );
+        if ( insee_city != null )
+        {
+            parameters.put( QUERY_PARAM_INSEE_CITY, insee_city );
+        }
+        final String insee_country = request.getParameter( QUERY_PARAM_INSEE_COUNTRY );
+        if ( insee_country != null )
+        {
+            parameters.put( QUERY_PARAM_INSEE_COUNTRY, insee_country );
+        }
         return parameters;
     }
 
@@ -243,6 +255,16 @@ public abstract class ManageIdentitiesJspBean extends MVCAdminJspBean
         if ( datasource != null )
         {
             request.removeAttribute( QUERY_PARAM_DATASOURCE );
+        }
+        final String insee_city = request.getParameter( QUERY_PARAM_INSEE_CITY );
+        if ( insee_city != null )
+        {
+            request.removeAttribute( QUERY_PARAM_INSEE_CITY );
+        }
+        final String insee_country = request.getParameter( QUERY_PARAM_INSEE_COUNTRY );
+        if ( insee_country != null )
+        {
+            request.removeAttribute( QUERY_PARAM_INSEE_COUNTRY );
         }
     }
 }
