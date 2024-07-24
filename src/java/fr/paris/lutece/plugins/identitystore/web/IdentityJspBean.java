@@ -156,6 +156,8 @@ public class IdentityJspBean extends ManageIdentitiesJspBean
         final List<SearchAttribute> atttributes = new ArrayList<>( );
         final String cuid = queryParameters.get( QUERY_PARAM_CUID );
         final String guid = queryParameters.get( QUERY_PARAM_GUID );
+        final String insee_city = queryParameters.get( QUERY_PARAM_INSEE_CITY );
+        final String insee_country = queryParameters.get( QUERY_PARAM_INSEE_COUNTRY );
         final String email = queryParameters.get( QUERY_PARAM_EMAIL );
         final String gender = queryParameters.get( QUERY_PARAM_GENDER );
         final String family_name = queryParameters.get( QUERY_PARAM_FAMILY_NAME );
@@ -191,6 +193,14 @@ public class IdentityJspBean extends ManageIdentitiesJspBean
                 }
                 else
                 {
+                    if ( StringUtils.isNotEmpty( insee_city ) )
+                    {
+                        atttributes.add( new SearchAttribute( Constants.PARAM_BIRTH_PLACE_CODE, insee_city, AttributeTreatmentType.APPROXIMATED ) );
+                    }
+                    if ( StringUtils.isNotEmpty( insee_country ) )
+                    {
+                        atttributes.add( new SearchAttribute( Constants.PARAM_BIRTH_COUNTRY_CODE, insee_country, AttributeTreatmentType.APPROXIMATED ) );
+                    }
                     if ( StringUtils.isNotEmpty( email ) )
                     {
                         atttributes.add( new SearchAttribute( Constants.PARAM_LOGIN, email, AttributeTreatmentType.STRICT ) );
@@ -267,6 +277,8 @@ public class IdentityJspBean extends ManageIdentitiesJspBean
 
         model.put( QUERY_PARAM_CUID, cuid );
         model.put( QUERY_PARAM_GUID, guid );
+        model.put( QUERY_PARAM_INSEE_CITY, insee_city );
+        model.put( QUERY_PARAM_INSEE_COUNTRY, insee_country );
         model.put( QUERY_PARAM_FAMILY_NAME, family_name );
         model.put( QUERY_PARAM_PREFERRED_USERNAME, preferred_username );
         model.put( QUERY_PARAM_FIRST_NAME, first_name );
