@@ -20,42 +20,30 @@
         </div>
         <form class="form-inline" action="jsp/admin/plugins/identitystore/IdentitiesHistory.jsp">
             <div class="input-group">
-                <@table id="search-result-table">
+                <@table id="search-history-table">
                     <tr>
-                        <th onclick="sortTable(0, 'search-result-table')">#i18n{identitystore.view_change_history.customerId}</th>
-                        <th onclick="sortTable(1, 'search-result-table')">#i18n{identitystore.view_change_history.type}</th>
-                        <th onclick="sortTable(2, 'search-result-table')">#i18n{identitystore.view_change_history.status}</th>
-                        <th onclick="sortTable(3, 'search-result-table')">#i18n{identitystore.view_change_history.date}</th>
-                        <th onclick="sortTable(4, 'search-result-table')">#i18n{identitystore.view_change_history.author.type}</th>
-                        <th onclick="sortTable(5, 'search-result-table')">#i18n{identitystore.view_change_history.author.name}</th>
-                        <th onclick="sortTable(6, 'search-result-table')">#i18n{identitystore.view_change_history.client.code}</th>
+                        <th>#i18n{identitystore.view_change_history.customerId}</th>
+                        <th>#i18n{identitystore.view_change_history.type}</th>
+                        <th>#i18n{identitystore.view_change_history.date}</th>
+                        <th>#i18n{identitystore.view_change_history.author.type}</th>
+                        <th>#i18n{identitystore.view_change_history.author.name}</th>
+                        <th>#i18n{identitystore.view_change_history.client.code}</th>
+                        <th></th>
                     </tr>
                     <@tableHeadBodySeparator />
                     <tr>
                         <td>
-                            <input class="form-control search-field" type="text" name="customerId"
-                                   placeholder="#i18n{identitystore.view_change_history.customerId}" value="${customerId!''}" />
+                            <input class="form-control search-field" type="text" name="cuid"
+                                   placeholder="#i18n{identitystore.view_change_history.customerId}" value="${cuid!''}" />
                         </td>
                         <td>
                             <label for="type" />
                             <select class="search-field form-select select-type" id="type" name="type" value="${type!''}" >
                                 <option value="">#i18n{identitystore.view_change_history.no.type}</option>
-                                <option value="CREATE" <#if type! == "CREATE"> selected="selected"</#if>>CREATE</option>
-                                <option value="UPDATE" <#if type! == "UPDATE"> selected="selected"</#if>>UPDATE</option>
-                                <option value="DELETE" <#if type! == "DELETE"> selected="selected"</#if>>DELETE</option>
-                                <option value="MERGED" <#if type! == "MERGED"> selected="selected"</#if>>MERGED</option>
-                                <option value="CONSOLIDATED" <#if type! == "CONSOLIDATED"> selected="selected"</#if>>CONSOLIDATED</option>
-                                <option value="MERGE_CANCELLED" <#if type! == "MERGE_CANCELLED"> selected="selected"</#if>>MERGE_CANCELLED</option>
-                                <option value="CONSOLIDATION_CANCELLED" <#if type! == "CONSOLIDATION_CANCELLED"> selected="selected"</#if>>CONSOLIDATION_CANCELLED</option>
-                                <option value="EXCLUDED" <#if type! == "EXCLUDED"> selected="selected"</#if>>EXCLUDED</option>
-                                <option value="EXCLUSION_CANCELLED" <#if type! == "EXCLUSION_CANCELLED"> selected="selected"</#if>>EXCLUSION_CANCELLED</option>
-                                <option value="MARKED_SUSPICIOUS" <#if type! == "MARKED_SUSPICIOUS"> selected="selected"</#if>>MARKED_SUSPICIOUS</option>
-                                <option value="READ" <#if type! == "READ"> selected="selected"</#if>>READ</option>
+                                <#list type_list as form_type>
+                                    <option value="${form_type!}" <#if typr! == form_type!> selected="selected"</#if>>${form_type!}</option>
+                                </#list>
                             </select>
-                        </td>
-                        <td>
-                            <input class="form-control search-field" type="text" name="status"
-                                   placeholder="#i18n{identitystore.view_change_history.status}" value="${status!''}" />
                         </td>
                         <td>
                             <input class="form-control search-field" type="date" name="date"
@@ -85,15 +73,16 @@
             </div>
         </form>
 
-        <table id="identity-table" class="table table-condensed table-striped">
+        <@paginationAdmin paginator=paginator combo=1 />
+        <table id="search-result-table" class="table table-condensed table-striped">
             <tr>
-                <th onclick="sortTable(0, 'identity-table')">#i18n{identitystore.view_change_history.customerId}</th>
-                <th onclick="sortTable(1, 'identity-table')">#i18n{identitystore.view_change_history.type}</th>
-                <th onclick="sortTable(2, 'identity-table')">#i18n{identitystore.view_change_history.status}</th>
-                <th onclick="sortTable(3, 'identity-table')">#i18n{identitystore.view_change_history.date}</th>
-                <th onclick="sortTable(4, 'identity-table')">#i18n{identitystore.view_change_history.author.type}</th>
-                <th onclick="sortTable(5, 'identity-table')">#i18n{identitystore.view_change_history.author.name}</th>
-                <th onclick="sortTable(6, 'identity-table')">#i18n{identitystore.view_change_history.client.code}</th>
+                <th onclick="sortTable(0, 'search-result-table')">#i18n{identitystore.view_change_history.customerId}</th>
+                <th onclick="sortTable(1, 'search-result-table')">#i18n{identitystore.view_change_history.type}</th>
+                <th onclick="sortTable(2, 'search-result-table')">#i18n{identitystore.view_change_history.status}</th>
+                <th onclick="sortTable(3, 'search-result-table')">#i18n{identitystore.view_change_history.date}</th>
+                <th onclick="sortTable(4, 'search-result-table')">#i18n{identitystore.view_change_history.author.type}</th>
+                <th onclick="sortTable(5, 'search-result-table')">#i18n{identitystore.view_change_history.author.name}</th>
+                <th onclick="sortTable(6, 'search-result-table')">#i18n{identitystore.view_change_history.client.code}</th>
             </tr>
             <#if identity_change_list??  && identity_change_list?has_content>
                 <#list identity_change_list as change>
@@ -134,6 +123,7 @@
                 </#list>
             </#if>
         </table>
+        <@paginationAdmin paginator=paginator />
     </@boxBody>
 </@rowBox>
 <script src="./js/admin/plugins/identitystore/table.js"></script>

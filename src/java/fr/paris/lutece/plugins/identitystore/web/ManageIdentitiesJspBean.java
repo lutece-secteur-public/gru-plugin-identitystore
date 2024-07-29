@@ -77,6 +77,13 @@ public abstract class ManageIdentitiesJspBean extends MVCAdminJspBean
     public static final String QUERY_PARAM_INSEE_BIRTHCOUNTRY_LABEL = "insee_birthcountry_label";
     public static final String QUERY_PARAM_PHONE = "phone";
     public static final String QUERY_PARAM_DATASOURCE = "datasource";
+    public static final String QUERY_PARAM_TYPE = "type";
+    public static final String QUERY_PARAM_DATE = "date";
+    public static final String QUERY_PARAM_AUTHOR_TYPE = "author_type";
+    public static final String QUERY_PARAM_AUTHOR_NAME = "author_name";
+    public static final String QUERY_PARAM_CLIENT_CODE = "client_code";
+    public static final String QUERY_PARAM_STATUS_LIST = "status_list";
+    public static final String QUERY_PARAM_TYPE_LIST = "type_list";
 
     // Variables
     private final int _nDefaultItemsPerPage = AppPropertiesService.getPropertyInt( PROPERTY_DEFAULT_LIST_ITEM_PER_PAGE, 50 );
@@ -191,6 +198,31 @@ public abstract class ManageIdentitiesJspBean extends MVCAdminJspBean
         {
             parameters.put( QUERY_PARAM_INSEE_COUNTRY, insee_country );
         }
+        final String type = request.getParameter( QUERY_PARAM_TYPE );
+        if ( type != null )
+        {
+            parameters.put( QUERY_PARAM_TYPE, type );
+        }
+        final String date = request.getParameter( QUERY_PARAM_DATE );
+        if ( date != null )
+        {
+            parameters.put( QUERY_PARAM_DATE, date );
+        }
+        final String author_type = request.getParameter( QUERY_PARAM_AUTHOR_TYPE );
+        if ( author_type != null )
+        {
+            parameters.put( QUERY_PARAM_AUTHOR_TYPE, author_type );
+        }
+        final String author_name = request.getParameter( QUERY_PARAM_AUTHOR_NAME );
+        if ( author_name != null )
+        {
+            parameters.put( QUERY_PARAM_AUTHOR_NAME, author_name );
+        }
+        final String client_code = request.getParameter( QUERY_PARAM_CLIENT_CODE );
+        if ( client_code != null )
+        {
+            parameters.put( QUERY_PARAM_CLIENT_CODE, client_code );
+        }
         return parameters;
     }
 
@@ -265,6 +297,31 @@ public abstract class ManageIdentitiesJspBean extends MVCAdminJspBean
         if ( insee_country != null )
         {
             request.removeAttribute( QUERY_PARAM_INSEE_COUNTRY );
+        }
+        final String type = request.getParameter( QUERY_PARAM_TYPE );
+        if ( type != null )
+        {
+            request.removeAttribute( QUERY_PARAM_TYPE );
+        }
+        final String date = request.getParameter( QUERY_PARAM_DATE );
+        if ( date != null )
+        {
+            request.removeAttribute( QUERY_PARAM_DATE );
+        }
+        final String author_type = request.getParameter( QUERY_PARAM_AUTHOR_TYPE );
+        if ( author_type != null )
+        {
+            request.removeAttribute( QUERY_PARAM_AUTHOR_TYPE );
+        }
+        final String author_name = request.getParameter( QUERY_PARAM_AUTHOR_NAME );
+        if ( author_name != null )
+        {
+            request.removeAttribute( QUERY_PARAM_AUTHOR_NAME );
+        }
+        final String client_code = request.getParameter( QUERY_PARAM_CLIENT_CODE );
+        if ( client_code != null )
+        {
+            request.removeAttribute( QUERY_PARAM_CLIENT_CODE );
         }
     }
 }

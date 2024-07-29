@@ -55,6 +55,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -119,7 +120,7 @@ public final class IdentityDAO implements IIdentityDAO
             + "    JOIN identitystore_identity_history master ON master.change_type = tmp.change_type AND  master.customer_id = tmp.customer_id AND master.author_name = tmp.author_name "
             + "    WHERE date_trunc('day', master.modification_date) = date_trunc('day', CURRENT_TIMESTAMP)) ";
     private static final String SQL_QUERY_SELECT_IDENTITY_HISTORY = "SELECT change_type, change_status, change_message, author_type, author_name, client_code, customer_id, modification_date, metadata::text FROM identitystore_identity_history WHERE customer_id = ?  ORDER BY modification_date DESC";
-    private static final String SQL_QUERY_SEARCH_IDENTITY_HISTORY = "SELECT change_type, change_status, change_message, author_type, author_name, client_code, customer_id, modification_date, metadata::text FROM identitystore_identity_history WHERE ${client_code} AND ${customer_id} AND ${author_name} AND ${change_type} AND ${nbDaysFrom} AND ${metadata} AND ${change_status} AND ${author_type} AND ${modification_date} ORDER BY modification_date DESC";
+    private static final String SQL_QUERY_SEARCH_IDENTITY_HISTORY = "SELECT change_type, change_status, change_message, author_type, author_name, client_code, customer_id, modification_date, metadata::text FROM identitystore_identity_history WHERE ${client_code} AND ${customer_id} AND ${author_name} AND ${change_type} AND ${nbDaysFrom} AND ${metadata} AND ${change_status} AND ${author_type} AND ${modification_date} ORDER BY modification_date DESC LIMIT ${limit}";
 
     private static final String SQL_QUERY_SELECT_UPDATED_IDENTITIES = "SELECT DISTINCT i.customer_id, i.last_update_date FROM identitystore_identity i JOIN identitystore_identity_history ih ON i.customer_id = ih.customer_id JOIN identitystore_identity_attribute_history iah ON i.id_identity = iah.id_identity WHERE 1=1";
     private static final String SQL_QUERY_SELECT_UPDATED_IDENTITIES_FROM_IDS = "SELECT i.customer_id, i.last_update_date FROM identitystore_identity i WHERE id_identity IN (${identity_id_list}) ORDER BY i.last_update_date DESC";
@@ -144,6 +145,7 @@ public final class IdentityDAO implements IIdentityDAO
     private static final String SQL_QUERY_SELECT_COUNT_MONPARIS_ACTIVE_IDENTITIES = "SELECT COUNT(*) FROM identitystore_identity WHERE is_mon_paris_active = ?";
     private static final String SQL_QUERY_SELECT_COUNT_ATTRIUTES_BY_IDENTITY = "SELECT v.nbattr, count(v.id_identity) as identities FROM (SELECT id_identity , count(id_identity) as nbattr FROM identitystore_identity_attribute GROUP BY id_identity) as v GROUP BY v.nbattr ORDER BY v.nbattr";
     private static final String SQL_QUERY_SELECT_COUNT_IDENTITIES_NO_ATTRIBUTES_NOT_MERGED = "SELECT count(*) FROM identitystore_identity i WHERE is_merged = 0 AND i.id_identity NOT IN (SELECT a.id_identity FROM identitystore_identity_attribute a WHERE a.id_identity = i.id_identity)";
+    private static final String SQL_QUERY_SELECT_ALL_STATUS = "SELECT DISTINCT change_status FROM identitystore_identity_history";
 
     private final ObjectMapper objectMapper = new ObjectMapper( );
 
@@ -841,7 +843,7 @@ public final class IdentityDAO implements IIdentityDAO
     @Override
     public List<IdentityChange> selectIdentityHistoryBySearchParameters( final String customerId, final String clientCode, final String authorName,
             final IdentityChangeType changeType, final String changeStatus, final String authorType, final Date modificationDate, final Map<String, String> metadata, final Integer nbDaysFrom,
-            final Pair<Date, Date> modificationDateInterval, final Plugin plugin ) throws IdentityStoreException
+            final Pair<Date, Date> modificationDateInterval, final Plugin plugin, final int nMaxNbIdentityReturned ) throws IdentityStoreException
     {
         final List<IdentityChange> identityChanges = new ArrayList<>( );
         // ${client_code} AND ${customer_id} AND ${author_name} AND ${change_type} AND ${modification_date} AND ${metadata} AND ${modification_date} AND
@@ -853,7 +855,8 @@ public final class IdentityDAO implements IIdentityDAO
                 .replace( "${change_type}", ( changeType != null ? "change_type = " + changeType.getValue( ) : "1=1" ) )
                 .replace( "${change_status}", ( StringUtils.isNotBlank( changeStatus ) ? "change_status = '" + changeStatus + "'" : "1=1" ) )
                 .replace( "${author_type}", ( StringUtils.isNotBlank( authorType ) ? "author_type = '" + authorType + "'" : "1=1" ) )
-                .replace( "${metadata}", ( metadata != null && !metadata.isEmpty( ) ? this.computeMetadaQuery( metadata ) : "1=1" ) );
+                .replace( "${metadata}", ( metadata != null && !metadata.isEmpty( ) ? this.computeMetadaQuery( metadata ) : "1=1" ) )
+                .replace( "${limit}", String.valueOf( nMaxNbIdentityReturned ) );
         final List<Date> sqlDateParameters = new ArrayList<>( );
         if(modificationDate != null )
         {

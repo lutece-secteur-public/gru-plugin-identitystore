@@ -201,10 +201,11 @@ public final class IdentityHome
      */
     public static List<IdentityChange> findHistoryBySearchParameters( final String strCustomerId, final String clientCode, final String authorName,
             final IdentityChangeType changeType, final String changeStatus, final String authorType, final Date modificationDate, final Map<String, String> metadata, final Integer nbDaysFrom,
-            final Pair<Date, Date> modificationDateInterval ) throws IdentityStoreException
+            final Pair<Date, Date> modificationDateInterval, final int max ) throws IdentityStoreException
     {
+        int nMaxNbIdentityReturned = ( max > 0 ) ? max : AppPropertiesService.getPropertyInt( PROPERTY_MAX_NB_IDENTITY_RETURNED, 100 );
         return _dao.selectIdentityHistoryBySearchParameters( strCustomerId, clientCode, authorName, changeType, changeStatus, authorType, modificationDate, metadata, nbDaysFrom,
-                modificationDateInterval, _plugin );
+                modificationDateInterval, _plugin, nMaxNbIdentityReturned );
     }
 
     /**
