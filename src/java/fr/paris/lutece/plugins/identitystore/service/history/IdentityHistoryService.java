@@ -111,7 +111,7 @@ public class IdentityHistoryService
 
         final List<IdentityChange> identityChangeList = IdentityHome.findHistoryBySearchParameters( request.getCustomerId( ), request.getClientCode( ),
                 request.getAuthorName( ), request.getIdentityChangeType( ), request.getChangeStatus( ), null, null, request.getMetadata( ), request.getNbDaysFrom( ),
-                Pair.of( request.getModificationDateIntervalStart( ), request.getModificationDateIntervalEnd( ) ) );
+                Pair.of( request.getModificationDateIntervalStart( ), request.getModificationDateIntervalEnd( ) ), 0 );
         if ( !serviceContract.getAuthorizedAgentHistoryRead( ) )
         {
             identityChangeList.removeIf( identityChange -> Objects.equals( identityChange.getChangeType( ), IdentityChangeType.READ ) );

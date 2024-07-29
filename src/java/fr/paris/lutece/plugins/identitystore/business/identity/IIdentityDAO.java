@@ -274,7 +274,7 @@ public interface IIdentityDAO
      * @return
      */
     List<IdentityChange> selectIdentityHistoryBySearchParameters( String strCustomerId, String clientCode, String authorName, IdentityChangeType changeType,
-            String changeStatus, final String authorType, final Date modificationDate, Map<String, String> metadata, Integer nbDaysFrom, Pair<Date, Date> modificationDateInterval, Plugin plugin )
+            String changeStatus, final String authorType, final Date modificationDate, Map<String, String> metadata, Integer nbDaysFrom, Pair<Date, Date> modificationDateInterval, Plugin plugin, int nMaxNbIdentityReturned )
             throws IdentityStoreException;
 
     /**
