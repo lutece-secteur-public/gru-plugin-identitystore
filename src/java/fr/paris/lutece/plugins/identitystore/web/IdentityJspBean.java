@@ -160,8 +160,7 @@ public class IdentityJspBean extends ManageIdentitiesJspBean
         final String insee_country = queryParameters.get( QUERY_PARAM_INSEE_COUNTRY );
         final String email = queryParameters.get( QUERY_PARAM_EMAIL );
         final String gender = queryParameters.get( QUERY_PARAM_GENDER );
-        final String family_name = queryParameters.get( QUERY_PARAM_FAMILY_NAME );
-        final String preferred_username = queryParameters.get( QUERY_PARAM_PREFERRED_USERNAME );
+        final String common_name = queryParameters.get(QUERY_PARAM_COMMON_LASTNAME);
         final String first_name = queryParameters.get( QUERY_PARAM_FIRST_NAME );
         final String birthdate = queryParameters.get( QUERY_PARAM_BIRTHDATE );
         final String birthplace = queryParameters.get( QUERY_PARAM_INSEE_BIRTHPLACE_LABEL );
@@ -173,22 +172,34 @@ public class IdentityJspBean extends ManageIdentitiesJspBean
         {
             if ( StringUtils.isNotEmpty( cuid ) )
             {
-                final Identity identity = IdentityHome.findMasterIdentityByCustomerId( cuid );
-                if ( identity != null )
+                if ( datasource.equals( DATASOURCE_DB ) )
                 {
-                    final IdentityDto qualifiedIdentity = DtoConverter.convertIdentityToDto( identity );
-                    _identities.add( qualifiedIdentity );
+                    final Identity identity = IdentityHome.findMasterIdentityByCustomerId( cuid );
+                    if ( identity != null )
+                    {
+                        final IdentityDto qualifiedIdentity = DtoConverter.convertIdentityToDto( identity );
+                        _identities.add( qualifiedIdentity );
+                    }
+                }
+                else
+                if ( datasource.equals( DATASOURCE_ES ) )
+                {
+                    _identities.addAll( _searchIdentityServiceES.getQualifiedIdentities( cuid, Collections.emptyList() )
+                            .getQualifiedIdentities( ) );
                 }
             }
             else
             {
                 if ( StringUtils.isNotEmpty( guid ) )
                 {
-                    final Identity identity = IdentityHome.findMasterIdentityByConnectionId( guid );
-                    if ( identity != null )
+                    if ( datasource.equals( DATASOURCE_DB ) )
                     {
-                        final IdentityDto qualifiedIdentity = DtoConverter.convertIdentityToDto( identity );
-                        _identities.add( qualifiedIdentity );
+                        final Identity identity = IdentityHome.findMasterIdentityByConnectionId( guid );
+                        if ( identity != null )
+                        {
+                            final IdentityDto qualifiedIdentity = DtoConverter.convertIdentityToDto( identity );
+                            _identities.add( qualifiedIdentity );
+                        }
                     }
                 }
                 else
@@ -203,19 +214,15 @@ public class IdentityJspBean extends ManageIdentitiesJspBean
                     }
                     if ( StringUtils.isNotEmpty( email ) )
                     {
-                        atttributes.add( new SearchAttribute( Constants.PARAM_LOGIN, email, AttributeTreatmentType.STRICT ) );
+                        atttributes.add( new SearchAttribute( Constants.PARAM_COMMON_EMAIL, email, AttributeTreatmentType.STRICT ) );
                     }
                     if ( StringUtils.isNotEmpty( gender ) )
                     {
                         atttributes.add( new SearchAttribute( Constants.PARAM_GENDER, gender, AttributeTreatmentType.STRICT ) );
                     }
-                    if ( StringUtils.isNotEmpty( family_name ) )
+                    if ( StringUtils.isNotEmpty( common_name ) )
                     {
-                        atttributes.add( new SearchAttribute( Constants.PARAM_FAMILY_NAME, family_name, AttributeTreatmentType.APPROXIMATED ) );
-                    }
-                    if ( StringUtils.isNotEmpty( preferred_username ) )
-                    {
-                        atttributes.add( new SearchAttribute( Constants.PARAM_PREFERRED_USERNAME, preferred_username, AttributeTreatmentType.APPROXIMATED ) );
+                        atttributes.add( new SearchAttribute( Constants.PARAM_COMMON_LASTNAME, common_name, AttributeTreatmentType.APPROXIMATED ) );
                     }
                     if ( StringUtils.isNotEmpty( first_name ) )
                     {
@@ -235,7 +242,7 @@ public class IdentityJspBean extends ManageIdentitiesJspBean
                     }
                     if ( StringUtils.isNotEmpty( phone ) )
                     {
-                        atttributes.add( new SearchAttribute( Constants.PARAM_MOBILE_PHONE, phone, AttributeTreatmentType.STRICT ) );
+                        atttributes.add( new SearchAttribute( Constants.PARAM_COMMON_PHONE, phone, AttributeTreatmentType.STRICT ) );
                     }
                     if ( CollectionUtils.isNotEmpty( atttributes ) )
                     {
@@ -279,8 +286,7 @@ public class IdentityJspBean extends ManageIdentitiesJspBean
         model.put( QUERY_PARAM_GUID, guid );
         model.put( QUERY_PARAM_INSEE_CITY, insee_city );
         model.put( QUERY_PARAM_INSEE_COUNTRY, insee_country );
-        model.put( QUERY_PARAM_FAMILY_NAME, family_name );
-        model.put( QUERY_PARAM_PREFERRED_USERNAME, preferred_username );
+        model.put( QUERY_PARAM_COMMON_LASTNAME, common_name );
         model.put( QUERY_PARAM_FIRST_NAME, first_name );
         model.put( QUERY_PARAM_EMAIL, email );
         model.put( QUERY_PARAM_INSEE_BIRTHPLACE_LABEL, birthplace );

@@ -41,7 +41,9 @@ import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.RequestAuthor;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.crud.UpdatedIdentityDto;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.history.IdentityChange;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.history.IdentityChangeType;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.search.SearchAttribute;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.search.SearchUpdatedAttribute;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
 import fr.paris.lutece.portal.service.plugin.Plugin;
 import fr.paris.lutece.util.sql.DAOUtil;
@@ -53,14 +55,12 @@ import java.sql.Statement;
 import java.sql.Timestamp;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Queue;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -94,12 +94,12 @@ public final class IdentityDAO implements IIdentityDAO
             + COLUMNS + " from identity_tree a where a.is_merged = 0;";
 
     private static final String SQL_QUERY_SELECT_ID_BY_CUSTOMER_ID = "SELECT id_identity, is_deleted, is_merged FROM identitystore_identity WHERE customer_id = ?";
-    private static final String SQL_QUERY_SELECT_BY_ATTRIBUTES_FOR_API_SEARCH = "SELECT " + COLUMNS
-            + " FROM identitystore_identity a, identitystore_identity_attribute b, identitystore_ref_attribute c"
-            + " WHERE a.id_identity = b.id_identity AND b.id_attribute = c.id_attribute AND (${filter})"
-            + " GROUP BY a.id_identity HAVING COUNT(b.id_attribute) >= ? LIMIT ${limit}";
-    private static final String SQL_QUERY_FILTER_ATTRIBUTE_FOR_API_SEARCH = "(c.key_name = ? AND LOWER(b.attribute_value) IN (${list}))";
-    private static final String SQL_QUERY_FILTER_NORMALIZED_ATTRIBUTE_FOR_API_SEARCH = "(c.key_name = ? AND TRANSLATE(REPLACE(REPLACE(LOWER(b.attribute_value), 'œ', 'oe'), 'æ', 'ae'), 'àâäéèêëîïôöùûüÿçñ', 'aaaeeeeiioouuuycn') IN (${list}))";
+    private static final String SQL_QUERY_SELECT_BY_ATTRIBUTES_FOR_API_SEARCH = " SELECT " + COLUMNS + " FROM identitystore_identity a ${join_clause} LIMIT ${limit}";
+    private static final String SQL_QUERY_WITH_CLAUSE_FOR_API_SEARCH = "WITH ${with_clause} ";
+    private static final String SQL_QUERY_JOIN_CLAUSE_FOR_API_SEARCH = "JOIN ${tmp_table_name} on ${tmp_table_name}.id_identity = a.id_identity ";
+    private static final String SQL_QUERY_TMP_TABLE_FOR_API_SEARCH = " AS (SELECT b.id_identity AS id_identity FROM identitystore_identity_attribute b JOIN identitystore_ref_attribute c ON b.id_attribute = c.id_attribute AND ${filter})";
+    private static final String SQL_QUERY_FILTER_ATTRIBUTE_FOR_API_SEARCH = "c.key_name IN (${key_name_list}) AND LOWER(b.attribute_value) = '${value}'";
+    private static final String SQL_QUERY_FILTER_NORMALIZED_ATTRIBUTE_FOR_API_SEARCH = "c.key_name IN (${key_name_list}) AND TRANSLATE(REPLACE(REPLACE(LOWER(b.attribute_value), 'œ', 'oe'), 'æ', 'ae'), 'àâäéèêëîïôöùûüÿçñ', 'aaaeeeeiioouuuycn') = '${value}'";
     private static final String SQL_QUERY_SOFT_DELETE = "UPDATE identitystore_identity SET is_deleted = 1, date_delete = now( ), is_mon_paris_active = 0, expiration_date=now( ), last_update_date=now( )  WHERE customer_id = ?";
     private static final String SQL_QUERY_MERGE = "UPDATE identitystore_identity SET is_merged = 1, date_merge = now(), last_update_date = now(), id_master_identity = ? WHERE id_identity = ?";
     private static final String SQL_QUERY_CANCEL_MERGE = "UPDATE identitystore_identity SET is_merged = 0, date_merge = null, last_update_date = now(), id_master_identity = null WHERE id_identity = ?";
@@ -143,7 +143,7 @@ public final class IdentityDAO implements IIdentityDAO
     private static final String SQL_QUERY_SELECT_COUNT_DELETED_IDENTITIES = "SELECT COUNT(*) FROM identitystore_identity WHERE is_deleted = ?";
     private static final String SQL_QUERY_SELECT_COUNT_MERGED_IDENTITIES = "SELECT COUNT(*) FROM identitystore_identity WHERE is_merged = ?";
     private static final String SQL_QUERY_SELECT_COUNT_MONPARIS_ACTIVE_IDENTITIES = "SELECT COUNT(*) FROM identitystore_identity WHERE is_mon_paris_active = ?";
-    private static final String SQL_QUERY_SELECT_COUNT_ATTRIUTES_BY_IDENTITY = "SELECT v.nbattr, count(v.id_identity) as identities FROM (SELECT id_identity , count(id_identity) as nbattr FROM identitystore_identity_attribute GROUP BY id_identity) as v GROUP BY v.nbattr ORDER BY v.nbattr";
+    private static final String SQL_QUERY_SELECT_COUNT_ATTRIBUTES_BY_IDENTITY = "SELECT v.nbattr, count(v.id_identity) as identities FROM (SELECT id_identity , count(id_identity) as nbattr FROM identitystore_identity_attribute GROUP BY id_identity) as v GROUP BY v.nbattr ORDER BY v.nbattr";
     private static final String SQL_QUERY_SELECT_COUNT_IDENTITIES_NO_ATTRIBUTES_NOT_MERGED = "SELECT count(*) FROM identitystore_identity i WHERE is_merged = 0 AND i.id_identity NOT IN (SELECT a.id_identity FROM identitystore_identity_attribute a WHERE a.id_identity = i.id_identity)";
     private static final String SQL_QUERY_SELECT_ALL_STATUS = "SELECT DISTINCT change_status FROM identitystore_identity_history";
 
@@ -512,77 +512,45 @@ public final class IdentityDAO implements IIdentityDAO
      * {@inheritDoc }
      */
     @Override
-    public List<Identity> selectByAttributesValueForApiSearch( final Map<String, List<String>> mapAttributes, final int nMaxNbIdentityReturned, Plugin plugin )
+    public List<Identity> selectByAttributesValueForApiSearch( final List<SearchAttribute> searchAttributes, final int nMaxNbIdentityReturned, final Plugin plugin )
     {
         final List<Identity> listIdentities = new ArrayList<>( );
+        final Map<String, String> withClauses = new HashMap<>( );
 
-        final Queue<String> queueAttributeId = new ArrayDeque<>( );
-        final List<String> listAttributeFilter = new ArrayList<>( );
-
-        if ( mapAttributes == null || mapAttributes.isEmpty( ) )
+        if ( searchAttributes == null || searchAttributes.isEmpty( ) )
         {
             return listIdentities;
         }
 
-        for ( final Map.Entry<String, List<String>> entryAttribute : mapAttributes.entrySet( ) )
+        for ( final SearchAttribute attribute : searchAttributes )
         {
-            final String strAttributeId = entryAttribute.getKey( );
-            final List<String> listAttributeValues = entryAttribute.getValue( );
-            if ( listAttributeValues == null || listAttributeValues.isEmpty( ) )
+            if ( StringUtils.isBlank( attribute.getValue() ) )
             {
                 continue;
             }
 
-            queueAttributeId.add( strAttributeId );
-
-            final List<String> listIn = new ArrayList<>( );
-
-            for ( int i = 0; i < listAttributeValues.size( ); i++ )
+            final String filter;
+            if ( attribute.getKey( ).equals( Constants.PARAM_FIRST_NAME ) || attribute.getKey( ).equals( Constants.PARAM_FAMILY_NAME )
+                    ||  ( attribute.getOutputKeys( ) != null && !attribute.getOutputKeys( ).isEmpty( ) && ( attribute.getOutputKeys( ).contains( Constants.PARAM_FIRST_NAME ) || attribute.getOutputKeys( ).contains( Constants.PARAM_FAMILY_NAME ) ) ) )
             {
-                listIn.add( "?" );
-            }
-
-            if ( strAttributeId.equals( "family_name" ) || strAttributeId.equals( "first_name" ) )
-            {
-                listAttributeFilter.add( SQL_QUERY_FILTER_NORMALIZED_ATTRIBUTE_FOR_API_SEARCH.replace( "${list}", String.join( ", ", listIn ) ) );
+                filter = SQL_QUERY_FILTER_NORMALIZED_ATTRIBUTE_FOR_API_SEARCH.replace("${key_name_list}", "'" + String.join("', '", attribute.getOutputKeys( ) ) + "'" ).replace("${value}", this.normalizeValue( attribute.getValue( ) ) );
             }
             else
             {
-                listAttributeFilter.add( SQL_QUERY_FILTER_ATTRIBUTE_FOR_API_SEARCH.replace( "${list}", String.join( ", ", listIn ) ) );
+                filter = SQL_QUERY_FILTER_ATTRIBUTE_FOR_API_SEARCH.replace("${key_name_list}", "'" + String.join("', '", attribute.getOutputKeys( ) ) + "'" ).replace("${value}", StringUtils.lowerCase( attribute.getValue( ) ) );
             }
+            withClauses.put(attribute.getKey(), SQL_QUERY_TMP_TABLE_FOR_API_SEARCH.replace("${filter}", filter ) );
         }
 
-        if ( listAttributeFilter.isEmpty( ) )
+        if ( withClauses.isEmpty( ) )
         {
             return listIdentities;
         }
 
-        String strSQL = SQL_QUERY_SELECT_BY_ATTRIBUTES_FOR_API_SEARCH.replace( "${filter}", String.join( " OR ", listAttributeFilter ) );
-        strSQL = strSQL.replace( "${limit}", String.valueOf( nMaxNbIdentityReturned ) );
-
+        final String strSQL = SQL_QUERY_WITH_CLAUSE_FOR_API_SEARCH.replace("${with_clause}", withClauses.entrySet( ).stream( ).map( entry -> entry.getKey() + " " + entry.getValue( ) ).collect( Collectors.joining(", ") ) )
+                + SQL_QUERY_SELECT_BY_ATTRIBUTES_FOR_API_SEARCH.replace( "${join_clause}", withClauses.keySet( ).stream( ).map( key -> SQL_QUERY_JOIN_CLAUSE_FOR_API_SEARCH.replace( "${tmp_table_name}", key ) ).collect(Collectors.joining( " " )) ).replace( "${limit}", String.valueOf( nMaxNbIdentityReturned ) );
         try ( final DAOUtil daoUtil = new DAOUtil( strSQL, plugin ) )
         {
-            int nIndex = 1;
-
-            for ( String strAttributeId : queueAttributeId )
-            {
-                daoUtil.setString( nIndex++, strAttributeId );
-
-                for ( String strAttributeValue : mapAttributes.get( strAttributeId ) )
-                {
-                    if ( strAttributeId.equals( "family_name" ) || strAttributeId.equals( "first_name" ) )
-                    {
-                        daoUtil.setString( nIndex++, normalizeValue( strAttributeValue ) );
-                    }
-                    else
-                    {
-                        daoUtil.setString( nIndex++, StringUtils.lowerCase( strAttributeValue ) );
-                    }
-                }
-            }
-
-            daoUtil.setInt( nIndex, queueAttributeId.size( ) );
-
             daoUtil.executeQuery( );
 
             while ( daoUtil.next( ) )
@@ -1063,7 +1031,7 @@ public final class IdentityDAO implements IIdentityDAO
     @Override
     public Map<Integer, Integer> getCountAttributesByIdentities(Plugin plugin)
     {
-        try ( final DAOUtil daoUtil = new DAOUtil( SQL_QUERY_SELECT_COUNT_ATTRIUTES_BY_IDENTITY, plugin ) )
+        try ( final DAOUtil daoUtil = new DAOUtil(SQL_QUERY_SELECT_COUNT_ATTRIBUTES_BY_IDENTITY, plugin ) )
         {
             daoUtil.executeQuery( );
             Map<Integer, Integer> attributesByIdentities = new HashMap<>( );

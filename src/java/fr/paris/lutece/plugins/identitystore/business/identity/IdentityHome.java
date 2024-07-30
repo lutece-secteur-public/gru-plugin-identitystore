@@ -37,6 +37,7 @@ import fr.paris.lutece.plugins.identitystore.service.IdentityStorePlugin;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.crud.UpdatedIdentityDto;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.history.IdentityChange;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.history.IdentityChangeType;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.search.SearchAttribute;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.search.SearchUpdatedAttribute;
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
 import fr.paris.lutece.portal.service.plugin.Plugin;
@@ -310,10 +311,10 @@ public final class IdentityHome
      *            A map that associates the id of each attributes selected with the list of values
      * @return list of Identity
      */
-    public static List<Identity> findByAttributesValueForApiSearch( Map<String, List<String>> mapAttributes, final int max )
+    public static List<Identity> findByAttributesValueForApiSearch(final List<SearchAttribute> searchAttributes, final int max )
     {
         int nMaxNbIdentityReturned = ( max > 0 ) ? max : AppPropertiesService.getPropertyInt( PROPERTY_MAX_NB_IDENTITY_RETURNED, 100 );
-        return _dao.selectByAttributesValueForApiSearch( mapAttributes, nMaxNbIdentityReturned, _plugin );
+        return _dao.selectByAttributesValueForApiSearch( searchAttributes, nMaxNbIdentityReturned, _plugin );
     }
 
     /**
