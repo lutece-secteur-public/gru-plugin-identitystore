@@ -66,14 +66,13 @@ public class DatabaseSearchIdentityService implements ISearchIdentityService
     /**
      * {@inheritDoc }
      */
+    @Override
     public QualifiedIdentitySearchResult getQualifiedIdentities( final List<SearchAttribute> attributes, final int max, final boolean connected,
             final List<String> attributesFilter )
     {
-        final Map<String, List<String>> mapAttributeValues = attributes.stream( )
-                .collect( Collectors.toMap( SearchAttribute::getKey, searchAttribute -> Lists.newArrayList( searchAttribute.getValue( ) ) ) );
         try
         {
-            final List<Identity> listIdentity = IdentityHome.findByAttributesValueForApiSearch( mapAttributeValues, max );
+            final List<Identity> listIdentity = IdentityHome.findByAttributesValueForApiSearch( this.computeOutputKeys( attributes ), max );
             if ( listIdentity != null && !listIdentity.isEmpty( ) )
             {
                 return new QualifiedIdentitySearchResult( this.getEntities( listIdentity ) );
@@ -122,9 +121,7 @@ public class DatabaseSearchIdentityService implements ISearchIdentityService
         }
         try
         {
-            final Map<String, List<String>> mapAttributeValues = attributes.stream( )
-                    .collect( Collectors.toMap( SearchAttribute::getKey, searchAttribute -> Lists.newArrayList( searchAttribute.getValue( ) ) ) );
-            final List<Identity> listIdentity = IdentityHome.findByAttributesValueForApiSearch( mapAttributeValues, max );
+            final List<Identity> listIdentity = IdentityHome.findByAttributesValueForApiSearch( this.computeOutputKeys( attributes ), max );
             if ( listIdentity != null && !listIdentity.isEmpty( ) )
             {
                 return new QualifiedIdentitySearchResult( this.getEntities( listIdentity ) );

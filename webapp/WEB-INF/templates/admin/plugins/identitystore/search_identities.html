@@ -28,9 +28,8 @@
 
                 <tr>
                     <th>Email</th>
-                    <th>Nom de naissance</th>
-                    <th>Nom d'usage</th>
-                    <th>Prénoms</th>
+                    <th>Nom(s)</th>
+                    <th>Prénom(s)</th>
                     <th>Date de naissance</th>
                     <th>Téléphone</th>
                     <th></th>
@@ -42,10 +41,7 @@
                         <input class="form-control search-field" type="text" name="email" placeholder="Email ou email de login" value="${email!''}" />
                     </td>
                     <td>
-                        <input class="form-control search-field" type="text" name="family_name" placeholder="Nom de famille" value="${family_name!''}" />
-                    </td>
-                    <td>
-                        <input class="form-control search-field" type="text" name="preferred_username" placeholder="Nom d'usage" value="${preferred_username!''}" />
+                        <input class="form-control search-field" type="text" name="common_lastname" placeholder="Nom de famille ou d'usage" value="${common_lastname!''}" />
                     </td>
                     <td>
                         <input class="form-control search-field" type="text" name="first_name" placeholder="Prénoms usuels" value="${first_name!''}" />
@@ -71,7 +67,6 @@
                     <th>Code INSEE Pays</th>
                     <th>CUID</th>
                     <th>GUID</th>
-                    <th></th>
                 </tr>
                 <@tableHeadBodySeparator />
                 <tr>
@@ -93,7 +88,6 @@
                     <td>
                         <input class="form-control search-field" type="text" name="guid" placeholder="Connection ID" value="${guid!''}" />
                     </td>
-                    <td></td>
                 </tr>
             </@table>
         </div>

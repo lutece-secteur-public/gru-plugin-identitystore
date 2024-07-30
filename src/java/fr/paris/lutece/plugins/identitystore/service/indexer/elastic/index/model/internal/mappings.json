@@ -49,6 +49,12 @@
                         "hyphen_to_whitespace",
                         "whitespace_to_hyphen"
                     ]
+                },
+                "id_analyser" : {
+                    "tokenizer" : "keyword",
+                    "filter" : [
+                        "lowercase"
+                    ]
                 }
             },
             "tokenizer" : {
@@ -124,6 +130,16 @@
                         "search_analyzer": "keyword"
                     }
                 }
+            },
+            "customerId" : {
+                "type" : "text",
+                "analyzer" : "id_analyser",
+                "search_analyzer" : "id_analyser"
+            },
+            "connectionId" : {
+                "type" : "text",
+                "analyzer" : "id_analyser",
+                "search_analyzer" : "id_analyser"
             }
         }
     }

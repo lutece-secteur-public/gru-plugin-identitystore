@@ -1,0 +1,2 @@
+create index on identitystore_identity_attribute(LOWER(attribute_value));
+create index on identitystore_identity_attribute(TRANSLATE(REPLACE(REPLACE(LOWER(attribute_value), 'œ', 'oe'), 'æ', 'ae'), 'àâäéèêëîïôöùûüÿçñ', 'aaaeeeeiioouuuycn'));

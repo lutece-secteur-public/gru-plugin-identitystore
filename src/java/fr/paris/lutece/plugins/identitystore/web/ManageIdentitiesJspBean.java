@@ -69,8 +69,7 @@ public abstract class ManageIdentitiesJspBean extends MVCAdminJspBean
     public static final String QUERY_PARAM_INSEE_COUNTRY = "insee_country";
     public static final String QUERY_PARAM_EMAIL = "email";
     public static final String QUERY_PARAM_GENDER = "gender";
-    public static final String QUERY_PARAM_FAMILY_NAME = "family_name";
-    public static final String QUERY_PARAM_PREFERRED_USERNAME = "preferred_username";
+    public static final String QUERY_PARAM_COMMON_LASTNAME = "common_lastname";
     public static final String QUERY_PARAM_FIRST_NAME = "first_name";
     public static final String QUERY_PARAM_BIRTHDATE = "birthdate";
     public static final String QUERY_PARAM_INSEE_BIRTHPLACE_LABEL = "insee_birthplace_label";
@@ -148,15 +147,10 @@ public abstract class ManageIdentitiesJspBean extends MVCAdminJspBean
         {
             parameters.put( QUERY_PARAM_GENDER, gender );
         }
-        final String family_name = request.getParameter( QUERY_PARAM_FAMILY_NAME );
+        final String family_name = request.getParameter(QUERY_PARAM_COMMON_LASTNAME);
         if ( family_name != null )
         {
-            parameters.put( QUERY_PARAM_FAMILY_NAME, family_name );
-        }
-        final String preferred_username = request.getParameter( QUERY_PARAM_PREFERRED_USERNAME );
-        if ( preferred_username != null )
-        {
-            parameters.put( QUERY_PARAM_PREFERRED_USERNAME, preferred_username );
+            parameters.put(QUERY_PARAM_COMMON_LASTNAME, family_name );
         }
         final String first_name = request.getParameter( QUERY_PARAM_FIRST_NAME );
         if ( first_name != null )
@@ -248,15 +242,10 @@ public abstract class ManageIdentitiesJspBean extends MVCAdminJspBean
         {
             request.removeAttribute( QUERY_PARAM_GENDER );
         }
-        final String family_name = request.getParameter( QUERY_PARAM_FAMILY_NAME );
+        final String family_name = request.getParameter(QUERY_PARAM_COMMON_LASTNAME);
         if ( family_name != null )
         {
-            request.removeAttribute( QUERY_PARAM_FAMILY_NAME );
-        }
-        final String preferred_username = request.getParameter( QUERY_PARAM_PREFERRED_USERNAME );
-        if ( preferred_username != null )
-        {
-            request.removeAttribute( QUERY_PARAM_PREFERRED_USERNAME );
+            request.removeAttribute(QUERY_PARAM_COMMON_LASTNAME);
         }
         final String first_name = request.getParameter( QUERY_PARAM_FIRST_NAME );
         if ( first_name != null )
