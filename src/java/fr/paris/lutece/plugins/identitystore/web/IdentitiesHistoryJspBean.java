@@ -2,14 +2,21 @@ package fr.paris.lutece.plugins.identitystore.web;
 
 
 import fr.paris.lutece.plugins.identitystore.business.identity.IdentityHome;
+import fr.paris.lutece.plugins.identitystore.utils.Batch;
+import fr.paris.lutece.plugins.identitystore.v3.csv.CsvIdentityService;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.IdentityDto;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.history.IdentityChange;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.history.IdentityChangeType;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
+import fr.paris.lutece.portal.service.admin.AccessDeniedException;
+import fr.paris.lutece.portal.service.util.AppPropertiesService;
 import fr.paris.lutece.portal.util.mvc.admin.annotations.Controller;
+import fr.paris.lutece.portal.util.mvc.commons.annotations.Action;
 import fr.paris.lutece.portal.util.mvc.commons.annotations.View;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
+import java.io.ByteArrayOutputStream;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -18,6 +25,11 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 @Controller( controllerJsp = "IdentitiesHistory.jsp", controllerPath = "jsp/admin/plugins/identitystore/", right = "IDENTITYSTORE_MANAGEMENT" )
 public class IdentitiesHistoryJspBean extends ManageIdentitiesJspBean
@@ -37,11 +49,14 @@ public class IdentitiesHistoryJspBean extends ManageIdentitiesJspBean
     private static final String VIEW_IDENTITIES_HISTORY = "viewIdentitiesHistory";
 
     //Actions
+    private static final String ACTION_EXPORT_IDENTITIES = "exportIdentities";
 
     //Infos
+    private static final int BATCH_PARTITION_SIZE = AppPropertiesService.getPropertyInt( "identitystore.export.batch.size", 100 );
 
     // Session variable to store working values
     private final List<IdentityDto> _identities = new ArrayList<>( );
+    List<IdentityChange> _historyList = new ArrayList<>();
     private List<String> _listQuery = new ArrayList<>( );
 
     @View( value = VIEW_IDENTITIES_HISTORY, defaultView = true )
@@ -76,7 +91,6 @@ public class IdentitiesHistoryJspBean extends ManageIdentitiesJspBean
             }
         }
 
-        List<IdentityChange> historyList = new ArrayList<>();
         List<String> typeList = new ArrayList<>();
         try
         {
@@ -86,12 +100,12 @@ public class IdentitiesHistoryJspBean extends ManageIdentitiesJspBean
             {
                 if(StringUtils.isNotBlank( type ))
                 {
-                    historyList.addAll(IdentityHome.findHistoryBySearchParameters(cuid, client_code, author_name,
+                    _historyList.addAll(IdentityHome.findHistoryBySearchParameters(cuid, client_code, author_name,
                             IdentityChangeType.valueOf(type), null, author_type, modificationDate, null, DAYS_FROM_HYSTORY, null, 0));
                 }
                 else
                 {
-                    historyList.addAll(IdentityHome.findHistoryBySearchParameters(cuid, client_code, author_name,
+                    _historyList.addAll(IdentityHome.findHistoryBySearchParameters(cuid, client_code, author_name,
                             null, null, author_type, modificationDate, null, DAYS_FROM_HYSTORY, null, 0));
                 }
             }
@@ -108,7 +122,7 @@ public class IdentitiesHistoryJspBean extends ManageIdentitiesJspBean
             typeList.add(value.toString());
         }
 
-        Map<String, Object> model = getPaginatedListModel(request, MARK_IDENTITY_CHANGE_LIST, historyList, JSP_IDENTITIES_HISTORY);
+        Map<String, Object> model = getPaginatedListModel(request, MARK_IDENTITY_CHANGE_LIST, _historyList, JSP_IDENTITIES_HISTORY);
 
         model.put(QUERY_PARAM_CUID, cuid);
         model.put(QUERY_PARAM_TYPE, type);
@@ -119,6 +133,44 @@ public class IdentitiesHistoryJspBean extends ManageIdentitiesJspBean
         model.put(QUERY_PARAM_TYPE_LIST, typeList);
 
         return getPage( PROPERTY_PAGE_TITLE_IDENTITIES_HISTORY, TEMPLATE_IDENTITIES_HISTORY, model );
+    }
+
+    /**
+     * Process the data capture form of a new suspiciousidentity
+     *
+     * @param request
+     *            The Http Request
+     * @return The Jsp URL of the process result
+     * @throws AccessDeniedException
+     */
+    @Action( ACTION_EXPORT_IDENTITIES )
+    public void doExportIdentities( HttpServletRequest request )
+    {
+        try
+        {
+            final Batch<IdentityChange> batches = Batch.ofSize( _historyList, BATCH_PARTITION_SIZE );
+
+            final ByteArrayOutputStream outputStream = new ByteArrayOutputStream( );
+            final ZipOutputStream zipOut = new ZipOutputStream( outputStream );
+
+            int i = 0;
+            for ( final List<IdentityChange> batch : batches )
+            {
+                final byte [ ] bytes = CsvIdentityService.instance( ).writeChange( batch );
+                final ZipEntry zipEntry = new ZipEntry( "identities-" + ++i + ".csv" );
+                zipEntry.setSize( bytes.length );
+                zipOut.putNextEntry( zipEntry );
+                zipOut.write( bytes );
+            }
+            zipOut.closeEntry( );
+            zipOut.close( );
+            this.download( outputStream.toByteArray( ), "identitiesHistory.zip", "application/zip" );
+        }
+        catch( Exception e )
+        {
+            addError( e.getMessage( ) );
+            redirectView( request, VIEW_IDENTITIES_HISTORY );
+        }
     }
 
     private Map<String, String> getHisotryQueryParameters(HttpServletRequest request )

@@ -6,7 +6,6 @@
         <@headerButtons>
             <form class="form-inline pull-right" method="post" name="identities_history" action="jsp/admin/plugins/identitystore/IdentitiesHistory.jsp">
                 <@button type='submit' name='action_exportIdentities' buttonIcon='plus' title='#i18n{identitystore.manage_identities.buttonExport}' />
-                <@button type='submit' name='action_exportRequestIdentities' buttonIcon='upload' title='#i18n{identitystore.manage_identities.buttonGenerateRequests}' />
             </form>
         </@headerButtons>
     </@boxHeader>
@@ -19,58 +18,56 @@
             </a>
         </div>
         <form class="form-inline" action="jsp/admin/plugins/identitystore/IdentitiesHistory.jsp">
-            <div class="input-group">
-                <@table id="search-history-table">
-                    <tr>
-                        <th>#i18n{identitystore.view_change_history.customerId}</th>
-                        <th>#i18n{identitystore.view_change_history.type}</th>
-                        <th>#i18n{identitystore.view_change_history.date}</th>
-                        <th>#i18n{identitystore.view_change_history.author.type}</th>
-                        <th>#i18n{identitystore.view_change_history.author.name}</th>
-                        <th>#i18n{identitystore.view_change_history.client.code}</th>
-                        <th></th>
-                    </tr>
-                    <@tableHeadBodySeparator />
-                    <tr>
-                        <td>
-                            <input class="form-control search-field" type="text" name="cuid"
-                                   placeholder="#i18n{identitystore.view_change_history.customerId}" value="${cuid!''}" />
-                        </td>
-                        <td>
-                            <label for="type" />
-                            <select class="search-field form-select select-type" id="type" name="type" value="${type!''}" >
-                                <option value="">#i18n{identitystore.view_change_history.no.type}</option>
-                                <#list type_list as form_type>
-                                    <option value="${form_type!}" <#if typr! == form_type!> selected="selected"</#if>>${form_type!}</option>
-                                </#list>
-                            </select>
-                        </td>
-                        <td>
-                            <input class="form-control search-field" type="date" name="date"
-                                   placeholder="DD/MM/YYYY" value="${date!''}" />
-                        </td>
-                        <td>
-                            <input class="form-control search-field" type="text" name="author_type"
-                                   placeholder="#i18n{identitystore.view_change_history.author.type}" value="${author_type!''}"/>
-                        </td>
-                        <td>
-                            <input class="form-control search-field" type="text" name="author_name"
-                                   placeholder="#i18n{identitystore.view_change_history.author.name}" value="${author_name!''}" />
-                        </td>
-                        <td>
-                            <input class="form-control search-field" type="text" name="client_code"
-                                   placeholder="#i18n{identitystore.view_change_history.client.code}" value="${client_code!''}" />
-                        </td>
-                        <td>
-                            <span class="input-group-btn">
-                                <button class="btn btn-default" type="submit">
-                                    <span class="fa fa-search"></span>
-                                </button>
-                            </span>
-                        </td>
-                    </tr>
-                </@table>
-            </div>
+            <@table id="search-history-table" params='style="width: 100%;"'>
+                <tr>
+                    <th>#i18n{identitystore.view_change_history.customerId}</th>
+                    <th>#i18n{identitystore.view_change_history.type}</th>
+                    <th>#i18n{identitystore.view_change_history.date}</th>
+                    <th>#i18n{identitystore.view_change_history.author.type}</th>
+                    <th>#i18n{identitystore.view_change_history.author.name}</th>
+                    <th>#i18n{identitystore.view_change_history.client.code}</th>
+                    <th></th>
+                </tr>
+                <@tableHeadBodySeparator />
+                <tr>
+                    <td>
+                        <input class="form-control search-field" type="text" name="cuid"
+                               placeholder="#i18n{identitystore.view_change_history.customerId}" value="${cuid!''}" />
+                    </td>
+                    <td>
+                        <label for="type" />
+                        <select class="search-field form-select select-type" id="type" name="type" value="${type!''}" >
+                            <option value="">#i18n{identitystore.view_change_history.no.type}</option>
+                            <#list type_list as form_type>
+                                <option value="${form_type!}" <#if typr! == form_type!> selected="selected"</#if>>${form_type!}</option>
+                            </#list>
+                        </select>
+                    </td>
+                    <td>
+                        <input class="form-control search-field" type="date" name="date"
+                               placeholder="DD/MM/YYYY" value="${date!''}" />
+                    </td>
+                    <td>
+                        <input class="form-control search-field" type="text" name="author_type"
+                               placeholder="#i18n{identitystore.view_change_history.author.type}" value="${author_type!''}"/>
+                    </td>
+                    <td>
+                        <input class="form-control search-field" type="text" name="author_name"
+                               placeholder="#i18n{identitystore.view_change_history.author.name}" value="${author_name!''}" />
+                    </td>
+                    <td>
+                        <input class="form-control search-field" type="text" name="client_code"
+                               placeholder="#i18n{identitystore.view_change_history.client.code}" value="${client_code!''}" />
+                    </td>
+                    <td>
+                        <span class="input-group-btn">
+                            <button class="btn btn-default" type="submit">
+                                <span class="fa fa-search"></span>
+                            </button>
+                        </span>
+                    </td>
+                </tr>
+            </@table>
         </form>
 
         <@paginationAdmin paginator=paginator combo=1 />
