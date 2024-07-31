@@ -51,7 +51,7 @@
                             <td>${change.clientCode!}</td>
                             <td>
                                 <#list change.metadata?keys as key>
-                                    ${key} : ${change.metadata[key]} <br/>
+                                    ${key} : ${change.metadata[key]!''} <br/>
                                 </#list>
                             </td>
                         </tr>
