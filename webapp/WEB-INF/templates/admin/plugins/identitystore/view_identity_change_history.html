@@ -24,15 +24,26 @@
                                 <#elseif change.changeType.name() == "UPDATE">
                                     <span class="badge bg-warning"> ${change.changeType.name()!} </span>
                                 <#elseif change.changeType.name() == "DELETE">
-                                    <span class="badge bg-error"> ${change.changeType.name()!} </span>
-                                <#elseif change.changeType.name() == "MERGE">
+                                    <span class="badge bg-danger"> ${change.changeType.name()!} </span>
+                                <#elseif change.changeType.name() == "MERGED">
                                     <span class="badge bg-primary"> ${change.changeType.name()!} </span>
                                 <#elseif change.changeType.name() == "CONSOLIDATED">
                                     <span class="badge bg-primary"> ${change.changeType.name()!} </span>
+                                <#elseif change.changeType.name() == "CONSOLIDATION_CANCELLED">
+                                    <span class="badge bg-danger"> ${change.changeType.name()!} </span>
+                                <#elseif change.changeType.name() == "MERGE_CANCELLED">
+                                    <span class="badge bg-danger"> ${change.changeType.name()!} </span>
+                                <#elseif change.changeType.name() == "EXCLUDED">
+                                    <span class="badge bg-warning"> ${change.changeType.name()!} </span>
+                                <#elseif change.changeType.name() == "EXCLUSION_CANCELLED">
+                                    <span class="badge bg-danger"> ${change.changeType.name()!} </span>
+                                <#elseif change.changeType.name() == "MARKED_SUSPICIOUS">
+                                    <span class="badge bg-warning"> ${change.changeType.name()!} </span>
+                                <#elseif change.changeType.name() == "READ">
+                                    <span class="badge bg-success"> ${change.changeType.name()!} </span>
                                 <#else>
                                     ${change.changeType.name()!}
                                 </#if>
-
                             </td>
                             <td>
                                 <#if change.changeStatus == "CONFLICT"
@@ -88,7 +99,7 @@
                                 <#elseif change.changeType.name() == "UPDATE">
                                     <span class="badge bg-warning"> ${change.changeType.name()!} </span>
                                 <#elseif change.changeType.name() == "DELETE">
-                                    <span class="badge bg-error"> ${change.changeType.name()!} </span>
+                                    <span class="badge bg-danger"> ${change.changeType.name()!} </span>
                                 <#elseif change.changeType.name() == "MERGE">
                                     <span class="badge bg-primary"> ${change.changeType.name()!} </span>
                                 <#elseif change.changeType.name() == "CONSOLIDATED">
