@@ -492,4 +492,9 @@ public final class IdentityHome
     {
         return _dao.getCountUnmergedIdentitiesWithoutAttributes( _plugin );
     }
+
+    public static List<IndicatorsActionsType> getActionsTypesDuringInterval(int interval)
+    {
+        return _dao.getActionsTypesDuringInterval(interval, _plugin);
+    }
 }
