@@ -63,6 +63,7 @@ public class IdentitiesHistoryJspBean extends ManageIdentitiesJspBean
     public String getIdentitiesHistory( HttpServletRequest request )
     {
         _identities.clear( );
+        _historyList.clear();
         final Map<String, String> queryParameters = this.getQueryParameters( request );
         final String cuid = queryParameters.get( QUERY_PARAM_CUID ) != null ?
                 queryParameters.get( QUERY_PARAM_CUID ) : "";
