@@ -36,6 +36,7 @@ package fr.paris.lutece.plugins.identitystore.v3.web.rs;
 import fr.paris.lutece.plugins.identitystore.business.application.ClientApplication;
 import fr.paris.lutece.plugins.identitystore.business.attribute.AttributeCertificate;
 import fr.paris.lutece.plugins.identitystore.business.attribute.AttributeKey;
+import fr.paris.lutece.plugins.identitystore.business.attribute.AttributeValue;
 import fr.paris.lutece.plugins.identitystore.business.attribute.KeyType;
 import fr.paris.lutece.plugins.identitystore.business.contract.AttributeCertification;
 import fr.paris.lutece.plugins.identitystore.business.contract.AttributeRequirement;
@@ -51,7 +52,6 @@ import fr.paris.lutece.plugins.identitystore.business.referentiel.RefCertificati
 import fr.paris.lutece.plugins.identitystore.business.referentiel.RefCertificationLevelHome;
 import fr.paris.lutece.plugins.identitystore.service.attribute.IdentityAttributeService;
 import fr.paris.lutece.plugins.identitystore.service.contract.AttributeCertificationDefinitionService;
-import fr.paris.lutece.plugins.identitystore.service.contract.RefAttributeCertificationDefinitionNotFoundException;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.application.ClientApplicationDto;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.AttributeDto;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.AttributeKeyDto;
@@ -310,20 +310,21 @@ public final class DtoConverter
         return serviceContractDto;
     }
 
-    private static AttributeDefinitionDto extractAttributeDefinition( final AttributeKey attributeRight )
+    private static AttributeDefinitionDto extractAttributeDefinition( final AttributeKey attributeKey )
     {
         final AttributeDefinitionDto attributeDefinitionDto = new AttributeDefinitionDto( );
-        attributeDefinitionDto.setName( attributeRight.getName( ) );
-        attributeDefinitionDto.setKeyName( attributeRight.getKeyName( ) );
-        attributeDefinitionDto.setDescription( attributeRight.getDescription( ) );
-        attributeDefinitionDto.setType( AttributeType.valueOf( attributeRight.getKeyType( ).name( ) ) );
-        attributeDefinitionDto.setCertifiable( attributeRight.getCertifiable( ) );
-        attributeDefinitionDto.setPivot( attributeRight.getPivot( ) );
-        attributeDefinitionDto.setKeyWeight( attributeRight.getKeyWeight( ) );
-        attributeDefinitionDto.setMandatoryForCreation( attributeRight.isMandatoryForCreation( ) );
-        attributeDefinitionDto.setValidationRegex( attributeRight.getValidationRegex( ) );
-        attributeDefinitionDto.setValidationErrorMessage( attributeRight.getValidationErrorMessage( ) );
-        attributeDefinitionDto.setValidationErrorMessageKey( attributeRight.getValidationErrorMessageKey( ) );
+        attributeDefinitionDto.setName( attributeKey.getName( ) );
+        attributeDefinitionDto.setKeyName( attributeKey.getKeyName( ) );
+        attributeDefinitionDto.setDescription( attributeKey.getDescription( ) );
+        attributeDefinitionDto.setType( AttributeType.valueOf( attributeKey.getKeyType( ).name( ) ) );
+        attributeDefinitionDto.setCertifiable( attributeKey.getCertifiable( ) );
+        attributeDefinitionDto.setPivot( attributeKey.getPivot( ) );
+        attributeDefinitionDto.setKeyWeight( attributeKey.getKeyWeight( ) );
+        attributeDefinitionDto.setMandatoryForCreation( attributeKey.isMandatoryForCreation( ) );
+        attributeDefinitionDto.setValidationRegex( attributeKey.getValidationRegex( ) );
+        attributeDefinitionDto.setValidationErrorMessage( attributeKey.getValidationErrorMessage( ) );
+        attributeDefinitionDto.setValidationErrorMessageKey( attributeKey.getValidationErrorMessageKey( ) );
+        attributeDefinitionDto.setValues( attributeKey.getAttributeValues( ).stream( ).map( DtoConverter::convertAttributeValueToDto ).collect( Collectors.toList( ) ) );
         return attributeDefinitionDto;
     }
 
@@ -479,12 +480,15 @@ public final class DtoConverter
         dto.setMandatoryForCreation( attributeKey.isMandatoryForCreation( ) );
         dto.setValidationErrorMessage( attributeKey.getValidationErrorMessage( ) );
         dto.setValidationErrorMessageKey( attributeKey.getValidationErrorMessageKey( ) );
-        dto.setValues( attributeKey.getAttributeValues( ).stream( ).map( attributeValue -> {
-            final AttributeValueDto valueDto = new AttributeValueDto( );
-            valueDto.setValue( attributeValue.getValue( ) );
-            valueDto.setLabel( attributeValue.getLabel( ) );
-            return valueDto;
-        } ).collect( Collectors.toList( ) ) );
+        dto.setValues( attributeKey.getAttributeValues( ).stream( ).map( DtoConverter::convertAttributeValueToDto ).collect( Collectors.toList( ) ) );
         return dto;
+    }
+
+    public static AttributeValueDto convertAttributeValueToDto( final AttributeValue attributeValue )
+    {
+        final AttributeValueDto valueDto = new AttributeValueDto( );
+        valueDto.setValue( attributeValue.getValue( ) );
+        valueDto.setLabel( attributeValue.getLabel( ) );
+        return valueDto;
     }
 }
