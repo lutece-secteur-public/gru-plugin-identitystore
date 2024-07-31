@@ -34,12 +34,16 @@
 package fr.paris.lutece.plugins.identitystore.business.contract;
 
 import fr.paris.lutece.plugins.identitystore.business.attribute.AttributeKey;
+import fr.paris.lutece.plugins.identitystore.business.attribute.AttributeValue;
 import fr.paris.lutece.plugins.identitystore.business.attribute.KeyType;
 import fr.paris.lutece.portal.service.plugin.Plugin;
 import fr.paris.lutece.util.sql.DAOUtil;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * This class provides rights Access methods for Attribute objects
@@ -50,7 +54,11 @@ public final class AttributeRightDAO implements IAttributeRightDAO
     private static final String SQL_QUERY_DELETE_ALL_BY_SERVICE_CONTRACT = "DELETE FROM identitystore_service_contract_attribute_right WHERE id_service_contract = ? ";
     private static final String SQL_QUERY_INSERT = "INSERT INTO identitystore_service_contract_attribute_right ( id_attribute, id_service_contract, searchable, readable, writable, mandatory ) VALUES ( ?, ?, ?, ?, ?, ? ) ";
     private static final String SQL_QUERY_UPDATE = "UPDATE identitystore_service_contract_attribute_right SET readable = ? , writable = ?, searchable = ?, mandatory = ? WHERE id_attribute = ? AND id_service_contract = ?";
-    private static final String SQL_QUERY_SELECT_ALL_BY_CONTRACT = "SELECT a.id_attribute, a.name, a.key_name, a.common_search_key, a.description, a.key_type, a.pivot, a.mandatory_for_creation, a.validation_regex, a.validation_error_message, a.validation_error_message_key, b.searchable, b.readable, b.writable, b.mandatory FROM identitystore_ref_attribute a LEFT JOIN  identitystore_service_contract_attribute_right b ON  a.id_attribute = b.id_attribute AND id_service_contract = ? ";
+    private static final String SQL_QUERY_SELECT_ALL_BY_CONTRACT = "SELECT a.id_attribute, a.name, a.key_name, a.common_search_key, a.description, a.key_type, a.pivot, a.mandatory_for_creation, a.validation_regex, a.validation_error_message, a.validation_error_message_key, b.searchable, b.readable, b.writable, b.mandatory, STRING_AGG( v.value || '-' || v.label, ';' ) AS attribute_values" +
+            " FROM identitystore_ref_attribute a" +
+            " LEFT JOIN identitystore_service_contract_attribute_right b ON a.id_attribute = b.id_attribute AND id_service_contract = ?" +
+            " LEFT JOIN identitystore_ref_attribute_values v ON a.id_attribute = v.id_attribute" +
+            " GROUP BY a.id_attribute, a.name, a.key_name, a.common_search_key, a.description, a.key_type, a.pivot, a.mandatory_for_creation, a.validation_regex, a.validation_error_message, a.validation_error_message_key, b.searchable, b.readable, b.writable, b.mandatory";
     private static final int CONST_INT_TRUE = 1;
     private static final int CONST_INT_FALSE = 0;
 
@@ -132,7 +140,21 @@ public final class AttributeRightDAO implements IAttributeRightDAO
                 attributeRight.setSearchable( daoUtil.getInt( nIndex++ ) == CONST_INT_TRUE );
                 attributeRight.setReadable( daoUtil.getInt( nIndex++ ) == CONST_INT_TRUE );
                 attributeRight.setWritable( daoUtil.getInt( nIndex++ ) == CONST_INT_TRUE );
-                attributeRight.setMandatory( daoUtil.getInt( nIndex ) == CONST_INT_TRUE );
+                attributeRight.setMandatory( daoUtil.getInt( nIndex++ ) == CONST_INT_TRUE );
+
+                final String values = daoUtil.getString(nIndex);
+                if( StringUtils.isNotBlank( values ) )
+                {
+                    final List<AttributeValue> attributeValues = Arrays.stream(values.split(";")).map(value -> {
+                        final AttributeValue attributeValue = new AttributeValue();
+                        final String[] properties = value.split("-");
+                        attributeValue.setAttributeId( attributeKey.getId() );
+                        attributeValue.setValue( properties[0] );
+                        attributeValue.setLabel( properties[1] );
+                        return attributeValue;
+                    }).collect(Collectors.toList());
+                    attributeKey.setAttributeValues( attributeValues );
+                }
 
                 lstAttributeRights.add( attributeRight );
             }
