@@ -359,4 +359,9 @@ public interface IIdentityDAO
      * Count how many attributes has no attribute and isn't merged.
      */
     Integer getCountUnmergedIdentitiesWithoutAttributes(final Plugin plugin );
+
+    /**
+     * Count how many actions and their type were done during an delimited time.
+     */
+    List<IndicatorsActionsType> getActionsTypesDuringInterval(int interval, final Plugin plugin );
 }

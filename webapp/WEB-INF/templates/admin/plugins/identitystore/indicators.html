@@ -9,7 +9,6 @@
         <@messages errors=errors />
         <@messages warnings=warnings />
 
-
         <table id="indicators-table" class="table rounded rounded-3 overflow-hidden border table-condensed table-hover mb-0">
             <tr>
                 <th onclick="sortTable(0, 'indicators-table')">#i18n{identitystore.indicators.identities.number}</th>
@@ -30,6 +29,67 @@
         </table>
 
     </@boxBody>
+
+<@boxHeader i18nTitleKey="identitystore.indicators.activities.title.day"></@boxHeader>
+    <@boxBody>
+        <table id="actions-by-day-table" class="table rounded rounded-3 overflow-hidden border table-condensed table-hover mb-0" style="width: 60%;">
+            <tr>
+                <th onclick="sortTable(0, 'attributes-by-identities-table')">#i18n{identitystore.indicators.activities.change_type}</th>
+                <th onclick="sortTable(1, 'attributes-by-identities-table')">#i18n{identitystore.indicators.activities.change_status}</th>
+                <th onclick="sortTable(2, 'attributes-by-identities-table')">#i18n{identitystore.indicators.activities.author_type}</th>
+                <th onclick="sortTable(3, 'attributes-by-identities-table')">#i18n{identitystore.indicators.activities.client_code}</th>
+                <th onclick="sortTable(4, 'attributes-by-identities-table')">#i18n{identitystore.indicators.activities.count}</th>
+            </tr>
+            <tr>
+                <td><div class="loader"></div></td>
+                <td><div class="loader"></div></td>
+                <td><div class="loader"></div></td>
+                <td><div class="loader"></div></td>
+                <td><div class="loader"></div></td>
+            </tr>
+        </table>
+    </@boxBody>
+
+<@boxHeader i18nTitleKey="identitystore.indicators.activities.title.week"></@boxHeader>
+    <@boxBody>
+        <table id="actions-by-week-table" class="table rounded rounded-3 overflow-hidden border table-condensed table-hover mb-0" style="width: 60%;">
+            <tr>
+                <th onclick="sortTable(0, 'attributes-by-identities-table')">#i18n{identitystore.indicators.activities.change_type}</th>
+                <th onclick="sortTable(1, 'attributes-by-identities-table')">#i18n{identitystore.indicators.activities.change_status}</th>
+                <th onclick="sortTable(2, 'attributes-by-identities-table')">#i18n{identitystore.indicators.activities.author_type}</th>
+                <th onclick="sortTable(3, 'attributes-by-identities-table')">#i18n{identitystore.indicators.activities.client_code}</th>
+                <th onclick="sortTable(4, 'attributes-by-identities-table')">#i18n{identitystore.indicators.activities.count}</th>
+            </tr>
+            <tr>
+                <td><div class="loader"></div></td>
+                <td><div class="loader"></div></td>
+                <td><div class="loader"></div></td>
+                <td><div class="loader"></div></td>
+                <td><div class="loader"></div></td>
+            </tr>
+        </table>
+    </@boxBody>
+
+<@boxHeader i18nTitleKey="identitystore.indicators.activities.title.month"></@boxHeader>
+    <@boxBody>
+        <table id="actions-by-month-table" class="table rounded rounded-3 overflow-hidden border table-condensed table-hover mb-0" style="width: 60%;">
+            <tr>
+                <th onclick="sortTable(0, 'attributes-by-identities-table')">#i18n{identitystore.indicators.activities.change_type}</th>
+                <th onclick="sortTable(1, 'attributes-by-identities-table')">#i18n{identitystore.indicators.activities.change_status}</th>
+                <th onclick="sortTable(2, 'attributes-by-identities-table')">#i18n{identitystore.indicators.activities.author_type}</th>
+                <th onclick="sortTable(3, 'attributes-by-identities-table')">#i18n{identitystore.indicators.activities.client_code}</th>
+                <th onclick="sortTable(4, 'attributes-by-identities-table')">#i18n{identitystore.indicators.activities.count}</th>
+            </tr>
+            <tr>
+                <td><div class="loader"></div></td>
+                <td><div class="loader"></div></td>
+                <td><div class="loader"></div></td>
+                <td><div class="loader"></div></td>
+                <td><div class="loader"></div></td>
+            </tr>
+        </table>
+    </@boxBody>
+
 <@boxHeader i18nTitleKey="identitystore.indicators.identities.number.attributes"></@boxHeader>
     <@boxBody>
         <table id="attributes-by-identities-table" class="table rounded rounded-3 overflow-hidden border table-condensed table-hover mb-0" style="width: 20%;">
@@ -41,14 +101,6 @@
                 <td><div class="loader"></div></td>
                 <td><div class="loader"></div></td>
             </tr>
-                <!--<#if list_attributes_identities??  && list_attributes_identities?has_content>
-                    <#list list_attributes_identities as key, value>
-                        <tr>
-                            <td><span>${key}</span></td>
-                            <td><span>${value}</span></td>
-                        </tr>
-                    </#list>
-                </#if>-->
         </table>
     </@boxBody>
 </@rowBox>
@@ -57,15 +109,36 @@
     $(document).ready( function( ) {
         $.get("../../../../jsp/admin/plugins/identitystore/ajax/IndicatorsAttributesByIdentities.jsp", function (response) {
             let div = document.getElementById("attributes-by-identities-table");
-            header = "<tr>\n" +
-                "                <th onclick=\"sortTable(0, 'attributes-by-identities-table')\">#i18n{identitystore.indicators.identities.number.attributes.number}</th>\n" +
-                "                <th onclick=\"sortTable(1, 'attributes-by-identities-table')\">#i18n{identitystore.indicators.identities.number.attributes.identity}</th>\n" +
-                "            </tr>"
-            div.innerHTML = header + response;
+            let trimmed = trim(div.innerHTML, 2)
+            div.innerHTML = trimmed + response;
         }, "html");
         $.get("../../../../jsp/admin/plugins/identitystore/ajax/IndicatorsNoAttributesAjax.jsp", function (response) {
             let span = document.getElementById("count_unmerged_no_attributes_identities");
             span.innerHTML = response;
         }, "json");
+        $.get("../../../../jsp/admin/plugins/identitystore/ajax/IndicatorsActions.jsp", { data: 1 }, function (response) {
+            let div = document.getElementById("actions-by-day-table");
+            let trimmed = trim(div.innerHTML, 5)
+            div.innerHTML = trimmed + response;
+        }, "html");
+        $.get("../../../../jsp/admin/plugins/identitystore/ajax/IndicatorsActions.jsp", { data: 7 }, function (response) {
+            let div = document.getElementById("actions-by-week-table");
+            let trimmed = trim(div.innerHTML, 5)
+            div.innerHTML = trimmed + response;
+        }, "html");
+        $.get("../../../../jsp/admin/plugins/identitystore/ajax/IndicatorsActions.jsp", { data: 30 }, function (response) {
+            let div = document.getElementById("actions-by-month-table");
+            let trimmed = trim(div.innerHTML, 5)
+            div.innerHTML = trimmed + response;
+        }, "html");
     });
+    function trim(stringToTrim, rowsCount)
+    {
+        rows = "";
+        for( let i = 0; i < rowsCount; i++)
+        {
+            rows += "                <td><div class=\"loader\"></div></td>\n";
+        }
+        return stringToTrim.replace("<tr>\n" + rows + "            </tr>", "");
+    }
 </script>
