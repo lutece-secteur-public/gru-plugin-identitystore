@@ -35,6 +35,7 @@ package fr.paris.lutece.plugins.identitystore.service;
 
 import fr.paris.lutece.plugins.grubusiness.business.demand.DemandType;
 import fr.paris.lutece.plugins.grubusiness.business.web.rs.DemandDisplay;
+import fr.paris.lutece.plugins.grubusiness.business.web.rs.EnumGenericStatus;
 import fr.paris.lutece.plugins.identitystore.business.identity.Identity;
 import fr.paris.lutece.plugins.identitystore.business.identity.IdentityHome;
 import fr.paris.lutece.plugins.identitystore.cache.DemandTypeCacheService;
@@ -110,6 +111,9 @@ public final class PurgeIdentityService
                 Timestamp demandExpirationDateMAX = expiredIdentity.getExpirationDate( );
                 for ( final DemandDisplay demand : demandDisplayList )
                 {
+                    if (demand.getDemand().getStatusId() == EnumGenericStatus.CANCELED.getStatusId()) {
+                        continue;
+                    }
                     final String appCode = getAppCodeFromDemandTypeId( demand.getDemand( ).getTypeId( ) );
                     if ( !excludedAppCodes.contains( appCode ) )
                     {
