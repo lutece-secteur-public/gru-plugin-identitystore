@@ -38,7 +38,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import fr.paris.lutece.plugins.identitystore.business.duplicates.suspicions.SuspiciousIdentityHome;
 import fr.paris.lutece.plugins.identitystore.business.identity.Identity;
+import fr.paris.lutece.plugins.identitystore.business.identity.IdentityAttribute;
 import fr.paris.lutece.plugins.identitystore.business.identity.IdentityAttributeHome;
+import fr.paris.lutece.plugins.identitystore.business.identity.IdentityConstants;
 import fr.paris.lutece.plugins.identitystore.business.identity.IdentityHome;
 import fr.paris.lutece.plugins.identitystore.service.IdentityManagementResourceIdService;
 import fr.paris.lutece.plugins.identitystore.service.identity.IdentityService;
@@ -49,6 +51,7 @@ import fr.paris.lutece.plugins.identitystore.v3.web.rs.DtoConverter;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.AttributeTreatmentType;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.BatchDto;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.IdentityDto;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.contract.ServiceContractDto;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.history.AttributeChange;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.history.IdentityChange;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.importing.BatchImportRequest;
@@ -73,6 +76,7 @@ import java.io.ByteArrayOutputStream;
 import java.sql.Date;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -109,6 +113,7 @@ public class IdentityJspBean extends ManageIdentitiesJspBean
     // Markers
     private static final String MARK_IDENTITY_LIST = "identity_list";
     private static final String MARK_IDENTITY = "identity";
+    private static final String MARK_ATTRIBUTES = "attributes";
     private static final String MARK_MERGED_IDENTITIES = "merged_identities";
     private static final String MARK_IDENTITY_IS_SUSPICIOUS = "identity_is_suspicious";
     private static final String MARK_IDENTITY_CHANGE_LIST = "identity_change_list";
@@ -320,8 +325,11 @@ public class IdentityJspBean extends ManageIdentitiesJspBean
         AccessLogService.getInstance( ).info( AccessLoggerConstants.EVENT_TYPE_READ, DISPLAY_IDENTITY_EVENT_CODE, getUser( ), filteredCustomerId,
                 IdentityService.SPECIFIC_ORIGIN );
 
+        List<IdentityAttribute> attributes = sortIdentityttributes( );
+
         final Map<String, Object> model = getModel( );
         model.put( MARK_IDENTITY, _identity );
+        model.put( MARK_ATTRIBUTES, attributes );
         model.put( MARK_MERGED_IDENTITIES, mergedIdentities );
         model.put( MARK_IDENTITY_IS_SUSPICIOUS, SuspiciousIdentityHome.hasSuspicious( Collections.singletonList( _identity.getCustomerId( ) ) ) );
         model.put( MARK_HAS_ATTRIBUTS_HISTO_ROLE,
@@ -488,5 +496,27 @@ public class IdentityJspBean extends ManageIdentitiesJspBean
             addError( e.getMessage( ) );
             redirectView( request, VIEW_MANAGE_IDENTITIES );
         }
+    }
+
+    private List<IdentityAttribute> sortIdentityttributes( )
+    {
+        if ( _identity != null )
+        {
+            final List<String> _sortedAttributeKeyList = Arrays.asList( AppPropertiesService.getProperty(IdentityConstants.PROPERTY_IDENTITY_ATTRIBUTE_ORDER, "" ).split( "," ) );
+            List<IdentityAttribute> valueList = new ArrayList<>(_identity.getAttributes( ).values());
+            valueList.sort( ( a1, a2 ) -> {
+                final int index1 = _sortedAttributeKeyList.indexOf( a1.getAttributeKey( ).getKeyName() );
+                final int index2 = _sortedAttributeKeyList.indexOf( a2.getAttributeKey( ).getKeyName() );
+                final int i1 = index1 == -1 ? 999 : index1;
+                final int i2 = index2 == -1 ? 999 : index2;
+                if ( i1 == i2 )
+                {
+                    return a1.getAttributeKey( ).getKeyName().compareTo( a2.getAttributeKey( ).getKeyName() );
+                }
+                return Integer.compare( i1, i2 );
+            } );
+            return valueList;
+        }
+        return null;
     }
 }
