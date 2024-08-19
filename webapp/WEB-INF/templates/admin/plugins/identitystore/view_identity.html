@@ -52,7 +52,16 @@
         <tr>
             <td> ${attribute.attributeKey.name} </td>
             <td> ${attribute.attributeKey.keyName} </td>
-            <td><strong> ${attribute.value} </strong></td>
+            <#if attribute.attributeKey.keyName == "gender">
+                <#switch attribute.value>
+                    <#case "0"><td><strong>#i18n{identitystore.view_identity.gender.undefined}</strong></td><#break>
+                    <#case "1"><td><strong>#i18n{identitystore.view_identity.gender.mme}</strong></td><#break>
+                    <#case "2"><td><strong>#i18n{identitystore.view_identity.gender.mr}</strong></td><#break>
+                    <#default><td><strong>${attributeValue}</strong></td>
+                </#switch>
+            <#else>
+                <td><strong> ${attribute.value} </strong></td>
+            </#if>
             <td><strong> ${attribute.lastUpdateDate!} </strong></td>
             <td>
                 <#if attribute.certificate ??>
