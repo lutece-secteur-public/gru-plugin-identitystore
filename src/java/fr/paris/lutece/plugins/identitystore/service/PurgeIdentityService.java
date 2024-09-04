@@ -100,11 +100,11 @@ public final class PurgeIdentityService
                 // - check if exists recent Demands associated to each identity or its merged ones
                 // >> if true, calculate the new expiration date (date of demand last update + CGUs term)
                 final List<DemandDisplay> demandDisplayList = new ArrayList<>(
-                        _notificationStoreService.getListDemand( expiredIdentity.getCustomerId( ), null, null, null ).getListDemandDisplay( ) );
+                        _notificationStoreService.getListDemand( expiredIdentity.getCustomerId( ), null, null, null, null ).getListDemandDisplay( ) );
                 for ( final Identity mergedIdentity : mergedIdentities )
                 {
                     demandDisplayList
-                            .addAll( _notificationStoreService.getListDemand( mergedIdentity.getCustomerId( ), null, null, null ).getListDemandDisplay( ) );
+                            .addAll( _notificationStoreService.getListDemand( mergedIdentity.getCustomerId( ), null, null, null, null ).getListDemandDisplay( ) );
                 }
 
                 Timestamp demandExpirationDateMAX = expiredIdentity.getExpirationDate( );
