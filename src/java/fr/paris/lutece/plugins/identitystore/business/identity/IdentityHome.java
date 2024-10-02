@@ -204,7 +204,7 @@ public final class IdentityHome
             final IdentityChangeType changeType, final String changeStatus, final String authorType, final Date modificationDate, final Map<String, String> metadata, final Integer nbDaysFrom,
             final Pair<Date, Date> modificationDateInterval, final int max ) throws IdentityStoreException
     {
-        int nMaxNbIdentityReturned = ( max > 0 ) ? max : AppPropertiesService.getPropertyInt( PROPERTY_MAX_NB_IDENTITY_RETURNED, 100 );
+        int nMaxNbIdentityReturned = ( max > 0 ) ? max : AppPropertiesService.getPropertyInt( PROPERTY_MAX_NB_IDENTITY_RETURNED, 10000 );
         return _dao.selectIdentityHistoryBySearchParameters( strCustomerId, clientCode, authorName, changeType, changeStatus, authorType, modificationDate, metadata, nbDaysFrom,
                 modificationDateInterval, _plugin, nMaxNbIdentityReturned );
     }
