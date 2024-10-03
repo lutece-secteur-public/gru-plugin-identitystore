@@ -102,12 +102,12 @@ public class IdentitiesHistoryJspBean extends ManageIdentitiesJspBean
                 if(StringUtils.isNotBlank( type ))
                 {
                     _historyList.addAll(IdentityHome.findHistoryBySearchParameters(cuid, client_code, author_name,
-                            IdentityChangeType.valueOf(type), null, author_type, modificationDate, null, DAYS_FROM_HYSTORY, null, 10000));
+                            IdentityChangeType.valueOf(type), null, author_type, modificationDate, null, DAYS_FROM_HYSTORY, null, 0));
                 }
                 else
                 {
                     _historyList.addAll(IdentityHome.findHistoryBySearchParameters(cuid, client_code, author_name,
-                            null, null, author_type, modificationDate, null, DAYS_FROM_HYSTORY, null, 10000));
+                            null, null, author_type, modificationDate, null, DAYS_FROM_HYSTORY, null, 0));
                 }
             }
         }
