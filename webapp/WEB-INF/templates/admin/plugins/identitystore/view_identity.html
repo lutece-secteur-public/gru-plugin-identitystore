@@ -60,7 +60,7 @@
                     <#default><td><strong>${attributeValue}</strong></td>
                 </#switch>
             <#else>
-                <td><strong> ${attribute.value} </strong></td>
+                <td><strong> ${attribute.value!''} </strong></td>
             </#if>
             <td><strong> ${attribute.lastUpdateDate!} </strong></td>
             <td>
@@ -90,7 +90,7 @@
             <tbody>
                 <#list merged_identities as identity>
                     <tr>
-                        <td><span>${identity.customerId!""}</span></td>
+                        <td><span>${identity.customerId!''}</span></td>
                         <td><span>${identity.mergeDate?string["dd/MM/yyyy HH:mm"]!}</span></td>
                     </tr>
                 </#list>

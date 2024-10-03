@@ -123,25 +123,26 @@
                     </#list>
                 </td>
                 <td>
-                    <strong><#list identity.attributes?filter(a -> a.key == "family_name") as attr>${attr.value} </#list></strong>
-                    <#list identity.attributes?filter(a -> a.key == "first_name") as attr>${attr.value} </#list>
-                    <br><i><#list identity.attributes?filter(a -> a.key == "preferred_username") as attr>${attr.value} </#list></i>
+                    <strong><#list identity.attributes?filter(a -> a.key == "family_name") as attr>${attr.value!''} </#list></strong>
+                    <#list identity.attributes?filter(a -> a.key == "first_name") as attr>${attr.value!''} </#list>
+                    <br><i><#list identity.attributes?filter(a -> a.key == "preferred_username") as attr>${attr.value!''} </#list></i>
                 </td>
                 <td>
-                    <#list identity.attributes?filter(a -> a.key == "birthdate") as attr>${attr.value} </#list>
-                    <br><#list identity.attributes?filter(a -> a.key == "birthplace") as attr>${attr.value} </#list>
-                    <strong><#list identity.attributes?filter(a -> a.key == "birthcountry") as attr>${attr.value} </#list></strong>
+                    <#list identity.attributes?filter(a -> a.key == "birthdate") as attr>${attr.value!''} </#list>
+                    <br><#list identity.attributes?filter(a -> a.key == "birthplace") as attr>${attr.value!''} </#list>
+                    <strong><#list identity.attributes?filter(a -> a.key == "birthcountry") as attr>${attr.value!''} </#list></strong>
                 </td>
                 <td>
-                    <#list identity.attributes?filter(a -> a.key == "email") as attr>${attr.value} </#list>
-                    <br><#list identity.attributes?filter(a -> a.key == "mobile_phone") as attr>${attr.value} </#list>
+                    <#list identity.attributes?filter(a -> a.key == "email") as attr>${attr.value!''} </#list>
+                    <br><#list identity.attributes?filter(a -> a.key == "mobile_phone") as attr>${attr.value!''} </#list>
+                    <br><#list identity.attributes?filter(a -> a.key == "fixed_phone") as attr>${attr.value!''} </#list>
                 </td>
                 <td>
-                    <strong><#list identity.attributes?filter(a -> a.key == "login") as attr>${attr.value} </#list></strong>
+                    <strong><#list identity.attributes?filter(a -> a.key == "login") as attr>${attr.value!''} </#list></strong>
                 </td>
                 <td>
-                    CUID : <strong>${identity.customerId!}</strong>
-                    <br> GUID : <strong>${identity.connectionId!}</strong>
+                    CUID : <strong>${identity.customerId!''}</strong>
+                    <br> GUID : <strong>${identity.connectionId!''}</strong>
                 </td>
                 <td>
                     <a href="jsp/admin/plugins/identitystore/ManageIdentities.jsp?view=viewIdentity&id=${identity.customerId}"
