@@ -106,6 +106,14 @@ public class ElasticSearchIdentityService implements ISearchIdentityService
     }
 
     @Override
+    public QualifiedIdentitySearchResult getQualifiedIdentitiesByConnectionId( String connectionId, List<String> attributesFilter ) throws IdentityStoreException
+    {
+        final Response search = _identitySearcher.searchByConnectionId( connectionId, attributesFilter );
+
+        return new QualifiedIdentitySearchResult( this.getEntities( search ), search.getMetadata( ) );
+    }
+
+    @Override
     public QualifiedIdentitySearchResult getQualifiedIdentities( List<String> customerIds, final List<String> attributesFilter ) throws IdentityStoreException
     {
         final Response search = _identitySearcher.search( customerIds, attributesFilter );

@@ -92,13 +92,25 @@ public interface IIdentitySearcher
      * Performs a search in elastic search (_search) based on customer ID
      * 
      * @param customerId
-     *            the customer ID to find
+     *            the customer ID to find (CUID)
      * @param attributesFilter
      *            the list of attributes that must be included in the response
      * @return a {@link Response}
      * @throws IdentityStoreException
      */
     Response search( final String customerId, final List<String> attributesFilter ) throws IdentityStoreException;
+
+    /**
+     * Performs a search in elastic search (_search) based on customer ID
+     *
+     * @param connectionId
+     *            the connection ID to find (GUID)
+     * @param attributesFilter
+     *            the list of attributes that must be included in the response
+     * @return a {@link Response}
+     * @throws IdentityStoreException
+     */
+    Response searchByConnectionId( final String connectionId, final List<String> attributesFilter ) throws IdentityStoreException;
 
     /**
      * Performs a multi search in elastic search (_msearch) based on a list of customer IDs

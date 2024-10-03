@@ -206,6 +206,12 @@ public class IdentityJspBean extends ManageIdentitiesJspBean
                             _identities.add( qualifiedIdentity );
                         }
                     }
+                    else
+                    if ( datasource.equals( DATASOURCE_ES ) )
+                    {
+                        _identities.addAll( _searchIdentityServiceES.getQualifiedIdentitiesByConnectionId( guid, Collections.emptyList() )
+                                .getQualifiedIdentities( ) );
+                    }
                 }
                 else
                 {

@@ -37,6 +37,7 @@ import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.client.Elas
 import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.client.ElasticClientException;
 import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.search.model.ASearchRequest;
 import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.search.model.ComplexSearchRequest;
+import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.search.model.ConnectionIdSearchRequest;
 import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.search.model.CustomerIdSearchRequest;
 import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.search.model.inner.request.InnerSearchRequest;
 import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.search.model.inner.request.MultiSearchAction;
@@ -174,6 +175,13 @@ public class IdentitySearcher implements IIdentitySearcher
     public Response search( final String customerId, final List<String> attributesFilter ) throws IdentityStoreException
     {
         final ASearchRequest request = new CustomerIdSearchRequest( customerId, attributesFilter );
+        return this.getResponse( request, 0 );
+    }
+
+    @Override
+    public Response searchByConnectionId( final String connectionId, final List<String> attributesFilter ) throws IdentityStoreException
+    {
+        final ASearchRequest request = new ConnectionIdSearchRequest( connectionId, attributesFilter );
         return this.getResponse( request, 0 );
     }
 
