@@ -106,31 +106,35 @@
 </@rowBox>
 <script src="./js/admin/plugins/identitystore/table.js"></script>
 <script>
-    $(document).ready( function( ) {
-        $.get("../../../../jsp/admin/plugins/identitystore/ajax/IndicatorsAttributesByIdentities.jsp", function (response) {
-            let div = document.getElementById("attributes-by-identities-table");
-            let trimmed = trim(div.innerHTML, 2)
-            div.innerHTML = trimmed + response;
-        }, "html");
-        $.get("../../../../jsp/admin/plugins/identitystore/ajax/IndicatorsNoAttributesAjax.jsp", function (response) {
-            let span = document.getElementById("count_unmerged_no_attributes_identities");
-            span.innerHTML = response;
-        }, "json");
-        $.get("../../../../jsp/admin/plugins/identitystore/ajax/IndicatorsActions.jsp", { data: 1 }, function (response) {
-            let div = document.getElementById("actions-by-day-table");
-            let trimmed = trim(div.innerHTML, 5)
-            div.innerHTML = trimmed + response;
-        }, "html");
-        $.get("../../../../jsp/admin/plugins/identitystore/ajax/IndicatorsActions.jsp", { data: 7 }, function (response) {
-            let div = document.getElementById("actions-by-week-table");
-            let trimmed = trim(div.innerHTML, 5)
-            div.innerHTML = trimmed + response;
-        }, "html");
-        $.get("../../../../jsp/admin/plugins/identitystore/ajax/IndicatorsActions.jsp", { data: 30 }, function (response) {
-            let div = document.getElementById("actions-by-month-table");
-            let trimmed = trim(div.innerHTML, 5)
-            div.innerHTML = trimmed + response;
-        }, "html");
+    $(document).ready( async function( ) {
+        let responseDay = await fetch("jsp/admin/plugins/identitystore/Indicators.jsp?action=count_actions_by_time&duration=1");
+        let divDay = document.getElementById("actions-by-day-table");
+        let trimmedDay = trim(divDay.innerHTML, 5);
+        const urlParamsDay = new URLSearchParams(responseDay.url);
+        divDay.innerHTML = trimmedDay + urlParamsDay.get('response');
+
+        let responseWeek = await fetch("jsp/admin/plugins/identitystore/Indicators.jsp?action=count_actions_by_time&duration=7");
+        let divWeek = document.getElementById("actions-by-week-table");
+        let trimmedWeek = trim(divWeek.innerHTML, 5);
+        const urlParamsWeek = new URLSearchParams(responseWeek.url);
+        divWeek.innerHTML = trimmedWeek + urlParamsWeek.get('response');
+
+        let responseMonth = await fetch("jsp/admin/plugins/identitystore/Indicators.jsp?action=count_actions_by_time&duration=30");
+        let divMonth = document.getElementById("actions-by-month-table");
+        let trimmedMonth = trim(divMonth.innerHTML, 5);
+        const urlParamsMonth = new URLSearchParams(responseMonth.url);
+        divMonth.innerHTML = trimmedMonth + urlParamsMonth.get('response');
+
+        let responseAttributeByIdentity = await fetch("jsp/admin/plugins/identitystore/Indicators.jsp?action=attributes_by_identities");
+        let divAttributeByIdentity = document.getElementById("attributes-by-identities-table");
+        let trimmedAttributeByIdentity = trim(divAttributeByIdentity.innerHTML, 2);
+        const urlParamsAttributeByIdentity = new URLSearchParams(responseAttributeByIdentity.url);
+        divAttributeByIdentity.innerHTML = trimmedAttributeByIdentity + urlParamsAttributeByIdentity.get('response');
+
+        let responseNoAttribute = await fetch("jsp/admin/plugins/identitystore/Indicators.jsp?action=count_unmerged_no_attributes");
+        let spanNoAttribute = document.getElementById("count_unmerged_no_attributes_identities");
+        const urlParamsNoAttribute = new URLSearchParams(responseNoAttribute.url);
+        spanNoAttribute.innerHTML = urlParamsNoAttribute.get('response');
     });
     function trim(stringToTrim, rowsCount)
     {
