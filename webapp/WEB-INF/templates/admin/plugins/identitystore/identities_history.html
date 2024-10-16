@@ -39,7 +39,7 @@
                         <select class="search-field form-select select-type" id="type" name="type" value="${type!''}" >
                             <option value="">#i18n{identitystore.view_change_history.no.type}</option>
                             <#list type_list as form_type>
-                                <option value="${form_type!}" <#if typr! == form_type!> selected="selected"</#if>>${form_type!}</option>
+                                <option value="${form_type!}" <#if type! == form_type!> selected="selected"</#if>>${form_type!}</option>
                             </#list>
                         </select>
                     </td>
