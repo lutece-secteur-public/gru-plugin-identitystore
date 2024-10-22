@@ -5,6 +5,7 @@ import fr.paris.lutece.plugins.identitystore.business.identity.IndicatorsActions
 import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.client.ElasticClientException;
 import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.service.IIdentityIndexer;
 import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.task.UsingElasticConnection;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.history.IdentityChangeType;
 import fr.paris.lutece.portal.service.util.AppPropertiesService;
 import fr.paris.lutece.portal.util.mvc.admin.MVCAdminJspBean;
 import fr.paris.lutece.portal.util.mvc.admin.annotations.Controller;
@@ -109,7 +110,7 @@ public class IndicatorsJspBean extends MVCAdminJspBean implements UsingElasticCo
             for (IndicatorsActionsType action : listIndicators)
             {
                 result += "<tr><td><span>"
-                        + action.getChangeType()
+                        + IdentityChangeType.valueOf( action.getChangeType() )
                         + "</span></td><td><span>"
                         + action.getChangeStatus()
                         + "</span></td><td><span>"
