@@ -61,15 +61,21 @@
                     </td>
                 </tr>
                 <tr>
+                    <th>CUID</th>
+                    <th>GUID</th>
                     <th>Ville de naissance</th>
                     <th>Code INSEE Commune</th>
                     <th>Pays de naissance</th>
                     <th>Code INSEE Pays</th>
-                    <th>CUID</th>
-                    <th>GUID</th>
                 </tr>
                 <@tableHeadBodySeparator />
                 <tr>
+                    <td>
+                        <input class="form-control search-field" type="text" name="cuid" placeholder="Customer ID" value="${cuid!''}" />
+                    </td>
+                    <td>
+                        <input class="form-control search-field" type="text" name="guid" placeholder="Connection ID" value="${guid!''}" />
+                    </td>
                     <td>
                         <input class="form-control search-field" type="text" name="insee_birthplace_label" placeholder="Ville de naissance" value="${insee_birthplace_label!''}" />
                     </td>
@@ -81,12 +87,6 @@
                     </td>
                     <td>
                         <input class="form-control search-field" type="text" name="insee_country" placeholder="Code INSEE Pays" value="${insee_country!''}" />
-                    </td>
-                    <td>
-                        <input class="form-control search-field" type="text" name="cuid" placeholder="Customer ID" value="${cuid!''}" />
-                    </td>
-                    <td>
-                        <input class="form-control search-field" type="text" name="guid" placeholder="Connection ID" value="${guid!''}" />
                     </td>
                 </tr>
             </@table>
