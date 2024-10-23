@@ -142,6 +142,7 @@ public class IdentityJspBean extends ManageIdentitiesJspBean
     private static final String DATASOURCE_DB = "db";
     private static final String DATASOURCE_ES = "es";
     private static final int BATCH_PARTITION_SIZE = AppPropertiesService.getPropertyInt( "identitystore.export.batch.size", 100 );
+    private static final int PROPERTY_MAX_NB_IDENTITY_RETURNED = AppPropertiesService.getPropertyInt("identitystore.search.maxNbIdentityReturned", 0);
 
     // Session variable to store working values
     private Identity _identity;
@@ -259,13 +260,13 @@ public class IdentityJspBean extends ManageIdentitiesJspBean
                     {
                         if ( datasource.equals( DATASOURCE_DB ) )
                         {
-                            _identities.addAll( _searchIdentityServiceDB.getQualifiedIdentities( atttributes, 0, false, Collections.emptyList( ) )
+                            _identities.addAll( _searchIdentityServiceDB.getQualifiedIdentities( atttributes, PROPERTY_MAX_NB_IDENTITY_RETURNED, false, Collections.emptyList( ) )
                                     .getQualifiedIdentities( ) );
                         }
                         else
                             if ( datasource.equals( DATASOURCE_ES ) )
                             {
-                                _identities.addAll( _searchIdentityServiceES.getQualifiedIdentities( atttributes, 0, false, Collections.emptyList( ) )
+                                _identities.addAll( _searchIdentityServiceES.getQualifiedIdentities( atttributes, PROPERTY_MAX_NB_IDENTITY_RETURNED, false, Collections.emptyList( ) )
                                         .getQualifiedIdentities( ) );
                             }
                     }

@@ -71,6 +71,7 @@ public class IdentitySearcher implements IIdentitySearcher
     public static final String IDENTITYSTORE_SEARCH_OFFSET = "identitystore.search.offset";
     private static final String INDEX = "identities-alias";
     final private static int propertySize = AppPropertiesService.getPropertyInt( IDENTITYSTORE_SEARCH_OFFSET, 10 );
+    private static final int PROPERTY_MAX_NB_IDENTITY_RETURNED = AppPropertiesService.getPropertyInt("identitystore.search.maxNbIdentityReturned", 0);
     private final ElasticClient _elasticClient;
 
     public IdentitySearcher( String strServerUrl, String strLogin, String strPassword )
@@ -175,14 +176,14 @@ public class IdentitySearcher implements IIdentitySearcher
     public Response search( final String customerId, final List<String> attributesFilter ) throws IdentityStoreException
     {
         final ASearchRequest request = new CustomerIdSearchRequest( customerId, attributesFilter );
-        return this.getResponse( request, 0 );
+        return this.getResponse( request, PROPERTY_MAX_NB_IDENTITY_RETURNED );
     }
 
     @Override
     public Response searchByConnectionId( final String connectionId, final List<String> attributesFilter ) throws IdentityStoreException
     {
         final ASearchRequest request = new ConnectionIdSearchRequest( connectionId, attributesFilter );
-        return this.getResponse( request, 0 );
+        return this.getResponse( request, PROPERTY_MAX_NB_IDENTITY_RETURNED );
     }
 
     @Override
@@ -194,7 +195,7 @@ public class IdentitySearcher implements IIdentitySearcher
                     .map( filteredAttribute -> new SearchAttribute( filteredAttribute, null, null ) ).collect( Collectors.toList( ) ) );
             return customerIdSearchRequest;
         } ).collect( Collectors.toList( ) );
-        return this.getResponse( request, 0 );
+        return this.getResponse( request, PROPERTY_MAX_NB_IDENTITY_RETURNED );
     }
 
     private Response getResponse( final ASearchRequest request, final int max ) throws IdentityStoreException

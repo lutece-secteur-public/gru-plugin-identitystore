@@ -57,7 +57,7 @@ import java.util.Objects;
  */
 public final class IdentityHome
 {
-    private static final String PROPERTY_MAX_NB_IDENTITY_RETURNED = "identitystore.search.maxNbIdentityReturned";
+    private static final int PROPERTY_MAX_NB_IDENTITY_RETURNED = AppPropertiesService.getPropertyInt("identitystore.search.maxNbIdentityReturned", 0);
 
     // Static variable pointed at the DAO instance
     private static final IIdentityDAO _dao = SpringContextService.getBean( IIdentityDAO.BEAN_NAME );
@@ -204,7 +204,7 @@ public final class IdentityHome
             final IdentityChangeType changeType, final String changeStatus, final String authorType, final Date modificationDate, final Map<String, String> metadata, final Integer nbDaysFrom,
             final Pair<Date, Date> modificationDateInterval, final int max ) throws IdentityStoreException
     {
-        int nMaxNbIdentityReturned = ( max > 0 ) ? max : AppPropertiesService.getPropertyInt( PROPERTY_MAX_NB_IDENTITY_RETURNED, 100 );
+        int nMaxNbIdentityReturned = ( max > 0 ) ? max : PROPERTY_MAX_NB_IDENTITY_RETURNED;
         return _dao.selectIdentityHistoryBySearchParameters( strCustomerId, clientCode, authorName, changeType, changeStatus, authorType, modificationDate, metadata, nbDaysFrom,
                 modificationDateInterval, _plugin, nMaxNbIdentityReturned );
     }
@@ -313,7 +313,7 @@ public final class IdentityHome
      */
     public static List<Identity> findByAttributesValueForApiSearch(final List<SearchAttribute> searchAttributes, final int max )
     {
-        int nMaxNbIdentityReturned = ( max > 0 ) ? max : AppPropertiesService.getPropertyInt( PROPERTY_MAX_NB_IDENTITY_RETURNED, 100 );
+        int nMaxNbIdentityReturned = ( max > 0 ) ? max : PROPERTY_MAX_NB_IDENTITY_RETURNED;
         return _dao.selectByAttributesValueForApiSearch( searchAttributes, nMaxNbIdentityReturned, _plugin );
     }
 
@@ -369,7 +369,8 @@ public final class IdentityHome
     public static List<UpdatedIdentityDto> findUpdatedIdentities( final Integer days, final List<IdentityChangeType> identityChangeTypes,
             final List<SearchUpdatedAttribute> updatedAttributes, final Integer max )
     {
-        return _dao.selectUpdated( days, identityChangeTypes, updatedAttributes, max, _plugin );
+        int nMaxNbIdentityReturned = ( max > 0 ) ? max : PROPERTY_MAX_NB_IDENTITY_RETURNED;
+        return _dao.selectUpdated( days, identityChangeTypes, updatedAttributes, nMaxNbIdentityReturned, _plugin );
     }
 
     /**
@@ -386,7 +387,8 @@ public final class IdentityHome
     public static List<Integer> findUpdatedIdentityIds( final Integer days, final List<IdentityChangeType> identityChangeTypes,
             final List<SearchUpdatedAttribute> updatedAttributes, final Integer max )
     {
-        return _dao.selectUpdatedIds( days, identityChangeTypes, updatedAttributes, max, _plugin );
+        int nMaxNbIdentityReturned = ( max > 0 ) ? max : PROPERTY_MAX_NB_IDENTITY_RETURNED;
+        return _dao.selectUpdatedIds( days, identityChangeTypes, updatedAttributes, nMaxNbIdentityReturned, _plugin );
     }
 
     /**
