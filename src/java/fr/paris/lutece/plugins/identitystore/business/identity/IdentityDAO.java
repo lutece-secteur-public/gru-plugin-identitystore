@@ -144,7 +144,7 @@ public final class IdentityDAO implements IIdentityDAO
     private static final String SQL_QUERY_SELECT_COUNT_MERGED_IDENTITIES = "SELECT COUNT(*) FROM identitystore_identity WHERE is_merged = ?";
     private static final String SQL_QUERY_SELECT_COUNT_MONPARIS_ACTIVE_IDENTITIES = "SELECT COUNT(*) FROM identitystore_identity WHERE is_mon_paris_active = ?";
     private static final String SQL_QUERY_SELECT_COUNT_ATTRIBUTES_BY_IDENTITY = "SELECT v.nbattr, count(v.id_identity) as identities FROM (SELECT id_identity , count(id_identity) as nbattr FROM identitystore_identity_attribute GROUP BY id_identity) as v GROUP BY v.nbattr ORDER BY v.nbattr";
-    private static final String SQL_QUERY_SELECT_COUNT_IDENTITIES_NO_ATTRIBUTES_NOT_MERGED = "SELECT count(*) FROM identitystore_identity i WHERE is_merged = 0 AND i.id_identity NOT IN (SELECT a.id_identity FROM identitystore_identity_attribute a WHERE a.id_identity = i.id_identity)";
+    private static final String SQL_QUERY_SELECT_COUNT_IDENTITIES_NO_ATTRIBUTES_NOT_MERGED = "SELECT count(*) FROM identitystore_identity i LEFT OUTER JOIN identitystore_identity_attribute a ON a.id_identity = i.id_identity WHERE is_merged = 0 AND a.id_identity is null";
     private static final String SQL_QUERY_SELECT_ACTIONS_ACTIVITIES = "SELECT change_type AS change_type_label, change_status , author_type, client_code , count(*) FROM identitystore_identity_history WHERE modification_date > NOW() - INTERVAL '${interval} DAY' GROUP BY change_type , change_status , author_type, client_code ORDER BY client_code, change_type, change_status";
 
     private final ObjectMapper objectMapper = new ObjectMapper( );

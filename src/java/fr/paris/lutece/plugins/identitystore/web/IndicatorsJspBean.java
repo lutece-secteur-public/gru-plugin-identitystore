@@ -34,16 +34,10 @@ public class IndicatorsJspBean extends MVCAdminJspBean implements UsingElasticCo
     private static final String MARKER_COUNT_DELETED_IDENTITIES = "count_deleted_identities";
     private static final String MARKER_COUNT_MERGED_IDENTITIES = "count_merged_identities";
     private static final String MARKER_COUNT_MONPARIS_IDENTITIES = "count_monparis_identities";
-    private static final String MARKER_COUNT_UNMERGED_NO_ATTRIBUTES_IDENTITIES = "count_unmerged_no_attributes_identities";
-    private static final String MARKER_LIST_ATTRIBUTES_IDENTITIES = "list_attributes_identities";
     private static final String MARKER_COUNT_INDEXED_IDENTITIES = "count_indexed_identities";
     //Views
     private static final String VIEW_INDICATORS = "viewIndicators";
 
-    //Actions
-    private static final String ACTION_ATTRIBUTES_BY_IDENTITIES = "attributes_by_identities";
-    private static final String ACTION_COUNT_UNMERGED_NO_ATTRIBUTES = "count_unmerged_no_attributes";
-    private static final String ACTION_COUNT_ACTIONS_BY_TIME = "count_actions_by_time";
 
     //Infos
 
@@ -71,63 +65,5 @@ public class IndicatorsJspBean extends MVCAdminJspBean implements UsingElasticCo
         model.put( MARKER_COUNT_INDEXED_IDENTITIES, countIndexedIdentities);
 
         return getPage( PROPERTY_PAGE_TITLE_INDICATORS, TEMPLATE_INDICATORS, model );
-    }
-
-    @Action( ACTION_ATTRIBUTES_BY_IDENTITIES )
-    public String getAttributesByIdentities( HttpServletRequest request )
-    {
-        Map<Integer, Integer> attributesByIdentities = IdentityHome.getCountAttributesByIdentities( );
-        String result = "";
-        for( Map.Entry<Integer, Integer> entry : attributesByIdentities.entrySet( ) ){
-            result += "<tr><td><span>"
-                    + entry.getKey( )
-                    + "</span></td><td><span>"
-                    + entry.getValue( )
-                    + "</span></td></tr>";
-        }
-
-        final HashMap<String, String> additionalParameters = new HashMap<>( );
-        additionalParameters.put( "response", result );
-        return redirect(request, null, additionalParameters);
-    }
-
-    @Action( ACTION_COUNT_UNMERGED_NO_ATTRIBUTES )
-    public String countUnmergedNoAttributes( HttpServletRequest request )
-    {
-        final HashMap<String, String> additionalParameters = new HashMap<>( );
-        additionalParameters.put( "response", IdentityHome.getCountUnmergedIdentitiesWithoutAttributes().toString() );
-        return redirect(request, null, additionalParameters);
-    }
-
-    @Action( ACTION_COUNT_ACTIONS_BY_TIME )
-    public String countActionsByTime( HttpServletRequest request )
-    {
-        int data = Integer.parseInt(request.getParameter("duration"));
-        String result = "";
-        List<IndicatorsActionsType> listIndicators = IdentityHome.getActionsTypesDuringInterval(data);
-        if(!listIndicators.isEmpty())
-        {
-            for (IndicatorsActionsType action : listIndicators)
-            {
-                result += "<tr><td><span>"
-                        + IdentityChangeType.valueOf( action.getChangeType() )
-                        + "</span></td><td><span>"
-                        + action.getChangeStatus()
-                        + "</span></td><td><span>"
-                        + action.getAuthorType()
-                        + "</span></td><td><span>"
-                        + action.getClientCode()
-                        + "</span></td><td><span>"
-                        + action.getCountActions()
-                        + "</span></td></tr>";
-            }
-        }
-        else{
-            result += "<tr><td><span>-</span></td><td><span>-</span></td><td><span>-</span></td><td><span>-</span></td><td><span>-</span></td></tr>";
-        }
-
-        final HashMap<String, String> additionalParameters = new HashMap<>( );
-        additionalParameters.put( "response", result );
-        return redirect(request, null, additionalParameters);
     }
 }

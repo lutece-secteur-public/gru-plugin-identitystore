@@ -102,6 +102,7 @@
     <bean id="identitystore.clientRest" class="fr.paris.lutece.plugins.identitystore.v3.web.rs.ClientRestService" />
     <bean id="identitystore.referentielRest" class="fr.paris.lutece.plugins.identitystore.v3.web.rs.ReferentielRestService" />
     <bean id="identitystore.historyRest" class="fr.paris.lutece.plugins.identitystore.v3.web.rs.HistoryRestService" />
+    <bean id="identitystore.indicatorsRest" class="fr.paris.lutece.plugins.identitystore.v3.web.rs.IndicatorsRestService" />
 
     <!-- Schedule full E/S identities reindexing -->
     <bean id="identitystore.fullIndexer" class="fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.task.FullIndexTask" />
