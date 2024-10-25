@@ -36,18 +36,15 @@
 
     // check if indexing in progress;
     async function check() {
-        await getStatus().then(indexStatus => {
-            if (indexStatus != null) {
-                progressBar(indexStatus);
-                displayLogs(indexStatus);
-            }
-        });
-    }
-
-    async function getStatus() {
-        let response = await fetch("jsp/admin/plugins/identitystore/IndexIdentities.jsp?action=indexStatus");
-        const urlParams = new URLSearchParams(response.url);
-        return JSON.parse(urlParams.get('json'));
+        fetch("rest/identitystore/v3/indexing/status")
+            .then(response => response.json())
+            .then(indexStatus => {
+                if (indexStatus != null) {
+                    progressBar(indexStatus);
+                    displayLogs(indexStatus);
+                }
+            })
+            .catch(err => console.log(err));
     }
 
     // progress bar
@@ -65,7 +62,10 @@
 
     function displayLogs(indexStatus) {
         const console = document.getElementById("logs-console");
-        console.innerHTML = indexStatus.logs;
+        if( console.innerHTML !== indexStatus.logs) {
+            console.innerHTML = indexStatus.logs;
+        }
+
     }
 
     function scrollLogs(indexStatus) {

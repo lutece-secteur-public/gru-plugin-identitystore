@@ -77,14 +77,12 @@
         <constructor-arg ref="identitystore.elasticsearch.identityIndexer" name="_identityIndexer"/>
     </bean>
 
-    <!-- Config -->
-    <bean id="identitystore.application.code.delete.authorized.list" class="java.util.ArrayList">
-        <constructor-arg>
-            <list>
-                <value></value>
-            </list>
-        </constructor-arg>
-    </bean>
+    <!-- Schedule full E/S identities reindexing -->
+    <bean id="identitystore.fullIndexer" class="fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.task.FullIndexTask" />
+    <task:scheduler id="identitystore.fullIndexerScheduler" pool-size="10" />
+    <task:scheduled-tasks scheduler="identitystore.fullIndexerScheduler">
+        <task:scheduled ref="identitystore.fullIndexer" method="run" cron="${identitystore.index.full.cron}"/>
+    </task:scheduled-tasks>
 
     <!-- REST -->
     <bean id="identitystore.customObjectMapper"  class="fr.paris.lutece.plugins.identitystore.v3.web.rs.CustomMapper" />
@@ -103,12 +101,6 @@
     <bean id="identitystore.referentielRest" class="fr.paris.lutece.plugins.identitystore.v3.web.rs.ReferentielRestService" />
     <bean id="identitystore.historyRest" class="fr.paris.lutece.plugins.identitystore.v3.web.rs.HistoryRestService" />
     <bean id="identitystore.indicatorsRest" class="fr.paris.lutece.plugins.identitystore.v3.web.rs.IndicatorsRestService" />
-
-    <!-- Schedule full E/S identities reindexing -->
-    <bean id="identitystore.fullIndexer" class="fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.task.FullIndexTask" />
-    <task:scheduler id="identitystore.fullIndexerScheduler" pool-size="10" />
-    <task:scheduled-tasks scheduler="identitystore.fullIndexerScheduler">
-        <task:scheduled ref="identitystore.fullIndexer" method="run" cron="${identitystore.index.full.cron}"/>
-    </task:scheduled-tasks>
+    <bean id="identitystore.indexingRest" class="fr.paris.lutece.plugins.identitystore.v3.web.rs.IndexingRestService"/>
 
 </beans>

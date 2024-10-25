@@ -85,45 +85,45 @@ public class FullIndexTask extends AbstractIndexTask implements UsingElasticConn
         final List<Integer> identityIdsList = new ArrayList<>( IdentityObjectHome.getEligibleIdListForIndex( ) );
         if ( !identityIdsList.isEmpty( ) )
         {
-            this.debug( "Starting identities full reindex at " + DateFormatUtils.format( stopWatch.getStartTime( ), "dd-MM-yyyy'T'HH:mm:ss" ) );
+            this.info( "Starting identities full reindex at " + DateFormatUtils.format( stopWatch.getStartTime( ), "dd-MM-yyyy'T'HH:mm:ss" ) );
             final IIdentityIndexer identityIndexer = this.createIdentityIndexer( );
             if ( identityIndexer.isAlive( ) )
             {
                 final String newIndex = "identities-" + UUID.randomUUID( );
-                this.debug( "ES available :: indexing" );
+                this.info( "ES available :: indexing" );
                 try
                 {
-                    this.debug( "Creating new index : " + newIndex );
+                    this.info( "Creating new index : " + newIndex );
                     identityIndexer.initIndex( newIndex );
 
                     if ( identityIndexer.indexExists( CURRENT_INDEX_ALIAS ) )
                     {
-                        this.debug( "Set current index READ-ONLY" );
+                        this.info( "Set current index READ-ONLY" );
                         identityIndexer.makeIndexReadOnly( CURRENT_INDEX_ALIAS );
                     }
                     else
                     {
-                        this.debug( "Create alias" );
+                        this.info( "Create alias" );
                         identityIndexer.addAliasOnIndex( newIndex, CURRENT_INDEX_ALIAS );
                     }
 
                     this.getStatus( ).setNbTotalIdentities( identityIdsList.size( ) );
-                    this.debug( "NB identities to be indexed : " + this.getStatus( ).getNbTotalIdentities( ) );
-                    this.debug( "Size of indexing batches : " + BATCH_SIZE );
+                    this.info( "NB identities to be indexed : " + this.getStatus( ).getNbTotalIdentities( ) );
+                    this.info( "Size of indexing batches : " + BATCH_SIZE );
                     final Batch<Integer> batch = Batch.ofSize( identityIdsList, BATCH_SIZE );
-                    this.debug( "NB of indexing batches : " + batch.size( ) );
+                    this.info( "NB of indexing batches : " + batch.size( ) );
                     batch.stream( ).parallel( ).forEach( identityIdList -> {
                         this.process( identityIdList, newIndex );
                     } );
-                    this.debug( "All batches processed, now switch alias to publish new index.." );
+                    this.info( "All batches processed, now switch alias to publish new index.." );
                     final String oldIndex = identityIndexer.getIndexBehindAlias( CURRENT_INDEX_ALIAS );
                     if ( !StringUtils.equals( oldIndex, newIndex ) )
                     {
-                        this.debug( "Old index id: " + oldIndex );
+                        this.info( "Old index id: " + oldIndex );
                         identityIndexer.addAliasOnIndex( newIndex, CURRENT_INDEX_ALIAS );
                         if ( oldIndex != null )
                         {
-                            this.debug( "Delete old index : " + oldIndex );
+                            this.info( "Delete old index : " + oldIndex );
                             identityIndexer.removeIndexReadOnly( oldIndex );
                             identityIndexer.deleteIndex( oldIndex );
                         }
@@ -131,23 +131,23 @@ public class FullIndexTask extends AbstractIndexTask implements UsingElasticConn
                 }
                 catch( final ElasticClientException e )
                 {
-                    this.debug( "Failed to reindex " + e.getMessage( ) );
+                    this.info( "Failed to reindex " + e.getMessage( ) );
                     final String oldIndex = identityIndexer.getIndexBehindAlias( CURRENT_INDEX_ALIAS );
                     this.rollbackIndexCreation( oldIndex, newIndex, identityIndexer );
                 }
             }
             else
             {
-                this.debug( "[ERROR] ES not available" );
+                this.info( "[ERROR] ES not available" );
             }
             stopWatch.stop( );
             final String duration = DurationFormatUtils.formatDurationWords( stopWatch.getTime( ), true, true );
-            this.debug( "Re-indexed  " + this.getStatus( ).getCurrentNbIndexedIdentities( ) + " identities in " + duration );
+            this.info( "Re-indexed  " + this.getStatus( ).getCurrentNbIndexedIdentities( ) + " identities in " + duration );
         }
         else
         {
             stopWatch.stop( );
-            this.debug( "No index in database" );
+            this.info( "No index in database" );
         }
         this.close( );
     }
@@ -184,7 +184,7 @@ public class FullIndexTask extends AbstractIndexTask implements UsingElasticConn
         }
         catch( ElasticClientException e )
         {
-            this.debug( "Failed to rollback " + e.getMessage( ) );
+            this.info( "Failed to rollback " + e.getMessage( ) );
         }
         finally {
             this.close();

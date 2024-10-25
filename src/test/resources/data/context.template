@@ -81,15 +81,6 @@
     </bean>
     <bean id="identitystore.identityInfoExternalProvider" class="fr.paris.lutece.plugins.identitystore.service.external.MockIdentityInfoExternalProvider" />
 
-    <!-- Config -->
-    <bean id="identitystore.application.code.delete.authorized.list" class="java.util.ArrayList">
-        <constructor-arg>
-            <list>
-                <value></value>
-            </list>
-        </constructor-arg>
-    </bean>
-
     <!-- REST -->
     <bean id="identitystore.customObjectMapper"  class="fr.paris.lutece.plugins.identitystore.v3.web.rs.CustomMapper" />
     <bean id="identitystore.v1.identityStoreRestService"  class="fr.paris.lutece.plugins.identitystore.v1.web.rs.IdentityStoreRestService" />
