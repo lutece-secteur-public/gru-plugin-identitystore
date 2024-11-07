@@ -319,7 +319,7 @@ public class IdentityAttributeFormatterService
 
     private String toFirstLetterUpperCased ( final String value )
     {
-        return value.substring( 0, 1 ).toUpperCase( ) + value.substring( 1 ).toLowerCase( );
+        return !value.isEmpty() ? value.substring( 0, 1 ).toUpperCase( ) + value.substring( 1 ).toLowerCase( ) : value;
     }
 
     /**
