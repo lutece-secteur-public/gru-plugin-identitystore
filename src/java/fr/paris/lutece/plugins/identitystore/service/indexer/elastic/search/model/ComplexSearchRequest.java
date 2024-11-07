@@ -148,7 +148,7 @@ public class ComplexSearchRequest extends ASearchRequest
                 switch( treatmentType )
                 {
                     case STRICT:
-                        boolContainer.getMust( ).add( body.createMatchPhrase( treatmentType, key, value, true ) );
+                        boolContainer.getMust( ).add( body.createMatchPhrase( treatmentType, key, value, false ) );
                         break;
                     case APPROXIMATED:
                         final String multipleHyphenToOne = value.trim( ).replaceAll( "(-)\\1+", "$1" );
@@ -189,7 +189,7 @@ public class ComplexSearchRequest extends ASearchRequest
                 switch( treatmentType )
                 {
                     case STRICT:
-                        boolContainer.getMust( ).add( body.createMatchPhrase( treatmentType, key, value, true ) );
+                        boolContainer.getMust( ).add( body.createMatchPhrase( treatmentType, key, value, false ) );
                         break;
                     case APPROXIMATED:
                         boolContainer.getMust( ).add( body.createMatch( treatmentType, value, key ) );

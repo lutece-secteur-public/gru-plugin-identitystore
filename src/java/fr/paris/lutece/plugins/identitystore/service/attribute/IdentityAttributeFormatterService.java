@@ -42,13 +42,9 @@ import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.search.IdentitySearch
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.search.SearchAttribute;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.search.SearchDto;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -99,7 +95,7 @@ public class IdentityAttributeFormatterService
     {
         final List<AttributeStatus> statuses = new ArrayList<>( );
         final IdentityDto identity = request.getIdentity( );
-        if ( identity != null && CollectionUtils.isNotEmpty( identity.getAttributes( ) ) )
+        if ( identity != null )
         {
             statuses.addAll( this.formatIdentityAttributeValues( identity ) );
             request.setIdentity( identity );
@@ -121,6 +117,24 @@ public class IdentityAttributeFormatterService
         if ( search != null )
         {
             search.getAttributes( ).stream( ).filter( attributeDto -> StringUtils.isNotBlank( attributeDto.getValue( ) ) )
+                    .forEach(attribute -> attribute.setValue( this.formatAttribute( attribute.getKey(), attribute.getValue(), statuses ) ));
+        }
+        return statuses;
+    }
+
+    /**
+     * Formats attribute values in the provided search request.
+     *
+     * @see IdentityAttributeFormatterService#formatAttribute(String, String, List)
+     * @param attributes
+     *            the searched attributes
+     */
+    public List<AttributeStatus> formatDuplicateSearchRequestAttributeValues( final Map<String, String> attributes )
+    {
+        final List<AttributeStatus> statuses = new ArrayList<>( );
+        if ( attributes != null )
+        {
+            attributes.entrySet().stream( ).filter( attributeDto -> StringUtils.isNotBlank( attributeDto.getValue( ) ) )
                     .forEach(attribute -> attribute.setValue( this.formatAttribute( attribute.getKey(), attribute.getValue(), statuses ) ));
         }
         return statuses;
@@ -217,84 +231,6 @@ public class IdentityAttributeFormatterService
         }
 
         return formattedValue;
-    }
-
-    /**
-     * Formats all attributes stored in the provided identity :
-     * <ul>
-     * <li>Remove leading and trailing spaces</li>
-     * <li>Replace all blank characters by an actual space</li>
-     * <li>Replace space successions with a single space</li>
-     * <li>For phone number attributes :
-     * <ul>
-     * <li>Remove all spaces, dots, dashes and parenthesis</li>
-     * <li>Replace leading indicative part (0033 or +33) by a single zero</li>
-     * </ul>
-     * </li>
-     * <li>For date attributes :
-     * <ul>
-     * <li>Put a leading zero in day and month parts if they contain only one character</li>
-     * </ul>
-     * </li>
-     * <li>For first name attributes :
-     * <ul>
-     * <li>Replace comas (,) by a single whitespace</li>
-     * <li>Force the first character of each group (space-separated) to be uppercase, the rest is forced to lowercase</li>
-     * </ul>
-     * </li>
-     * <li>For country label, family name and prefered name attributes :
-     * <ul>
-     * <li>force to uppercase</li>
-     * </ul>
-     * </li>
-     * <li>For login and email attributes :
-     * <ul>
-     * <li>force to lowercase</li>
-     * </ul>
-     * </li>
-     * </ul>
-     *
-     * @param identity
-     *            identity containing attributes to format
-     * @return FORMATTED_VALUE statuses for attributes whose value has changed after the formatting.
-     */
-    private List<AttributeStatus> formatSearchAttributeValues( final List<SearchAttribute> attributes )
-    {
-        final List<AttributeStatus> statuses = new ArrayList<>( );
-        attributes.stream( ).filter( attributeDto -> StringUtils.isNotBlank( attributeDto.getValue( ) ) ).forEach( attribute -> {
-            // Suppression espaces avant et après, et uniformisation des espacements (tab, space, nbsp, successions d'espaces, ...) en les remplaçant tous par
-            // un espace
-            String formattedValue = attribute.getValue( ).trim( ).replaceAll( "\\s+", " " );
-
-            if ( PHONE_ATTR_KEYS.contains( attribute.getKey( ) ) )
-            {
-                formattedValue = formatPhoneValue( formattedValue );
-            }
-            if ( DATE_ATTR_KEYS.contains( attribute.getKey( ) ) )
-            {
-                formattedValue = formatDateValue( formattedValue );
-            }
-            if ( FIRSTNAME_ATTR_KEYS.contains( attribute.getKey( ) ) )
-            {
-                formattedValue = formatFirstnameValue( formattedValue );
-            }
-            if ( UPPERCASE_ATTR_KEYS.contains( attribute.getKey( ) ) )
-            {
-                formattedValue = StringUtils.upperCase( formattedValue );
-            }
-            if ( LOWERCASE_ATTR_KEYS.contains( attribute.getKey( ) ) )
-            {
-                formattedValue = StringUtils.lowerCase( formattedValue );
-            }
-
-            // Si la valeur a été modifiée, on renvoie un status
-            if ( !formattedValue.equals( attribute.getValue( ) ) )
-            {
-                statuses.add( buildAttributeValueFormattedStatus( attribute.getKey( ), attribute.getValue( ), formattedValue ) );
-            }
-            attribute.setValue( formattedValue );
-        } );
-        return statuses;
     }
 
     /**

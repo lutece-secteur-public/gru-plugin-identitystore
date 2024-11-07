@@ -1,146 +1,184 @@
 {
-    "settings" : {
-        "analysis" : {
-            "char_filter": {
-                "hyphen_filter": {
-                    "type": "mapping",
-                    "mappings": [
-                        "- =>"
-                    ]
-                }
-            },
-            "analyzer" : {
-                "default" : {
-                    "tokenizer": "standard",
-                    "filter" : [
-                        "lowercase",
-                        "asciifolding"
-                    ]
-                },
-                "default_search" : {
-                    "tokenizer": "standard",
-                    "filter" : [
-                        "lowercase",
-                        "asciifolding"
-                    ]
-                },
-                "email_analyzer" : {
-                    "tokenizer" : "keyword",
-                    "filter" : [
-                        "lowercase",
-                        "asciifolding"
-                    ]
-                },
-                "first_name_analyzer" : {
-                    "tokenizer" : "whitespace",
-                    "filter" : [
-                        "lowercase",
-                        "asciifolding"
-                    ],
-                    "char_filter" : [
-                        "hyphen_filter"
-                    ]
-                },
-                "last_name_analyzer" : {
-                    "tokenizer" : "keyword",
-                    "filter" : [
-                        "lowercase",
-                        "asciifolding",
-                        "hyphen_to_whitespace",
-                        "whitespace_to_hyphen"
-                    ]
-                },
-                "id_analyser" : {
-                    "tokenizer" : "keyword",
-                    "filter" : [
-                        "lowercase"
-                    ]
-                }
-            },
-            "tokenizer" : {
-                "email_tokenizer" : {
-                    "type" : "uax_url_email"
-                }
-            },
-            "filter" : {
-                "hyphen_to_whitespace" : {
-                    "type" : "pattern_replace",
-                    "pattern" : "-",
-                    "replacement" : " ",
-                    "all" : true
-                },
-                "whitespace_to_hyphen" : {
-                    "type" : "pattern_replace",
-                    "pattern" : " ",
-                    "replacement" : "-",
-                    "all" : true
-                }
-            }
+  "settings": {
+    "analysis": {
+      "char_filter": {
+        "replace_comas_with_blank": {
+          "type": "pattern_replace",
+          "pattern": "(,+)",
+          "replacement": " "
+        },
+        "replace_hyphens_with_blank": {
+          "type": "pattern_replace",
+          "pattern": "(-+)",
+          "replacement": " "
+        },
+        "replace_hyphens_with_hyphen": {
+          "type": "pattern_replace",
+          "pattern": "(-+)",
+          "replacement": "-"
+        },
+        "replace_blanks_with_blank": {
+          "type": "pattern_replace",
+          "pattern": "( +)",
+          "replacement": " "
         }
-    },
-    "mappings" : {
-        "properties" : {
-            "attributes.email.value" : {
-                "type" : "text",
-                "analyzer" : "email_analyzer",
-                "search_analyzer" : "email_analyzer"
-            },
-            "attributes.login.value" : {
-                "type" : "text",
-                "analyzer" : "keyword",
-                "search_analyzer" : "keyword"
-            },
-            "attributes.birthdate.value" : {
-                "type" : "text",
-                "analyzer" : "keyword",
-                "search_analyzer" : "keyword"
-            },
-            "attributes.first_name.value" : {
-                "type" : "text",
-                "analyzer" : "first_name_analyzer",
-                "search_analyzer" : "first_name_analyzer",
-                "fields": {
-                    "raw": {
-                        "type": "text",
-                        "analyzer": "keyword",
-                        "search_analyzer": "keyword"
-                    }
-                }
-            },
-            "attributes.family_name.value" : {
-                "type" : "text",
-                "analyzer" : "last_name_analyzer",
-                "search_analyzer" : "last_name_analyzer",
-                "fields": {
-                    "raw": {
-                        "type": "text",
-                        "analyzer": "keyword",
-                        "search_analyzer": "keyword"
-                    }
-                }
-            },
-            "attributes.preferred_username.value" : {
-                "type" : "text",
-                "analyzer" : "last_name_analyzer",
-                "search_analyzer" : "last_name_analyzer",
-                "fields": {
-                    "raw": {
-                        "type": "text",
-                        "analyzer": "keyword",
-                        "search_analyzer": "keyword"
-                    }
-                }
-            },
-            "customerId" : {
-                "type" : "text",
-                "analyzer" : "id_analyser",
-                "search_analyzer" : "id_analyser"
-            },
-            "connectionId" : {
-                "type" : "text",
-                "analyzer" : "id_analyser",
-                "search_analyzer" : "id_analyser"
-            }
+      },
+      "analyzer": {
+        "default": {
+          "tokenizer": "keyword",
+          "filter": [
+            "lowercase",
+            "asciifolding",
+            "trim"
+          ]
+        },
+        "default_search": {
+          "tokenizer": "keyword",
+          "filter": [
+            "lowercase",
+            "asciifolding",
+            "trim"
+          ]
+        },
+        "custom_keyword_analyzer": {
+          "tokenizer": "keyword",
+          "filter": [
+            "lowercase",
+            "asciifolding",
+            "trim"
+          ]
+        },
+        "birthdate_analyzer": {
+          "tokenizer": "keyword",
+          "filter": [
+            "trim"
+          ]
+        },
+        "approximated_first_name_analyzer": {
+          "tokenizer": "whitespace",
+          "filter": [
+            "lowercase",
+            "asciifolding",
+            "trim"
+          ],
+          "char_filter": [
+            "replace_comas_with_blank"
+          ]
+        },
+        "raw_first_name_analyzer": {
+          "tokenizer": "keyword",
+          "filter": [
+            "lowercase",
+            "asciifolding",
+            "trim"
+          ],
+          "char_filter": [
+            "replace_comas_with_blank"
+          ]
+        },
+        "last_name_analyzer": {
+          "tokenizer": "keyword",
+          "filter": [
+            "lowercase",
+            "asciifolding",
+            "trim"
+          ],
+          "char_filter": [
+            "replace_hyphens_with_blank",
+            "replace_blanks_with_blank"
+          ]
+        },
+        "place_analyzer": {
+          "tokenizer": "keyword",
+          "filter": [
+            "lowercase",
+            "asciifolding",
+            "trim"
+          ],
+          "char_filter": [
+            "replace_hyphens_with_blank",
+            "replace_blanks_with_blank"
+          ]
+        },
+        "id_analyser": {
+          "tokenizer": "keyword",
+          "filter": [
+            "lowercase",
+            "trim"
+          ]
         }
+      },
+      "tokenizer": {
+        "email_tokenizer": {
+          "type": "uax_url_email"
+        }
+      }
     }
+  },
+  "mappings": {
+    "properties": {
+      "attributes.first_name.value": {
+        "type": "text",
+        "analyzer": "approximated_first_name_analyzer",
+        "search_analyzer": "approximated_first_name_analyzer",
+        "fields": {
+          "raw": {
+            "type": "text",
+            "analyzer": "raw_first_name_analyzer",
+            "search_analyzer": "raw_first_name_analyzer"
+          }
+        }
+      },
+      "attributes.family_name.value": {
+        "type": "text",
+        "analyzer": "last_name_analyzer",
+        "search_analyzer": "last_name_analyzer"
+      },
+      "attributes.preferred_username.value": {
+        "type": "text",
+        "analyzer": "last_name_analyzer",
+        "search_analyzer": "last_name_analyzer"
+      },
+      "attributes.birthcountry.value": {
+        "type": "text",
+        "analyzer": "place_analyzer",
+        "search_analyzer": "place_analyzer"
+      },
+      "attributes.birthplace.value": {
+        "type": "text",
+        "analyzer": "place_analyzer",
+        "search_analyzer": "place_analyzer"
+      },
+      "attributes.gender.value": {
+        "type": "text",
+        "analyzer": "custom_keyword_analyzer",
+        "search_analyzer": "custom_keyword_analyzer"
+      },
+      "attributes.email.value": {
+        "type": "text",
+        "analyzer": "custom_keyword_analyzer",
+        "search_analyzer": "custom_keyword_analyzer"
+      },
+      "attributes.login.value": {
+        "type": "text",
+        "analyzer": "custom_keyword_analyzer",
+        "search_analyzer": "custom_keyword_analyzer"
+      },
+      "attributes.birthdate.value": {
+        "type": "text",
+        "analyzer": "birthdate_analyzer",
+        "search_analyzer": "birthdate_analyzer"
+      },
+      "customerId": {
+        "type": "text",
+        "analyzer": "id_analyser",
+        "search_analyzer": "id_analyser"
+      },
+      "connectionId": {
+        "type": "text",
+        "analyzer": "id_analyser",
+        "search_analyzer": "id_analyser"
+      }
+    }
+  }
 }
