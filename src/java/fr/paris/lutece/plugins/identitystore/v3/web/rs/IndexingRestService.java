@@ -35,7 +35,6 @@ package fr.paris.lutece.plugins.identitystore.v3.web.rs;
 
 import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.task.FullIndexTask;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
-import fr.paris.lutece.plugins.rest.service.RestConstants;
 import fr.paris.lutece.portal.service.spring.SpringContextService;
 
 import javax.ws.rs.GET;
@@ -47,7 +46,7 @@ import javax.ws.rs.core.Response;
 /**
  * ClientRest
  */
-@Path( RestConstants.BASE_PATH + Constants.PLUGIN_PATH + Constants.VERSION_PATH_V3 )
+@Path( Constants.INTERNAL_API_PATH + Constants.PLUGIN_PATH + Constants.VERSION_PATH_V3 )
 public class IndexingRestService
 {
 

@@ -76,7 +76,7 @@ public class IndexStatus implements Serializable
         {
             return 0;
         }
-        return ( (double) _nCurrentNbIndexedIdentities / (double) _nNbTotalIdentities ) * 100.0;
+        return Math.round( ( (double) _nCurrentNbIndexedIdentities / (double) _nNbTotalIdentities ) * 100.0 );
     }
 
     public String getLogs( )

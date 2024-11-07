@@ -39,7 +39,6 @@ import fr.paris.lutece.plugins.identitystore.business.identity.IdentityHome;
 import fr.paris.lutece.plugins.identitystore.business.identity.IndicatorsActionsType;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.history.IdentityChangeType;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
-import fr.paris.lutece.plugins.rest.service.RestConstants;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -54,7 +53,7 @@ import java.util.Map;
 /**
  * ClientRest
  */
-@Path( RestConstants.BASE_PATH + Constants.PLUGIN_PATH + Constants.VERSION_PATH_V3 )
+@Path( Constants.INTERNAL_API_PATH + Constants.PLUGIN_PATH + Constants.VERSION_PATH_V3 )
 public class IndicatorsRestService
 {
 

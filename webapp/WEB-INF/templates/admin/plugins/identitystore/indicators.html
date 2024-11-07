@@ -110,35 +110,35 @@
 
         let divDay = document.getElementById("actions-by-day-table");
         let trimmedDay = trim(divDay.innerHTML, 5);
-        fetch("rest/identitystore/v3/indicators/count/actionsbytime?duration=1")
+        fetch("internal/api/identitystore/v3/indicators/count/actionsbytime?duration=1")
             .then(response => response.json())
             .then(json => divDay.innerHTML = trimmedDay + handleActionsByTimeResponse(json))
             .catch(console.error);
 
         let divWeek = document.getElementById("actions-by-week-table");
         let trimmedWeek = trim(divWeek.innerHTML, 5);
-        fetch("rest/identitystore/v3/indicators/count/actionsbytime?duration=7")
+        fetch("internal/api/identitystore/v3/indicators/count/actionsbytime?duration=7")
             .then(response => response.json())
             .then(json => divWeek.innerHTML = trimmedWeek + handleActionsByTimeResponse(json))
             .catch(console.error);
 
         let divMonth = document.getElementById("actions-by-month-table");
         let trimmedMonth = trim(divMonth.innerHTML, 5);
-        fetch("rest/identitystore/v3/indicators/count/actionsbytime?duration=30")
+        fetch("internal/api/identitystore/v3/indicators/count/actionsbytime?duration=30")
             .then(response => response.json())
             .then(json => divMonth.innerHTML = trimmedMonth + handleActionsByTimeResponse(json))
             .catch(console.error);
 
         let divAttributeByIdentity = document.getElementById("attributes-by-identities-table");
         let trimmedAttributeByIdentity = trim(divAttributeByIdentity.innerHTML, 2);
-        fetch("rest/identitystore/v3/indicators/count/attributesbyidentities")
+        fetch("internal/api/identitystore/v3/indicators/count/attributesbyidentities")
             .then(response => response.json())
             .then(json => divAttributeByIdentity.innerHTML = trimmedAttributeByIdentity + handleAttributesByIdentitiesResponse(json))
             .catch(console.error);
 
 
         let spanNoAttribute = document.getElementById("count_unmerged_no_attributes_identities");
-        fetch("rest/identitystore/v3/indicators/count/unmergednoattributes")
+        fetch("internal/api/identitystore/v3/indicators/count/unmergednoattributes")
             .then(response => response.json())
             .then(json => spanNoAttribute.innerHTML = json)
             .catch(console.error);

@@ -36,7 +36,7 @@
 
     // check if indexing in progress;
     async function check() {
-        fetch("rest/identitystore/v3/indexing/status")
+        fetch("internal/api/identitystore/v3/indexing/status")
             .then(response => response.json())
             .then(indexStatus => {
                 if (indexStatus != null) {
