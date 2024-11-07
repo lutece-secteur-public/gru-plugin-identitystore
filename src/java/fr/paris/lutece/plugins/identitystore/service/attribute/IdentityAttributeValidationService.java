@@ -45,6 +45,7 @@ import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
 
@@ -103,7 +104,7 @@ public class IdentityAttributeValidationService
     public void validateIdentityAttributeValues( final IdentityDto identity, final ChangeResponse response ) throws IdentityAttributeNotFoundException
     {
         final List<AttributeStatus> attrStatusList = new ArrayList<>( );
-        if ( identity != null )
+        if ( identity != null && CollectionUtils.isNotEmpty( identity.getAttributes( ) ) )
         {
             for ( final AttributeDto attribute : identity.getAttributes( ) )
             {

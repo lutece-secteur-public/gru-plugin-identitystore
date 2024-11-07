@@ -42,6 +42,7 @@ import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.search.IdentitySearch
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.search.SearchAttribute;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.search.SearchDto;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
@@ -98,7 +99,7 @@ public class IdentityAttributeFormatterService
     {
         final List<AttributeStatus> statuses = new ArrayList<>( );
         final IdentityDto identity = request.getIdentity( );
-        if ( identity != null )
+        if ( identity != null && CollectionUtils.isNotEmpty( identity.getAttributes( ) ) )
         {
             statuses.addAll( this.formatIdentityAttributeValues( identity ) );
             request.setIdentity( identity );

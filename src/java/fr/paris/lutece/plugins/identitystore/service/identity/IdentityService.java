@@ -605,7 +605,7 @@ public class IdentityService
         try
         {
             final List<AttributeStatus> attrStatusList = new ArrayList<>( );
-            if ( request.getIdentity( ) != null )
+            if ( request.getIdentity( ) != null && CollectionUtils.isNotEmpty(request.getIdentity().getAttributes()) )
             {
                 attrStatusList.addAll( this.updateIdentity( request.getIdentity( ), clientCode, response, primaryIdentity ) );
                 if ( ResponseStatusFactory.unauthorized( ).equals( response.getStatus( ) ) )
