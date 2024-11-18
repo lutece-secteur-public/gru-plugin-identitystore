@@ -33,16 +33,24 @@
  */
 package fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.listener;
 
+import fr.paris.lutece.plugins.identitystore.business.duplicates.suspicions.SuspiciousIdentity;
+import fr.paris.lutece.plugins.identitystore.business.duplicates.suspicions.SuspiciousIdentityHome;
 import fr.paris.lutece.plugins.identitystore.business.identity.Identity;
 import fr.paris.lutece.plugins.identitystore.service.IdentityChangeListener;
+import fr.paris.lutece.plugins.identitystore.service.duplicate.IDuplicateService;
 import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.model.AttributeObject;
 import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.model.IdentityObject;
 import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.service.IIdentityIndexer;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.DtoConverter;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.AttributeDto;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.RequestAuthor;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.history.IdentityChangeType;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.search.DuplicateSearchResponse;
 import fr.paris.lutece.portal.service.util.AppLogService;
 import fr.paris.lutece.portal.service.util.AppPropertiesService;
+import fr.paris.lutece.util.sql.TransactionManager;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -52,10 +60,12 @@ public class IdentityIndexListener implements IdentityChangeListener
     private static final String SERVICE_NAME = "Elastic Search identity change listener";
 
     private final IIdentityIndexer _identityIndexer;
+    private final IDuplicateService _duplicateServiceElasticSearch;
 
-    public IdentityIndexListener( IIdentityIndexer _identityIndexer )
+    public IdentityIndexListener( final IIdentityIndexer _identityIndexer, final IDuplicateService _duplicateServiceElasticSearch )
     {
         this._identityIndexer = _identityIndexer;
+        this._duplicateServiceElasticSearch = _duplicateServiceElasticSearch;
     }
 
     @Override
@@ -91,6 +101,9 @@ public class IdentityIndexListener implements IdentityChangeListener
             default:
                 break;
         }
+
+        // Ensure that the identity is a valid suspicion
+        this.checkSuspicion( identity );
     }
 
     @Override
@@ -109,5 +122,38 @@ public class IdentityIndexListener implements IdentityChangeListener
                         attribute.getCertificate( ) != null ? attribute.getCertificate( ).getCertificateDate( ) : null,
                         attribute.getCertificate( ) != null ? attribute.getCertificate( ).getExpirationDate( ) : null, attribute.getLastUpdateClientCode( ) ) )
                 .collect( Collectors.toMap( AttributeObject::getKey, o -> o ) );
+    }
+
+    /**
+     * Check if the given {@link Identity} is a {@link fr.paris.lutece.plugins.identitystore.business.duplicates.suspicions.SuspiciousIdentity} or not. <br>
+     * If it is suspicious, delete from suspicions.
+     *
+     * @param identity
+     *            the {@link Identity} to handle
+     */
+    private void checkSuspicion( final Identity identity )
+    {
+        final SuspiciousIdentity suspiciousIdentity = SuspiciousIdentityHome.selectByCustomerID( identity.getCustomerId( ) );
+        if ( suspiciousIdentity != null )
+        {
+            try
+            {
+                final Map<String, String> attributeMap = DtoConverter.convertIdentityToDto( identity ).getAttributes( ).stream( )
+                        .collect( Collectors.toMap( AttributeDto::getKey, AttributeDto::getValue ) );
+                final DuplicateSearchResponse duplicates =  _duplicateServiceElasticSearch.findDuplicates( attributeMap, identity.getCustomerId( ), Collections.singletonList( suspiciousIdentity.getDuplicateRuleCode( ) ), Collections.emptyList( ) );
+
+                if ( duplicates.getIdentities( ).isEmpty( ) )
+                {
+                    TransactionManager.beginTransaction( null );
+                    SuspiciousIdentityHome.remove( identity.getCustomerId( ) );
+                    TransactionManager.commitTransaction( null );
+                }
+            }
+            catch( final Exception e )
+            {
+                TransactionManager.rollBack( null );
+                AppLogService.error( "Handle suspicion :: Could not handle identity " + identity.getCustomerId( ) + " : " + e.getMessage( ) );
+            }
+        }
     }
 }

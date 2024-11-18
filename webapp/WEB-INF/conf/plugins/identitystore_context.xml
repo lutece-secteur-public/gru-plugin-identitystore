@@ -69,12 +69,13 @@
 	    <constructor-arg ref="notificationStore.impl"/>
 	</bean>
 	
-    <!-- Logging -->
+    <!-- Listeners -->
     <bean id="identitystore.listener.logging" class="fr.paris.lutece.plugins.identitystore.service.listeners.LoggingListener" />
     <bean id="identitystore.listener.attributeHistory" class="fr.paris.lutece.plugins.identitystore.service.listeners.AttributeHistoryListener" />
     <bean id="identitystore.listener.identityHistory" class="fr.paris.lutece.plugins.identitystore.service.listeners.IdentityHistoryListener" />
     <bean id="identitystore.listener.index" class="fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.listener.IdentityIndexListener" >
         <constructor-arg ref="identitystore.elasticsearch.identityIndexer" name="_identityIndexer"/>
+        <constructor-arg ref="identitystore.duplicateService.elasticsearch" name="_duplicateServiceElasticSearch"/>
     </bean>
 
     <!-- Schedule full E/S identities reindexing -->
