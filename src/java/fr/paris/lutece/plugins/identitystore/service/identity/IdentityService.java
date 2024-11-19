@@ -33,6 +33,24 @@
  */
 package fr.paris.lutece.plugins.identitystore.service.identity;
 
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+
 import fr.paris.lutece.plugins.identitystore.business.application.ClientApplication;
 import fr.paris.lutece.plugins.identitystore.business.attribute.AttributeKey;
 import fr.paris.lutece.plugins.identitystore.business.attribute.AttributeKeyHome;
@@ -44,8 +62,6 @@ import fr.paris.lutece.plugins.identitystore.business.identity.Identity;
 import fr.paris.lutece.plugins.identitystore.business.identity.IdentityAttribute;
 import fr.paris.lutece.plugins.identitystore.business.identity.IdentityAttributeHome;
 import fr.paris.lutece.plugins.identitystore.business.identity.IdentityHome;
-import fr.paris.lutece.plugins.identitystore.business.referentiel.RefAttributeCertificationLevel;
-import fr.paris.lutece.plugins.identitystore.business.referentiel.RefAttributeCertificationLevelHome;
 import fr.paris.lutece.plugins.identitystore.business.rules.duplicate.DuplicateRule;
 import fr.paris.lutece.plugins.identitystore.business.rules.duplicate.DuplicateRuleHome;
 import fr.paris.lutece.plugins.identitystore.business.rules.search.IdentitySearchRule;
@@ -95,22 +111,6 @@ import fr.paris.lutece.portal.service.spring.SpringContextService;
 import fr.paris.lutece.portal.service.util.AppPropertiesService;
 import fr.paris.lutece.util.http.SecurityUtil;
 import fr.paris.lutece.util.sql.TransactionManager;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 public class IdentityService
 {
@@ -1235,8 +1235,7 @@ public class IdentityService
 
         // - For new attributes, certification level must be > 100 (better than self-declare)
         final boolean newAttrSelfDeclare = newWritableAttributes.stream( )
-                .map( a -> RefAttributeCertificationLevelHome.findByProcessusAndAttributeKeyName( a.getCertifier( ), a.getKey( ) ) )
-                .anyMatch( c -> Integer.parseInt( c.getRefCertificationLevel( ).getLevel( ) ) <= 100 );
+                .anyMatch( a -> AttributeCertificationDefinitionService.instance( ).getLevelAsInteger(  a.getCertifier( ), a.getKey( ) )   <= 100 );
         if ( newAttrSelfDeclare )
         {
             response.setStatus( ResponseStatusFactory.unauthorized( )
@@ -1247,16 +1246,15 @@ public class IdentityService
 
         // - For existing attributes, certification level must be >= than the existing level
         final boolean lesserWantedLvl = existingWritableAttributes.stream( )
-                .map( a -> RefAttributeCertificationLevelHome.findByProcessusAndAttributeKeyName( a.getCertifier( ), a.getKey( ) ) ).anyMatch( wantedCertif -> {
-                    final int wantedLvl = Integer.parseInt( wantedCertif.getRefCertificationLevel( ).getLevel( ) );
-
-                    final IdentityAttribute existingAttr = identity.getAttributes( ).get( wantedCertif.getAttributeKey( ).getKeyName( ) );
-                    final RefAttributeCertificationLevel existingCertif = RefAttributeCertificationLevelHome.findByProcessusAndAttributeKeyName(
+                .anyMatch( a ->  {
+                	int wantedLvl = AttributeCertificationDefinitionService.instance( ).getLevelAsInteger( a.getCertifier( ), a.getKey( ) );
+                    
+                    final IdentityAttribute existingAttr = identity.getAttributes( ).get( a.getKey( ) );
+                    final int existingLvl = AttributeCertificationDefinitionService.instance( ).getLevelAsInteger(
                             existingAttr.getCertificate( ).getCertifierCode( ), existingAttr.getAttributeKey( ).getKeyName( ) );
-                    final int existingLvl = Integer.parseInt( existingCertif.getRefCertificationLevel( ).getLevel( ) );
 
                     return wantedLvl < existingLvl;
-                } );
+                	});
         if ( lesserWantedLvl )
         {
             response.setStatus( ResponseStatusFactory.unauthorized( )
@@ -1271,13 +1269,12 @@ public class IdentityService
         final List<String> pivotAttributeKeys = allAttributesByKey.values( ).stream( ).filter( AttributeKey::getPivot ).map( AttributeKey::getKeyName )
                                                                   .collect( Collectors.toList( ) );
         final boolean breakingThreshold = identity.getAttributes( ).values( ).stream( ).filter( a -> a.getAttributeKey( ).getPivot( ) )
-                .map( a -> RefAttributeCertificationLevelHome.findByProcessusAndAttributeKeyName( a.getCertificate( ).getCertifierCode( ),
-                        a.getAttributeKey( ).getKeyName( ) ) )
-                .anyMatch( c -> Integer.parseInt( c.getRefCertificationLevel( ).getLevel( ) ) >= threshold )
+                .anyMatch( a -> AttributeCertificationDefinitionService.instance( ).getLevelAsInteger( a.getCertificate( ).getCertifierCode( ),
+                        a.getAttributeKey( ).getKeyName( )  ) >= threshold  )                
                 || requestIdentity.getAttributes( ).stream( )
                         .filter(a -> pivotAttributeKeys.contains(a.getKey()))
-                        .map( a -> RefAttributeCertificationLevelHome.findByProcessusAndAttributeKeyName( a.getCertifier( ), a.getKey( ) ) )
-                        .anyMatch( c -> Integer.parseInt( c.getRefCertificationLevel( ).getLevel( ) ) >= threshold );
+                        .anyMatch( a ->  AttributeCertificationDefinitionService.instance( ).getLevelAsInteger( a.getCertifier( ), a.getKey( ) ) 
+                        		 >= threshold );
         if ( breakingThreshold )
         {
             // if any pivot is missing from request + existing -> unauthorized
@@ -1285,6 +1282,29 @@ public class IdentityService
                     requestIdentity.getAttributes( ).stream( ).map(AttributeDto::getKey).filter(pivotAttributeKeys::contains).collect(Collectors.toSet()),
                     identity.getAttributes( ).values( ).stream( ).map( IdentityAttribute::getAttributeKey ).filter( AttributeKey::getPivot )
                             .map( AttributeKey::getKeyName ).collect( Collectors.toSet( ) ) );
+            
+            if ( unionOfExistingAndRequestedPivotKeys.contains( Constants.PARAM_BIRTH_COUNTRY_CODE ) )
+	        {
+	        	IdentityAttribute existingIdentityCountryCodeAttribute = identity.getAttributes( ).get( Constants.PARAM_BIRTH_COUNTRY_CODE );
+	        	String existingIdentityCountryCodeValue = ( existingIdentityCountryCodeAttribute != null ? existingIdentityCountryCodeAttribute.getValue( ) : null );
+	        	String requestedIdentityCountryCodeValue = requestIdentity.getAttributes( ).stream( )
+	        			.filter( a -> Constants.PARAM_BIRTH_COUNTRY_CODE.equals(a.getKey()) )
+	        			.map( a -> a.getValue( ) ).findFirst().orElse(null);
+	        	
+	        	String CODE_FRANCE = "99100";
+	        
+	        	if (  ( requestedIdentityCountryCodeValue != null && !CODE_FRANCE.equals( requestedIdentityCountryCodeValue ) ||
+	        		  ( requestedIdentityCountryCodeValue == null && !CODE_FRANCE.equals( existingIdentityCountryCodeValue ) ) ) )
+	        	{
+	        		// remove "birth place code" attribute from pivot mandatory attributes 
+	        		// in case of actual or requested foreign birth country
+	        		pivotAttributeKeys.remove( Constants.PARAM_BIRTH_PLACE_CODE );
+	        		unionOfExistingAndRequestedPivotKeys.remove( Constants.PARAM_BIRTH_PLACE_CODE );
+	        	}
+	        	
+	        }
+            
+            
             if ( !CollectionUtils.isEqualCollection( pivotAttributeKeys, unionOfExistingAndRequestedPivotKeys ) )
             {
                 response.setStatus( ResponseStatusFactory.unauthorized( )
@@ -1303,14 +1323,11 @@ public class IdentityService
                 int existingLvl = 0;
                 if ( requested != null )
                 {
-                    requestedLvl = Integer.parseInt( RefAttributeCertificationLevelHome.findByProcessusAndAttributeKeyName( requested.getCertifier( ), key )
-                            .getRefCertificationLevel( ).getLevel( ) );
+                    requestedLvl = AttributeCertificationDefinitionService.instance( ).getLevelAsInteger( requested.getCertifier( ), key);
                 }
                 if ( existing != null )
                 {
-                    existingLvl = Integer.parseInt(
-                            RefAttributeCertificationLevelHome.findByProcessusAndAttributeKeyName( existing.getCertificate( ).getCertifierCode( ), key )
-                                    .getRefCertificationLevel( ).getLevel( ) );
+                    existingLvl = AttributeCertificationDefinitionService.instance( ).getLevelAsInteger( existing.getCertificate( ).getCertifierCode( ), key );
                 }
                 return Math.max( requestedLvl, existingLvl );
             } ).anyMatch( lvl -> lvl < threshold );
