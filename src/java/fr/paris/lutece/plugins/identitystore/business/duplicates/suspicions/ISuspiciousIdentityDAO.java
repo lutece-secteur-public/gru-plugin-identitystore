@@ -251,4 +251,5 @@ public interface ISuspiciousIdentityDAO
 
     List<ExcludedIdentities> selectExcludedIdentitiesList( String customerId, Plugin plugin );
 
+    void purgeByRuleId(Integer ruleId, Plugin plugin);
 }

@@ -295,6 +295,18 @@ public final class SuspiciousIdentityHome
         return _dao.selectByCustomerIDs( customerIds, _plugin );
     }
 
+    public static void purge( final Integer ruleId )
+    {
+        if( ruleId == null )
+        {
+            _dao.purge( _plugin );
+        }
+        else
+        {
+            _dao.purgeByRuleId( ruleId, _plugin );
+        }
+    }
+
     public static void purge( )
     {
         _dao.purge( _plugin );
