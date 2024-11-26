@@ -52,9 +52,11 @@ import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.search.SearchAttribut
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.ResponseStatusFactory;
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
+import fr.paris.lutece.portal.service.util.AppPropertiesService;
 import org.apache.commons.collections.CollectionUtils;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -67,6 +69,9 @@ import java.util.stream.Collectors;
 
 public class DuplicateService implements IDuplicateService
 {
+
+    private static final String PROPERTY_DUPLICATES_RULES_STRICT = "identitystore.identity.duplicates.rules.strict";
+
     /**
      * Identity Search service
      */
@@ -143,6 +148,8 @@ public class DuplicateService implements IDuplicateService
 
         duplicateRules.sort( Comparator.comparingInt( DuplicateRule::getPriority ) );
         final Set<String> matchingRuleCodes = new HashSet<>( );
+        final Set<String> strictCUIDs = new HashSet<>();
+        final List<String> strictRuleCodes = Arrays.asList(AppPropertiesService.getProperty(PROPERTY_DUPLICATES_RULES_STRICT, "").split(","));
         for ( final DuplicateRule duplicateRule : duplicateRules )
         {
             final QualifiedIdentitySearchResult identitySearchResult = this.findDuplicates( attributeValues, customerId, duplicateRule, attributesFilter );
@@ -154,6 +161,9 @@ public class DuplicateService implements IDuplicateService
                     {
                         matchingRuleCodes.add( duplicateRule.getCode( ) );
                         response.getIdentities( ).add( identityDto );
+                        if (strictRuleCodes.contains(duplicateRule.getCode())) {
+                            strictCUIDs.add(identityDto.getCustomerId());
+                        }
                     }
                 } );
                 Maps.mergeStringMap( response.getMetadata( ), identitySearchResult.getMetadata( ) );
@@ -162,7 +172,11 @@ public class DuplicateService implements IDuplicateService
 
         if ( CollectionUtils.isNotEmpty( response.getIdentities( ) ) )
         {
-            response.setStatus( ResponseStatusFactory.ok( ).setMessage( "Potential duplicate(s) found with rule(s) : " + String.join( ",", matchingRuleCodes ) )
+            String errMsg = "Potential duplicate(s) found with rule(s) : " + String.join( ",", matchingRuleCodes );
+            if (!strictCUIDs.isEmpty()) {
+                errMsg += ". Strict duplicate CUIDs : " + strictCUIDs;
+            }
+            response.setStatus( ResponseStatusFactory.ok( ).setMessage( errMsg )
                     .setMessageKey( Constants.PROPERTY_REST_INFO_POTENTIAL_DUPLICATE_FOUND ) );
         }
         else
