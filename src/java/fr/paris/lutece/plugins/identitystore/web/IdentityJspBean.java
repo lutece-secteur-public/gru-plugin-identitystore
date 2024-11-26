@@ -218,11 +218,11 @@ public class IdentityJspBean extends ManageIdentitiesJspBean
                 {
                     if ( StringUtils.isNotEmpty( insee_city ) )
                     {
-                        atttributes.add( new SearchAttribute( Constants.PARAM_BIRTH_PLACE_CODE, insee_city, AttributeTreatmentType.APPROXIMATED ) );
+                        atttributes.add( new SearchAttribute( Constants.PARAM_BIRTH_PLACE_CODE, insee_city, AttributeTreatmentType.STRICT ) );
                     }
                     if ( StringUtils.isNotEmpty( insee_country ) )
                     {
-                        atttributes.add( new SearchAttribute( Constants.PARAM_BIRTH_COUNTRY_CODE, insee_country, AttributeTreatmentType.APPROXIMATED ) );
+                        atttributes.add( new SearchAttribute( Constants.PARAM_BIRTH_COUNTRY_CODE, insee_country, AttributeTreatmentType.STRICT ) );
                     }
                     if ( StringUtils.isNotEmpty( email ) )
                     {
@@ -246,11 +246,11 @@ public class IdentityJspBean extends ManageIdentitiesJspBean
                     }
                     if ( StringUtils.isNotEmpty( birthplace ) )
                     {
-                        atttributes.add( new SearchAttribute( Constants.PARAM_BIRTH_PLACE, birthplace, AttributeTreatmentType.STRICT ) );
+                        atttributes.add( new SearchAttribute( Constants.PARAM_BIRTH_PLACE, birthplace, AttributeTreatmentType.APPROXIMATED ) );
                     }
                     if ( StringUtils.isNotEmpty( birthcountry ) )
                     {
-                        atttributes.add( new SearchAttribute( Constants.PARAM_BIRTH_COUNTRY, birthcountry, AttributeTreatmentType.STRICT ) );
+                        atttributes.add( new SearchAttribute( Constants.PARAM_BIRTH_COUNTRY, birthcountry, AttributeTreatmentType.APPROXIMATED ) );
                     }
                     if ( StringUtils.isNotEmpty( phone ) )
                     {
