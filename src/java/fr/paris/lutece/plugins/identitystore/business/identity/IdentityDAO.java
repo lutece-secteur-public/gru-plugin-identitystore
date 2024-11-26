@@ -97,7 +97,7 @@ public final class IdentityDAO implements IIdentityDAO
     private static final String SQL_QUERY_SELECT_BY_ATTRIBUTES_FOR_API_SEARCH = " SELECT " + COLUMNS + " FROM identitystore_identity a ${join_clause} LIMIT ${limit}";
     private static final String SQL_QUERY_WITH_CLAUSE_FOR_API_SEARCH = "WITH ${with_clause} ";
     private static final String SQL_QUERY_JOIN_CLAUSE_FOR_API_SEARCH = "JOIN ${tmp_table_name} on ${tmp_table_name}.id_identity = a.id_identity ";
-    private static final String SQL_QUERY_TMP_TABLE_FOR_API_SEARCH = " AS (SELECT b.id_identity AS id_identity FROM identitystore_identity_attribute b JOIN identitystore_ref_attribute c ON b.id_attribute = c.id_attribute AND ${filter})";
+    private static final String SQL_QUERY_TMP_TABLE_FOR_API_SEARCH = " AS (SELECT ${distinct} b.id_identity AS id_identity FROM identitystore_identity_attribute b JOIN identitystore_ref_attribute c ON b.id_attribute = c.id_attribute AND ${filter})";
     private static final String SQL_QUERY_FILTER_ATTRIBUTE_FOR_API_SEARCH = "c.key_name IN (${key_name_list}) AND LOWER(b.attribute_value) = '${value}'";
     private static final String SQL_QUERY_FILTER_NORMALIZED_ATTRIBUTE_FOR_API_SEARCH = "c.key_name IN (${key_name_list}) AND TRANSLATE(REPLACE(REPLACE(LOWER(b.attribute_value), 'œ', 'oe'), 'æ', 'ae'), 'àâäéèêëîïôöùûüÿçñ', 'aaaeeeeiioouuuycn') = '${value}'";
     private static final String SQL_QUERY_SOFT_DELETE = "UPDATE identitystore_identity SET is_deleted = 1, date_delete = now( ), is_mon_paris_active = 0, expiration_date=now( ), last_update_date=now( )  WHERE customer_id = ?";
@@ -539,7 +539,19 @@ public final class IdentityDAO implements IIdentityDAO
             {
                 filter = SQL_QUERY_FILTER_ATTRIBUTE_FOR_API_SEARCH.replace("${key_name_list}", "'" + String.join("', '", attribute.getOutputKeys( ) ) + "'" ).replace("${value}", StringUtils.lowerCase( attribute.getValue( ) ) );
             }
-            withClauses.put(attribute.getKey(), SQL_QUERY_TMP_TABLE_FOR_API_SEARCH.replace("${filter}", filter ) );
+
+            if(attribute.getKey( ).equals(Constants.PARAM_COMMON_EMAIL)
+                    || attribute.getKey( ).equals( Constants.PARAM_COMMON_LASTNAME )
+                    || attribute.getKey( ).equals(Constants.PARAM_COMMON_PHONE) )
+            {
+                withClauses.put(attribute.getKey(), SQL_QUERY_TMP_TABLE_FOR_API_SEARCH.replace("${filter}", filter )
+                        .replace("${distinct}", "DISTINCT") );
+            }
+            else
+            {
+                withClauses.put(attribute.getKey(), SQL_QUERY_TMP_TABLE_FOR_API_SEARCH.replace("${filter}", filter )
+                        .replace("${distinct}", "") );
+            }
         }
 
         if ( withClauses.isEmpty( ) )
