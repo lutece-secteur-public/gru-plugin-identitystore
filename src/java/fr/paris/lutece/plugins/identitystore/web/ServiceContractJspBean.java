@@ -46,12 +46,16 @@ import fr.paris.lutece.plugins.identitystore.business.referentiel.RefAttributeCe
 import fr.paris.lutece.plugins.identitystore.business.referentiel.RefCertificationLevel;
 import fr.paris.lutece.plugins.identitystore.business.referentiel.RefCertificationLevelHome;
 import fr.paris.lutece.plugins.identitystore.service.contract.ServiceContractService;
+import fr.paris.lutece.plugins.identitystore.utils.Batch;
+import fr.paris.lutece.plugins.identitystore.v3.csv.CsvIdentityService;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.contract.ServiceContractDto;
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
 import fr.paris.lutece.portal.service.admin.AccessDeniedException;
 import fr.paris.lutece.portal.service.message.AdminMessage;
 import fr.paris.lutece.portal.service.message.AdminMessageService;
 import fr.paris.lutece.portal.service.security.SecurityTokenService;
 import fr.paris.lutece.portal.service.util.AppException;
+import fr.paris.lutece.portal.service.util.AppPropertiesService;
 import fr.paris.lutece.portal.util.mvc.admin.annotations.Controller;
 import fr.paris.lutece.portal.util.mvc.commons.annotations.Action;
 import fr.paris.lutece.portal.util.mvc.commons.annotations.View;
@@ -61,6 +65,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 
 import javax.servlet.http.HttpServletRequest;
+import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -69,8 +74,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
+
+import static fr.paris.lutece.plugins.identitystore.v3.web.rs.DtoConverter.convertContractToDto;
 
 /**
  * This class provides the user interface to manage ServiceContract features ( manage, create, modify, remove )
@@ -131,11 +139,13 @@ public class ServiceContractJspBean extends ManageServiceContractJspBean<Integer
     private static final String ACTION_MODIFY_SERVICECONTRACT = "modifyServiceContract";
     private static final String ACTION_REMOVE_SERVICECONTRACT = "removeServiceContract";
     private static final String ACTION_CONFIRM_REMOVE_SERVICECONTRACT = "confirmRemoveServiceContract";
+    private static final String ACTION_EXPORT_SERVICECONTRACT = "exportServiceContract";
 
     // Infos
     private static final String INFO_SERVICECONTRACT_CREATED = "identitystore.info.servicecontract.created";
     private static final String INFO_SERVICECONTRACT_UPDATED = "identitystore.info.servicecontract.updated";
     private static final String INFO_SERVICECONTRACT_REMOVED = "identitystore.info.servicecontract.removed";
+    private static final int BATCH_PARTITION_SIZE = AppPropertiesService.getPropertyInt( "identitystore.export.batch.size", 100 );
 
     // Errors
     private static final String ERROR_RESOURCE_NOT_FOUND = "Resource not found";
@@ -167,7 +177,7 @@ public class ServiceContractJspBean extends ManageServiceContractJspBean<Integer
         }
 
         final Map<String, Object> model = getPaginatedListModel( request, MARK_SERVICECONTRACT_LIST, _listIdServiceContracts, JSP_MANAGE_SERVICECONTRACTS );
-        model.put( QUERY_PARAM_ACTIVE, request.getParameter( QUERY_PARAM_ACTIVE ) );
+        model.put( QUERY_PARAM_ACTIVE, queryParameters.get(QUERY_PARAM_ACTIVE) );
         model.put( QUERY_PARAM_CONTRACT_NAME, request.getParameter( QUERY_PARAM_CONTRACT_NAME ) );
         model.put( QUERY_PARAM_CLIENT_CODE, request.getParameter( QUERY_PARAM_CLIENT_CODE ) );
         model.put( QUERY_PARAM_START_DATE, request.getParameter( QUERY_PARAM_START_DATE ) );
@@ -520,6 +530,41 @@ public class ServiceContractJspBean extends ManageServiceContractJspBean<Integer
         resetListId( );
 
         return redirectView( request, VIEW_MANAGE_SERVICECONTRACTS );
+    }
+
+    @Action( ACTION_EXPORT_SERVICECONTRACT )
+    public void doExportIdentities( HttpServletRequest request )
+    {
+        try
+        {
+            List<ServiceContractDto> listServiceContracts = new ArrayList<>();
+                    for(  ImmutablePair<ServiceContract, String> serviceContract : getItemsFromIds(_listIdServiceContracts))
+                    {
+                        listServiceContracts.add(convertContractToDto(serviceContract.left));
+                    }
+            final Batch<ServiceContractDto> batches = Batch.ofSize( listServiceContracts, BATCH_PARTITION_SIZE );
+
+            final ByteArrayOutputStream outputStream = new ByteArrayOutputStream( );
+            final ZipOutputStream zipOut = new ZipOutputStream( outputStream );
+
+            int i = 0;
+            for ( final List<ServiceContractDto> batch : batches )
+            {
+                final byte [ ] bytes = CsvIdentityService.instance( ).writeContract( batch );
+                final ZipEntry zipEntry = new ZipEntry( "service-contracts-" + ++i + ".csv" );
+                zipEntry.setSize( bytes.length );
+                zipOut.putNextEntry( zipEntry );
+                zipOut.write( bytes );
+            }
+            zipOut.closeEntry( );
+            zipOut.close( );
+            this.download( outputStream.toByteArray( ), "contractServices.zip", "application/zip" );
+        }
+        catch( Exception e )
+        {
+            addError( e.getMessage( ) );
+            redirectView( request, VIEW_MANAGE_SERVICECONTRACTS );
+        }
     }
 
     /**
