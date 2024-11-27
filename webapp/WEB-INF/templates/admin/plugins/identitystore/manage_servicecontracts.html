@@ -2,10 +2,15 @@
 <@tabs tab="servicecontracts" />
 
 <@rowBox>
-    <@boxHeader i18nTitleKey="identitystore.manage_clientapplications.title"/>
+    <@boxHeader i18nTitleKey="identitystore.manage_clientapplications.title">
+        <@headerButtons>
+            <form class="form-inline pull-right" method="post" name="service_contract" action="jsp/admin/plugins/identitystore/ManageServiceContracts.jsp">
+                <@button type='submit' name='action_exportServiceContract' buttonIcon='plus' title='#i18n{identitystore.manage_servicecontracts.buttonExport}' />
+            </form>
+        </@headerButtons>
+    </@boxHeader>
 	<@boxBody>    
     <@messages infos=infos />
-    <@paginationAdmin paginator=paginator combo=1 />
     <div class="clearfix"></div>
     <form id="search-contracts-form" class="form-inline" action="jsp/admin/plugins/identitystore/ManageServiceContracts.jsp">
         <@table class="table-sort-filtered">
@@ -13,79 +18,97 @@
                 <th>Actif</th>
                 <th>#i18n{identitystore.manage_servicecontracts.columnName}</th>
                 <th>#i18n{identitystore.manage_servicecontracts.columnClientCode}</th>
-                <th>#i18n{identitystore.manage_servicecontracts.columnMoaContactName}</th>
-                <th>#i18n{identitystore.manage_servicecontracts.columnMoeResponsibleName}</th>
                 <th>#i18n{identitystore.manage_servicecontracts.columnStartingDate}</th>
                 <th>#i18n{identitystore.manage_servicecontracts.columnEndingDate}</th>
                 <th>#i18n{portal.util.labelActions}</th>
             </tr>
             <tr class="table-sort-inputs">
-                <th><input class="form-control search-field" type="text" value="${active!''}" name="active" placeholder="(y, o, 1) or (n, 0)"></th>
+                <th>
+                    <select class="search-field form-select select-type" name="active" value="${active!''}" >
+                        <option value="1" <#if active! == "1"> selected="selected"</#if>>OUI</option>
+                        <option value="0" <#if active! == "0"> selected="selected"</#if>>NON</option>
+                        <option value="" <#if active! != "1" && active! != "0"> selected="selected"</#if>>TOUS</option>
+                    </select>
+                </th>
                 <th><input class="form-control search-field" type="text" value="${contract_name!''}" name="contract_name" placeholder="Recherche par #i18n{identitystore.manage_servicecontracts.columnName}.."></th>
                 <th><input class="form-control search-field" type="text" value="${client_code!''}" name="client_code" placeholder="Recherche par #i18n{identitystore.manage_servicecontracts.columnClientCode}.."></th>
-                <th></th>
-                <th></th>
                 <th><input class="form-control search-field" type="text" value="${start_date!''}" name="start_date" placeholder="Recherche par #i18n{identitystore.manage_servicecontracts.columnStartingDate}.."></th>
                 <th><input class="form-control search-field" type="text" value="${end_date!''}" name="end_date" placeholder="Recherche par #i18n{identitystore.manage_servicecontracts.columnEndingDate}.."></th>
                 <th>
-                    <span class="input-group-btn">
-                        <button class="btn btn-default" type="submit">
-                            <span class="fa fa-search"></span>
-                        </button>
-                    </span>
+                            <span class="input-group-btn">
+                                <button class="btn btn-default" type="submit">
+                                    <span class="fa fa-search"></span>
+                                </button>
+                            </span>
                     <span >
-                        <button type="submit" class="btn btn-primary btn-empty" title="#i18n{identitystore.manage_identities.emptyFields}">
-                            <i class="fa fa-trash"></i>
-                        </button>
-                    </span>
+                                <button type="submit" class="btn btn-primary btn-empty" title="#i18n{identitystore.manage_identities.emptyFields}">
+                                    <i class="fa fa-trash"></i>
+                                </button>
+                            </span>
                 </th>
             </tr>
-            <@tableHeadBodySeparator />
-            <#list servicecontract_list as servicecontract >
-            <tr>
-                <td>
-                    <#if servicecontract.key.active>
-                    <i class="fas fa-check" aria-hidden="true"></i>
-                    <#else>
-                    <i class="fas fa-times" aria-hidden="true"></i>
-                </#if>
-                </td>
-                <td>
-                    ${servicecontract.key.name}
-                </td>
-                <td>
-                    ${servicecontract.value}
-                </td>
-                <td>
-                    ${servicecontract.key.moaContactName}
-                </td>
-                <td>
-                    ${servicecontract.key.moeResponsibleName}
-                </td>
-                <td>
-                    ${servicecontract.key.startingDate!''}
-                </td>
-                <td>
-                    ${servicecontract.key.endingDate!''}
-                </td>
-                <td>
-                    <@aButton href='jsp/admin/plugins/identitystore/ManageServiceContracts.jsp?view=modifyServiceContract&id=${servicecontract.key.id}' title='#i18n{portal.util.labelModify}' hideTitle=['all'] buttonIcon='pencil' />
 
-                    <@aButton href='jsp/admin/plugins/identitystore/ManageServiceContracts.jsp?action=confirmRemoveServiceContract&id=${servicecontract.key.id}' title='#i18n{portal.util.labelDelete}' buttonIcon='trash' hideTitle=['all'] color='btn-danger'  />
-
-                    <a href="jsp/admin/plugins/identitystore/ManageServiceContracts.jsp?view=displayServiceContract&id=${servicecontract.key.id}&back_url=jsp/admin/plugins/identitystore/ManageServiceContracts.jsp?view=manageServiceContracts"
-                       class="btn btn-primary" title="#i18n{identitystore.manage_servicecontracts.buttonDisplay}" >
-                        <i class="fa fa-eye"></i>
-                    </a>
-                </td>
-            </tr>
-            </#list>
         </@table>
+
     </form>
+
+    <@paginationAdmin paginator=paginator combo=1 />
+    <@table id="table-service-contracts" class="table-sort-filtered">
+        <tr>
+            <th onclick="sortTable(0, 'table-service-contracts')">Actif</th>
+            <th onclick="sortTable(1, 'table-service-contracts')">#i18n{identitystore.manage_servicecontracts.columnName}</th>
+            <th onclick="sortTable(2, 'table-service-contracts')">#i18n{identitystore.manage_servicecontracts.columnClientCode}</th>
+            <th onclick="sortTable(3, 'table-service-contracts')">#i18n{identitystore.manage_servicecontracts.columnMoaContactName}</th>
+            <th onclick="sortTable(4, 'table-service-contracts')">#i18n{identitystore.manage_servicecontracts.columnMoeResponsibleName}</th>
+            <th onclick="sortTable(5, 'table-service-contracts')">#i18n{identitystore.manage_servicecontracts.columnStartingDate}</th>
+            <th onclick="sortTable(6, 'table-service-contracts')">#i18n{identitystore.manage_servicecontracts.columnEndingDate}</th>
+            <th>#i18n{portal.util.labelActions}</th>
+        </tr>
+        <#list servicecontract_list as servicecontract >
+        <tr>
+            <td>
+                <#if servicecontract.key.active>
+                <i class="fas fa-check" aria-hidden="true"></i>
+                <#else>
+                <i class="fas fa-times" aria-hidden="true"></i>
+            </#if>
+            </td>
+            <td>
+                ${servicecontract.key.name}
+            </td>
+            <td>
+                ${servicecontract.value}
+            </td>
+            <td>
+                ${servicecontract.key.moaContactName}
+            </td>
+            <td>
+                ${servicecontract.key.moeResponsibleName}
+            </td>
+            <td>
+                ${servicecontract.key.startingDate!''}
+            </td>
+            <td>
+                ${servicecontract.key.endingDate!''}
+            </td>
+            <td>
+                <@aButton href='jsp/admin/plugins/identitystore/ManageServiceContracts.jsp?view=modifyServiceContract&id=${servicecontract.key.id}' title='#i18n{portal.util.labelModify}' hideTitle=['all'] buttonIcon='pencil' />
+
+                <@aButton href='jsp/admin/plugins/identitystore/ManageServiceContracts.jsp?action=confirmRemoveServiceContract&id=${servicecontract.key.id}' title='#i18n{portal.util.labelDelete}' buttonIcon='trash' hideTitle=['all'] color='btn-danger'  />
+
+                <a href="jsp/admin/plugins/identitystore/ManageServiceContracts.jsp?view=displayServiceContract&id=${servicecontract.key.id}&back_url=jsp/admin/plugins/identitystore/ManageServiceContracts.jsp?view=manageServiceContracts"
+                   class="btn btn-primary" title="#i18n{identitystore.manage_servicecontracts.buttonDisplay}" >
+                    <i class="fa fa-eye"></i>
+                </a>
+            </td>
+        </tr>
+        </#list>
+    </@table>
     <@paginationAdmin paginator=paginator />
 
   </@boxBody>
 </@rowBox>
+<script src="./js/admin/plugins/identitystore/table.js"></script>
 <script>
     $('.btn-empty').click(function () {
         $('.search-field').val('');
