@@ -402,6 +402,7 @@ public class IdentityService
         TransactionManager.beginTransaction( null );
         try
         {
+            final HashMap<String, String> metadata = new HashMap<>();
             if ( _serviceContractService.canModifyConnectedIdentity( clientCode )
                     && !StringUtils.equalsIgnoreCase( identity.getConnectionId( ), request.getIdentity( ).getConnectionId( ) )
                     && request.getIdentity( ).getConnectionId( ) != null )
@@ -419,6 +420,8 @@ public class IdentityService
                 }
                 else
                 {
+                    metadata.put( Constants.METADATA_OLD_GUID, identity.getConnectionId( ) );
+                    metadata.put( Constants.METADATA_NEW_GUID, request.getIdentity( ).getConnectionId( ) );
                     identity.setConnectionId( request.getIdentity( ).getConnectionId( ) );
                     IdentityHome.update( identity );
                 }
@@ -426,7 +429,7 @@ public class IdentityService
 
             // => process update :
 
-            final List<AttributeStatus> attrStatusList = this.updateIdentity( request.getIdentity( ), clientCode, response, identity );
+            final List<AttributeStatus> attrStatusList = this.updateIdentity( request.getIdentity( ), clientCode, response, identity, metadata );
             if ( ResponseStatusFactory.unauthorized( ).equals( response.getStatus( ) ) )
             {
                 response.setCustomerId( identity.getCustomerId( ) );
@@ -464,8 +467,8 @@ public class IdentityService
             }
 
             /* Indexation et historique */
-            _identityStoreNotifyListenerService.notifyListenersIdentityChange( IdentityChangeType.UPDATE, identity, response.getStatus( ).getType( ).name( ),
-                    response.getStatus( ).getMessage( ), author, clientCode, new HashMap<>( ) );
+            _identityStoreNotifyListenerService.notifyListenersIdentityChange(IdentityChangeType.UPDATE, identity, response.getStatus( ).getType( ).name( ),
+                    response.getStatus( ).getMessage( ), author, clientCode, metadata);
             AccessLogService.getInstance( ).info( AccessLoggerConstants.EVENT_TYPE_MODIFY, UPDATE_IDENTITY_EVENT_CODE,
                     _internalUserService.getApiUser( author, clientCode ), SecurityUtil.logForgingProtect( identity.getCustomerId( ) ), SPECIFIC_ORIGIN );
         }
@@ -606,9 +609,10 @@ public class IdentityService
         try
         {
             final List<AttributeStatus> attrStatusList = new ArrayList<>( );
+            final Map<String, String> primaryMetadata = new HashMap<>( );
             if ( request.getIdentity( ) != null && CollectionUtils.isNotEmpty(request.getIdentity().getAttributes()) )
             {
-                attrStatusList.addAll( this.updateIdentity( request.getIdentity( ), clientCode, response, primaryIdentity ) );
+                attrStatusList.addAll( this.updateIdentity( request.getIdentity( ), clientCode, response, primaryIdentity, primaryMetadata ) );
                 if ( ResponseStatusFactory.unauthorized( ).equals( response.getStatus( ) ) )
                 {
                     response.setCustomerId( primaryIdentity.getCustomerId( ) );
@@ -654,7 +658,6 @@ public class IdentityService
             }
 
             /* Indexation */
-            final Map<String, String> primaryMetadata = new HashMap<>( );
             primaryMetadata.put( Constants.METADATA_MERGED_MASTER_IDENTITY_CUID, primaryIdentity.getCustomerId( ) );
             primaryMetadata.put( Constants.METADATA_DUPLICATE_RULE_CODE, request.getDuplicateRuleCode( ) );
             _identityStoreNotifyListenerService.notifyListenersIdentityChange( IdentityChangeType.MERGED, secondaryIdentity,
@@ -1137,7 +1140,7 @@ public class IdentityService
     }
 
     private List<AttributeStatus> updateIdentity( final IdentityDto requestIdentity, final String clientCode, final ChangeResponse response,
-            final Identity identity ) throws IdentityStoreException
+            final Identity identity, final Map<String, String> metadata ) throws IdentityStoreException
     {
         final List<AttributeStatus> attrStatusList = new ArrayList<>( );
 
@@ -1179,6 +1182,8 @@ public class IdentityService
         boolean monParisUpdated = false;
         if ( requestIdentity.getMonParisActive( ) != null && requestIdentity.getMonParisActive( ) != identity.isMonParisActive( ) )
         {
+            metadata.put(Constants.METADATA_OLD_MON_PARIS_ACTIF, String.valueOf(identity.isMonParisActive()));
+            metadata.put(Constants.METADATA_NEW_MON_PARIS_ACTIF, String.valueOf(requestIdentity.isMonParisActive()));
             monParisUpdated = true;
             identity.setMonParisActive( requestIdentity.isMonParisActive( ) );
         }
