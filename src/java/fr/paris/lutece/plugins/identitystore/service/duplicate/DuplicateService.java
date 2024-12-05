@@ -54,6 +54,7 @@ import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.ResponseStatusFactor
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
 import fr.paris.lutece.portal.service.util.AppPropertiesService;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -172,11 +173,8 @@ public class DuplicateService implements IDuplicateService
 
         if ( CollectionUtils.isNotEmpty( response.getIdentities( ) ) )
         {
-            String errMsg = "Potential duplicate(s) found with rule(s) : " + String.join( ",", matchingRuleCodes );
-            if (!strictCUIDs.isEmpty()) {
-                errMsg += ". Strict duplicate CUIDs : " + strictCUIDs;
-            }
-            response.setStatus( ResponseStatusFactory.ok( ).setMessage( errMsg )
+            response.getMetadata().put(Constants.METADATA_DUPLICATE_CUID_LIST, String.join(",", strictCUIDs));
+            response.setStatus( ResponseStatusFactory.ok( ).setMessage( "Potential duplicate(s) found with rule(s) : " + String.join( ",", matchingRuleCodes ) )
                     .setMessageKey( Constants.PROPERTY_REST_INFO_POTENTIAL_DUPLICATE_FOUND ) );
         }
         else
