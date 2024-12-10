@@ -54,6 +54,7 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 public class GeocodesService
 {
@@ -80,9 +81,8 @@ public class GeocodesService
     public static List<AttributeStatus> processCountryAndCityForUpdate( final Identity identity, final List<AttributeDto> attrToCreate,
             final List<AttributeDto> attrToUpdate, final String clientCode ) throws IdentityStoreException
     {
-        final IdentityAttribute previousCountryCode = identity.getAttributes( ).get( Constants.PARAM_BIRTH_COUNTRY_CODE );
-        final AttributeDto newCountryCode = attrToUpdate.stream( ).filter( a -> a.getKey( ).equals( Constants.PARAM_BIRTH_COUNTRY_CODE ) ).findFirst( )
-                .orElse( null );
+        final String previousCountryCode = Optional.ofNullable(identity.getAttributes().get(Constants.PARAM_BIRTH_COUNTRY_CODE)).map(IdentityAttribute::getValue).orElse(null);
+        final String newCountryCode = attrToUpdate.stream( ).filter( a -> a.getKey( ).equals( Constants.PARAM_BIRTH_COUNTRY_CODE ) ).findFirst( ).map(AttributeDto::getValue).orElse( null );
 
         final List<AttributeStatus> attrStatusList = processCountryForUpdate( identity, attrToCreate, attrToUpdate, clientCode );
 
@@ -90,11 +90,13 @@ public class GeocodesService
                 .orElse( null );
 
         if ( countryCodeStatus != null && countryCodeStatus.getStatus( ) == AttributeChangeStatus.UPDATED && previousCountryCode != null
-                && newCountryCode != null && !previousCountryCode.getValue( ).equals( newCountryCode.getValue( ) ) )
+                && newCountryCode != null && !previousCountryCode.equals( newCountryCode ) )
         {
             // Si l'identité a changé de pays
             final IdentityAttribute existingBirthplace = identity.getAttributes( ).get( Constants.PARAM_BIRTH_PLACE );
-            if ( existingBirthplace != null )
+            final AttributeDto newBirthplace = attrToUpdate.stream( ).filter( a -> a.getKey( ).equals( Constants.PARAM_BIRTH_PLACE ) ).findFirst( ).orElse( null );
+
+            if ( existingBirthplace != null && ( newBirthplace == null || newBirthplace.getValue().equals( existingBirthplace.getValue( ) ) ) )
             {
                 // Suppression du libellé de commune de naissance
                 IdentityAttributeHome.remove( identity.getId( ), existingBirthplace.getAttributeKey( ).getId( ) );
@@ -105,7 +107,7 @@ public class GeocodesService
                 removedBirthplace.setMessageKey( Constants.PROPERTY_ATTRIBUTE_STATUS_REMOVED );
                 attrStatusList.add( removedBirthplace );
             }
-            if ( previousCountryCode.getValue( ).equals( "99100" ) )
+            if ( previousCountryCode.equals( "99100" ) )
             {
                 // Passage de France à Etranger
                 final IdentityAttribute existingBirthplaceCode = identity.getAttributes( ).get( Constants.PARAM_BIRTH_PLACE_CODE );
