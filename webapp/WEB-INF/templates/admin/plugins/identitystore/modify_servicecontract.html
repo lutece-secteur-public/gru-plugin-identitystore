@@ -12,7 +12,7 @@
 			<@input type="hidden" value="${token}" name="token" />
 			
 			<@formGroup labelFor='name' labelKey='#i18n{identitystore.modify_servicecontract.labelName}' mandatory=true>
-				<@input type='text' id='name' name='name'  maxlength=50 value='${servicecontract.name!\'\'}' tabIndex='0' />
+				<@input type='text' id='name' name='name'  maxlength=255 value='${servicecontract.name!\'\'}' tabIndex='0' />
 			</@formGroup>
 
 			<@input type="hidden" id="parent_application_id" name="parent_application_id" value="${id_client_app}"/>
