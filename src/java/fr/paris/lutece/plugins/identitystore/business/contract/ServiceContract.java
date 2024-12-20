@@ -55,7 +55,7 @@ public class ServiceContract implements Serializable
     private String _strClientCode;
 
     @NotEmpty( message = "#i18n{contractservice.validation.servicecontract.Name.notEmpty}" )
-    @Size( max = 50, message = "#i18n{contractservice.validation.servicecontract.Name.size}" )
+    @Size( max = 255, message = "#i18n{contractservice.validation.servicecontract.Name.size}" )
     private String _strName;
 
     @NotEmpty( message = "#i18n{contractservice.validation.servicecontract.OrganizationalEntity.notEmpty}" )

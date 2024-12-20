@@ -14,7 +14,7 @@
 		<hr class="hr" />
 		<@formGroup labelFor='name' labelKey='#i18n{identitystore.modify_servicecontract.labelName}' mandatory=true>
 			<#list availaible_client_applications_list?filter(app -> app.id == id_client_app) as app>
-				<@input type='text' id='name' name='name' maxlength=50 value='${servicecontract.name!app.name!\'\'}' tabIndex='0' />
+				<@input type='text' id='name' name='name' maxlength=255 value='${servicecontract.name!app.name!\'\'}' tabIndex='0' />
 			</#list>
 		</@formGroup>
 
