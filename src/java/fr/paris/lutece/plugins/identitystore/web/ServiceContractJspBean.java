@@ -197,7 +197,12 @@ public class ServiceContractJspBean extends ManageServiceContractJspBean<Integer
     public String getDisplayServiceContracts( HttpServletRequest request )
     {
         final int nId = Integer.parseInt( request.getParameter( PARAMETER_ID_SERVICECONTRACT ) );
-        final String backUrl = request.getParameter( PARAMETER_BACK_URL );
+        final String backUrl = request.getParameter( PARAMETER_BACK_URL )
+                .concat( ( StringUtils.isNotBlank( request.getParameter( QUERY_PARAM_ACTIVE ) ) ? "&" + QUERY_PARAM_ACTIVE + "=" + request.getParameter( QUERY_PARAM_ACTIVE ) : "" ) )
+                .concat( ( StringUtils.isNotBlank( request.getParameter( QUERY_PARAM_CONTRACT_NAME ) ) ? "&" + QUERY_PARAM_CONTRACT_NAME + "=" + request.getParameter( QUERY_PARAM_CONTRACT_NAME ) : "" ) )
+                .concat( ( StringUtils.isNotBlank( request.getParameter( QUERY_PARAM_CLIENT_CODE ) ) ? "&" + QUERY_PARAM_CLIENT_CODE + "=" + request.getParameter( QUERY_PARAM_CLIENT_CODE ) : "" ) )
+                .concat( ( StringUtils.isNotBlank( request.getParameter( QUERY_PARAM_START_DATE ) ) ? "&" + QUERY_PARAM_START_DATE + "=" + request.getParameter( QUERY_PARAM_START_DATE ) : "" ) )
+                .concat( ( StringUtils.isNotBlank( request.getParameter( QUERY_PARAM_END_DATE ) ) ? "&" + QUERY_PARAM_END_DATE + "=" + request.getParameter( QUERY_PARAM_END_DATE ) : "" ) );
         _servicecontract = null;
 
         final Optional<ServiceContract> optServiceContract = ServiceContractHome.findByPrimaryKey( nId );
@@ -439,6 +444,11 @@ public class ServiceContractJspBean extends ManageServiceContractJspBean<Integer
                 .collect( Collectors.toList( ) );
 
         model.put( MARK_MANDATORY_ATTRIBUTE_KEYS_LIST, mandatoryAttrKeyList );
+        model.put( QUERY_PARAM_ACTIVE, request.getParameter(QUERY_PARAM_ACTIVE) );
+        model.put( QUERY_PARAM_CONTRACT_NAME, request.getParameter( QUERY_PARAM_CONTRACT_NAME ) );
+        model.put( QUERY_PARAM_CLIENT_CODE, request.getParameter( QUERY_PARAM_CLIENT_CODE ) );
+        model.put( QUERY_PARAM_START_DATE, request.getParameter( QUERY_PARAM_START_DATE ) );
+        model.put( QUERY_PARAM_END_DATE, request.getParameter( QUERY_PARAM_END_DATE ) );
         model.put( MARK_SERVICECONTRACT, _servicecontract );
         model.put( MARK_EDIT_ACTION, "action_modifyServiceContract" );
         model.put( MARK_ATTRIBUTE_REQUIREMENTS_LIST, attributeRequirementList );
