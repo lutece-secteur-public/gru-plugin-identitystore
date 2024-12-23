@@ -10,6 +10,11 @@
 			<@input type="hidden" id="id" name="id" value="${servicecontract.id}"/>
 			<@input type="hidden" id="id_client_app" name="id_client_app" value="${id_client_app}"/>
 			<@input type="hidden" value="${token}" name="token" />
+			<@input type="hidden" id="contract_name" name="contract_name" value="${contract_name!''}"/>
+			<@input type="hidden" id="client_code" name="client_code" value="${client_code!''}"/>
+			<@input type="hidden" id="active" name="active" value="${active!''}"/>
+			<@input type="hidden" id="start_date" name="start_date" value="${start_date!''}"/>
+			<@input type="hidden" id="end_date" name="end_date" value="${end_date!''}"/>
 			
 			<@formGroup labelFor='name' labelKey='#i18n{identitystore.modify_servicecontract.labelName}' mandatory=true>
 				<@input type='text' id='name' name='name'  maxlength=255 value='${servicecontract.name!\'\'}' tabIndex='0' />
