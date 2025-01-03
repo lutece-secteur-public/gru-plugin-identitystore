@@ -139,11 +139,11 @@ public class ManageClientApplicationJspBean extends ManageIdentitiesJspBean
         final String clientCode = request.getParameter( QUERY_PARAM_CLIENT_CODE );
 
         final List<ClientApplication> listClientApplications = ClientApplicationHome.selectApplicationList( ).stream( )
-                .filter( ca -> StringUtils.isBlank( name ) || ( ca.getName( ) != null && ca.getName( ).toLowerCase( ).contains( name ) ) )
+                .filter( ca -> StringUtils.isBlank( name ) || ( ca.getName( ) != null && ca.getName( ).toLowerCase( ).contains( name.toLowerCase( ) ) ) )
                 .filter( ca -> StringUtils.isBlank( appCode )
-                        || ( ca.getApplicationCode( ) != null && ca.getApplicationCode( ).toLowerCase( ).contains( appCode ) ) )
+                        || ( ca.getApplicationCode( ) != null && ca.getApplicationCode( ).toLowerCase( ).contains( appCode.toLowerCase( ) ) ) )
                 .filter( ca -> StringUtils.isBlank( clientCode )
-                        || ( ca.getClientCode( ) != null && ca.getClientCode( ).toLowerCase( ).contains( clientCode ) ) )
+                        || ( ca.getClientCode( ) != null && ca.getClientCode( ).toLowerCase( ).contains( clientCode.toLowerCase( ) ) ) )
                 .sorted( ( a, b ) -> {
                     final int compare = StringUtils.compare( a.getApplicationCode( ), b.getApplicationCode( ), false );
                     if ( compare == 0 )
