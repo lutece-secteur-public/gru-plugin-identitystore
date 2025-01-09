@@ -829,12 +829,12 @@ public final class IdentityDAO implements IIdentityDAO
         // ${client_code} AND ${customer_id} AND ${author_name} AND ${change_type} AND ${modification_date} AND ${metadata} AND ${modification_date} AND
         // ${change_status} AND ${nbDaysFrom} AND ${author_type}
         String sql = SQL_QUERY_SEARCH_IDENTITY_HISTORY
-                .replace( "${client_code}", ( StringUtils.isNotBlank( clientCode ) ? "client_code = '" + clientCode + "'" : "1=1" ) )
-                .replace( "${customer_id}", ( StringUtils.isNotBlank( customerId ) ? "customer_id = '" + customerId + "'" : "1=1" ) )
-                .replace( "${author_name}", ( StringUtils.isNotBlank( authorName ) ? "lower(author_name) = '" + authorName.toLowerCase( ) + "'" : "1=1" ) )
+                .replace( "${client_code}", ( StringUtils.isNotBlank( clientCode ) ? "LOWER(client_code) = '" + StringUtils.lowerCase(clientCode) + "'" : "1=1" ) )
+                .replace( "${customer_id}", ( StringUtils.isNotBlank( customerId ) ? "LOWER(customer_id) = '" + StringUtils.lowerCase(customerId) + "'" : "1=1" ) )
+                .replace( "${author_name}", ( StringUtils.isNotBlank( authorName ) ? "LOWER(author_name) = '" + StringUtils.lowerCase(authorName.toLowerCase( )) + "'" : "1=1" ) )
                 .replace( "${change_type}", ( changeType != null ? "change_type = " + changeType.getValue( ) : "1=1" ) )
                 .replace( "${change_status}", ( StringUtils.isNotBlank( changeStatus ) ? "change_status = '" + changeStatus + "'" : "1=1" ) )
-                .replace( "${author_type}", ( StringUtils.isNotBlank( authorType ) ? "author_type = '" + authorType + "'" : "1=1" ) )
+                .replace( "${author_type}", ( StringUtils.isNotBlank( authorType ) ? "LOWER(author_type) = '" + StringUtils.lowerCase(authorType) + "'" : "1=1" ) )
                 .replace( "${metadata}", ( metadata != null && !metadata.isEmpty( ) ? this.computeMetadaQuery( metadata ) : "1=1" ) )
                 .replace( "${limit}", String.valueOf( nMaxNbIdentityReturned ) );
         final List<Date> sqlDateParameters = new ArrayList<>( );
