@@ -232,6 +232,7 @@ public class IdentityService
         {
             response.setStatus( ResponseStatusFactory.conflict( ).setMessage( duplicateSearchResponse.getStatus( ).getMessage( ) )
                     .setMessageKey( duplicateSearchResponse.getStatus( ).getMessageKey( ) ) );
+            response.setMetadata( duplicateSearchResponse.getMetadata( ) );
             return null;
         }
 
@@ -394,6 +395,7 @@ public class IdentityService
             {
                 response.setStatus( ResponseStatusFactory.conflict( ).setMessage( duplicateSearchResponse.getStatus( ).getMessage( ) )
                         .setMessageKey( duplicateSearchResponse.getStatus( ).getMessageKey( ) ) );
+                response.setMetadata( duplicateSearchResponse.getMetadata( ) );
                 return null;
             }
         }
