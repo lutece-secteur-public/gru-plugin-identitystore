@@ -66,7 +66,7 @@ public class DelayedNetworkService<T>
         {
             if( NETWORK_DELAY_ACTIVATED )
             {
-                this.log( LogLevel.debug,serviceName + " - Delayed network service activated with value of " + NETWORK_DELAY + " ms", logger);
+                //this.log( LogLevel.debug,serviceName + " - Delayed network service activated with value of " + NETWORK_DELAY + " ms", logger);
                 try
                 {
                     Thread.sleep( NETWORK_DELAY );
