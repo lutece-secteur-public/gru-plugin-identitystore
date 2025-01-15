@@ -22,6 +22,7 @@
                 <tr>
                     <th>#i18n{identitystore.view_change_history.customerId}</th>
                     <th>#i18n{identitystore.view_change_history.type}</th>
+                    <th>#i18n{identitystore.view_change_history.status}</th>
                     <th>#i18n{identitystore.view_change_history.date}</th>
                     <th>#i18n{identitystore.view_change_history.author.type}</th>
                     <th>#i18n{identitystore.view_change_history.author.name}</th>
@@ -42,6 +43,14 @@
                                 <option value="${form_type!}" <#if type! == form_type!> selected="selected"</#if>>${form_type!}</option>
                             </#list>
                         </select>
+                    </td>
+                    <td>
+                        <select class="form-select" id="status" name="status" value="${status!''}">
+                            <option value="" >TOUS</option>
+                            <#list status_list as search_status >
+                                <option value="${search_status}" <#if search_status == (status!'')>selected</#if> >${search_status}</option>
+                            </#list>
+                    </select>
                     </td>
                     <td>
                         <input class="form-control search-field" type="date" name="date"

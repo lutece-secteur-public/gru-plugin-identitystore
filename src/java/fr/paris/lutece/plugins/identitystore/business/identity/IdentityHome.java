@@ -499,4 +499,9 @@ public final class IdentityHome
     {
         return _dao.getActionsTypesDuringInterval(interval, _plugin);
     }
+
+    public static List<String> getHistoryStatusList( )
+    {
+        return _dao.getHistoryStatusList( _plugin );
+    }
 }

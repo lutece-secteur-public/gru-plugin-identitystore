@@ -7,7 +7,6 @@ import fr.paris.lutece.plugins.identitystore.v3.csv.CsvIdentityService;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.IdentityDto;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.history.IdentityChange;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.history.IdentityChangeType;
-import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
 import fr.paris.lutece.portal.service.admin.AccessDeniedException;
 import fr.paris.lutece.portal.service.util.AppPropertiesService;
 import fr.paris.lutece.portal.util.mvc.admin.annotations.Controller;
@@ -25,9 +24,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.UUID;
-import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -69,6 +65,8 @@ public class IdentitiesHistoryJspBean extends ManageIdentitiesJspBean
                 queryParameters.get( QUERY_PARAM_CUID ) : "";
         final String type = queryParameters.get( QUERY_PARAM_TYPE ) != null ?
                 StringUtils.replace(queryParameters.get( QUERY_PARAM_TYPE ).toUpperCase(), " ", "_") : "";
+        final String status = queryParameters.get( QUERY_PARAM_STATUS ) != null ?
+                queryParameters.get( QUERY_PARAM_STATUS ) : "";
         final String author_type = queryParameters.get( QUERY_PARAM_AUTHOR_TYPE ) != null ?
                 queryParameters.get( QUERY_PARAM_AUTHOR_TYPE ) : "";
         final String author_name = queryParameters.get( QUERY_PARAM_AUTHOR_NAME ) != null ?
@@ -93,21 +91,22 @@ public class IdentitiesHistoryJspBean extends ManageIdentitiesJspBean
         }
 
         List<String> typeList = new ArrayList<>();
+        List<String> statusList = IdentityHome.getHistoryStatusList();
         try
         {
             if( StringUtils.isNotBlank( cuid ) || StringUtils.isNotBlank( type ) ||
                     StringUtils.isNotBlank( date ) || StringUtils.isNotBlank( author_type ) || StringUtils.isNotBlank( author_name ) ||
-                    StringUtils.isNotBlank( client_code ))
+                    StringUtils.isNotBlank( client_code ) || StringUtils.isNotBlank(status))
             {
                 if(StringUtils.isNotBlank( type ))
                 {
                     _historyList.addAll(IdentityHome.findHistoryBySearchParameters(cuid, client_code, author_name,
-                            IdentityChangeType.valueOf(type), null, author_type, modificationDate, null, DAYS_FROM_HYSTORY, null, 0));
+                            IdentityChangeType.valueOf(type), status, author_type, modificationDate, null, DAYS_FROM_HYSTORY, null, 0));
                 }
                 else
                 {
                     _historyList.addAll(IdentityHome.findHistoryBySearchParameters(cuid, client_code, author_name,
-                            null, null, author_type, modificationDate, null, DAYS_FROM_HYSTORY, null, 0));
+                            null, status, author_type, modificationDate, null, DAYS_FROM_HYSTORY, null, 0));
                 }
             }
         }
@@ -127,11 +126,13 @@ public class IdentitiesHistoryJspBean extends ManageIdentitiesJspBean
 
         model.put(QUERY_PARAM_CUID, cuid);
         model.put(QUERY_PARAM_TYPE, type);
+        model.put(QUERY_PARAM_STATUS, status);
         model.put(QUERY_PARAM_DATE, date);
         model.put(QUERY_PARAM_AUTHOR_TYPE, author_type);
         model.put(QUERY_PARAM_AUTHOR_NAME, author_name);
         model.put(QUERY_PARAM_CLIENT_CODE, client_code);
         model.put(QUERY_PARAM_TYPE_LIST, typeList);
+        model.put(QUERY_PARAM_STATUS_LIST, statusList);
 
         return getPage( PROPERTY_PAGE_TITLE_IDENTITIES_HISTORY, TEMPLATE_IDENTITIES_HISTORY, model );
     }

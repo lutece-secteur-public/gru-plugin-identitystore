@@ -364,4 +364,6 @@ public interface IIdentityDAO
      * Count how many actions and their type were done during an delimited time.
      */
     List<IndicatorsActionsType> getActionsTypesDuringInterval(int interval, final Plugin plugin );
+
+    List<String> getHistoryStatusList( final Plugin plugin );
 }

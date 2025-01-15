@@ -77,6 +77,7 @@ public abstract class ManageIdentitiesJspBean extends MVCAdminJspBean
     public static final String QUERY_PARAM_PHONE = "phone";
     public static final String QUERY_PARAM_DATASOURCE = "datasource";
     public static final String QUERY_PARAM_TYPE = "type";
+    public static final String QUERY_PARAM_STATUS = "status";
     public static final String QUERY_PARAM_DATE = "date";
     public static final String QUERY_PARAM_AUTHOR_TYPE = "author_type";
     public static final String QUERY_PARAM_AUTHOR_NAME = "author_name";
@@ -196,6 +197,11 @@ public abstract class ManageIdentitiesJspBean extends MVCAdminJspBean
         if ( type != null )
         {
             parameters.put( QUERY_PARAM_TYPE, type );
+        }
+        final String status = request.getParameter( QUERY_PARAM_STATUS );
+        if ( status != null )
+        {
+            parameters.put( QUERY_PARAM_STATUS, status );
         }
         final String date = request.getParameter( QUERY_PARAM_DATE );
         if ( date != null )
