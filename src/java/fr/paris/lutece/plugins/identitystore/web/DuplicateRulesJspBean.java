@@ -39,12 +39,16 @@ import fr.paris.lutece.plugins.identitystore.business.rules.duplicate.DuplicateR
 import fr.paris.lutece.plugins.identitystore.business.rules.duplicate.DuplicateRuleAttributeTreatment;
 import fr.paris.lutece.plugins.identitystore.business.rules.duplicate.DuplicateRuleHome;
 import fr.paris.lutece.plugins.identitystore.service.duplicate.DuplicateRuleService;
+import fr.paris.lutece.plugins.identitystore.utils.Batch;
+import fr.paris.lutece.plugins.identitystore.v3.csv.CsvDuplicateRule;
+import fr.paris.lutece.plugins.identitystore.v3.csv.CsvIdentityService;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.AttributeTreatmentType;
 import fr.paris.lutece.portal.service.admin.AccessDeniedException;
 import fr.paris.lutece.portal.service.message.AdminMessage;
 import fr.paris.lutece.portal.service.message.AdminMessageService;
 import fr.paris.lutece.portal.service.security.SecurityTokenService;
 import fr.paris.lutece.portal.service.util.AppException;
+import fr.paris.lutece.portal.service.util.AppPropertiesService;
 import fr.paris.lutece.portal.util.mvc.admin.annotations.Controller;
 import fr.paris.lutece.portal.util.mvc.commons.annotations.Action;
 import fr.paris.lutece.portal.util.mvc.commons.annotations.View;
@@ -52,12 +56,15 @@ import fr.paris.lutece.util.html.AbstractPaginator;
 import fr.paris.lutece.util.url.UrlItem;
 
 import javax.servlet.http.HttpServletRequest;
+import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 /**
  * This class provides the user interface to manage DuplicateRule features ( manage, create, modify, remove )
@@ -109,11 +116,13 @@ public class DuplicateRulesJspBean extends ManageIdentitiesJspBean
     private static final String ACTION_MODIFY_DUPLICATERULES = "modifyDuplicateRule";
     private static final String ACTION_REMOVE_DUPLICATERULES = "removeDuplicateRule";
     private static final String ACTION_CONFIRM_REMOVE_DUPLICATERULES = "confirmRemoveDuplicateRule";
+    private static final String ACTION_EXPORT_DUPLICATERULES = "exportDuplicaterules";
 
     // Infos
     private static final String INFO_DUPLICATERULES_CREATED = "identitystore.info.duplicaterule.created";
     private static final String INFO_DUPLICATERULES_UPDATED = "identitystore.info.duplicaterule.updated";
     private static final String INFO_DUPLICATERULES_REMOVED = "identitystore.info.duplicaterule.removed";
+    private static final int BATCH_PARTITION_SIZE = AppPropertiesService.getPropertyInt( "identitystore.export.batch.size", 100 );
 
     // Errors
     private static final String ERROR_RESOURCE_NOT_FOUND = "Resource not found";
@@ -366,14 +375,43 @@ public class DuplicateRulesJspBean extends ManageIdentitiesJspBean
         return redirectView( request, VIEW_MANAGE_DUPLICATERULES );
     }
 
-    private List<AttributeKey> extractAttributeKeys( final HttpServletRequest request )
+    @Action( ACTION_EXPORT_DUPLICATERULES )
+    public void doExportDuplicatesRules( HttpServletRequest request )
     {
-        final String [ ] selectedAttributes = request.getParameterValues( PARAMETER_SELECTED_CHECKED_ATTRIBUTES );
-        if ( selectedAttributes != null )
-        {
-            return Arrays.stream( selectedAttributes ).map( key -> AttributeKeyHome.findByKey( key, false ) ).collect( Collectors.toList( ) );
+        try{
+            final Batch<CsvDuplicateRule> batches = Batch.ofSize( convertToCsvDuplicateRule(_listDuplicateRules), BATCH_PARTITION_SIZE );
+
+            final ByteArrayOutputStream outputStream = new ByteArrayOutputStream( );
+            final ZipOutputStream zipOut = new ZipOutputStream( outputStream );
+
+            int i = 0;
+            for ( final List<CsvDuplicateRule> batch : batches )
+            {
+                final byte [ ] bytes = CsvIdentityService.instance( ).writeDuplicateRules( batch );
+                final ZipEntry zipEntry = new ZipEntry( "duplicateRules-" + ++i + ".csv" );
+                zipEntry.setSize( bytes.length );
+                zipOut.putNextEntry( zipEntry );
+                zipOut.write( bytes );
+            }
+            zipOut.closeEntry( );
+            zipOut.close( );
+            this.download( outputStream.toByteArray( ), "duplicateRules.zip", "application/zip" );
         }
-        return new ArrayList<>( );
+        catch( Exception e )
+        {
+            addError( e.getMessage( ) );
+            redirectView( request, VIEW_MANAGE_DUPLICATERULES );
+        }
+    }
+
+    private List<AttributeKey> extractAttributeKeys(final HttpServletRequest request)
+    {
+        final String[] selectedAttributes = request.getParameterValues(PARAMETER_SELECTED_CHECKED_ATTRIBUTES);
+        if (selectedAttributes != null)
+        {
+            return Arrays.stream(selectedAttributes).map(key -> AttributeKeyHome.findByKey(key, false)).collect(Collectors.toList());
+        }
+        return new ArrayList<>();
     }
 
     private List<DuplicateRuleAttributeTreatment> extractAttributeTreatments( final HttpServletRequest request )
@@ -392,5 +430,37 @@ public class DuplicateRulesJspBean extends ManageIdentitiesJspBean
                 } );
 
         return treatments;
+    }
+
+    private List<CsvDuplicateRule> convertToCsvDuplicateRule( List<DuplicateRule> duplicateRules )
+    {
+        List<CsvDuplicateRule> csvDuplicateRules = new ArrayList<>( );
+
+        for( DuplicateRule duplicateRule : duplicateRules )
+        {
+            CsvDuplicateRule csvDuplicateRule = new CsvDuplicateRule( );
+
+            csvDuplicateRule.setCode( duplicateRule.getCode( ) );
+            csvDuplicateRule.setName( duplicateRule.getName( ) );
+            csvDuplicateRule.setDescription( duplicateRule.getDescription( ) );
+            csvDuplicateRule.setPriority( duplicateRule.getPriority( ) );
+            csvDuplicateRule.setDetectionLimit( duplicateRule.getDetectionLimit( ) );
+            csvDuplicateRule.setActive( duplicateRule.isActive( ) );
+            csvDuplicateRule.setDaemon( duplicateRule.isDaemon( ) );
+            csvDuplicateRule.setImpactedAttributes(duplicateRule.getCheckedAttributes().size());
+            csvDuplicateRule.setNbFilledAttributes( duplicateRule.getNbFilledAttributes( ) );
+            csvDuplicateRule.setNbEqualAttributes( duplicateRule.getNbEqualAttributes( ) );
+            csvDuplicateRule.setNbMissingAttributes( duplicateRule.getNbMissingAttributes( ) );
+            String treatmentType = "";
+            for(DuplicateRuleAttributeTreatment treatment : duplicateRule.getAttributeTreatments())
+            {
+                treatmentType = treatmentType.concat(" ").concat(treatment.getType().getLabel()).concat("/");
+            }
+            csvDuplicateRule.settreatmentType(!treatmentType.isEmpty() ? treatmentType.substring( 0, treatmentType.length( ) - 1 ) : treatmentType );
+
+            csvDuplicateRules.add( csvDuplicateRule );
+        }
+        csvDuplicateRules.sort(Comparator.comparing(CsvDuplicateRule::getPriority));
+        return csvDuplicateRules;
     }
 }
