@@ -4,6 +4,9 @@
             <form class="form-inline pull-right" method="post" name="manage_duplicaterules" action="jsp/admin/plugins/identitystore/ManageDuplicateRules.jsp">
                 <@actionButtons button1Name="view_createDuplicateRule" icon1="icon-plus icon-white" i18nValue1Key="identitystore.manage_duplicaterules.buttonAdd" />
             </form>
+            <form class="form-inline pull-right" method="post" name="export_duplicaterules" action="jsp/admin/plugins/identitystore/ManageDuplicateRules.jsp">
+                <@button type='submit' name='action_exportDuplicaterules' buttonIcon='plus' title='#i18n{identitystore.manage_duplicaterules.buttonExport}' />
+            </form>
         </@headerButtons>
     </@boxHeader>
 	<@boxBody>    
