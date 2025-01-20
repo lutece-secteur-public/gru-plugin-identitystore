@@ -39,12 +39,20 @@ import fr.paris.lutece.plugins.identitystore.service.contract.ServiceContractSer
 import fr.paris.lutece.plugins.identitystore.service.identity.IdentityService;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.AbstractIdentityStoreRequest;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.IdentityRequestValidator;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.AttributeDto;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.AttributeStatus;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.crud.IdentityChangeRequest;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.crud.IdentityChangeResponse;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.ResponseStatusFactory;
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
+import fr.paris.lutece.portal.business.datastore.DataEntity;
+import fr.paris.lutece.portal.business.datastore.DataEntityHome;
+import fr.paris.lutece.portal.service.util.AppPropertiesService;
+import org.apache.commons.lang3.StringUtils;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -54,6 +62,7 @@ public class IdentityStoreCreateRequest extends AbstractIdentityStoreRequest
 {
 
     private final IdentityChangeRequest _identityChangeRequest;
+    private static final String PROPERTY_EMAIL_FORBIDDEN_DOMAINS = AppPropertiesService.getProperty("identitystore.identity.attribute.email.forbidden_domains");
 
     /**
      * Constructor of IdentityStoreCreateRequest
@@ -100,6 +109,31 @@ public class IdentityStoreCreateRequest extends AbstractIdentityStoreRequest
         if ( ResponseStatusFactory.failure( ).equals( response.getStatus( ) ) )
         {
             return response;
+        }
+
+        DataEntity dataEntity = DataEntityHome.findByPrimaryKey(PROPERTY_EMAIL_FORBIDDEN_DOMAINS);
+        List<String> listForbiddenDomains = new ArrayList<>(Arrays.asList(dataEntity.getValue().split(";")));
+        for ( AttributeDto attributeDto : _identityChangeRequest.getIdentity().getAttributes())
+        {
+            if(StringUtils.equals(attributeDto.getKey(), Constants.PARAM_EMAIL) ||
+                    ( StringUtils.equals(attributeDto.getKey(),Constants.PARAM_LOGIN) && attributeDto.getValue().contains("@") ) )
+            {
+                boolean forbiddenDomain = false;
+                for(String domain : listForbiddenDomains)
+                {
+                    if(attributeDto.getValue().contains(domain))
+                    {
+                        forbiddenDomain = true;
+                        break;
+                    }
+                }
+                if(forbiddenDomain)
+                {
+                    response.setStatus(
+                            ResponseStatusFactory.failure( ).setMessageKey( Constants.PROPERTY_REST_ERROR_FORBIDDEN_EMAIL_DOMAIN ).setMessage( "Forbidden domain" ) );
+                    return response;
+                }
+            }
         }
 
         // perform create
