@@ -225,8 +225,7 @@ public class IdentityService
             throw new IdentityStoreException( "GUID is already in use." );
         }
 
-        final Map<String, String> attributes = request.getIdentity( ).getAttributes( ).stream( ).filter( a -> StringUtils.isNotBlank( a.getValue( ) ) )
-                .collect( Collectors.toMap( AttributeDto::getKey, AttributeDto::getValue, ( a, b ) -> a ) );
+        final Map<String, String> attributes = GeocodesService.getAttributeListWithLabelAndCodes( request.getIdentity( ) );
         final DuplicateSearchResponse duplicateSearchResponse = this.checkDuplicates( attributes, PROPERTY_DUPLICATES_CREATION_RULES, "" );
         if ( duplicateSearchResponse != null && CollectionUtils.isNotEmpty( duplicateSearchResponse.getIdentities( ) ) )
         {
@@ -377,20 +376,21 @@ public class IdentityService
             return null;
         }
 
+        final Map<String, String> attributeListWithLabelAndCodes = GeocodesService.getAttributeListWithLabelAndCodes(request.getIdentity());
+
         // check if update would create duplicates
-        if ( doesRequestContainsAttributeValueChangesImpactingRules( request, identity, PROPERTY_DUPLICATES_UPDATE_RULES ) )
+        if ( doesRequestContainsAttributeValueChangesImpactingRules( attributeListWithLabelAndCodes, identity, PROPERTY_DUPLICATES_UPDATE_RULES ) )
         {
             // collect all non blank attributes from request
-            final Map<String, String> attributes = request.getIdentity( ).getAttributes( ).stream( ).filter( a -> StringUtils.isNotBlank( a.getValue( ) ) )
-                    .collect( Collectors.toMap( AttributeDto::getKey, AttributeDto::getValue, ( a, b ) -> a ) );
+            attributeListWithLabelAndCodes.values().removeIf(StringUtils::isBlank);
             // add other existing identity attributes
-            identity.getAttributes( ).forEach( ( key, attr ) -> attributes.putIfAbsent( key, attr.getValue( ) ) );
+            identity.getAttributes( ).forEach( ( key, attr ) -> attributeListWithLabelAndCodes.putIfAbsent( key, attr.getValue( ) ) );
             // remove attributes that have blank values in the request
             request.getIdentity( ).getAttributes( ).stream( ).filter( a -> StringUtils.isBlank( a.getValue( ) ) )
-                    .forEach( a -> attributes.remove( a.getKey( ) ) );
+                    .forEach( a -> attributeListWithLabelAndCodes.remove( a.getKey( ) ) );
 
             // search for potential duplicates with those attributes
-            final DuplicateSearchResponse duplicateSearchResponse = this.checkDuplicates( attributes, PROPERTY_DUPLICATES_UPDATE_RULES, customerId );
+            final DuplicateSearchResponse duplicateSearchResponse = this.checkDuplicates( attributeListWithLabelAndCodes, PROPERTY_DUPLICATES_UPDATE_RULES, customerId );
             if ( duplicateSearchResponse != null && !duplicateSearchResponse.getIdentities( ).isEmpty( ) )
             {
                 response.setStatus( ResponseStatusFactory.conflict( ).setMessage( duplicateSearchResponse.getStatus( ).getMessage( ) )
@@ -489,18 +489,18 @@ public class IdentityService
      * checked by the duplicate rules in parameter.<br/>
      * Returns <code>false</code> otherwise.
      * 
-     * @param request
-     *            the request
+     * @param updatedAttributes
+     *            the attributes that shall be updated
      * @param identity
      *            the identity
      */
-    private boolean doesRequestContainsAttributeValueChangesImpactingRules( final IdentityChangeRequest request, final Identity identity,
+    private boolean doesRequestContainsAttributeValueChangesImpactingRules( final Map<String, String> updatedAttributes, final Identity identity,
             final String duplicateRulesProperty )
     {
         final Set<String> checkedAttributeKeys = Arrays.stream( AppPropertiesService.getProperty( duplicateRulesProperty ).split( "," ) )
                 .map( DuplicateRuleHome::findByCode ).flatMap( rule -> rule.getCheckedAttributes( ).stream( ) ).map( AttributeKey::getKeyName )
                 .collect( Collectors.toSet( ) );
-        return request.getIdentity( ).getAttributes( ).stream( ).filter( a -> checkedAttributeKeys.contains( a.getKey( ) ) ).anyMatch( a -> {
+        return updatedAttributes.entrySet().stream( ).filter( a -> checkedAttributeKeys.contains( a.getKey( ) ) ).anyMatch( a -> {
             if ( StringUtils.isNotBlank( a.getValue( ) ) )
             {
                 return !identity.getAttributes( ).containsKey( a.getKey( ) )

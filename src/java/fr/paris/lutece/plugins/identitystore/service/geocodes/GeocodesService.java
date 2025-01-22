@@ -44,8 +44,10 @@ import fr.paris.lutece.plugins.identitystore.service.identity.IdentityAttributeN
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.AttributeChangeStatus;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.AttributeDto;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.AttributeStatus;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.IdentityDto;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
+import fr.paris.lutece.portal.service.util.AppLogService;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
@@ -55,6 +57,9 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 public class GeocodesService
 {
@@ -1280,6 +1285,73 @@ public class GeocodesService
                 attrStatusList.add( _identityAttributeService.updateAttribute( cityLabelToUpdate, identity, clientCode ) );
             }
         return attrStatusList;
+    }
+
+    /**
+     * This method is a temporary patch to prevent from creations and updates with labels only, which could lead to duplicates creation when duplicate rules are based only on INSEE codes.
+     * @param identity the {@link IdentityDto} from which to extract the list of attributes
+     * @return a {@link Map} of key:value representing the attributes of the identity
+     */
+    public static Map<String, String> getAttributeListWithLabelAndCodes(final IdentityDto identity ) {
+        final Map<String, String> attributes = identity.getAttributes( ).stream( )
+                .filter( a -> StringUtils.isNotBlank( a.getValue( ) ) )
+                .collect( Collectors.toMap( AttributeDto::getKey, AttributeDto::getValue ) );
+
+        final String strBirthdate = attributes.get(Constants.PARAM_BIRTH_DATE);
+        Date birthdate = null;
+        try {
+            birthdate = strBirthdate != null ? DateUtils.parseDate( strBirthdate, "dd/MM/yyyy" ) : null;
+        } catch ( final ParseException e ) {
+            AppLogService.error( "Could not parse birthdate attribute value " + strBirthdate + " with format dd/MM/yyyy when trying to convert INSEE codes and labels before verifying possible duplicates at creation or update of an identity" );
+        }
+
+        // Country code but no label
+        if( attributes.containsKey( Constants.PARAM_BIRTH_COUNTRY_CODE ) && !attributes.containsKey( Constants.PARAM_BIRTH_COUNTRY ) )
+        {
+            GeoCodesService.getInstance( ).getCountryByCode( attributes.get( Constants.PARAM_BIRTH_COUNTRY_CODE ) ).ifPresent( country -> attributes.put( Constants.PARAM_BIRTH_COUNTRY, country.getValue( ) ) );
+        }
+
+        // Country label but no code, only possible when birthdate exists
+        if( !attributes.containsKey( Constants.PARAM_BIRTH_COUNTRY_CODE ) && attributes.containsKey( Constants.PARAM_BIRTH_COUNTRY ) && birthdate != null )
+        {
+            final List<Country> countries = GeoCodesService.getInstance( ).getCountriesListByName( attributes.get( Constants.PARAM_BIRTH_COUNTRY ), birthdate );
+            if( countries != null && countries.size( ) == 1 )
+            {
+                attributes.put( Constants.PARAM_BIRTH_COUNTRY_CODE, countries.get( 0 ).getCode( ) );
+            }
+        }
+
+        // Process cities only when birth country is FRANCE
+        if( attributes.containsKey( Constants.PARAM_BIRTH_COUNTRY ) && Objects.equals(attributes.get(Constants.PARAM_BIRTH_COUNTRY).toUpperCase(), "FRANCE")
+                || attributes.containsKey( Constants.PARAM_BIRTH_COUNTRY_CODE ) && Objects.equals(attributes.get(Constants.PARAM_BIRTH_COUNTRY_CODE), "99100") )
+        {
+            // City code but no label
+            if( attributes.containsKey( Constants.PARAM_BIRTH_PLACE_CODE ) && !attributes.containsKey( Constants.PARAM_BIRTH_PLACE ) )
+            {
+                final City city = birthdate != null
+                        ? GeoCodesService.getInstance( ).getCityByDateAndCode( birthdate, attributes.get( Constants.PARAM_BIRTH_PLACE_CODE ) ).orElse( null )
+                        : GeoCodesService.getInstance( ).getCityByCode( attributes.get( Constants.PARAM_BIRTH_PLACE_CODE ) ).orElse( null );
+                attributes.put( Constants.PARAM_BIRTH_PLACE, city != null ? city.getValueMinComplete( ) : "commune inconnue" );
+            }
+
+            // City label but no code
+            if( !attributes.containsKey( Constants.PARAM_BIRTH_PLACE_CODE ) && attributes.containsKey( Constants.PARAM_BIRTH_PLACE ) )
+            {
+                final List<City> cities = birthdate != null
+                        ? GeoCodesService.getInstance( ).getCitiesListByNameAndDate( attributes.get( Constants.PARAM_BIRTH_PLACE ), birthdate )
+                        : GeoCodesService.getInstance( ).getCitiesListByName( attributes.get( Constants.PARAM_BIRTH_PLACE ) );
+                if( cities != null && cities.size( ) == 1 )
+                {
+                    attributes.put( Constants.PARAM_BIRTH_PLACE_CODE, cities.get( 0 ).getCode( ) );
+                }
+            }
+        }
+        else
+        {
+            attributes.remove( Constants.PARAM_BIRTH_PLACE_CODE ); // In case of foreign country, the identity cannot have an INSEE city code which are reserved to FRANCE.
+        }
+
+        return attributes;
     }
 
 }
