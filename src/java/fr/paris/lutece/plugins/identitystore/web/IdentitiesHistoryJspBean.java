@@ -2,6 +2,7 @@ package fr.paris.lutece.plugins.identitystore.web;
 
 
 import fr.paris.lutece.plugins.identitystore.business.identity.IdentityHome;
+import fr.paris.lutece.plugins.identitystore.service.history.IdentityHistoryService;
 import fr.paris.lutece.plugins.identitystore.utils.Batch;
 import fr.paris.lutece.plugins.identitystore.v3.csv.CsvIdentityService;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.IdentityDto;
@@ -91,7 +92,7 @@ public class IdentitiesHistoryJspBean extends ManageIdentitiesJspBean
         }
 
         List<String> typeList = new ArrayList<>();
-        List<String> statusList = IdentityHome.getHistoryStatusList();
+        List<String> statusList = IdentityHistoryService.instance().getStatusList();
         try
         {
             if( StringUtils.isNotBlank( cuid ) || StringUtils.isNotBlank( type ) ||

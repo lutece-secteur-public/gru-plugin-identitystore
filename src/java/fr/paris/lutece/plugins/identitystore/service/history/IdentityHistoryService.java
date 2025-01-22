@@ -38,6 +38,7 @@ import fr.paris.lutece.plugins.identitystore.business.contract.ServiceContract;
 import fr.paris.lutece.plugins.identitystore.business.identity.Identity;
 import fr.paris.lutece.plugins.identitystore.business.identity.IdentityAttributeHome;
 import fr.paris.lutece.plugins.identitystore.business.identity.IdentityHome;
+import fr.paris.lutece.plugins.identitystore.cache.IdentityHistoryStatusCache;
 import fr.paris.lutece.plugins.identitystore.service.contract.ServiceContractNotFoundException;
 import fr.paris.lutece.plugins.identitystore.service.contract.ServiceContractService;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.history.AttributeChange;
@@ -51,6 +52,7 @@ import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.ResponseStatusFactory;
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityNotFoundException;
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
+import fr.paris.lutece.portal.service.spring.SpringContextService;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.List;
@@ -63,11 +65,15 @@ public class IdentityHistoryService
 {
     private static IdentityHistoryService _instance;
 
+    private final IdentityHistoryStatusCache _identityHistoryCache = SpringContextService.getBean( "identitystore.identityHistoryCache" );
+    private final String HISTORY_STATUS_LIST = "historyStatusList";
+
     public static IdentityHistoryService instance( )
     {
         if ( _instance == null )
         {
             _instance = new IdentityHistoryService( );
+            _instance._identityHistoryCache.refresh();
         }
         return _instance;
     }
@@ -152,5 +158,10 @@ public class IdentityHistoryService
                     history.getAttributeHistories( ).add( attributeHistory );
                 } );
         return history;
+    }
+
+    public List<String> getStatusList()
+    {
+        return _identityHistoryCache.getStatusList(HISTORY_STATUS_LIST);
     }
 }

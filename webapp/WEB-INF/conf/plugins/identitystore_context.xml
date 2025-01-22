@@ -32,6 +32,7 @@
     <bean id="identitystore.refAttributeCertificationDefinitionCache"  class="fr.paris.lutece.plugins.identitystore.cache.RefAttributeCertificationDefinitionCache"/>
 	<bean id="identitystore.demandTypeCacheService" class="fr.paris.lutece.plugins.identitystore.cache.DemandTypeCacheService" />
     <bean id="identitystore.identityDtoCache" class="fr.paris.lutece.plugins.identitystore.cache.IdentityDtoCache"/>
+    <bean id="identitystore.identityHistoryCache" class="fr.paris.lutece.plugins.identitystore.cache.IdentityHistoryStatusCache"/>
 
     <!-- Services -->
     <!-- Services E/S clients -->
