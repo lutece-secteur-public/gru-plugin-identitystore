@@ -35,6 +35,7 @@ package fr.paris.lutece.plugins.identitystore.service.attribute;
 
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
@@ -45,6 +46,8 @@ import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import fr.paris.lutece.portal.business.datastore.DataEntity;
+import fr.paris.lutece.portal.business.datastore.DataEntityHome;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
@@ -76,6 +79,7 @@ public class IdentityAttributeValidationService
     private final IdentityAttributeValidationCache _cache = SpringContextService.getBean( "identitystore.identityAttributeValidationCache" );
     private final int pivotCertificationLevelThreshold = AppPropertiesService
             .getPropertyInt( "identitystore.identity.attribute.pivot.certification.level.threshold", 400 );
+    private static final String PROPERTY_EMAIL_FORBIDDEN_DOMAINS = AppPropertiesService.getProperty("identitystore.identity.attribute.email.forbidden_domains");
     private static IdentityAttributeValidationService _instance;
 
     public static IdentityAttributeValidationService instance( )
@@ -116,6 +120,21 @@ public class IdentityAttributeValidationService
                         if ( !validationPattern.matcher( attribute.getValue( ) ).matches( ) )
                         {
                             attrStatusList.add( this.buildAttributeValueValidationErrorStatus( attribute.getKey( ) ) );
+                        }
+                    }
+
+                    // In particular case of an email, check if the domain is not in the banned domains property of the core datastore
+                    if( StringUtils.equals(attribute.getKey( ), Constants.PARAM_EMAIL ) || ( StringUtils.equals(attribute.getKey(), Constants.PARAM_LOGIN) && attribute.getValue( ).contains( "@" ) ) )
+                    {
+                        final DataEntity dataEntity = DataEntityHome.findByPrimaryKey( PROPERTY_EMAIL_FORBIDDEN_DOMAINS );
+                        if( dataEntity != null && Arrays.stream( dataEntity.getValue( ).split( ";" ) ).anyMatch( domain -> attribute.getValue( ).contains( domain ) ) )
+                        {
+                            final AttributeStatus attributeStatus = new AttributeStatus( );
+                            attributeStatus.setKey( attribute.getKey() );
+                            attributeStatus.setStatus( AttributeChangeStatus.INVALID_VALUE );
+                            attributeStatus.setMessage( "Forbidden domain" );
+                            attributeStatus.setMessageKey( Constants.PROPERTY_REST_ERROR_FORBIDDEN_EMAIL_DOMAIN );
+                            attrStatusList.add(attributeStatus);
                         }
                     }
                 }

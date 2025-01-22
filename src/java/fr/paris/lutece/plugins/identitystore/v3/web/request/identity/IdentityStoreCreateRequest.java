@@ -62,7 +62,7 @@ public class IdentityStoreCreateRequest extends AbstractIdentityStoreRequest
 {
 
     private final IdentityChangeRequest _identityChangeRequest;
-    private static final String PROPERTY_EMAIL_FORBIDDEN_DOMAINS = AppPropertiesService.getProperty("identitystore.identity.attribute.email.forbidden_domains");
+
 
     /**
      * Constructor of IdentityStoreCreateRequest
@@ -109,31 +109,6 @@ public class IdentityStoreCreateRequest extends AbstractIdentityStoreRequest
         if ( ResponseStatusFactory.failure( ).equals( response.getStatus( ) ) )
         {
             return response;
-        }
-
-        DataEntity dataEntity = DataEntityHome.findByPrimaryKey(PROPERTY_EMAIL_FORBIDDEN_DOMAINS);
-        List<String> listForbiddenDomains = new ArrayList<>(Arrays.asList(dataEntity.getValue().split(";")));
-        for ( AttributeDto attributeDto : _identityChangeRequest.getIdentity().getAttributes())
-        {
-            if(StringUtils.equals(attributeDto.getKey(), Constants.PARAM_EMAIL) ||
-                    ( StringUtils.equals(attributeDto.getKey(),Constants.PARAM_LOGIN) && attributeDto.getValue().contains("@") ) )
-            {
-                boolean forbiddenDomain = false;
-                for(String domain : listForbiddenDomains)
-                {
-                    if(attributeDto.getValue().contains(domain))
-                    {
-                        forbiddenDomain = true;
-                        break;
-                    }
-                }
-                if(forbiddenDomain)
-                {
-                    response.setStatus(
-                            ResponseStatusFactory.failure( ).setMessageKey( Constants.PROPERTY_REST_ERROR_FORBIDDEN_EMAIL_DOMAIN ).setMessage( "Forbidden domain" ) );
-                    return response;
-                }
-            }
         }
 
         // perform create
