@@ -37,6 +37,7 @@ import fr.paris.lutece.plugins.identitystore.business.contract.AttributeRight;
 import fr.paris.lutece.plugins.identitystore.business.contract.ServiceContract;
 import fr.paris.lutece.plugins.identitystore.business.identity.IdentityAttributeHome;
 import fr.paris.lutece.plugins.identitystore.business.identity.IdentityHome;
+import fr.paris.lutece.plugins.identitystore.cache.IdentityHistoryStatusCache;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.history.AttributeChange;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.history.AttributeHistory;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.history.IdentityChange;
@@ -46,6 +47,7 @@ import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.history.IdentityHisto
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
 import fr.paris.lutece.plugins.identitystore.web.exception.ResourceNotFoundException;
+import fr.paris.lutece.portal.service.spring.SpringContextService;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.ArrayList;

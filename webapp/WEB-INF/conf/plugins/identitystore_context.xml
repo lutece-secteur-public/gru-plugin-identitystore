@@ -46,6 +46,11 @@
         <constructor-arg name="strLogin" value="${elasticsearch.user}"/>
         <constructor-arg name="strPassword" value="${elasticsearch.pwd}"/>
     </bean>
+    <bean id="identitystore.elasticsearch.failRequestIndexer" class="fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.service.FailRequestIndexer" >
+        <constructor-arg name="strServerUrl" value="${elasticsearch.url}"/>
+        <constructor-arg name="strLogin" value="${elasticsearch.user}"/>
+        <constructor-arg name="strPassword" value="${elasticsearch.pwd}"/>
+    </bean>
 
     <!-- Services recherche -->
     <bean id="identitystore.searchIdentityService.elasticsearch" class="fr.paris.lutece.plugins.identitystore.service.indexer.search.ElasticSearchIdentityService">
@@ -77,6 +82,9 @@
     <bean id="identitystore.listener.index" class="fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.listener.IdentityIndexListener" >
         <constructor-arg ref="identitystore.elasticsearch.identityIndexer" name="_identityIndexer"/>
         <constructor-arg ref="identitystore.duplicateService.elasticsearch" name="_duplicateServiceElasticSearch"/>
+    </bean>
+    <bean id="identitystore.failRequestService" class="fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.service.FailRequestService" >
+        <constructor-arg ref="identitystore.elasticsearch.failRequestIndexer" name="_failRequestIndexer"/>
     </bean>
 
     <!-- Schedule full E/S identities reindexing -->
