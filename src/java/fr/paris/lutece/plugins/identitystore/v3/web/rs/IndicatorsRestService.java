@@ -37,8 +37,12 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import fr.paris.lutece.plugins.identitystore.business.identity.IdentityHome;
 import fr.paris.lutece.plugins.identitystore.business.identity.IndicatorsActionsType;
+import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.client.ElasticClientException;
+import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.service.IIdentityIndexer;
+import fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.task.UsingElasticConnection;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.history.IdentityChangeType;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
+import fr.paris.lutece.portal.service.util.AppPropertiesService;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -54,12 +58,16 @@ import java.util.Map;
  * ClientRest
  */
 @Path( Constants.INTERNAL_API_PATH + Constants.PLUGIN_PATH + Constants.VERSION_PATH_V3 )
-public class IndicatorsRestService
+public class IndicatorsRestService implements UsingElasticConnection
 {
 
     public static final String INDICATORS_COUNT_ACTIONSBYTIME = "indicators/count/actionsbytime";
     public static final String INDICATORS_ATTRIBUTESBYIDENTITIES = "indicators/count/attributesbyidentities";
     public static final String INDICATORS_UNMERGED_NO_ATTRIBUTES = "indicators/count/unmergednoattributes";
+    public static final String INDICATORS_INDEX_ELIGIBLE_IDENTITIES = "indicators/count/indexeligibleidentities";
+    public static final String INDICATORS_INDEX_NOT_ELIGIBLE_IDENTITIES = "indicators/count/indexnoteligibleidentities";
+    public static final String INDICATORS_INDEX_DELTA_IDENTITIES = "indicators/count/indexdeltaidentities";
+    private final String PROPERTY_CURRENT_INDEX_ALIAS = AppPropertiesService.getProperty( "identitystore.elastic.client.identities.alias", "identities-alias" );
 
     final static ObjectMapper objectMapper = new ObjectMapper();
 
@@ -130,6 +138,56 @@ public class IndicatorsRestService
     @Produces( MediaType.APPLICATION_JSON )
     public Response getCountUnmergedIdentitiesWithoutAttributes( ) {
         return Response.status( 200 ).entity( IdentityHome.getCountUnmergedIdentitiesWithoutAttributes().toString() ).type( MediaType.APPLICATION_JSON ).build( );
+    }
+
+    /**
+     * Get all Clients
+     * @return the Client
+     */
+    @Path(INDICATORS_INDEX_ELIGIBLE_IDENTITIES)
+    @GET
+    @Produces( MediaType.APPLICATION_JSON )
+    public Response getCountIndexEligibleIdentities( ) {
+        return Response.status( 200 ).entity( IdentityHome.getCountIndexEligibleIdentities().toString() ).type( MediaType.APPLICATION_JSON ).build( );
+    }
+
+    /**
+     * Get all Clients
+     * @return the Client
+     */
+    @Path(INDICATORS_INDEX_NOT_ELIGIBLE_IDENTITIES)
+    @GET
+    @Produces( MediaType.APPLICATION_JSON )
+    public Response getCountIndexNotEligibleIdentities( ) {
+        return Response.status( 200 ).entity( IdentityHome.getCountIndexNotEligibleIdentities().toString() ).type( MediaType.APPLICATION_JSON ).build( );
+    }
+
+    /**
+     * Get all Clients
+     * @return the Client
+     */
+    @Path(INDICATORS_INDEX_DELTA_IDENTITIES)
+    @GET
+    @Produces( MediaType.APPLICATION_JSON )
+    public Response getCountIndexDeltaIdentities( ) {
+        try {
+            final IIdentityIndexer identityIndexer = this.createIdentityIndexer( );
+            if(identityIndexer.isAlive())
+            {
+                final String countIndexedIdentities = identityIndexer.getIndexedIdentitiesNumber( PROPERTY_CURRENT_INDEX_ALIAS );
+                if( countIndexedIdentities != null )
+                {
+                    final Integer countIndexEligibleIdentities = IdentityHome.getCountIndexEligibleIdentities();
+                    final Integer countIndexedIdentitiesInt = Integer.valueOf( countIndexedIdentities );
+                    final Integer delta = countIndexEligibleIdentities - countIndexedIdentitiesInt;
+                    final String span = delta != 0 ? "<span class='text-red'>" + delta + "</span>" : String.valueOf( delta ) ;
+                    return Response.status( 200 ).entity( span ).type( MediaType.APPLICATION_JSON ).build( );
+                }
+            }
+        } catch (ElasticClientException e) {
+            // do nothing
+        }
+        return Response.status( 200 ).entity( "error" ).type( MediaType.APPLICATION_JSON ).build( );
     }
 
     private static class Action

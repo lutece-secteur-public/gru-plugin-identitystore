@@ -495,6 +495,16 @@ public final class IdentityHome
         return _dao.getCountUnmergedIdentitiesWithoutAttributes( _plugin );
     }
 
+    public static Integer getCountIndexEligibleIdentities( )
+    {
+        return _dao.getCountIndexEligibleIdentities( _plugin );
+    }
+
+    public static Integer getCountIndexNotEligibleIdentities( )
+    {
+        return _dao.getCountIndexNotEligibleIdentities( _plugin );
+    }
+
     public static List<IndicatorsActionsType> getActionsTypesDuringInterval(int interval)
     {
         return _dao.getActionsTypesDuringInterval(interval, _plugin);

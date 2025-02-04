@@ -360,6 +360,10 @@ public interface IIdentityDAO
      */
     Integer getCountUnmergedIdentitiesWithoutAttributes(final Plugin plugin );
 
+    Integer getCountIndexEligibleIdentities(final Plugin plugin);
+
+    Integer getCountIndexNotEligibleIdentities(final Plugin plugin);
+
     /**
      * Count how many actions and their type were done during an delimited time.
      */

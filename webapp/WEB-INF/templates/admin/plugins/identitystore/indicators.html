@@ -16,7 +16,6 @@
                 <th onclick="sortTable(2, 'indicators-table')">#i18n{identitystore.indicators.identities.number.merged}</th>
                 <th onclick="sortTable(3, 'indicators-table')">#i18n{identitystore.indicators.identities.number.monparis}</th>
                 <th onclick="sortTable(4, 'indicators-table')">#i18n{identitystore.indicators.identities.number.attributes.unmerged}</th>
-                <th onclick="sortTable(5, 'indicators-table')">#i18n{identitystore.indicators.identities.number.indexed}</th>
             </tr>
             <tr>
                 <td><span>${count_identities!""}</span></td>
@@ -24,10 +23,22 @@
                 <td><span>${count_merged_identities!""}</span></td>
                 <td><span>${count_monparis_identities!""}</span></td>
                 <td><span id="count_unmerged_no_attributes_identities"><div class="loader"></div></span></td>
-                <td><span>${count_indexed_identities!""}</span></td>
             </tr>
         </table>
-
+        <table id="indicators-table-2" class="table rounded rounded-3 overflow-hidden border table-condensed table-hover mb-0">
+            <tr>
+                <th onclick="sortTable(0, 'indicators-table-2')">#i18n{identitystore.indicators.identities.number.indexed}</th>
+                <th onclick="sortTable(1, 'indicators-table-2')">#i18n{identitystore.indicators.identities.number.index.eligible}</th>
+                <th onclick="sortTable(2, 'indicators-table-2')">#i18n{identitystore.indicators.identities.number.index.not_eligible}</th>
+                <th onclick="sortTable(3, 'indicators-table-2')">#i18n{identitystore.indicators.identities.number.index.delta}</th>
+            </tr>
+            <tr>
+                <td><span>${count_indexed_identities!""}</span></td>
+                <td><span id="count_index_eligible_identities"><div class="loader"></div></span></td>
+                <td><span id="count_index_not_eligible_identities"><div class="loader"></div></span></td>
+                <td><span id="count_index_delta_identities"><div class="loader"></div></span></td>
+            </tr>
+        </table>
     </@boxBody>
 
 <@boxHeader i18nTitleKey="identitystore.indicators.activities.title.day"></@boxHeader>
@@ -143,6 +154,24 @@
             .then(json => spanNoAttribute.innerHTML = json)
             .catch(console.error);
 
+        let spanIndexEligibleIdentities = document.getElementById("count_index_eligible_identities");
+        fetch("internal/api/identitystore/v3/indicators/count/indexeligibleidentities")
+            .then(response => response.json())
+            .then(json => spanIndexEligibleIdentities.innerHTML = json)
+            .catch(console.error);
+
+        let spanIndexNotEligibleIdentities = document.getElementById("count_index_not_eligible_identities");
+        fetch("internal/api/identitystore/v3/indicators/count/indexnoteligibleidentities")
+            .then(response => response.json())
+            .then(json => spanIndexNotEligibleIdentities.innerHTML = json)
+            .catch(console.error);
+
+        let spanIndexDeltaIdentities = document.getElementById("count_index_delta_identities");
+        fetch("internal/api/identitystore/v3/indicators/count/indexdeltaidentities")
+            .then(response => response.text())
+            .then(json => spanIndexDeltaIdentities.innerHTML = json)
+            .catch(console.error);
+
     });
     function trim(stringToTrim, rowsCount)
     {
@@ -186,3 +215,9 @@
         return html;
     }
 </script>
+<style>
+    .text-red {
+        color: red;
+        font-weight: bold;
+    }
+</style>

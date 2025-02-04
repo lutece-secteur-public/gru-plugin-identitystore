@@ -82,6 +82,7 @@ public class FullIndexTask extends AbstractIndexTask implements UsingElasticConn
         final StopWatch stopWatch = new StopWatch( );
         stopWatch.start( );
         this.init( );
+        String countIndexedIdentities = "0";
         final List<Integer> identityIdsList = new ArrayList<>( IdentityObjectHome.getEligibleIdListForIndex( ) );
         if ( !identityIdsList.isEmpty( ) )
         {
@@ -115,7 +116,8 @@ public class FullIndexTask extends AbstractIndexTask implements UsingElasticConn
                     batch.stream( ).parallel( ).forEach( identityIdList -> {
                         this.process( identityIdList, newIndex );
                     } );
-                    this.info( "All batches processed, now switch alias to publish new index.." );
+                    countIndexedIdentities = identityIndexer.getIndexedIdentitiesNumber(CURRENT_INDEX_ALIAS);
+                    this.info( "All batches processed, indexing " + countIndexedIdentities +  " identities, now switch alias to publish new index.." );
                     final String oldIndex = identityIndexer.getIndexBehindAlias( CURRENT_INDEX_ALIAS );
                     if ( !StringUtils.equals( oldIndex, newIndex ) )
                     {
@@ -142,7 +144,7 @@ public class FullIndexTask extends AbstractIndexTask implements UsingElasticConn
             }
             stopWatch.stop( );
             final String duration = DurationFormatUtils.formatDurationWords( stopWatch.getTime( ), true, true );
-            this.info( "Re-indexed  " + this.getStatus( ).getCurrentNbIndexedIdentities( ) + " identities in " + duration );
+            this.info( "Re-indexed  " + countIndexedIdentities + " identities over " + this.getStatus( ).getCurrentNbIndexedIdentities( ) + " processed identities in " + duration );
         }
         else
         {
@@ -172,6 +174,10 @@ public class FullIndexTask extends AbstractIndexTask implements UsingElasticConn
         if ( bulked )
         {
             this.getStatus( ).incrementCurrentNbIndexedIdentities( identityObjects.size( ) );
+        }
+        else
+        {
+            this.info("ERROR: Could not bulk");
         }
     }
 
