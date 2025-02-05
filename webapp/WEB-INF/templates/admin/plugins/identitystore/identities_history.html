@@ -93,7 +93,12 @@
             <#if identity_change_list??  && identity_change_list?has_content>
                 <#list identity_change_list as change>
                     <tr>
-                        <td>${change.customerId!}</td>
+                        <td>
+                            <a href="jsp/admin/plugins/identitystore/ManageIdentities.jsp?view=viewIdentity&id=${change.customerId!}"
+                               title="#i18n{identitystore.manage_identities.buttonView}">
+                                ${change.customerId!}
+                            </a>
+                        </td>
                         <td>
                             <#if change.changeType.name() == "CREATE">
                                 <span class="badge bg-success"> ${change.changeType.name()!} </span>
