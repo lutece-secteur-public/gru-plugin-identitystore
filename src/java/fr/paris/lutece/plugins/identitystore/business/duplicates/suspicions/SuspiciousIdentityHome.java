@@ -370,4 +370,14 @@ public final class SuspiciousIdentityHome
     {
         _dao.purgeLocks( _plugin );
     }
+
+    public static List<SuspiciousIdentity> getAllLocks ()
+    {
+        return _dao.getAllLocks( _plugin );
+    }
+
+    public static boolean isLock ( String customerId )
+    {
+        return _dao.isLock( customerId, _plugin );
+    }
 }

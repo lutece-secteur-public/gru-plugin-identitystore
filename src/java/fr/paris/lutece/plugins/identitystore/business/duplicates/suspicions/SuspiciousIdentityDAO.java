@@ -65,6 +65,8 @@ public final class SuspiciousIdentityDAO implements ISuspiciousIdentityDAO
     private static final String SQL_QUERY_PURGE_BY_RULE = "DELETE FROM identitystore_quality_suspicious_identity WHERE id_duplicate_rule=?";
     private static final String SQL_QUERY_SELECT = "SELECT i.id_suspicious_identity, i.customer_id, i.id_duplicate_rule, r.code, l.date_lock_end, l.is_locked, l.author_type, l.author_name FROM identitystore_quality_suspicious_identity i LEFT JOIN identitystore_quality_suspicious_identity_lock l ON i.customer_id = l.customer_id LEFT JOIN identitystore_duplicate_rule r ON r.id_rule = i.id_duplicate_rule WHERE id_suspicious_identity = ?";
     private static final String SQL_QUERY_INSERT = "INSERT INTO identitystore_quality_suspicious_identity ( customer_id, id_duplicate_rule ) VALUES ( ?, ?) ";
+    private static final String SQL_QUERY_SELECT_LOCK = "SELECT is_locked FROM identitystore_quality_suspicious_identity_lock WHERE customer_id = ?";
+    private static final String SQL_QUERY_SELECT_ALL_LOCK = "SELECT customer_id, date_lock_end, author_type, author_name FROM identitystore_quality_suspicious_identity_lock WHERE is_locked = 1";
     private static final String SQL_QUERY_ADD_LOCK = "INSERT INTO identitystore_quality_suspicious_identity_lock ( customer_id, is_locked, date_lock_end, author_type, author_name ) VALUES ( ?, ?, ?, ?, ?) ";
     private static final String SQL_QUERY_REMOVE_LOCK = "DELETE FROM identitystore_quality_suspicious_identity_lock WHERE customer_id = ? ";
     private static final String SQL_QUERY_REMOVE_LOCK_WITH_ID_SUSPICIOUS = "DELETE FROM identitystore_quality_suspicious_identity_lock WHERE customer_id IN ( SELECT customer_id FROM identitystore_quality_suspicious_identity WHERE id_suspicious_identity = ? ) ";
@@ -712,6 +714,49 @@ public final class SuspiciousIdentityDAO implements ISuspiciousIdentityDAO
         {
             daoUtil.executeUpdate( );
         }
+    }
+
+    @Override
+    public List<SuspiciousIdentity> getAllLocks( Plugin plugin )
+    {
+        List<SuspiciousIdentity> suspiciousIdentities = new ArrayList<>();
+        try( final DAOUtil daoUtil = new DAOUtil(SQL_QUERY_SELECT_ALL_LOCK, plugin ) )
+        {
+            daoUtil.executeQuery( );
+            while (daoUtil.next( ) )
+            {
+                final SuspiciousIdentity suspiciousIdentity = new SuspiciousIdentity( );
+                int nIndex = 1;
+                suspiciousIdentity.setCustomerId( daoUtil.getString(nIndex++) );
+                SuspiciousIdentityLock suspiciousIdentityLock = new SuspiciousIdentityLock( );
+                suspiciousIdentityLock.setLocked(true);
+                suspiciousIdentityLock.setLockEndDate(daoUtil.getTimestamp( nIndex++ ));
+                suspiciousIdentityLock.setAuthorType( daoUtil.getString(nIndex++) );
+                suspiciousIdentityLock.setAuthorName( daoUtil.getString(nIndex) );
+                suspiciousIdentity.setLock(suspiciousIdentityLock);
+
+                suspiciousIdentities.add(suspiciousIdentity);
+            }
+        }
+        return suspiciousIdentities;
+    }
+
+    @Override
+    public boolean isLock( String customerId, Plugin plugin )
+    {
+        boolean locked = false;
+        try( final DAOUtil daoUtil = new DAOUtil(SQL_QUERY_SELECT_LOCK, plugin ) )
+        {
+            daoUtil.setString( 1, customerId );
+            daoUtil.executeQuery( );
+            if( daoUtil.next( ) )
+            {
+                int nIndex = 1;
+
+                locked = daoUtil.getBoolean(nIndex);
+            }
+        }
+        return locked;
     }
 
     @Override
