@@ -47,10 +47,10 @@
 		</@formGroup>
 		<@formGroup labelFor='service_type' labelKey='#i18n{identitystore.modify_servicecontract.labelServiceType}' mandatory=true>
 			<@select id='service_type' name='service_type'>
-				<option value="FO Lutèce" <#if servicecontract.serviceType == "FO Lutèce"> selected="selected"</#if> >FO Lutèce</option>
-				<option value="BO Lutèce" <#if servicecontract.serviceType == "BO Lutèce"> selected="selected"</#if> >BO Lutèce</option>
-				<option value="FO non Lutèce" <#if servicecontract.serviceType == "FO non Lutèce"> selected="selected"</#if> >FO non Lutèce</option>
-				<option value="BO non Lutèce" <#if servicecontract.serviceType == "BO non Lutèce"> selected="selected"</#if> >BO non Lutèce</option>
+				<option value="FO Lutèce" <#if servicecontract.serviceType?? && servicecontract.serviceType == "FO Lutèce"> selected="selected"</#if> >FO Lutèce</option>
+				<option value="BO Lutèce" <#if servicecontract.serviceType?? && servicecontract.serviceType == "BO Lutèce"> selected="selected"</#if> >BO Lutèce</option>
+				<option value="FO non Lutèce" <#if servicecontract.serviceType?? && servicecontract.serviceType == "FO non Lutèce"> selected="selected"</#if> >FO non Lutèce</option>
+				<option value="BO non Lutèce" <#if servicecontract.serviceType?? && servicecontract.serviceType == "BO non Lutèce"> selected="selected"</#if> >BO non Lutèce</option>
 			</@select>
 		</@formGroup>
 		<@formGroup labelFor='data_retention_period_in_months' labelKey='#i18n{identitystore.modify_servicecontract.labelDataRetentionPeriod}' mandatory=true>
