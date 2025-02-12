@@ -6,6 +6,10 @@
         <@headerButtons>
             <form class="form-inline pull-right" method="post" name="manage_clientapplications" action="jsp/admin/plugins/identitystore/ManageClientApplications.jsp">
                 <!-- Add pull-right to class1 -->
+
+                <input type="hidden" id="client_application_name" name="client_application_name" value="${client_application_name!''}"/>
+                <input type="hidden" id="client_code_search" name="client_code_search" value="${client_code_search!''}"/>
+                <input type="hidden" id="application_code_search" name="application_code_search" value="${application_code_search!''}"/>
                 <@actionButtons button1Name="view_createClientApplication" icon1="icon-plus icon-white" i18nValue1Key="identitystore.manage_clientapplications.buttonAdd" />
             </form>
         </@headerButtons>
@@ -24,8 +28,8 @@
         </tr>
         <tr class="table-sort-inputs">
             <th><input class="form-control search-field" type="text" value="${client_application_name!''}" name="client_application_name" placeholder="Recherche par #i18n{identitystore.manage_clientapplications.columnName}.."></th>
-            <th><input class="form-control search-field" type="text" value="${client_code!''}" name="client_code" placeholder="Recherche par #i18n{identitystore.manage_clientapplications.columnClientCode}.."></th>
-            <th><input class="form-control search-field" type="text" value="${application_code!''}" name="application_code" placeholder="Recherche par #i18n{identitystore.manage_clientapplications.columnApplicationCode}.."></th>
+            <th><input class="form-control search-field" type="text" value="${client_code_search!''}" name="client_code_search" placeholder="Recherche par #i18n{identitystore.manage_clientapplications.columnClientCode}.."></th>
+            <th><input class="form-control search-field" type="text" value="${application_code_search!''}" name="application_code_search" placeholder="Recherche par #i18n{identitystore.manage_clientapplications.columnApplicationCode}.."></th>
             <th>
                 <span class="input-group-btn">
                     <button class="btn btn-default" type="submit">
@@ -52,21 +56,21 @@
                 ${clientapplication.applicationCode!''}
             </td>
         <td>
-            <a href="jsp/admin/plugins/identitystore/ManageClientApplications.jsp?view=modifyClientApplication&id=${clientapplication.id}"
+            <a href="jsp/admin/plugins/identitystore/ManageClientApplications.jsp?view=modifyClientApplication&id=${clientapplication.id}&client_application_name=${client_application_name!''}&client_code_search=${client_code_search!''}&application_code_search=${application_code_search!''}"
                class="btn btn-primary" title="#i18n{portal.util.labelModify}">
                 <i class="fas fa-edit"></i>
             </a>
 
-            <a href="jsp/admin/plugins/identitystore/ManageClientApplications.jsp?action=confirmRemoveClientApplication&id=${clientapplication.id}"
+            <a href="jsp/admin/plugins/identitystore/ManageClientApplications.jsp?action=confirmRemoveClientApplication&id=${clientapplication.id}&client_application_name=${client_application_name!''}&client_code_search=${client_code_search!''}&application_code_search=${application_code_search!''}"
                class="btn btn-danger" title="#i18n{portal.util.labelDelete}" >
                 <i class="fa fa-trash"></i>
             </a>
 
-            <a href="jsp/admin/plugins/identitystore/ManageServiceContracts.jsp?view=createServiceContract&id_client_app=${clientapplication.id}"
+            <a href="jsp/admin/plugins/identitystore/ManageServiceContracts.jsp?view=createServiceContract&id_client_app=${clientapplication.id}&client_application_name=${client_application_name!''}&client_code_search=${client_code_search!''}&application_code_search=${application_code_search!''}"
                class="btn btn-primary" title="#i18n{identitystore.manage_clientapplications.buttonAddContract}" >
                 <i class="fa fa-file-contract"></i>
             </a>
-            <a href="jsp/admin/plugins/identitystore/ManageClientApplications.jsp?view=displayClientApplication&id=${clientapplication.id}"
+            <a href="jsp/admin/plugins/identitystore/ManageClientApplications.jsp?view=displayClientApplication&id=${clientapplication.id}&client_application_name=${client_application_name!''}&client_code_search=${client_code_search!''}&application_code_search=${application_code_search!''}"
                class="btn btn-primary" title="#i18n{identitystore.manage_clientapplications.buttonDisplay}" >
                 <i class="fa fa-eye"></i>
             </a>

@@ -4,7 +4,7 @@
 <@rowBox>
     <@boxHeader i18nTitleKey="identitystore.view_clientapplication.pageTitle">
 	<@headerButtons>
-    <a href="jsp/admin/plugins/identitystore/ManageClientApplications.jsp?view=manageClientApplications"
+    <a href="jsp/admin/plugins/identitystore/ManageClientApplications.jsp?view=manageClientApplications&client_application_name=${client_application_name!''}&client_code_search=${client_code_search!''}&application_code_search=${application_code_search!''}"
        class="btn btn-secondary" >
         #i18n{portal.util.labelBack}
     </a>
@@ -113,7 +113,7 @@
        class="btn btn-primary" >
         Ajouter un contrat de service
     </a>
-    <a href="jsp/admin/plugins/identitystore/ManageClientApplications.jsp?view=manage_clientapplications"
+    <a href="jsp/admin/plugins/identitystore/ManageClientApplications.jsp?view=manage_clientapplications&client_application_name=${client_application_name!''}&client_code_search=${client_code_search!''}&application_code_search=${application_code_search!''}"
        class="btn btn-secondary" >
         #i18n{portal.util.labelBack}
     </a>
