@@ -121,6 +121,9 @@ public class ManageClientApplicationJspBean extends ManageIdentitiesJspBean
 
     // Session variable to store working values
     private ClientApplication _clientApplication;
+    private String _name;
+    private String _appCode;
+    private String _clientCode;
 
     /**
      * Build the Manage View
@@ -134,16 +137,14 @@ public class ManageClientApplicationJspBean extends ManageIdentitiesJspBean
     {
         _clientApplication = null;
 
-        final String name = request.getParameter( QUERY_PARAM_CLIENT_APPLICATION_NAME );
-        final String appCode = request.getParameter( QUERY_PARAM_APPLICATION_CODE );
-        final String clientCode = request.getParameter( QUERY_PARAM_CLIENT_CODE );
+        initSearchParameters(request);
 
         final List<ClientApplication> listClientApplications = ClientApplicationHome.selectApplicationList( ).stream( )
-                .filter( ca -> StringUtils.isBlank( name ) || ( ca.getName( ) != null && ca.getName( ).toLowerCase( ).contains( name.toLowerCase( ) ) ) )
-                .filter( ca -> StringUtils.isBlank( appCode )
-                        || ( ca.getApplicationCode( ) != null && ca.getApplicationCode( ).toLowerCase( ).contains( appCode.toLowerCase( ) ) ) )
-                .filter( ca -> StringUtils.isBlank( clientCode )
-                        || ( ca.getClientCode( ) != null && ca.getClientCode( ).toLowerCase( ).contains( clientCode.toLowerCase( ) ) ) )
+                .filter( ca -> StringUtils.isBlank( _name ) || ( ca.getName( ) != null && ca.getName( ).toLowerCase( ).contains( _name.toLowerCase( ) ) ) )
+                .filter( ca -> StringUtils.isBlank( _appCode )
+                        || ( ca.getApplicationCode( ) != null && ca.getApplicationCode( ).toLowerCase( ).contains( _appCode.toLowerCase( ) ) ) )
+                .filter( ca -> StringUtils.isBlank( _clientCode )
+                        || ( ca.getClientCode( ) != null && ca.getClientCode( ).toLowerCase( ).contains( _clientCode.toLowerCase( ) ) ) )
                 .sorted( ( a, b ) -> {
                     final int compare = StringUtils.compare( a.getApplicationCode( ), b.getApplicationCode( ), false );
                     if ( compare == 0 )
@@ -154,9 +155,9 @@ public class ManageClientApplicationJspBean extends ManageIdentitiesJspBean
                 } ).collect( Collectors.toList( ) );
 
         Map<String, Object> model = getPaginatedListModel( request, MARK_CLIENTAPPLICATION_LIST, listClientApplications, JSP_MANAGE_CLIENTAPPLICATIONS );
-        model.put( QUERY_PARAM_CLIENT_APPLICATION_NAME, name );
-        model.put( QUERY_PARAM_CLIENT_CODE, clientCode );
-        model.put( QUERY_PARAM_APPLICATION_CODE, appCode );
+        model.put( QUERY_PARAM_CLIENT_APPLICATION_NAME, _name );
+        model.put( QUERY_PARAM_CLIENT_CODE, _clientCode );
+        model.put( QUERY_PARAM_APPLICATION_CODE, _appCode );
 
         return getPage( PROPERTY_PAGE_TITLE_MANAGE_CLIENTAPPLICATIONS, TEMPLATE_MANAGE_CLIENTAPPLICATION, model );
     }
@@ -173,10 +174,6 @@ public class ManageClientApplicationJspBean extends ManageIdentitiesJspBean
     {
         _clientApplication = null;
 
-        final String name = request.getParameter( QUERY_PARAM_CLIENT_APPLICATION_NAME );
-        final String appCode = request.getParameter( QUERY_PARAM_APPLICATION_CODE );
-        final String clientCode = request.getParameter( QUERY_PARAM_CLIENT_CODE );
-
         int nId = Integer.parseInt( request.getParameter( PARAMETER_ID_CLIENTAPPLICATION ) );
 
         Map<String, Object> model = getModel( );
@@ -186,9 +183,9 @@ public class ManageClientApplicationJspBean extends ManageIdentitiesJspBean
         _clientApplication.setServiceContracts( serviceContracts );
 
         model.put( MARK_CLIENTAPPLICATION, _clientApplication );
-        model.put( QUERY_PARAM_CLIENT_APPLICATION_NAME, name );
-        model.put( QUERY_PARAM_CLIENT_CODE, clientCode );
-        model.put( QUERY_PARAM_APPLICATION_CODE, appCode );
+        model.put( QUERY_PARAM_CLIENT_APPLICATION_NAME, _name );
+        model.put( QUERY_PARAM_CLIENT_CODE, _clientCode );
+        model.put( QUERY_PARAM_APPLICATION_CODE, _appCode );
 
         return getPage( PROPERTY_PAGE_TITLE_MANAGE_CLIENTAPPLICATIONS, TEMPLATE_DISPLAY_CLIENTAPPLICATION, model );
     }
@@ -205,15 +202,11 @@ public class ManageClientApplicationJspBean extends ManageIdentitiesJspBean
     {
         _clientApplication = new ClientApplication( );
 
-        final String name = request.getParameter( QUERY_PARAM_CLIENT_APPLICATION_NAME );
-        final String appCode = request.getParameter( QUERY_PARAM_APPLICATION_CODE );
-        final String clientCode = request.getParameter( QUERY_PARAM_CLIENT_CODE );
-
         Map<String, Object> model = getModel( );
         model.put( MARK_CLIENTAPPLICATION, _clientApplication );
-        model.put( QUERY_PARAM_CLIENT_APPLICATION_NAME, name );
-        model.put( QUERY_PARAM_CLIENT_CODE, clientCode );
-        model.put( QUERY_PARAM_APPLICATION_CODE, appCode );
+        model.put( QUERY_PARAM_CLIENT_APPLICATION_NAME, _name );
+        model.put( QUERY_PARAM_CLIENT_CODE, _clientCode );
+        model.put( QUERY_PARAM_APPLICATION_CODE, _appCode );
 
         return getPage( PROPERTY_PAGE_TITLE_CREATE_CLIENTAPPLICATION, TEMPLATE_CREATE_CLIENTAPPLICATION, model );
     }
@@ -301,9 +294,6 @@ public class ManageClientApplicationJspBean extends ManageIdentitiesJspBean
     public String getModifyClientApplication( HttpServletRequest request )
     {
         int nId = Integer.parseInt( request.getParameter( PARAMETER_ID_CLIENTAPPLICATION ) );
-        final String name = request.getParameter( QUERY_PARAM_CLIENT_APPLICATION_NAME );
-        final String appCode = request.getParameter( QUERY_PARAM_APPLICATION_CODE );
-        final String clientCode = request.getParameter( QUERY_PARAM_CLIENT_CODE );
 
         if ( ( _clientApplication == null ) || ( _clientApplication.getId( ) != nId ) )
         {
@@ -312,9 +302,9 @@ public class ManageClientApplicationJspBean extends ManageIdentitiesJspBean
 
         Map<String, Object> model = getModel( );
         model.put( MARK_CLIENTAPPLICATION, _clientApplication );
-        model.put( QUERY_PARAM_CLIENT_APPLICATION_NAME, name );
-        model.put( QUERY_PARAM_CLIENT_CODE, clientCode );
-        model.put( QUERY_PARAM_APPLICATION_CODE, appCode );
+        model.put( QUERY_PARAM_CLIENT_APPLICATION_NAME, _name );
+        model.put( QUERY_PARAM_CLIENT_CODE, _clientCode );
+        model.put( QUERY_PARAM_APPLICATION_CODE, _appCode );
 
         return getPage( PROPERTY_PAGE_TITLE_MODIFY_CLIENTAPPLICATION, TEMPLATE_MODIFY_CLIENTAPPLICATION, model );
     }
@@ -341,6 +331,33 @@ public class ManageClientApplicationJspBean extends ManageIdentitiesJspBean
         addInfo( INFO_CLIENTAPPLICATION_UPDATED, getLocale( ) );
 
         return redirectView( request, VIEW_MANAGE_CLIENTAPPLICATIONS );
+    }
+
+    private void initSearchParameters( HttpServletRequest request )
+    {
+        //si il n'y a pas de paramètres alors c'est qu'on vient de revenir sur la page à partir d'un autre onglet
+        //on réinitialise alors la recherche
+        if(request.getParameterMap().isEmpty())
+        {
+            _name = "";
+            _appCode = "";
+            _clientCode = "";
+        }
+        else
+        {
+            if (request.getParameter(QUERY_PARAM_CLIENT_APPLICATION_NAME) != null)
+            {
+                _name = request.getParameter(QUERY_PARAM_CLIENT_APPLICATION_NAME);
+            }
+            if (request.getParameter(QUERY_PARAM_APPLICATION_CODE) != null)
+            {
+                _appCode = request.getParameter(QUERY_PARAM_APPLICATION_CODE);
+            }
+            if (request.getParameter(QUERY_PARAM_CLIENT_CODE) != null)
+            {
+                _clientCode = request.getParameter(QUERY_PARAM_CLIENT_CODE);
+            }
+        }
     }
 
 }

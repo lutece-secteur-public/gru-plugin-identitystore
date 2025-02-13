@@ -157,6 +157,11 @@ public class ServiceContractJspBean extends ManageServiceContractJspBean<Integer
     // Session variable to store working values
     private ServiceContract _servicecontract;
     private List<Integer> _listIdServiceContracts;
+    private String _active;
+    private String _contractName;
+    private String _clientCode;
+    private String _startDate;
+    private String _endDate;
 
     /**
      * Build the Manage View
@@ -171,17 +176,19 @@ public class ServiceContractJspBean extends ManageServiceContractJspBean<Integer
         _servicecontract = null;
         final Map<String, String> queryParameters = this.getQueryParameters( request );
 
+        queryParameters.putAll(initSearchParameters( queryParameters, request ) );
+
         if ( request.getParameter( AbstractPaginator.PARAMETER_PAGE_INDEX ) == null || _listIdServiceContracts.isEmpty( ) )
         {
             _listIdServiceContracts = ServiceContractHome.getFilteredIdServiceContractsList( queryParameters );
         }
 
         final Map<String, Object> model = getPaginatedListModel( request, MARK_SERVICECONTRACT_LIST, _listIdServiceContracts, JSP_MANAGE_SERVICECONTRACTS );
-        model.put( QUERY_PARAM_ACTIVE, queryParameters.get(QUERY_PARAM_ACTIVE) );
-        model.put( QUERY_PARAM_CONTRACT_NAME, request.getParameter( QUERY_PARAM_CONTRACT_NAME ) );
-        model.put( QUERY_PARAM_CLIENT_CODE, request.getParameter( QUERY_PARAM_CLIENT_CODE ) );
-        model.put( QUERY_PARAM_START_DATE, request.getParameter( QUERY_PARAM_START_DATE ) );
-        model.put( QUERY_PARAM_END_DATE, request.getParameter( QUERY_PARAM_END_DATE ) );
+        model.put( QUERY_PARAM_ACTIVE, _active );
+        model.put( QUERY_PARAM_CONTRACT_NAME, _contractName );
+        model.put( QUERY_PARAM_CLIENT_CODE, _clientCode );
+        model.put( QUERY_PARAM_START_DATE, _startDate );
+        model.put( QUERY_PARAM_END_DATE, _endDate );
 
         return getPage( PROPERTY_PAGE_TITLE_MANAGE_SERVICECONTRACTS, TEMPLATE_MANAGE_SERVICECONTRACTS, model );
     }
@@ -198,11 +205,11 @@ public class ServiceContractJspBean extends ManageServiceContractJspBean<Integer
     {
         final int nId = Integer.parseInt( request.getParameter( PARAMETER_ID_SERVICECONTRACT ) );
         final String backUrl = request.getParameter( PARAMETER_BACK_URL )
-                .concat( ( StringUtils.isNotBlank( request.getParameter( QUERY_PARAM_ACTIVE ) ) ? "&" + QUERY_PARAM_ACTIVE + "=" + request.getParameter( QUERY_PARAM_ACTIVE ) : "" ) )
-                .concat( ( StringUtils.isNotBlank( request.getParameter( QUERY_PARAM_CONTRACT_NAME ) ) ? "&" + QUERY_PARAM_CONTRACT_NAME + "=" + request.getParameter( QUERY_PARAM_CONTRACT_NAME ) : "" ) )
-                .concat( ( StringUtils.isNotBlank( request.getParameter( QUERY_PARAM_CLIENT_CODE ) ) ? "&" + QUERY_PARAM_CLIENT_CODE + "=" + request.getParameter( QUERY_PARAM_CLIENT_CODE ) : "" ) )
-                .concat( ( StringUtils.isNotBlank( request.getParameter( QUERY_PARAM_START_DATE ) ) ? "&" + QUERY_PARAM_START_DATE + "=" + request.getParameter( QUERY_PARAM_START_DATE ) : "" ) )
-                .concat( ( StringUtils.isNotBlank( request.getParameter( QUERY_PARAM_END_DATE ) ) ? "&" + QUERY_PARAM_END_DATE + "=" + request.getParameter( QUERY_PARAM_END_DATE ) : "" ) );
+                .concat( ( StringUtils.isNotBlank( _active ) ? "&" + QUERY_PARAM_ACTIVE + "=" + _active : "" ) )
+                .concat( ( StringUtils.isNotBlank( _contractName ) ? "&" + QUERY_PARAM_CONTRACT_NAME + "=" + _contractName : "" ) )
+                .concat( ( StringUtils.isNotBlank( _clientCode ) ? "&" + QUERY_PARAM_CLIENT_CODE + "=" + _clientCode : "" ) )
+                .concat( ( StringUtils.isNotBlank( _startDate ) ? "&" + QUERY_PARAM_START_DATE + "=" + _startDate : "" ) )
+                .concat( ( StringUtils.isNotBlank( _endDate ) ? "&" + QUERY_PARAM_END_DATE + "=" + _endDate : "" ) );
         _servicecontract = null;
 
         final Optional<ServiceContract> optServiceContract = ServiceContractHome.findByPrimaryKey( nId );
@@ -444,11 +451,11 @@ public class ServiceContractJspBean extends ManageServiceContractJspBean<Integer
                 .collect( Collectors.toList( ) );
 
         model.put( MARK_MANDATORY_ATTRIBUTE_KEYS_LIST, mandatoryAttrKeyList );
-        model.put( QUERY_PARAM_ACTIVE, request.getParameter(QUERY_PARAM_ACTIVE) );
-        model.put( QUERY_PARAM_CONTRACT_NAME, request.getParameter( QUERY_PARAM_CONTRACT_NAME ) );
-        model.put( QUERY_PARAM_CLIENT_CODE, request.getParameter( QUERY_PARAM_CLIENT_CODE ) );
-        model.put( QUERY_PARAM_START_DATE, request.getParameter( QUERY_PARAM_START_DATE ) );
-        model.put( QUERY_PARAM_END_DATE, request.getParameter( QUERY_PARAM_END_DATE ) );
+        model.put( QUERY_PARAM_ACTIVE, _active );
+        model.put( QUERY_PARAM_CONTRACT_NAME, _contractName );
+        model.put( QUERY_PARAM_CLIENT_CODE, _clientCode );
+        model.put( QUERY_PARAM_START_DATE, _startDate );
+        model.put( QUERY_PARAM_END_DATE, _endDate );
         model.put( MARK_SERVICECONTRACT, _servicecontract );
         model.put( MARK_EDIT_ACTION, "action_modifyServiceContract" );
         model.put( MARK_ATTRIBUTE_REQUIREMENTS_LIST, attributeRequirementList );
@@ -740,5 +747,71 @@ public class ServiceContractJspBean extends ManageServiceContractJspBean<Integer
                 a.getRefAttributeCertificationProcessus( ).sort( Comparator.comparingInt( p -> a.getCompatibleProcessus( ).indexOf( p ) ) );
             } );
         }
+    }
+
+
+
+    private Map<String, String> initSearchParameters(final Map<String, String> queryParameters, HttpServletRequest request )
+    {
+        Map<String, String> seachMap = new HashMap<>();
+
+        //si il n'y a pas de paramètres alors c'est qu'on vient de revenir sur la page à partir d'un autre onglet
+        //on réinitialise alors la recherche
+        if(request.getParameterMap().isEmpty())
+        {
+            seachMap.put(QUERY_PARAM_ACTIVE, "1");
+            _active = "1";
+            _contractName = "";
+            _clientCode = "";
+            _startDate = "";
+            _endDate = "";
+        }
+        else
+        {
+            if (queryParameters.get(QUERY_PARAM_ACTIVE) != null)
+            {
+                _active = queryParameters.get(QUERY_PARAM_ACTIVE);
+            } else if (_active == null)
+            {
+                seachMap.put(QUERY_PARAM_ACTIVE, "1");
+                _active = "1";
+            } else
+            {
+                seachMap.put(QUERY_PARAM_ACTIVE, _active);
+            }
+
+            if (queryParameters.get(QUERY_PARAM_CONTRACT_NAME) != null)
+            {
+                _contractName = queryParameters.get(QUERY_PARAM_CONTRACT_NAME);
+            } else
+            {
+                seachMap.put(QUERY_PARAM_CONTRACT_NAME, _contractName);
+            }
+
+            if (queryParameters.get(QUERY_PARAM_CLIENT_CODE) != null)
+            {
+                _clientCode = queryParameters.get(QUERY_PARAM_CLIENT_CODE);
+            } else
+            {
+                seachMap.put(QUERY_PARAM_CLIENT_CODE, _clientCode);
+            }
+
+            if (queryParameters.get(QUERY_PARAM_START_DATE) != null)
+            {
+                _startDate = queryParameters.get(QUERY_PARAM_START_DATE);
+            } else
+            {
+                seachMap.put(QUERY_PARAM_START_DATE, _startDate);
+            }
+
+            if (queryParameters.get(QUERY_PARAM_END_DATE) != null)
+            {
+                _endDate = queryParameters.get(QUERY_PARAM_END_DATE);
+            } else
+            {
+                seachMap.put(QUERY_PARAM_END_DATE, _endDate);
+            }
+        }
+        return seachMap;
     }
 }

@@ -24,7 +24,7 @@
             </tr>
             <tr class="table-sort-inputs">
                 <th>
-                    <select class="search-field form-select select-type" name="active" value="${active!''}" >
+                    <select class="search-field select-field form-select select-type" name="active" value="${active!''}" >
                         <option value="1" <#if active! == "1"> selected="selected"</#if>>OUI</option>
                         <option value="0" <#if active! == "0"> selected="selected"</#if>>NON</option>
                         <option value="" <#if active! != "1" && active! != "0"> selected="selected"</#if>>TOUS</option>
@@ -112,5 +112,6 @@
 <script>
     $('.btn-empty').click(function () {
         $('.search-field').val('');
+        $('.select-field').val('1');
     });
 </script>

@@ -131,10 +131,6 @@ public abstract class ManageServiceContractJspBean<S, T> extends MVCAdminJspBean
         {
             parameters.put( QUERY_PARAM_ACTIVE, active );
         }
-        else
-        {
-            parameters.put( QUERY_PARAM_ACTIVE, "1" );
-        }
         final String contractName = request.getParameter( QUERY_PARAM_CONTRACT_NAME );
         if ( contractName != null )
         {
