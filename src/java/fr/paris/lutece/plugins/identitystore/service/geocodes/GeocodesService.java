@@ -392,7 +392,7 @@ public class GeocodesService
                 if ( countryLabelToCreate != null )
                 {
 
-                    final List<Country> countries = GeoCodesService.getInstance( ).getCountriesListByName( countryLabelToCreate.getValue( ), birthdate );
+                    final List<Country> countries = GeoCodesService.getInstance( ).getCountriesListByNameAndDate( countryLabelToCreate.getValue( ), birthdate );
                     if ( CollectionUtils.isEmpty( countries ) )
                     {
                         // Country doesn't exist in Geocodes for provided label
@@ -468,7 +468,7 @@ public class GeocodesService
                         }
                         else
                         {
-                            final List<Country> countries = GeoCodesService.getInstance( ).getCountriesListByName( countryLabelToUpdate.getValue( ),
+                            final List<Country> countries = GeoCodesService.getInstance( ).getCountriesListByNameAndDate( countryLabelToUpdate.getValue( ),
                                     birthdate );
                             if ( CollectionUtils.isEmpty( countries ) )
                             {
@@ -625,7 +625,7 @@ public class GeocodesService
                     birthdate = null;
                 }
 
-                final List<Country> countries = GeoCodesService.getInstance( ).getCountriesListByName( countryLabelToCreate.getValue( ), birthdate );
+                final List<Country> countries = GeoCodesService.getInstance( ).getCountriesListByNameAndDate( countryLabelToCreate.getValue( ), birthdate );
                 if ( CollectionUtils.isEmpty( countries ) )
                 {
                     // Country doesn't exist in Geocodes for provided label
@@ -1314,7 +1314,7 @@ public class GeocodesService
         // Country label but no code, only possible when birthdate exists
         if( !attributes.containsKey( Constants.PARAM_BIRTH_COUNTRY_CODE ) && attributes.containsKey( Constants.PARAM_BIRTH_COUNTRY ) && birthdate != null )
         {
-            final List<Country> countries = GeoCodesService.getInstance( ).getCountriesListByName( attributes.get( Constants.PARAM_BIRTH_COUNTRY ), birthdate );
+            final List<Country> countries = GeoCodesService.getInstance( ).getCountriesListByNameAndDate( attributes.get( Constants.PARAM_BIRTH_COUNTRY ), birthdate );
             if( countries != null && countries.size( ) == 1 )
             {
                 attributes.put( Constants.PARAM_BIRTH_COUNTRY_CODE, countries.get( 0 ).getCode( ) );
