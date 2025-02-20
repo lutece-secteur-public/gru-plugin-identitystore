@@ -51,7 +51,6 @@ import fr.paris.lutece.plugins.identitystore.v3.web.rs.DtoConverter;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.AttributeTreatmentType;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.BatchDto;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.IdentityDto;
-import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.contract.ServiceContractDto;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.history.AttributeChange;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.history.IdentityChange;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.importing.BatchImportRequest;
@@ -74,6 +73,8 @@ import org.apache.commons.lang3.StringUtils;
 import javax.servlet.http.HttpServletRequest;
 import java.io.ByteArrayOutputStream;
 import java.sql.Date;
+import java.sql.Timestamp;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -472,7 +473,6 @@ public class IdentityJspBean extends ManageIdentitiesJspBean
 
             int i = 0;
             final String reference = UUID.randomUUID( ).toString( );
-            final Date today = new Date( LocalDate.now( ).toEpochDay( ) );
 
             final ObjectMapper mapper = new ObjectMapper( );
             mapper.enable( SerializationFeature.INDENT_OUTPUT );
@@ -484,7 +484,7 @@ public class IdentityJspBean extends ManageIdentitiesJspBean
                 batchImportRequest.setBatch( new BatchDto( ) );
                 batchImportRequest.getBatch( ).setReference( reference );
                 batchImportRequest.getBatch( ).setComment( "Batch exporté depuis identity store" );
-                batchImportRequest.getBatch( ).setDate( today );
+                batchImportRequest.getBatch( ).setCreationDate( Timestamp.from( Instant.now( ) ) );
                 batchImportRequest.getBatch( ).setUser( getUser( ).getEmail( ) );
                 batchImportRequest.getBatch( ).setAppCode( "TEST" );
                 batchImportRequest.getBatch( ).setIdentities( batch );
