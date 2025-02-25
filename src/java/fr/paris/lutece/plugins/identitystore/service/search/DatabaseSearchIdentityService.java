@@ -129,20 +129,24 @@ public class DatabaseSearchIdentityService implements ISearchIdentityService
     {
         if ( CollectionUtils.isNotEmpty( specialTreatmentAttributes ) || ( nbMissingAttributes != null && nbMissingAttributes != 0 ) )
         {
-            throw new IdentityStoreException( "Cannot perform a complex search on database" );
+            AppLogService.error( "Cannot perform a complex search on database" );
         }
-        try
+        else
         {
-            final List<Identity> listIdentity = IdentityHome.findByAttributesValueForApiSearch( this.computeOutputKeys( attributes ), max );
-            if ( listIdentity != null && !listIdentity.isEmpty( ) )
+            try
             {
-                return new QualifiedIdentitySearchResult( this.getEntities( listIdentity ) );
+                final List<Identity> listIdentity = IdentityHome.findByAttributesValueForApiSearch( this.computeOutputKeys( attributes ), max );
+                if ( listIdentity != null && !listIdentity.isEmpty( ) )
+                {
+                    return new QualifiedIdentitySearchResult( this.getEntities( listIdentity ) );
+                }
+            }
+            catch( final IdentityStoreException e )
+            {
+                AppLogService.error( "An error occurred during database search: ", e );
             }
         }
-        catch( final IdentityStoreException e )
-        {
-            AppLogService.error( "An error occurred during database search: ", e );
-        }
+
         return new QualifiedIdentitySearchResult( );
     }
 
