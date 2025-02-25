@@ -34,12 +34,15 @@
 package fr.paris.lutece.plugins.identitystore.v3.web.request.identity;
 
 import fr.paris.lutece.plugins.identitystore.business.contract.ServiceContract;
+import fr.paris.lutece.plugins.identitystore.service.attribute.IdentityAttributeFormatterService;
+import fr.paris.lutece.plugins.identitystore.service.attribute.IdentityAttributeGeocodesAdjustmentService;
 import fr.paris.lutece.plugins.identitystore.service.contract.ServiceContractService;
 import fr.paris.lutece.plugins.identitystore.service.identity.IdentityService;
 import fr.paris.lutece.plugins.identitystore.v3.web.request.AbstractIdentityStoreAppCodeRequest;
 import fr.paris.lutece.plugins.identitystore.v3.web.request.validator.IdentityAttributeValidator;
 import fr.paris.lutece.plugins.identitystore.v3.web.request.validator.IdentityDuplicateValidator;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.IdentityRequestValidator;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.AttributeStatus;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.crud.IdentityChangeRequest;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.crud.IdentityChangeResponse;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.ResponseStatusFactory;
@@ -51,9 +54,13 @@ import fr.paris.lutece.plugins.identitystore.web.exception.RequestFormatExceptio
 import fr.paris.lutece.plugins.identitystore.web.exception.ResourceConsistencyException;
 import fr.paris.lutece.plugins.identitystore.web.exception.ResourceNotFoundException;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class IdentityStoreImportRequest extends AbstractIdentityStoreAppCodeRequest
 {
     private final IdentityChangeRequest _identityChangeRequest;
+    private final List<AttributeStatus> formatStatuses = new ArrayList<>();
 
     private ServiceContract serviceContract;
     private String strictDuplicateCustomerId;
@@ -99,7 +106,8 @@ public class IdentityStoreImportRequest extends AbstractIdentityStoreAppCodeRequ
     @Override
     protected void formatRequestContent( ) throws RequestContentFormattingException
     {
-        // do nothing, it will be done in subsequent request (create or update)
+        formatStatuses.addAll( IdentityAttributeFormatterService.instance( ).formatIdentityChangeRequestAttributeValues( _identityChangeRequest ) );
+        formatStatuses.addAll( IdentityAttributeGeocodesAdjustmentService.instance( ).adjustGeocodesAttributes( _identityChangeRequest ) );
     }
 
     @Override
@@ -113,13 +121,17 @@ public class IdentityStoreImportRequest extends AbstractIdentityStoreAppCodeRequ
     {
         if ( strictDuplicateCustomerId == null )
         {
-            return (IdentityChangeResponse) new IdentityStoreCreateRequest( _identityChangeRequest, _strClientCode, _strAppCode, _author.getName( ),
-                    _author.getType( ).name( ) ).doRequest( );
+            final IdentityChangeResponse identityChangeResponse = (IdentityChangeResponse) new IdentityStoreCreateRequest(_identityChangeRequest, _strClientCode, _strAppCode, _author.getName(),
+                    _author.getType().name()).doRequest();
+            identityChangeResponse.getStatus().getAttributeStatuses().addAll( formatStatuses );
+            return identityChangeResponse;
         }
         else
         {
-            return (IdentityChangeResponse) new IdentityStoreUpdateRequest( strictDuplicateCustomerId, _identityChangeRequest, _strClientCode, _strAppCode,
-                    _author.getName( ), _author.getType( ).name( ) ).doRequest( );
+            final IdentityChangeResponse identityChangeResponse = (IdentityChangeResponse) new IdentityStoreUpdateRequest(strictDuplicateCustomerId, _identityChangeRequest, _strClientCode, _strAppCode,
+                    _author.getName(), _author.getType().name()).doRequest();
+            identityChangeResponse.getStatus().getAttributeStatuses().addAll( formatStatuses );
+            return identityChangeResponse;
         }
     }
 }
