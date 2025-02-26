@@ -245,7 +245,7 @@ public interface ISuspiciousIdentityDAO
 
     List <SuspiciousIdentity> getAllLocks( Plugin plugin );
 
-    boolean isLock( String customerId, Plugin plugin );
+    void removeLock( String customerId, Plugin plugin );
 
     List<String> selectSuspiciousIdentityCuidsList( String ruleCode, Plugin plugin );
 

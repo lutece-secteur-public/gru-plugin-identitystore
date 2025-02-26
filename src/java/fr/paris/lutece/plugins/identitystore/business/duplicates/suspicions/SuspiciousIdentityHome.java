@@ -376,8 +376,9 @@ public final class SuspiciousIdentityHome
         return _dao.getAllLocks( _plugin );
     }
 
-    public static boolean isLock ( String customerId )
+    public static void removeLock( String custommerId )
     {
-        return _dao.isLock( customerId, _plugin );
+        _dao.removeLock( custommerId, _plugin );
     }
+
 }

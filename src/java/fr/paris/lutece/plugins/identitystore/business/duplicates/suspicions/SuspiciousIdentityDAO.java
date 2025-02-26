@@ -65,7 +65,6 @@ public final class SuspiciousIdentityDAO implements ISuspiciousIdentityDAO
     private static final String SQL_QUERY_PURGE_BY_RULE = "DELETE FROM identitystore_quality_suspicious_identity WHERE id_duplicate_rule=?";
     private static final String SQL_QUERY_SELECT = "SELECT i.id_suspicious_identity, i.customer_id, i.id_duplicate_rule, r.code, l.date_lock_end, l.is_locked, l.author_type, l.author_name FROM identitystore_quality_suspicious_identity i LEFT JOIN identitystore_quality_suspicious_identity_lock l ON i.customer_id = l.customer_id LEFT JOIN identitystore_duplicate_rule r ON r.id_rule = i.id_duplicate_rule WHERE id_suspicious_identity = ?";
     private static final String SQL_QUERY_INSERT = "INSERT INTO identitystore_quality_suspicious_identity ( customer_id, id_duplicate_rule ) VALUES ( ?, ?) ";
-    private static final String SQL_QUERY_SELECT_LOCK = "SELECT is_locked FROM identitystore_quality_suspicious_identity_lock WHERE customer_id = ?";
     private static final String SQL_QUERY_SELECT_ALL_LOCK = "SELECT customer_id, date_lock_end, author_type, author_name FROM identitystore_quality_suspicious_identity_lock WHERE is_locked = 1";
     private static final String SQL_QUERY_ADD_LOCK = "INSERT INTO identitystore_quality_suspicious_identity_lock ( customer_id, is_locked, date_lock_end, author_type, author_name ) VALUES ( ?, ?, ?, ?, ?) ";
     private static final String SQL_QUERY_REMOVE_LOCK = "DELETE FROM identitystore_quality_suspicious_identity_lock WHERE customer_id = ? ";
@@ -742,21 +741,13 @@ public final class SuspiciousIdentityDAO implements ISuspiciousIdentityDAO
     }
 
     @Override
-    public boolean isLock( String customerId, Plugin plugin )
+    public void removeLock( String customerId, Plugin plugin )
     {
-        boolean locked = false;
-        try( final DAOUtil daoUtil = new DAOUtil(SQL_QUERY_SELECT_LOCK, plugin ) )
+        try ( final DAOUtil daoUtil = new DAOUtil( SQL_QUERY_REMOVE_LOCK, plugin ) )
         {
             daoUtil.setString( 1, customerId );
-            daoUtil.executeQuery( );
-            if( daoUtil.next( ) )
-            {
-                int nIndex = 1;
-
-                locked = daoUtil.getBoolean(nIndex);
-            }
+            daoUtil.executeUpdate( );
         }
-        return locked;
     }
 
     @Override
