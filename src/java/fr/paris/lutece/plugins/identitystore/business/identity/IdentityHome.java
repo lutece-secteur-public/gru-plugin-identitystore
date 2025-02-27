@@ -416,6 +416,20 @@ public final class IdentityHome
     }
 
     /**
+     * Search for identity customer IDs that are not connected, not merged, and have the specified attribute non-certified.
+     *
+     * @param attributeKey
+     *            the attribute key to be present and non-certified
+     * @param limit
+     *            the max number of returned identities
+     * @return a list of customer IDs
+     */
+    public static List<String> findNotMergedNotConnectedWithNonCertifiedAttributeCustomerIds( final String attributeKey, final int limit )
+    {
+        return _dao.selectNotMergedNotConnectedWithNonCertifiedAttributeCustomerIds( attributeKey, limit, _plugin );
+    }
+
+    /**
      * Search for identities that are merged to the provided identity ID.
      * 
      * @param identityId

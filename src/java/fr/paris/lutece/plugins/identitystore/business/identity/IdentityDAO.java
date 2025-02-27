@@ -46,6 +46,7 @@ import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.search.SearchUpdatedA
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
 import fr.paris.lutece.portal.service.plugin.Plugin;
+import fr.paris.lutece.portal.service.util.AppPropertiesService;
 import fr.paris.lutece.util.sql.DAOUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
@@ -56,7 +57,6 @@ import java.sql.Timestamp;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -135,6 +135,15 @@ public final class IdentityDAO implements IIdentityDAO
     private static final String SQL_QUERY_REFRESH_LAST_UPDATE_DATE = "UPDATE identitystore_identity SET last_update_date = now() WHERE id_identity = ?";
     private static final String SQL_QUERY_SELECT_EXPIRED_NOT_MERGED_AND_NOT_CONNECTED = "SELECT " + COLUMNS
             + " FROM identitystore_identity a WHERE a.expiration_date < NOW() AND a.is_merged = 0 AND a.is_mon_paris_active = 0 LIMIT ?";
+
+    private static final String SQL_QUERY_SELECT_NOT_MERGED_NOT_CONNECTED_WITH_UNCERTIFIED_ATTRIBUTE =
+            "SELECT a.customer_id FROM identitystore_identity a"
+            + " JOIN identitystore_identity_attribute b ON a.id_identity = b.id_identity"
+            + " JOIN identitystore_ref_attribute c ON c.id_attribute = b.id_attribute"
+            + " JOIN identitystore_identity_attribute_certificate d ON b.id_certification = d.id_attribute_certificate"
+            + " WHERE c.key_name = ? AND a.is_merged = 0 AND a.is_mon_paris_active = 0 AND d.certifier_code = ?"
+            + " LIMIT ?";
+
     private static final String SQL_QUERY_SELECT_MERGED_TO = "SELECT " + COLUMNS
             + " FROM identitystore_identity a WHERE a.is_merged = 1 AND a.id_master_identity = ?";
     private static final String SQL_QUERY_DELETE_ALL_ATTRIBUTE_HISTORY = "DELETE from identitystore_identity_attribute_history WHERE id_identity = ?";
@@ -917,6 +926,27 @@ public final class IdentityDAO implements IIdentityDAO
             }
         }
         return listIdentities;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public List<String> selectNotMergedNotConnectedWithNonCertifiedAttributeCustomerIds( final String attributeKey, final int limit, final Plugin plugin )
+    {
+        final List<String> listCuids = new ArrayList<>( );
+        try ( final DAOUtil daoUtil = new DAOUtil( SQL_QUERY_SELECT_NOT_MERGED_NOT_CONNECTED_WITH_UNCERTIFIED_ATTRIBUTE, plugin ) )
+        {
+            daoUtil.setString( 1, attributeKey );
+            daoUtil.setString( 2, AppPropertiesService.getProperty("identitystore.identity.uncertify.processus", "DEC") );
+            daoUtil.setInt( 3, limit );
+            daoUtil.executeQuery( );
+            while ( daoUtil.next( ) )
+            {
+                listCuids.add( daoUtil.getString( 1 ) );
+            }
+        }
+        return listCuids;
     }
 
     /**

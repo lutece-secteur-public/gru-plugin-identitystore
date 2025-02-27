@@ -290,6 +290,17 @@ public interface IIdentityDAO
     List<Identity> selectExpiredNotMergedAndNotConnectedIdentities( int limit, Plugin plugin );
 
     /**
+     * Search for identity customer IDs that are not connected, not merged, and have the specified attribute non-certified.
+     *
+     * @param attributeKey
+     *            the attribute key to be present and non-certified
+     * @param limit
+     *            the max number of returned identities
+     * @return a list of customer IDs
+     */
+    List<String> selectNotMergedNotConnectedWithNonCertifiedAttributeCustomerIds(String attributeKey, int limit, Plugin plugin);
+
+    /**
      * Search for identities that are merged to the provided identity ID.
      *
      * @param identityId
