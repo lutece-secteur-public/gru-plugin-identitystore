@@ -1,4 +1,4 @@
-insert into public.identitystore_identity_search_rule (id_rule, type)  VALUES 
+insert into identitystore_identity_search_rule (id_rule, type)  VALUES 
 (1, 'OR'),
 (3, 'AND')
 ;
@@ -8,7 +8,7 @@ insert into public.identitystore_identity_search_rule (id_rule, type)  VALUES
 -- Data for Name: identitystore_identity_search_rule_attribute; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-INSERT INTO  public.identitystore_identity_search_rule_attribute (id_rule, id_attribute)  VALUES 
+INSERT INTO  identitystore_identity_search_rule_attribute (id_rule, id_attribute)  VALUES 
 (1, 16),
 (1, 12),
 (3, 3),
@@ -20,7 +20,7 @@ INSERT INTO  public.identitystore_identity_search_rule_attribute (id_rule, id_at
 -- Data for Name: identitystore_ref_attribute; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-INSERT INTO  public.identitystore_ref_attribute (id_attribute, name, key_name, description, key_type, key_weight, certifiable, pivot, common_search_key, mandatory_for_creation, validation_regex, validation_error_message, validation_error_message_key)  VALUES 
+INSERT INTO  identitystore_ref_attribute (id_attribute, name, key_name, description, key_type, key_weight, certifiable, pivot, common_search_key, mandatory_for_creation, validation_regex, validation_error_message, validation_error_message_key)  VALUES 
 (10, 'Code postal', 'address_postal_code', 'Champ d''adresse : code postal', 0, 0, 1, 0,  null , 0, '^[A-Za-zÀ-Üà-ü\\d\\s''-]+$', 'uniquement caractères alphanumériques, apostrophe, espace et tirets.', 'identitystore.attribute.status.validation.error.only.alphanum.apostrophe.space.dash'),
 (11, 'Ville', 'address_city', 'Champ d''adresse : ville', 0, 0, 1, 0,  null , 0, '^[A-Za-zÀ-Üà-ü\\d\\s''-]+$', 'uniquement caractères alphanumériques, apostrophe, espace et tirets.', 'identitystore.attribute.status.validation.error.only.alphanum.apostrophe.space.dash'),
 (16, 'Login', 'login', 'Login de connexion (email)', 0, '20', 1, 0, 'common_email', 0, '^[A-Za-zÀ-Üà-ü\\d\\s''-]+$', 'uniquement caractères alphanumériques, apostrophe, espace et tirets.', 'identitystore.attribute.status.validation.error.only.alphanum.apostrophe.space.dash'),
@@ -42,10 +42,10 @@ INSERT INTO  public.identitystore_ref_attribute (id_attribute, name, key_name, d
 ;
 
 --
--- Data for Name: identitystore_ref_certification_level; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: identitystore_ref_certification_level; Type: TABLE DATA; Schema: ; Owner: postgres
 --
 
-INSERT INTO  public.identitystore_ref_certification_level (id_ref_certification_level, name, description, level)  VALUES 
+INSERT INTO  identitystore_ref_certification_level (id_ref_certification_level, name, description, level)  VALUES 
 (1, 'Déclaratif', 'Des attributs renseignés sans certification ni PJ', 100),
 (2, 'PJ non officielle scannée', 'Agent certifie via scan PJ non officielle', 330),
 (3, 'PJ non officielle guichet', 'Agent certifie guichet PJ non officielle réelle', 360),
@@ -64,7 +64,7 @@ INSERT INTO  public.identitystore_ref_certification_level (id_ref_certification_
 -- Data for Name: identitystore_ref_certification_processus; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-INSERT INTO  public.identitystore_ref_certification_processus (id_ref_attribute_certification_processus, label, code)  VALUES 
+INSERT INTO  identitystore_ref_certification_processus (id_ref_attribute_certification_processus, label, code)  VALUES 
 (6, 'Validation SMS', 'SMS'),
 (5, 'Validation Mail', 'MAIL'),
 (10, 'Validation Mail Mon Paris', 'emailcertifier'),
@@ -83,7 +83,7 @@ INSERT INTO  public.identitystore_ref_certification_processus (id_ref_attribute_
 -- Data for Name: identitystore_ref_certification_attribute_level; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-INSERT INTO  public.identitystore_ref_certification_attribute_level (id_attribute, id_ref_certification_level, id_ref_attribute_certification_processus)  VALUES 
+INSERT INTO  identitystore_ref_certification_attribute_level (id_attribute, id_ref_certification_level, id_ref_attribute_certification_processus)  VALUES 
 (5, 7, 8),
 (6, 7, 8),
 (7, 7, 8),
