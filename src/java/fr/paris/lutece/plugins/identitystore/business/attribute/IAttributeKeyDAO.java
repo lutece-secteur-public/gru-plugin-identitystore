@@ -99,6 +99,15 @@ public interface IAttributeKeyDAO
     List<AttributeKey> selectAttributeKeysList( Plugin plugin );
 
     /**
+     * Load the name of all the attributeKey objects and returns them as a list
+     *
+     * @param plugin
+     *            the Plugin
+     * @return The list which contains the data of all the attributeKey objects
+     */
+    List<String> selectAttributeKeysNamesList( Plugin plugin );
+
+    /**
      * Load the data of all the attributeKey objects and returns them as a referenceList
      *
      * @param plugin

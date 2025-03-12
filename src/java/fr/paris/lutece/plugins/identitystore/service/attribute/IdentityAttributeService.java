@@ -89,7 +89,24 @@ public class IdentityAttributeService
      */
     public List<AttributeKey> getAllAtributeKeys( )
     {
-        return _attributeKeyCache.getAll( );
+        if(_attributeKeyCache.isCacheEnable())
+        {
+            List<AttributeKey> attributeKeys = _attributeKeyCache.getAll();
+            if( attributeKeys != null )
+            {
+                return attributeKeys;
+            }
+        }
+
+        List<AttributeKey> attributeKeys =  AttributeKeyHome.getAttributeKeysList(true);
+        if( attributeKeys != null && _attributeKeyCache.isCacheEnable() )
+        {
+            attributeKeys.forEach(
+                    attributeKey -> _attributeKeyCache.put( attributeKey.getKeyName(), attributeKey ));
+
+        }
+
+        return attributeKeys;
     }
 
     /**
@@ -103,7 +120,22 @@ public class IdentityAttributeService
      */
     public AttributeKey getAttributeKey( final String keyName ) throws ResourceNotFoundException
     {
-        return _attributeKeyCache.get( keyName );
+        if(_attributeKeyCache.isCacheEnable())
+        {
+            AttributeKey attribute = _attributeKeyCache.get( keyName );
+            if( attribute != null )
+            {
+                return attribute;
+            }
+        }
+
+        AttributeKey attribute =  AttributeKeyHome.findByKey( keyName, true);
+        if( attribute != null && _attributeKeyCache.isCacheEnable() )
+        {
+            _attributeKeyCache.put( attribute.getKeyName(), attribute );
+        }
+
+        return attribute;
     }
 
     /**
@@ -115,14 +147,17 @@ public class IdentityAttributeService
      */
     public AttributeKey getAttributeKeySafe( final String keyName )
     {
-        try
+        if(_attributeKeyCache.isCacheEnable())
         {
-            return _attributeKeyCache.get( keyName );
+            try
+            {
+                return _attributeKeyCache.get(keyName);
+            } catch (final Exception e)
+            {
+                return null;
+            }
         }
-        catch( final Exception e )
-        {
-            return null;
-        }
+        return AttributeKeyHome.findByKey( keyName, true);
     }
 
     /**
@@ -132,18 +167,44 @@ public class IdentityAttributeService
      */
     public List<AttributeKey> getPivotAttributeKeys( )
     {
-        return _attributeKeyCache.getAll( ).stream( ).filter( AttributeKey::getPivot ).collect( Collectors.toList( ) );
+        if(_attributeKeyCache.isCacheEnable())
+        {
+            List<AttributeKey> attributeKeys = _attributeKeyCache.getAll().stream( ).filter( AttributeKey::getPivot ).collect( Collectors.toList( ) );
+            if( attributeKeys != null )
+            {
+                return attributeKeys;
+            }
+        }
+
+        List<AttributeKey> attributeKeys =  AttributeKeyHome.getMandatoryForCreationAttributeKeyList();
+        if( attributeKeys != null && _attributeKeyCache.isCacheEnable() )
+        {
+            attributeKeys.forEach(
+                    attributeKey -> _attributeKeyCache.put( attributeKey.getKeyName(), attributeKey ));
+
+        }
+
+        return attributeKeys;
     }
 
     public List<AttributeKey> getCommonAttributeKeys( final String keyName )
     {
-        if ( _attributeKeyCache.getKeys( ).isEmpty( ) )
+        if(_attributeKeyCache.isCacheEnable())
         {
-            _attributeKeyCache.refresh( );
+            if (_attributeKeyCache.getKeys().isEmpty())
+            {
+                _attributeKeyCache.refresh();
+            }
+            return _attributeKeyCache.getKeys().stream().map(this::getAttributeKeySafe).filter(Objects::nonNull)
+                    .filter(attributeKey -> attributeKey.getCommonSearchKeyName() != null && Objects.equals(attributeKey.getCommonSearchKeyName(), keyName))
+                    .collect(Collectors.toList());
         }
-        return _attributeKeyCache.getKeys( ).stream( ).map( this::getAttributeKeySafe ).filter( Objects::nonNull )
-                .filter( attributeKey -> attributeKey.getCommonSearchKeyName( ) != null && Objects.equals( attributeKey.getCommonSearchKeyName( ), keyName ) )
-                .collect( Collectors.toList( ) );
+
+        List<String> attributeKeysnames =  AttributeKeyHome.getAttributeKeysNamesList();
+        return attributeKeysnames.stream().map(this::getAttributeKeySafe).filter(Objects::nonNull)
+                .filter(attributeKey -> attributeKey.getCommonSearchKeyName() != null && Objects.equals(attributeKey.getCommonSearchKeyName(), keyName))
+                .collect(Collectors.toList());
+
     }
 
     public void createAttributeKey( final AttributeKey attributeKey ) throws IdentityStoreException
@@ -152,7 +213,10 @@ public class IdentityAttributeService
         try
         {
             AttributeKeyHome.create( attributeKey );
-            _attributeKeyCache.put( attributeKey.getKeyName( ), attributeKey );
+            if(_attributeKeyCache.isCacheEnable())
+            {
+                _attributeKeyCache.put(attributeKey.getKeyName(), attributeKey);
+            }
             TransactionManager.commitTransaction( null );
         }
         catch( Exception e )
@@ -168,7 +232,10 @@ public class IdentityAttributeService
         try
         {
             AttributeKeyHome.update( attributeKey );
-            _attributeKeyCache.put( attributeKey.getKeyName( ), attributeKey );
+            if(_attributeKeyCache.isCacheEnable())
+            {
+                _attributeKeyCache.put(attributeKey.getKeyName(), attributeKey);
+            }
             TransactionManager.commitTransaction( null );
         }
         catch( Exception e )
@@ -184,7 +251,10 @@ public class IdentityAttributeService
         try
         {
             AttributeKeyHome.remove( attributeKey.getId( ) );
-            _attributeKeyCache.removeKey( attributeKey.getKeyName( ) );
+            if(_attributeKeyCache.isCacheEnable())
+            {
+                _attributeKeyCache.removeKey(attributeKey.getKeyName());
+            }
             TransactionManager.commitTransaction( null );
         }
         catch( Exception e )

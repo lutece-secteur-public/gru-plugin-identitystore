@@ -54,6 +54,7 @@ public final class AttributeKeyDAO implements IAttributeKeyDAO
     private static final String SQL_QUERY_DELETE = "DELETE FROM identitystore_ref_attribute WHERE id_attribute = ? ";
     private static final String SQL_QUERY_UPDATE = "UPDATE identitystore_ref_attribute SET id_attribute = ?, name = ?, key_name = ?, common_search_key = ?, description = ?, key_type = ?, certifiable = ?, pivot = ?, key_weight = ?, mandatory_for_creation = ?, validation_regex = ?, validation_error_message = ?, validation_error_message_key = ? WHERE id_attribute = ?";
     private static final String SQL_QUERY_SELECTALL = "SELECT id_attribute, name, key_name, common_search_key, description, key_type, certifiable, pivot, key_weight, mandatory_for_creation, validation_regex, validation_error_message, validation_error_message_key FROM identitystore_ref_attribute";
+    private static final String SQL_QUERY_SELECTALL_KEYS = "SELECT key_name FROM identitystore_ref_attribute";
     private static final String SQL_QUERY_SELECT_BY_KEY = "SELECT id_attribute, name, key_name, common_search_key, description, key_type, certifiable, pivot, key_weight, mandatory_for_creation, validation_regex, validation_error_message, validation_error_message_key FROM identitystore_ref_attribute WHERE key_name = ?";
     private static final String SQL_QUERY_SELECT_NB_ATTRIBUTE_ID_USED = "SELECT count(*) FROM identitystore_ref_attribute WHERE id_attribute = ? AND ( EXISTS( SELECT id_attribute FROM identitystore_service_contract_attribute_right WHERE id_attribute = ? ) OR EXISTS( SELECT id_attribute FROM identitystore_identity_attribute WHERE id_attribute = ? ) OR EXISTS( SELECT id_attribute FROM identitystore_identity_attribute_history  WHERE attribute_key IN  ( SELECT key_name FROM identitystore_ref_attribute WHERE id_attribute = ? ) ) )";
     private static final String SQL_QUERY_SELECT_LEVEL_MAX = "WITH attributes AS ( SELECT ia.key_name, ia.key_weight, max(cast(ircl.level AS NUMERIC)) as max_level FROM identitystore_ref_attribute ia JOIN identitystore_ref_certification_attribute_level iracl ON ia.id_attribute = iracl.id_attribute JOIN identitystore_ref_certification_level ircl ON iracl.id_ref_certification_level = ircl.id_ref_certification_level WHERE ia.key_weight != 0 GROUP BY ia.key_name, ia.key_weight ) SELECT SUM(attributes.max_level * attributes.key_weight) FROM attributes";
@@ -227,6 +228,26 @@ public final class AttributeKeyDAO implements IAttributeKeyDAO
             }
 
             return attributeKeyList;
+        }
+    }
+
+    /**
+     * {@inheritDoc }
+     */
+    @Override
+    public List<String> selectAttributeKeysNamesList( Plugin plugin )
+    {
+
+        try ( final DAOUtil daoUtil = new DAOUtil( SQL_QUERY_SELECTALL_KEYS, plugin ) )
+        {
+            daoUtil.executeQuery( );
+            final List<String> attributeNamesList = new ArrayList<>( );
+            while ( daoUtil.next( ) )
+            {
+                attributeNamesList.add(daoUtil.getString( 1 ) );
+            }
+
+            return attributeNamesList;
         }
     }
 

@@ -147,6 +147,11 @@ public final class AttributeKeyHome
         return attributeKeys;
     }
 
+    public static List<String> getAttributeKeysNamesList()
+    {
+        return _dao.selectAttributeKeysNamesList( _plugin );
+    }
+
     /**
      * Check reference in other tables of the attributeKey whose identifier is specified in parameter
      *
