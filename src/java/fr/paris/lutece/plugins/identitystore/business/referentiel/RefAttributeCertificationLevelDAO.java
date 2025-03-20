@@ -75,6 +75,12 @@ public final class RefAttributeCertificationLevelDAO implements IRefAttributeCer
             + " JOIN identitystore_ref_certification_level d on a.id_ref_certification_level = d.id_ref_certification_level "
             + " WHERE c.code = ? AND b.key_name = ?";
 
+    private static final String SQL_QUERY_SELECT_LEVEL_BY_ATTRIBUTE_AND_CODE = "SELECT d.level "
+            + " FROM identitystore_ref_certification_attribute_level a " + " JOIN identitystore_ref_attribute b ON a.id_attribute = b.id_attribute "
+            + " JOIN identitystore_ref_certification_processus c ON a.id_ref_attribute_certification_processus = c.id_ref_attribute_certification_processus "
+            + " JOIN identitystore_ref_certification_level d on a.id_ref_certification_level = d.id_ref_certification_level "
+            + " WHERE c.code = ? AND b.key_name = ?";
+
     /**
      * {@inheritDoc }
      */
@@ -390,6 +396,26 @@ public final class RefAttributeCertificationLevelDAO implements IRefAttributeCer
                 refAttributeCertificationLevel.setAttributeKey( attributeKey );
                 return refAttributeCertificationLevel;
 
+            }
+
+            return null;
+        }
+    }
+
+    @Override
+    public Integer findLevelByProcessusAndAttributeKeyName( String processusCode, String attributeKeyName, Plugin plugin )
+    {
+
+        try ( final DAOUtil daoUtil = new DAOUtil( SQL_QUERY_SELECT_LEVEL_BY_ATTRIBUTE_AND_CODE, plugin ) )
+        {
+            daoUtil.setString( 1, processusCode );
+            daoUtil.setString( 2, attributeKeyName );
+            daoUtil.executeQuery( );
+
+            if ( daoUtil.next( ) )
+            {
+                int nIndex = 1;
+                return daoUtil.getInt( nIndex);
             }
 
             return null;

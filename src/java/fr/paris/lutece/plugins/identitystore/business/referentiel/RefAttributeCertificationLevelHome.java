@@ -154,4 +154,9 @@ public final class RefAttributeCertificationLevelHome
     {
         return _dao.findByProcessusAndAttributeKeyName( processusCode, attributeKeyName, _plugin );
     }
+
+    public static Integer findfindLevelByProcessusAndAttributeKeyName(String processusCode, String attributeKeyName)
+    {
+        return _dao.findLevelByProcessusAndAttributeKeyName( processusCode, attributeKeyName, _plugin );
+    }
 }

@@ -135,4 +135,6 @@ public interface IRefAttributeCertificationLevelDAO
     List<RefAttributeCertificationLevel> selectRefAttributeLevelByAttribute( Plugin plugin, AttributeKey attributeKey );
 
     RefAttributeCertificationLevel findByProcessusAndAttributeKeyName( String processusCode, String attributeKeyName, Plugin plugin );
+
+    Integer findLevelByProcessusAndAttributeKeyName(String processusCode, String attributeKeyName, Plugin plugin);
 }

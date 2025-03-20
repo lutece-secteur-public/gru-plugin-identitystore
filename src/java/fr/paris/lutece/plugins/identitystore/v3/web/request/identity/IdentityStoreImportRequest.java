@@ -34,18 +34,20 @@
 package fr.paris.lutece.plugins.identitystore.v3.web.request.identity;
 
 import fr.paris.lutece.plugins.identitystore.business.contract.ServiceContract;
+import fr.paris.lutece.plugins.identitystore.business.identity.IdentityHome;
+import fr.paris.lutece.plugins.identitystore.business.referentiel.RefAttributeCertificationLevelHome;
 import fr.paris.lutece.plugins.identitystore.service.attribute.IdentityAttributeFormatterService;
 import fr.paris.lutece.plugins.identitystore.service.attribute.IdentityAttributeGeocodesAdjustmentService;
 import fr.paris.lutece.plugins.identitystore.service.contract.ServiceContractService;
-import fr.paris.lutece.plugins.identitystore.service.identity.IdentityService;
 import fr.paris.lutece.plugins.identitystore.v3.web.request.AbstractIdentityStoreAppCodeRequest;
-import fr.paris.lutece.plugins.identitystore.v3.web.request.validator.IdentityAttributeValidator;
 import fr.paris.lutece.plugins.identitystore.v3.web.request.validator.IdentityDuplicateValidator;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.DtoConverter;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.IdentityRequestValidator;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.AttributeStatus;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.IdentityDto;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.crud.IdentityChangeRequest;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.crud.IdentityChangeResponse;
-import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.ResponseStatusFactory;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
 import fr.paris.lutece.plugins.identitystore.web.exception.ClientAuthorizationException;
 import fr.paris.lutece.plugins.identitystore.web.exception.DuplicatesConsistencyException;
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
@@ -53,6 +55,7 @@ import fr.paris.lutece.plugins.identitystore.web.exception.RequestContentFormatt
 import fr.paris.lutece.plugins.identitystore.web.exception.RequestFormatException;
 import fr.paris.lutece.plugins.identitystore.web.exception.ResourceConsistencyException;
 import fr.paris.lutece.plugins.identitystore.web.exception.ResourceNotFoundException;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -128,6 +131,46 @@ public class IdentityStoreImportRequest extends AbstractIdentityStoreAppCodeRequ
         }
         else
         {
+            IdentityDto identityDuplicate = DtoConverter.convertIdentityToDto( IdentityHome.findByCustomerId( strictDuplicateCustomerId ) );
+
+            try
+            {
+                identityDuplicate.getAttributes().forEach(attributeDto -> {
+                    // pour chaque attribut on va comparer entre l'original et celui de la requete
+                    _identityChangeRequest.getIdentity().getAttributes().forEach(requestAttribute ->
+                        {
+                            // si il s'agit du bon attribut
+                             if( StringUtils.equals(attributeDto.getKey(), requestAttribute.getKey()) )
+                             {
+                                 Integer requestCertification = RefAttributeCertificationLevelHome.findfindLevelByProcessusAndAttributeKeyName(requestAttribute.getCertifier(), requestAttribute.getKey());
+                                 // si ils ne sont pas égaux alors on va regarder si le niveau de certification est inférieur ou égal
+                                 boolean change = !StringUtils.equals(attributeDto.getValue(), requestAttribute.getValue())
+                                         && attributeDto.isCertified() && requestAttribute.isCertified()
+                                         && attributeDto.getCertificationLevel() >= requestCertification;
+
+                                 if(change)
+                                 {
+                                    throw new RuntimeException("The identity has different attribute value with lower or equal certification for attribute : " + attributeDto.getKey());
+                                 }
+
+                                 //si ils ont égaux on va vérifier si le niveau de certification est inférieur
+                                 boolean certif = StringUtils.equals(attributeDto.getValue(), requestAttribute.getValue())
+                                         && attributeDto.isCertified() && requestAttribute.isCertified()
+                                         && attributeDto.getCertificationLevel() > requestCertification;
+
+                                 if(certif)
+                                 {
+                                     throw new RuntimeException("The certification is too low for attribute : " + attributeDto.getKey());
+                                 }
+                             }
+                        }
+                    );
+                });
+            }
+            catch (RuntimeException e)
+            {
+                throw new DuplicatesConsistencyException(e.getMessage(), Constants.PROPERTY_REST_INFO_UNABLE_TO_UPDATE);
+            }
             final IdentityChangeResponse identityChangeResponse = (IdentityChangeResponse) new IdentityStoreUpdateRequest(strictDuplicateCustomerId, _identityChangeRequest, _strClientCode, _strAppCode,
                     _author.getName(), _author.getType().name()).doRequest();
             identityChangeResponse.getStatus().getAttributeStatuses().addAll( formatStatuses );
