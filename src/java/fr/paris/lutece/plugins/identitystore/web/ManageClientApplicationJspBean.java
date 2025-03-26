@@ -222,6 +222,7 @@ public class ManageClientApplicationJspBean extends ManageIdentitiesJspBean
     public String doCreateClientApplication( HttpServletRequest request )
     {
         populate( _clientApplication, request );
+        _clientApplication.setAuthorName(this.getUser().getEmail());
 
         // Check constraints
         if ( !validateBean( _clientApplication, VALIDATION_ATTRIBUTES_PREFIX ) )
@@ -320,6 +321,7 @@ public class ManageClientApplicationJspBean extends ManageIdentitiesJspBean
     public String doModifyClientApplication( HttpServletRequest request )
     {
         populate( _clientApplication, request );
+        _clientApplication.setAuthorName(this.getUser().getEmail());
 
         // Check constraints
         if ( !validateBean( _clientApplication, VALIDATION_ATTRIBUTES_PREFIX ) )

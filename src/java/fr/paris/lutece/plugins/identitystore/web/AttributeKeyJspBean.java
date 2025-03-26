@@ -165,6 +165,7 @@ public class AttributeKeyJspBean extends AdminIdentitiesJspBean
     public String doCreateAttributeKey( HttpServletRequest request )
     {
         populate( _attributekey, request );
+        _attributekey.setAuthorName(this.getUser().getEmail());
         _attributekey.getAttributeValues( ).addAll( this.extractAttributeValues( request ) );
 
         // Check constraints
@@ -291,6 +292,7 @@ public class AttributeKeyJspBean extends AdminIdentitiesJspBean
     public String doModifyAttributeKey( HttpServletRequest request )
     {
         populate( _attributekey, request );
+        _attributekey.setAuthorName(this.getUser().getEmail());
         _attributekey.getAttributeValues( ).clear( );
         _attributekey.getAttributeValues( ).addAll( this.extractAttributeValues( request ) );
 

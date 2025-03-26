@@ -118,7 +118,7 @@ public class ClientUpdateRequest extends AbstractIdentityStoreAppCodeRequest
     protected ClientChangeResponse doSpecificRequest( ) throws IdentityStoreException
     {
         final ClientChangeResponse response = new ClientChangeResponse( );
-        final ClientApplication updatedClientApp = ClientApplicationService.instance( ).update( _clientApplicationDto );
+        final ClientApplication updatedClientApp = ClientApplicationService.instance( ).update( _clientApplicationDto, _author.getName() );
 
         response.setClientApplication( DtoConverter.convertClientToDto( updatedClientApp ) );
         response.setStatus( ResponseStatusFactory.success( ).setMessageKey( Constants.PROPERTY_REST_INFO_SUCCESSFUL_OPERATION ) );

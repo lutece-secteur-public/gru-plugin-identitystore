@@ -67,7 +67,7 @@ public final class AttributeRequirementHome
     public static AttributeRequirement create( AttributeRequirement attributeRequirement, ServiceContract serviceContract )
     {
         _dao.insert( attributeRequirement, serviceContract.getId( ), _plugin );
-
+        ServiceContractHome.updateServiceContractLastUpdateAndAuthor(serviceContract.getId(), serviceContract.getAuthorName());
         return attributeRequirement;
     }
 
@@ -91,9 +91,10 @@ public final class AttributeRequirementHome
      * @param nKey
      *            The attributeRequirement Id
      */
-    public static void remove( int nKey )
+    public static void remove( int nKey, String author )
     {
         _dao.delete( nKey, _plugin );
+        ServiceContractHome.updateServiceContractLastUpdateAndAuthor(nKey, author);
     }
 
     /**

@@ -37,6 +37,7 @@ import fr.paris.lutece.portal.service.plugin.Plugin;
 import fr.paris.lutece.util.ReferenceList;
 import fr.paris.lutece.util.sql.DAOUtil;
 
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -50,9 +51,9 @@ public final class ClientApplicationDAO implements IClientApplicationDAO
     private static final String SQL_QUERY_SELECT = "SELECT id_client_app, name, client_code, application_code  FROM identitystore_client_application WHERE id_client_app = ?";
     private static final String SQL_QUERY_SELECT_BY_CODE = "SELECT id_client_app, name, client_code, application_code FROM identitystore_client_application WHERE client_code = ?";
     private static final String SQL_QUERY_SELECT_BY_APP_CODE = "SELECT id_client_app, name, client_code, application_code FROM identitystore_client_application WHERE application_code = ?";
-    private static final String SQL_QUERY_INSERT = "INSERT INTO identitystore_client_application ( id_client_app, name, client_code, application_code) VALUES ( ?, ?, ?, ? ) ";
+    private static final String SQL_QUERY_INSERT = "INSERT INTO identitystore_client_application ( id_client_app, name, client_code, application_code, creation_date, last_update_date, author_name) VALUES ( ?, ?, ?, ?, ?, ?, ? ) ";
     private static final String SQL_QUERY_DELETE = "DELETE FROM identitystore_client_application WHERE id_client_app = ? ";
-    private static final String SQL_QUERY_UPDATE = "UPDATE identitystore_client_application SET id_client_app = ?, name = ?, client_code = ?, application_code = ? WHERE id_client_app = ?";
+    private static final String SQL_QUERY_UPDATE = "UPDATE identitystore_client_application SET id_client_app = ?, name = ?, client_code = ?, application_code = ?, last_update_date = ?, author_name = ? WHERE id_client_app = ?";
     private static final String SQL_QUERY_SELECTALL = "SELECT id_client_app, name, client_code, application_code FROM identitystore_client_application";
     private static final String SQL_QUERY_SELECTALL_ID = "SELECT id_client_app FROM identitystore_client_application";
     private static final String SQL_QUERY_SELECTALL_APP_CERTIFIER = "SELECT ica.id_client_app, ica.name, ica.client_code, ica.application_code FROM identitystore_client_application ica JOIN identitystore_client_application_certifiers icac ON ica.id_client_app=icac.id_client_app WHERE icac.certifier_code = ? ORDER BY ica.id_client_app";
@@ -94,7 +95,10 @@ public final class ClientApplicationDAO implements IClientApplicationDAO
             daoUtil.setInt( nIndex++, clientApplication.getId( ) );
             daoUtil.setString( nIndex++, clientApplication.getName( ) );
             daoUtil.setString( nIndex++, clientApplication.getClientCode( ) );
-            daoUtil.setString( nIndex, clientApplication.getApplicationCode( ) );
+            daoUtil.setString( nIndex++, clientApplication.getApplicationCode( ) );
+            daoUtil.setTimestamp( nIndex++, new Timestamp( new java.util.Date( ).getTime( ) ) );
+            daoUtil.setTimestamp( nIndex++, new Timestamp( new java.util.Date( ).getTime( ) ) );
+            daoUtil.setString( nIndex,  clientApplication.getAuthorName( ) );
             daoUtil.executeUpdate( );
         }
     }
@@ -186,6 +190,8 @@ public final class ClientApplicationDAO implements IClientApplicationDAO
             daoUtil.setString( nIndex++, clientApplication.getName( ) );
             daoUtil.setString( nIndex++, clientApplication.getClientCode( ) );
             daoUtil.setString( nIndex++, clientApplication.getApplicationCode( ) );
+            daoUtil.setTimestamp( nIndex++, new Timestamp( new java.util.Date( ).getTime( ) ) );
+            daoUtil.setString( nIndex++,  clientApplication.getAuthorName( ) );
 
             daoUtil.setInt( nIndex, clientApplication.getId( ) );
 

@@ -37,6 +37,7 @@ import fr.paris.lutece.portal.service.plugin.Plugin;
 import fr.paris.lutece.util.ReferenceList;
 import fr.paris.lutece.util.sql.DAOUtil;
 
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -48,11 +49,11 @@ public final class AttributeKeyDAO implements IAttributeKeyDAO
     // Constants
     private static final String SQL_QUERY_NEW_PK = "SELECT max( id_attribute ) FROM identitystore_ref_attribute";
     private static final String SQL_QUERY_SELECT = "SELECT id_attribute, name, key_name, common_search_key, description, key_type, certifiable, pivot, key_weight, mandatory_for_creation, validation_regex, validation_error_message, validation_error_message_key FROM identitystore_ref_attribute WHERE id_attribute = ?";
-    private static final String SQL_QUERY_INSERT = "INSERT INTO identitystore_ref_attribute ( id_attribute, name, key_name, common_search_key, description, key_type, certifiable, pivot, key_weight, validation_regex, validation_error_message, validation_error_message_key ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? ) ";
+    private static final String SQL_QUERY_INSERT = "INSERT INTO identitystore_ref_attribute ( id_attribute, name, key_name, common_search_key, description, key_type, certifiable, pivot, key_weight, validation_regex, validation_error_message, validation_error_message_key, creation_date, last_update_date, author_name ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? ) ";
     private static final String SQL_QUERY_INSERT_VALUE = "INSERT INTO identitystore_ref_attribute_values(id_attribute, value, label) VALUES (?,?,?)";
     private static final String SQL_QUERY_DELETE_VALUES = "DELETE FROM identitystore_ref_attribute_values WHERE id_attribute = ?";
     private static final String SQL_QUERY_DELETE = "DELETE FROM identitystore_ref_attribute WHERE id_attribute = ? ";
-    private static final String SQL_QUERY_UPDATE = "UPDATE identitystore_ref_attribute SET id_attribute = ?, name = ?, key_name = ?, common_search_key = ?, description = ?, key_type = ?, certifiable = ?, pivot = ?, key_weight = ?, mandatory_for_creation = ?, validation_regex = ?, validation_error_message = ?, validation_error_message_key = ? WHERE id_attribute = ?";
+    private static final String SQL_QUERY_UPDATE = "UPDATE identitystore_ref_attribute SET id_attribute = ?, name = ?, key_name = ?, common_search_key = ?, description = ?, key_type = ?, certifiable = ?, pivot = ?, key_weight = ?, mandatory_for_creation = ?, validation_regex = ?, validation_error_message = ?, validation_error_message_key, last_update_date = ?, author_name = ? = ? WHERE id_attribute = ?";
     private static final String SQL_QUERY_SELECTALL = "SELECT id_attribute, name, key_name, common_search_key, description, key_type, certifiable, pivot, key_weight, mandatory_for_creation, validation_regex, validation_error_message, validation_error_message_key FROM identitystore_ref_attribute";
     private static final String SQL_QUERY_SELECTALL_KEYS = "SELECT key_name FROM identitystore_ref_attribute";
     private static final String SQL_QUERY_SELECT_BY_KEY = "SELECT id_attribute, name, key_name, common_search_key, description, key_type, certifiable, pivot, key_weight, mandatory_for_creation, validation_regex, validation_error_message, validation_error_message_key FROM identitystore_ref_attribute WHERE key_name = ?";
@@ -108,7 +109,10 @@ public final class AttributeKeyDAO implements IAttributeKeyDAO
             daoUtil.setInt( nIndex++, attributeKey.getKeyWeight( ) );
             daoUtil.setString( nIndex++, attributeKey.getValidationRegex( ) );
             daoUtil.setString( nIndex++, attributeKey.getValidationErrorMessage( ) );
-            daoUtil.setString( nIndex, attributeKey.getValidationErrorMessageKey( ) );
+            daoUtil.setString( nIndex++, attributeKey.getValidationErrorMessageKey( ) );
+            daoUtil.setTimestamp( nIndex++, new Timestamp( new java.util.Date( ).getTime( ) ) );
+            daoUtil.setTimestamp( nIndex++, new Timestamp( new java.util.Date( ).getTime( ) ) );
+            daoUtil.setString( nIndex,  attributeKey.getAuthorName( ) );
 
             daoUtil.executeUpdate( );
         }
@@ -188,6 +192,8 @@ public final class AttributeKeyDAO implements IAttributeKeyDAO
             daoUtil.setString( nIndex++, attributeKey.getValidationRegex( ) );
             daoUtil.setString( nIndex++, attributeKey.getValidationErrorMessage( ) );
             daoUtil.setString( nIndex++, attributeKey.getValidationErrorMessageKey( ) );
+            daoUtil.setTimestamp( nIndex++, new Timestamp( new java.util.Date( ).getTime( ) ) );
+            daoUtil.setString( nIndex++, attributeKey.getAuthorName( ) );
             daoUtil.setInt( nIndex, attributeKey.getId( ) );
 
             daoUtil.executeUpdate( );

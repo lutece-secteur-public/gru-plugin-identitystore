@@ -311,6 +311,7 @@ public class ServiceContractJspBean extends ManageServiceContractJspBean<Integer
     public String doCreateServiceContract( HttpServletRequest request ) throws AccessDeniedException
     {
         populate( _servicecontract, request, getLocale( ) );
+        _servicecontract.setAuthorName(this.getUser().getEmail());
         final String [ ] selectedClienAppId = request.getParameterValues( PARAMETER_ID_PARENTCLIENTAPPLICATION );
         final String strSelectedClientAppId = selectedClienAppId [0];
         int selectedClientAppId = Integer.parseInt( strSelectedClientAppId );
@@ -480,6 +481,7 @@ public class ServiceContractJspBean extends ManageServiceContractJspBean<Integer
     public String doModifyServiceContract( HttpServletRequest request ) throws AccessDeniedException
     {
         populate( _servicecontract, request, getLocale( ) );
+        _servicecontract.setAuthorName(this.getUser().getEmail());
         final String [ ] selectedClienAppId = request.getParameterValues( PARAMETER_ID_PARENTCLIENTAPPLICATION );
         final String strSelectedClientAppId = selectedClienAppId [0];
         int selectedClientAppId = Integer.parseInt( strSelectedClientAppId );

@@ -142,5 +142,7 @@ public interface IServiceContractDAO
 
     void close( ServiceContract serviceContract, Plugin plugin );
 
+    void updateLastUpdateAuthor(int idService, String authorName, Plugin plugin );
+
     List<Integer> selectFilterdIdServiceContractsList( final Map<String, String> params, Plugin plugin );
 }

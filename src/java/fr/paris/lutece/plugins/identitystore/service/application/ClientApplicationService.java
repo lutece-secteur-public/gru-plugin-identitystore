@@ -56,12 +56,13 @@ public class ClientApplicationService
         return _instance;
     }
 
-    public ClientApplication create( final ClientApplicationDto clientApplicationDto ) throws IdentityStoreException
+    public ClientApplication create( final ClientApplicationDto clientApplicationDto, String authorName ) throws IdentityStoreException
     {
         TransactionManager.beginTransaction( null );
         try
         {
             final ClientApplication client = DtoConverter.convertDtoToClient( clientApplicationDto );
+            client.setAuthorName( authorName );
             final ClientApplication createdClientApplication = ClientApplicationHome.create( client );
             TransactionManager.commitTransaction( null );
             return createdClientApplication;
@@ -73,12 +74,13 @@ public class ClientApplicationService
         }
     }
 
-    public ClientApplication update( final ClientApplicationDto clientApplicationDto ) throws IdentityStoreException
+    public ClientApplication update( final ClientApplicationDto clientApplicationDto, String authorName ) throws IdentityStoreException
     {
         TransactionManager.beginTransaction( null );
         try
         {
             final ClientApplication client = DtoConverter.convertDtoToClient( clientApplicationDto );
+            client.setAuthorName( authorName );
             final ClientApplication updatedClientApp = ClientApplicationHome.update( client );
             TransactionManager.commitTransaction( null );
             return updatedClientApp;

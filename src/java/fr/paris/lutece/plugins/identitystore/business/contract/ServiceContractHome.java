@@ -222,6 +222,7 @@ public final class ServiceContractHome
         {
             _attributeRightDAO.insert( attributeRight, serviceContract.getId( ), _plugin );
         }
+        updateServiceContractLastUpdateAndAuthor(serviceContract.getId(), serviceContract.getAuthorName());
     }
 
     public static void addAttributeCertifications( List<AttributeCertification> attributeCertifications, ServiceContract serviceContract )
@@ -230,6 +231,7 @@ public final class ServiceContractHome
         {
             _attributeCertificationDAO.insert( attributeCertification, serviceContract.getId( ), _plugin );
         }
+        updateServiceContractLastUpdateAndAuthor(serviceContract.getId(), serviceContract.getAuthorName());
     }
 
     public static void addAttributeRequirements( List<AttributeRequirement> attributeRequirements, ServiceContract serviceContract )
@@ -238,6 +240,7 @@ public final class ServiceContractHome
         {
             _attributeRequirementDAO.insert( attributeRequirement, serviceContract.getId( ), _plugin );
         }
+        updateServiceContractLastUpdateAndAuthor(serviceContract.getId(), serviceContract.getAuthorName());
     }
 
     public static List<ServiceContractAttributeDefinitionDto> getDto( ServiceContract serviceContract )
@@ -299,15 +302,23 @@ public final class ServiceContractHome
     public static void removeAttributeRights( ServiceContract serviceContract )
     {
         _attributeRightDAO.removeAttributeRights( serviceContract, _plugin );
+        updateServiceContractLastUpdateAndAuthor(serviceContract.getId(), serviceContract.getAuthorName());
     }
 
     public static void removeAttributeCertifications( ServiceContract serviceContract )
     {
         _attributeCertificationDAO.deleteFromServiceContract( serviceContract.getId( ), _plugin );
+        updateServiceContractLastUpdateAndAuthor(serviceContract.getId(), serviceContract.getAuthorName());
     }
 
     public static void removeAttributeRequirements( ServiceContract serviceContract )
     {
         _attributeRequirementDAO.deleteFromServiceContract( serviceContract.getId( ), _plugin );
+        updateServiceContractLastUpdateAndAuthor(serviceContract.getId(), serviceContract.getAuthorName());
+    }
+
+    public static void updateServiceContractLastUpdateAndAuthor(int idServiceContract, String authorName)
+    {
+        _serviceContractDAO.updateLastUpdateAuthor( idServiceContract, authorName, _plugin );
     }
 }

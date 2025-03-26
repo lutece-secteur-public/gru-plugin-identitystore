@@ -90,6 +90,7 @@ public class ServiceContractCreateRequest extends AbstractIdentityStoreAppCodeRe
                                                     Constants.PROPERTY_REST_ERROR_APPLICATION_NOT_FOUND);
             }
             serviceContractToCreate = DtoConverter.convertDtoToContract(_serviceContractDto);
+            serviceContractToCreate.setAuthorName(_author.getName());
         }
     }
 

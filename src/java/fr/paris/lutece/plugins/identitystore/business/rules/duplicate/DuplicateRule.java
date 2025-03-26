@@ -33,6 +33,7 @@
  */
 package fr.paris.lutece.plugins.identitystore.business.rules.duplicate;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import fr.paris.lutece.plugins.identitystore.business.attribute.AttributeKey;
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
 import fr.paris.lutece.portal.service.i18n.I18nService;
@@ -103,6 +104,8 @@ public class DuplicateRule implements Serializable
     private boolean _bDaemon;
     private Timestamp _dateDaemonLastExecDate;
     private int _nDetectionLimit = -1;
+    @JsonIgnore
+    private String _strAuthorName;
 
     public void validate( ) throws IdentityStoreException
     {
@@ -270,5 +273,15 @@ public class DuplicateRule implements Serializable
     public void setDetectionLimit( int _nDetectionLimit )
     {
         this._nDetectionLimit = _nDetectionLimit;
+    }
+
+    public String getAuthorName()
+    {
+        return _strAuthorName;
+    }
+
+    public void setAuthorName(String _strAuthorName)
+    {
+        this._strAuthorName = _strAuthorName;
     }
 }

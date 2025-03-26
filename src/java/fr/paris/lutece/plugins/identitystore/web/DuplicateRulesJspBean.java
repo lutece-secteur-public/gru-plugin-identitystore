@@ -227,6 +227,7 @@ public class DuplicateRulesJspBean extends ManageIdentitiesJspBean
     public String doCreateDuplicateRule( HttpServletRequest request ) throws AccessDeniedException
     {
         populate( _duplicateRule, request, getLocale( ) );
+        _duplicateRule.setAuthorName(this.getUser().getEmail());
         _duplicateRule.getCheckedAttributes( ).addAll( this.extractAttributeKeys( request ) );
         _duplicateRule.getAttributeTreatments( ).addAll( this.extractAttributeTreatments( request ) );
 
@@ -342,6 +343,7 @@ public class DuplicateRulesJspBean extends ManageIdentitiesJspBean
     public String doModifyDuplicateRule( HttpServletRequest request ) throws AccessDeniedException
     {
         populate( _duplicateRule, request, getLocale( ) );
+        _duplicateRule.setAuthorName(this.getUser().getEmail());
         _duplicateRule.getCheckedAttributes( ).clear( );
         _duplicateRule.getCheckedAttributes( ).addAll( this.extractAttributeKeys( request ) );
         _duplicateRule.getAttributeTreatments( ).clear( );

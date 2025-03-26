@@ -33,6 +33,7 @@
  */
 package fr.paris.lutece.plugins.identitystore.business.application;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import fr.paris.lutece.plugins.identitystore.business.contract.ServiceContract;
 
 import javax.validation.constraints.NotEmpty;
@@ -63,6 +64,9 @@ public class ClientApplication implements Serializable
     private String _strApplicationCode;
 
     private List<ServiceContract> serviceContracts = new ArrayList<>( );
+
+    @JsonIgnore
+    private String _strAuthorName;
 
     /**
      * Returns the Id
@@ -144,5 +148,15 @@ public class ClientApplication implements Serializable
     public void setServiceContracts( List<ServiceContract> serviceContracts )
     {
         this.serviceContracts = serviceContracts;
+    }
+
+    public String getAuthorName()
+    {
+        return _strAuthorName;
+    }
+
+    public void setAuthorName(String _strAuthorName)
+    {
+        this._strAuthorName = _strAuthorName;
     }
 }

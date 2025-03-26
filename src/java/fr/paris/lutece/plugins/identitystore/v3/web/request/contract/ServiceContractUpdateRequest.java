@@ -106,6 +106,7 @@ public class ServiceContractUpdateRequest extends AbstractIdentityStoreAppCodeRe
             if (_serviceContractId != null) {
                 _serviceContractDto.setId(_serviceContractId);
                 sentServiceContract = DtoConverter.convertDtoToContract(_serviceContractDto);
+                sentServiceContract.setAuthorName(_author.getName());
             }
         }
 

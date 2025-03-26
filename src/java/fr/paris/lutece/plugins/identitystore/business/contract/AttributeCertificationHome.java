@@ -67,7 +67,7 @@ public final class AttributeCertificationHome
     public static AttributeCertification create( AttributeCertification attributeCertification, ServiceContract serviceContract )
     {
         _dao.insert( attributeCertification, serviceContract.getId( ), _plugin );
-
+        ServiceContractHome.updateServiceContractLastUpdateAndAuthor(serviceContract.getId(), serviceContract.getAuthorName());
         return attributeCertification;
     }
 
@@ -91,9 +91,10 @@ public final class AttributeCertificationHome
      * @param nKey
      *            The attributeCertification Id
      */
-    public static void remove( int nKey )
+    public static void remove( int nKey, String author )
     {
         _dao.delete( nKey, _plugin );
+        ServiceContractHome.updateServiceContractLastUpdateAndAuthor(nKey, author);
     }
 
     /**

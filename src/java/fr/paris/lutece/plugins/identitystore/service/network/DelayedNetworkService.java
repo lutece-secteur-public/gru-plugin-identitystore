@@ -98,7 +98,7 @@ public class DelayedNetworkService<T>
             catch ( final Exception e )
             {
                 nbRetry++;
-                this.log( LogLevel.error, "Retry nb " + nbRetry + "/" + NETWORK_MAX_RETRY + " caused by: " + e.getMessage(), logger );
+                //this.log( LogLevel.error, "Retry nb " + nbRetry + "/" + NETWORK_MAX_RETRY + " caused by: " + e.getMessage(), logger );
                 if ( nbRetry >= NETWORK_MAX_RETRY )
                 {
                     this.log( LogLevel.error, "The number of retries exceeds the configured value of " + NETWORK_MAX_RETRY + ", interrupting..", logger );

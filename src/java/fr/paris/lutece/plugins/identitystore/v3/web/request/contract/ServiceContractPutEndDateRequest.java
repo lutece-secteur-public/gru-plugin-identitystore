@@ -130,7 +130,9 @@ public class ServiceContractPutEndDateRequest extends AbstractIdentityStoreAppCo
     {
         final ServiceContractChangeResponse response = new ServiceContractChangeResponse( );
         _serviceContractDto.setId( _serviceContractId );
-        final ServiceContract closedContract = ServiceContractService.instance().close(DtoConverter.convertDtoToContract(_serviceContractDto));
+        ServiceContract serviceContractToClose = DtoConverter.convertDtoToContract(_serviceContractDto);
+        serviceContractToClose.setAuthorName(_author.getName());
+        final ServiceContract closedContract = ServiceContractService.instance().close(serviceContractToClose);
         response.setStatus( ResponseStatusFactory.success( ).setMessageKey( Constants.PROPERTY_REST_INFO_SUCCESSFUL_OPERATION ) );
         response.setServiceContract(DtoConverter.convertContractToDto(closedContract));
 

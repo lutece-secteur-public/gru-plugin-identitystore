@@ -40,6 +40,7 @@ import fr.paris.lutece.portal.service.plugin.Plugin;
 import fr.paris.lutece.util.sql.DAOUtil;
 
 import java.sql.Statement;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -56,9 +57,10 @@ public final class DuplicateRuleDAO implements IDuplicateRuleDAO
     private static final String SQL_QUERY_SELECT_RULE = "SELECT " + SELECT_ATTRIBUTES + " FROM identitystore_duplicate_rule WHERE id_rule = ? ";
     private static final String SQL_QUERY_SELECT_RULE_BY_NAME = "SELECT " + SELECT_ATTRIBUTES + " FROM identitystore_duplicate_rule WHERE name = ? ";
     private static final String SQL_QUERY_SELECT_RULE_BY_CODE = "SELECT " + SELECT_ATTRIBUTES + " FROM identitystore_duplicate_rule WHERE code = ? ";
-    private static final String SQL_QUERY_INSERT_RULE = "INSERT INTO identitystore_duplicate_rule ( name, code, description, nb_filled_attributes, nb_equal_attributes, nb_missing_attributes, priority, active, daemon, detection_limit ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ? ) ";
+    private static final String SQL_QUERY_INSERT_RULE = "INSERT INTO identitystore_duplicate_rule ( name, code, description, nb_filled_attributes, nb_equal_attributes, nb_missing_attributes, priority, active, daemon, detection_limit, creation_date, last_update_date, author_name ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? ) ";
     private static final String SQL_QUERY_DELETE_RULE = "DELETE FROM identitystore_duplicate_rule WHERE id_rule = ?";
-    private static final String SQL_QUERY_UPDATE_RULE = "UPDATE identitystore_duplicate_rule SET name = ?,  code = ?, description = ?, nb_filled_attributes = ?, nb_equal_attributes = ?, nb_missing_attributes = ?, priority = ?, active = ?, daemon = ?, daemon_last_exec_date = ?, detection_limit = ? WHERE id_rule = ? ";
+    private static final String SQL_QUERY_UPDATE_RULE = "UPDATE identitystore_duplicate_rule SET name = ?,  code = ?, description = ?, nb_filled_attributes = ?, nb_equal_attributes = ?, nb_missing_attributes = ?, priority = ?, active = ?, daemon = ?, daemon_last_exec_date = ?, detection_limit = ?, last_update_date = ?, author_name = ? WHERE id_rule = ? ";
+    private static final String SQL_QUERY_UPDATE_RULE_LAST_DATE_AUTHOR = "UPDATE identitystore_duplicate_rule SET last_update_date = ?, author_name = ? WHERE id_rule = ? ";
     private static final String SQL_QUERY_SELECTALL_RULE = "SELECT " + SELECT_ATTRIBUTES + " FROM identitystore_duplicate_rule";
 
     /** Checked attributes */
@@ -95,6 +97,9 @@ public final class DuplicateRuleDAO implements IDuplicateRuleDAO
             daoUtil.setBoolean( ++nIndex, duplicateRule.isActive( ) );
             daoUtil.setBoolean( ++nIndex, duplicateRule.isDaemon( ) );
             daoUtil.setInt( ++nIndex, duplicateRule.getDetectionLimit( ) );
+            daoUtil.setTimestamp( ++nIndex, new Timestamp( new java.util.Date( ).getTime( ) ) );
+            daoUtil.setTimestamp( ++nIndex, new Timestamp( new java.util.Date( ).getTime( ) ) );
+            daoUtil.setString( ++nIndex,  duplicateRule.getAuthorName( ) );
             daoUtil.executeUpdate( );
             if ( daoUtil.nextGeneratedKey( ) )
             {
@@ -234,6 +239,8 @@ public final class DuplicateRuleDAO implements IDuplicateRuleDAO
             daoUtil.setBoolean( ++nIndex, duplicateRule.isDaemon( ) );
             daoUtil.setTimestamp( ++nIndex, duplicateRule.getDaemonLastExecDate( ) );
             daoUtil.setInt( ++nIndex, duplicateRule.getDetectionLimit( ) );
+            daoUtil.setTimestamp( ++nIndex, new Timestamp( new java.util.Date( ).getTime( ) ) );
+            daoUtil.setString( ++nIndex,  duplicateRule.getAuthorName( ) );
             daoUtil.setInt( ++nIndex, duplicateRule.getId( ) );
             daoUtil.executeUpdate( );
             this.deleteCheckedAttributes( duplicateRule.getId( ), plugin );
@@ -247,6 +254,20 @@ public final class DuplicateRuleDAO implements IDuplicateRuleDAO
             {
                 this.insertAttributeTreatments( duplicateRule.getId( ), attributeTreatment, plugin );
             }
+        }
+    }
+
+    /**
+     * {@inheritDoc }
+     */
+    @Override
+    public void updateLastUpdateAuthor( DuplicateRule duplicateRule, Plugin plugin )
+    {
+        try ( final DAOUtil daoUtil = new DAOUtil( SQL_QUERY_UPDATE_RULE_LAST_DATE_AUTHOR, plugin ) )
+        {
+            int nIndex = 0;
+            daoUtil.setTimestamp( ++nIndex, new Timestamp( new java.util.Date( ).getTime( ) ) );
+            daoUtil.setString( ++nIndex,  duplicateRule.getAuthorName( ) );
         }
     }
 

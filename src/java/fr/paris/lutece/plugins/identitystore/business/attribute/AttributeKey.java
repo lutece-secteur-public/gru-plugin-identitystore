@@ -33,6 +33,8 @@
  */
 package fr.paris.lutece.plugins.identitystore.business.attribute;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.Size;
 import java.io.Serializable;
@@ -68,6 +70,9 @@ public class AttributeKey implements Serializable
     private String _strValidationErrorMessage;
     private String _strValidationErrorMessageKey;
     private List<AttributeValue> _listAttributeValues = new ArrayList<>( );
+
+    @JsonIgnore
+    private String _strAuthorName;
 
     /**
      * Returns the Id
@@ -345,5 +350,15 @@ public class AttributeKey implements Serializable
     public void setAttributeValues( List<AttributeValue> _listAttributeValues )
     {
         this._listAttributeValues = _listAttributeValues;
+    }
+
+    public String getAuthorName()
+    {
+        return _strAuthorName;
+    }
+
+    public void setAuthorName(String _strAuthorName)
+    {
+        this._strAuthorName = _strAuthorName;
     }
 }

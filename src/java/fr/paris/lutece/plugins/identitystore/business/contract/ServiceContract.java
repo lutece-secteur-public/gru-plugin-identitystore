@@ -33,6 +33,8 @@
  */
 package fr.paris.lutece.plugins.identitystore.business.contract;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.Size;
 import java.io.Serializable;
@@ -106,6 +108,9 @@ public class ServiceContract implements Serializable
     private List<AttributeCertification> _listAttributeCertifications = new ArrayList<>( );
 
     private List<AttributeRequirement> _listAttributeRequirements = new ArrayList<>( );
+
+    @JsonIgnore
+    private String _strAuthorName;
 
     public boolean isActive( )
     {
@@ -472,5 +477,15 @@ public class ServiceContract implements Serializable
     public void setAttributeRequirements( List<AttributeRequirement> attributeRequirements )
     {
         this._listAttributeRequirements = attributeRequirements;
+    }
+
+    public String getAuthorName()
+    {
+        return _strAuthorName;
+    }
+
+    public void setAuthorName(String _strAuthorName)
+    {
+        this._strAuthorName = _strAuthorName;
     }
 }
