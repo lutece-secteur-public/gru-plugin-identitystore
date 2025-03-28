@@ -308,7 +308,7 @@ public class IdentityAttributeFormatterService
                 .map( firstname -> {
                     if( firstname.contains("-") )
                     {
-                        return Arrays.stream(firstname.split("-")).map( this::toFirstLetterUpperCased ).collect(Collectors.joining("-"));
+                        return Arrays.stream(firstname.split("-")).map( this::toFirstLetterUpperCased ).map( String::trim ).collect(Collectors.joining("-"));
                     }
                     else
                     {
