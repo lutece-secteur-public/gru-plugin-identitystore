@@ -3,7 +3,7 @@ CREATE
     OR REPLACE FUNCTION COUNT_UNTRIMMED_ATTRIBUTES()
     RETURNS TABLE
             (
-                attribute_value VARCHAR,
+                value VARCHAR,
                 count           BIGINT,
                 identities      TEXT
             )
@@ -19,7 +19,9 @@ END
 $$
     LANGUAGE plpgsql;
 
+----------------------------------------------------------
 -- Reformat attributes with wrong or too much witespaces
+----------------------------------------------------------
 CREATE
     OR REPLACE PROCEDURE FORMAT_TRIM_ATTRIBUTES()
 AS
@@ -32,7 +34,9 @@ END
 $$
     LANGUAGE plpgsql;
 
+----------------------------------------------------------
 -- Reformat dates that match a given pattern (detectionRegexp && detectionPattern) according to a new pattern (formattingPattern)
+----------------------------------------------------------
 CREATE
     OR REPLACE PROCEDURE FORMAT_DATES(detectionRegexp VARCHAR, detectionPattern VARCHAR, formattingPattern VARCHAR,
                                       attribute_id INTEGER)
@@ -47,7 +51,9 @@ END
 $$
     LANGUAGE plpgsql;
 
+----------------------------------------------------------
 -- Reformat dates writen in plain text
+----------------------------------------------------------
 CREATE
     OR REPLACE PROCEDURE FORMAT_PLAIN_DATES(formattingPattern VARCHAR, attribute_id INTEGER)
 AS
@@ -86,7 +92,9 @@ END
 $$
     LANGUAGE plpgsql;
 
+----------------------------------------------------------
 -- Search for given attribute_id's attributes with lowercase
+----------------------------------------------------------
 CREATE
     OR REPLACE FUNCTION COUNT_UNCAPPED_ATTRIBUTE(attribute_id INTEGER)
     RETURNS TABLE
@@ -108,7 +116,9 @@ END
 $$
     LANGUAGE plpgsql;
 
+----------------------------------------------------------
 -- Search for given attribute_id's attributes without uppercase first letter
+----------------------------------------------------------
 CREATE
     OR REPLACE FUNCTION COUNT_UNINITCAP_ATTRIBUTES(attribute_id INTEGER)
     RETURNS TABLE
@@ -130,7 +140,9 @@ END
 $$
     LANGUAGE plpgsql;
 
+----------------------------------------------------------
 -- Reformat given attribute_id's attributes lowercase
+----------------------------------------------------------
 CREATE
     OR REPLACE PROCEDURE FORMAT_UPPERCASE_ATTRIBUTES(attribute_id INTEGER)
 AS
@@ -144,7 +156,9 @@ END
 $$
     LANGUAGE plpgsql;
 
+----------------------------------------------------------
 -- Reformat given attribute_id's attributes without uppercase first letter
+----------------------------------------------------------
 CREATE
     OR REPLACE PROCEDURE FORMAT_INITCAP_ATTRIBUTES(attribute_id INTEGER)
 AS
@@ -158,13 +172,15 @@ END
 $$
     LANGUAGE plpgsql;
 
+----------------------------------------------------------
 -- Count the identities that have a birthcountry set but no birthcountry_code
+----------------------------------------------------------
 CREATE
     OR REPLACE FUNCTION COUNT_MISSING_COUNTRY_CODES(attribute_id_birthcountry_code INTEGER,
                                                     attribute_id_birthcountry INTEGER)
     RETURNS TABLE
             (
-                attribute_value VARCHAR,
+                value VARCHAR,
                 count           BIGINT,
                 identities      TEXT
             )
@@ -187,7 +203,9 @@ END
 $$
     LANGUAGE plpgsql;
 
+----------------------------------------------------------
 -- Update the birthcountry_code if there is a birthcountry and if the birthdate is valid for this geocode
+----------------------------------------------------------
 
 CREATE
     OR REPLACE PROCEDURE UPDATE_COUNTRY_CODE_BY_LIBELLE(attribute_id_birthcountry_code INTEGER,
@@ -220,13 +238,15 @@ END
 $$
     LANGUAGE plpgsql;
 
+----------------------------------------------------------
 -- Count the identities that have a birthplace set but no birthplace_code
+----------------------------------------------------------
 CREATE
     OR REPLACE FUNCTION COUNT_MISSING_CITY_CODES(attribute_id_birthplace_code INTEGER, attribute_id_birthplace INTEGER,
                                                  attribute_id_birthcountry_code INTEGER, country_code VARCHAR)
     RETURNS TABLE
             (
-                attribute_value VARCHAR,
+                value VARCHAR,
                 count           BIGINT,
                 identities      TEXT
             )
@@ -257,7 +277,9 @@ $$
     LANGUAGE plpgsql;
 
 
+----------------------------------------------------------
 -- Update the birthcountry_code if there is a birthcountry and if the birthdate is valid for this geocode
+----------------------------------------------------------
 
 CREATE
     OR REPLACE PROCEDURE UPDATE_CITY_CODE_BY_LIBELLE(attribute_id_birthplace_code INTEGER,
@@ -300,7 +322,9 @@ END
 $$
     LANGUAGE plpgsql;
 
+----------------------------------------------------------
 -- Count specifically the phones numbers that matches a regex (example : '^\+33.*|(.*\s.*)|(.*\..*)')
+----------------------------------------------------------
 CREATE
     OR REPLACE FUNCTION GET_MALFORMED_PHONES_NUMBERS(regexp VARCHAR, attribute_id INTEGER)
     RETURNS TABLE
@@ -323,7 +347,9 @@ END
 $$
     LANGUAGE plpgsql;
 
+----------------------------------------------------------
 -- Update the phone number if it matches the regex taht scan for dots, whitespaces or start with '+33'
+----------------------------------------------------------
 CREATE
     OR REPLACE PROCEDURE UPDATE_PHONE_NUMBER(attribute_id INTEGER)
 AS
@@ -342,7 +368,9 @@ END
 $$
     LANGUAGE plpgsql;
 
+----------------------------------------------------------
 -- Function that searches for attributes (of type identified by attribute_id) that does not respect a given regexp (detectionRegexp)
+----------------------------------------------------------
 CREATE OR REPLACE FUNCTION GET_MALFORMED_ATTRIBUTES(detectionRegexp VARCHAR, attribute_id INTEGER)
     RETURNS TABLE
             (
@@ -364,7 +392,9 @@ END
 $$
     LANGUAGE plpgsql;
 
+----------------------------------------------------------
 -- Function that searches for attributes that are null or empty
+----------------------------------------------------------
 CREATE OR REPLACE FUNCTION GET_NULL_ATTRIBUTES()
     RETURNS TABLE
             (
@@ -384,3 +414,10 @@ BEGIN
 END
 $$
     LANGUAGE plpgsql;
+    
+-------------------
+-- + grants !
+-------------------
+-- GRANT ALL ON ALL PROCEDURES IN SCHEMA public TO postgres;
+-- GRANT ALL ON ALL FUNCTIONS IN SCHEMA public TO postgres;
+
