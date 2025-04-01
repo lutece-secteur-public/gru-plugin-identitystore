@@ -354,6 +354,8 @@ public final class SuspiciousIdentityDAO implements ISuspiciousIdentityDAO
             query.append( " LIMIT " ).append( max );
         }
 
+        query.append( " ORDER BY i.date_create DESC " );
+
         try ( final DAOUtil daoUtil = new DAOUtil( query.toString( ), plugin ) )
         {
             daoUtil.executeQuery( );
