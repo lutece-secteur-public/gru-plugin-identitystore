@@ -3,3 +3,4 @@
 .idea/
 *.iml
 .sdkmanrc
+/target_test-classes/
