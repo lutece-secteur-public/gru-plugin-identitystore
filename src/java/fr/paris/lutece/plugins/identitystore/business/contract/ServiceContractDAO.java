@@ -51,8 +51,8 @@ import java.util.stream.Collectors;
  */
 public final class ServiceContractDAO implements IServiceContractDAO
 {
-    private static final String COLUMNS = " name, moa_entity_name, moe_responsible_name, moa_contact_name, moe_entity_name, data_retention_period_in_months, service_type, starting_date, ending_date, authorized_creation, authorized_update, authorized_search, authorized_merge, authorized_account_update, authorized_deletion, authorized_import, authorized_export, authorized_decertification, authorized_agent_history_read, creation_date, last_update_date, author_name ";
-    private static final String JOINED_COLUMNS = " a.id_service_contract, b.client_code, a.name, a.moa_entity_name, a.moe_responsible_name, a.moa_contact_name, a.moe_entity_name, a.data_retention_period_in_months, a.service_type, a.starting_date, a.ending_date, a.authorized_creation, a.authorized_update, a.authorized_search, a.authorized_merge, a.authorized_account_update, a.authorized_deletion, a.authorized_import, a.authorized_export, a.authorized_decertification, a.authorized_agent_history_read ";
+    private static final String COLUMNS = " name, moa_entity_name, moe_responsible_name, moa_contact_name, moe_entity_name, data_retention_period_in_months, service_type, starting_date, ending_date, authorized_creation, authorized_update, authorized_search, authorized_merge, authorized_account_update, authorized_deletion, authorized_import, authorized_export, authorized_decertification, authorized_agent_history_read, authorized_attachment_certification, creation_date, last_update_date, author_name ";
+    private static final String JOINED_COLUMNS = " a.id_service_contract, b.client_code, a.name, a.moa_entity_name, a.moe_responsible_name, a.moa_contact_name, a.moe_entity_name, a.data_retention_period_in_months, a.service_type, a.starting_date, a.ending_date, a.authorized_creation, a.authorized_update, a.authorized_search, a.authorized_merge, a.authorized_account_update, a.authorized_deletion, a.authorized_import, a.authorized_export, a.authorized_decertification, a.authorized_agent_history_read, a.authorized_attachment_certification ";
     private static final String JOIN = " FROM identitystore_service_contract a JOIN identitystore_client_application b on a.id_client_app = b.id_client_app";
     private static final String SQL_QUERY_SELECT = "SELECT" + JOINED_COLUMNS + JOIN + "  WHERE a.id_service_contract = ?";
     private static final String SQL_QUERY_SELECT_ALL = "SELECT" + JOINED_COLUMNS + JOIN;
@@ -63,7 +63,7 @@ public final class ServiceContractDAO implements IServiceContractDAO
             + " ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? ) ";
     private static final String SQL_QUERY_DELETE = "DELETE FROM identitystore_service_contract WHERE id_service_contract = ?";
     private static final String SQL_QUERY_DELETE_WITH_CLIENT_APP_ID = "DELETE FROM identitystore_service_contract WHERE id_client_app = ?";
-    private static final String SQL_QUERY_UPDATE = "UPDATE identitystore_service_contract SET name = ?, id_client_app = ?, moa_entity_name = ?, moe_responsible_name = ?, moa_contact_name = ?, moe_entity_name = ?, data_retention_period_in_months = ?, service_type = ?, starting_date = ?, ending_date = ?, authorized_creation = ?, authorized_update = ?, authorized_search = ?, authorized_merge = ?, authorized_account_update = ?, authorized_deletion = ?, authorized_import = ?, authorized_export = ?, authorized_decertification = ?, authorized_agent_history_read = ?, last_update_date = ?, author_name = ? WHERE id_service_contract = ?";
+    private static final String SQL_QUERY_UPDATE = "UPDATE identitystore_service_contract SET name = ?, id_client_app = ?, moa_entity_name = ?, moe_responsible_name = ?, moa_contact_name = ?, moe_entity_name = ?, data_retention_period_in_months = ?, service_type = ?, starting_date = ?, ending_date = ?, authorized_creation = ?, authorized_update = ?, authorized_search = ?, authorized_merge = ?, authorized_account_update = ?, authorized_deletion = ?, authorized_import = ?, authorized_export = ?, authorized_decertification = ?, authorized_agent_history_read = ?, authorized_attachment_certification = ?, last_update_date = ?, author_name = ? WHERE id_service_contract = ?";
     private static final String SQL_QUERY_UPDATE_DATE = "UPDATE identitystore_service_contract SET ending_date = ?, last_update_date = ?, author_name = ? WHERE id_service_contract = ?";
     private static final String SQL_QUERY_UPDATE_SERVICE_CONTRACT_LAST_DATE_AUTHOR = "UPDATE identitystore_service_contract SET last_update_date = ?, author_name = ? WHERE id_service_contract = ?";
     private static final String SQL_QUERY_SELECTALL_ID = "SELECT id_service_contract FROM identitystore_service_contract";
@@ -107,6 +107,7 @@ public final class ServiceContractDAO implements IServiceContractDAO
             daoUtil.setBoolean( nIndex++, serviceContract.getAuthorizedExport( ) );
             daoUtil.setBoolean( nIndex++, serviceContract.getAuthorizedDecertification( ) );
             daoUtil.setBoolean( nIndex++, serviceContract.getAuthorizedAgentHistoryRead( ) );
+            daoUtil.setBoolean( nIndex++, serviceContract.getAuthorizedAttachmentCertification( ) );
             daoUtil.setTimestamp( nIndex++, new Timestamp( new java.util.Date( ).getTime( ) ) );
             daoUtil.setTimestamp( nIndex++, new Timestamp( new java.util.Date( ).getTime( ) ) );
             daoUtil.setString( nIndex,  serviceContract.getAuthorName( ) );
@@ -349,6 +350,7 @@ public final class ServiceContractDAO implements IServiceContractDAO
             daoUtil.setBoolean( nIndex++, serviceContract.getAuthorizedExport( ) );
             daoUtil.setBoolean( nIndex++, serviceContract.getAuthorizedDecertification( ) );
             daoUtil.setBoolean( nIndex++, serviceContract.getAuthorizedAgentHistoryRead( ) );
+            daoUtil.setBoolean( nIndex++, serviceContract.getAuthorizedAttachmentCertification( ) );
             daoUtil.setTimestamp( nIndex++, new Timestamp( new java.util.Date( ).getTime( ) ) );
             daoUtil.setString( nIndex++, serviceContract.getAuthorName( ) );
             daoUtil.setInt( nIndex, serviceContract.getId( ) );
@@ -477,7 +479,8 @@ public final class ServiceContractDAO implements IServiceContractDAO
         serviceContract.setAuthorizedImport( daoUtil.getBoolean( nIndex++ ) );
         serviceContract.setAuthorizedExport( daoUtil.getBoolean( nIndex++ ) );
         serviceContract.setAuthorizedDecertification( daoUtil.getBoolean( nIndex++ ) );
-        serviceContract.setAuthorizedAgentHistoryRead( daoUtil.getBoolean( nIndex ) );
+        serviceContract.setAuthorizedAgentHistoryRead( daoUtil.getBoolean( nIndex++ ) );
+        serviceContract.setAuthorizedAttachmentCertification( daoUtil.getBoolean( nIndex ) );
         return serviceContract;
     }
 }

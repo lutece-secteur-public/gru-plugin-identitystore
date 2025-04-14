@@ -124,6 +124,7 @@
     <th>#i18n{identitystore.manage_servicecontracts.columnAuthorizedExport}</th>
     <th>#i18n{identitystore.manage_servicecontracts.columnAuthorizedDecertification}</th>
     <th>#i18n{identitystore.manage_servicecontracts.columnAuthorizedAgentHistoryRead}</th>
+    <th>#i18n{identitystore.manage_servicecontracts.columnAuthorizedAttachementCertification}</th>
     </thead>
     <tbody>
     <tr>
@@ -157,6 +158,13 @@
         </td>
         <td>
             <#if servicecontract.authorizedAgentHistoryRead = true>
+            <i class="fas fa-check" aria-hidden="true"></i>
+            <#else>
+            <i class="fas fa-times" aria-hidden="true"></i>
+        </#if>
+        </td>
+        <td>
+            <#if servicecontract.authorizedAttachmentCertification = true>
             <i class="fas fa-check" aria-hidden="true"></i>
             <#else>
             <i class="fas fa-times" aria-hidden="true"></i>

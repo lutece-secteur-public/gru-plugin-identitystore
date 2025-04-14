@@ -69,6 +69,9 @@
 			<@formGroup labelFor='authorized_agent_history_read' labelKey='#i18n{identitystore.modify_servicecontract.labelAuthorizedAgentHistoryRead}'>
 				<@checkBox id="authorized_agent_history_read" name="authorized_agent_history_read"  value="1" checked=servicecontract.authorizedAgentHistoryRead!'false' tabIndex='12' />
 			</@formGroup>
+			<@formGroup labelFor='authorized_attachment_certification' labelKey='##i18n{identitystore.manage_servicecontracts.columnAuthorizedAttachementCertification}'>
+				<@checkBox id="authorized_attachment_certification" name="authorized_attachment_certification"  value="1" checked=servicecontract.authorizedAttachmentCertification!'false' tabIndex='13' />
+			</@formGroup>
 
 
 			<@table>
