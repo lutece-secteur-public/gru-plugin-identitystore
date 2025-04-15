@@ -43,6 +43,7 @@ import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.ResponseStatusFactor
 import fr.paris.lutece.plugins.identitystore.web.exception.ResourceConsistencyException;
 
 import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
 import java.util.Objects;
 
 public class IdentityValidator
@@ -77,7 +78,8 @@ public class IdentityValidator
     public void checkIdentityLastUpdateDate( final IdentityDto existingIdentityToUpdate, final Timestamp requestLastUpdateDate )
             throws ResourceConsistencyException
     {
-        if ( !Objects.equals( existingIdentityToUpdate.getLastUpdateDate( ), requestLastUpdateDate ) )
+        SimpleDateFormat fmt = new SimpleDateFormat( "yyyy-MM-dd" );
+        if ( !fmt.format( existingIdentityToUpdate.getLastUpdateDate( ) ).equals(fmt.format( requestLastUpdateDate ) ) )
         {
             final ResourceConsistencyException exception = new ResourceConsistencyException(
                     "This identity has been updated recently, please load the latest data before updating.", Constants.PROPERTY_REST_ERROR_UPDATE_CONFLICT,
