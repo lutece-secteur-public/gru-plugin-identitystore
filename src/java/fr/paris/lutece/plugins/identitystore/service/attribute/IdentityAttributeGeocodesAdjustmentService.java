@@ -149,7 +149,7 @@ public class IdentityAttributeGeocodesAdjustmentService
         AttributeDto sentCountryLabel = request.getIdentity( ).getAttributes( ).stream( ).filter( a -> a.getKey( ).equals( Constants.PARAM_BIRTH_COUNTRY ) )
                 .findFirst( ).orElse( null );
         // Country code was sent
-        if ( sentCountryCode != null )
+        if ( sentCountryCode != null && StringUtils.isNotBlank( sentCountryCode.getValue() ) )
         {
             final Country country = GeoCodesService.getInstance( ).getCountryByCode( sentCountryCode.getValue( ) ).orElse( null );
             if ( country == null )
@@ -197,7 +197,7 @@ public class IdentityAttributeGeocodesAdjustmentService
         else
         {
             // Country label was sent
-            if ( sentCountryLabel != null )
+            if ( sentCountryLabel != null && StringUtils.isNotBlank( sentCountryLabel.getValue() ) )
             {
                 Date birthdate;
                 try
@@ -275,7 +275,7 @@ public class IdentityAttributeGeocodesAdjustmentService
         }
 
         // City code was sent
-        if ( sentCityCode != null )
+        if ( sentCityCode != null && StringUtils.isNotBlank( sentCityCode.getValue( ) ) )
         {
             final City city = birthdate != null ? GeoCodesService.getInstance( ).getCityByDateAndCode( birthdate, sentCityCode.getValue( ) ).orElse( null )
                     : GeoCodesService.getInstance( ).getCityByCode( sentCityCode.getValue( ) ).orElse( null );
@@ -324,7 +324,7 @@ public class IdentityAttributeGeocodesAdjustmentService
         else
         {
             // City label was sent
-            if ( sentCityLabel != null )
+            if ( sentCityLabel != null && StringUtils.isNotBlank( sentCityLabel.getValue( ) ) )
             {
                 final List<City> cities = birthdate != null ? GeoCodesService.getInstance( ).getCitiesListByNameAndDate( sentCityLabel.getValue( ), birthdate )
                         : GeoCodesService.getInstance( ).getCitiesListByName( sentCityLabel.getValue( ) );
