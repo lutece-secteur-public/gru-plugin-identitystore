@@ -250,6 +250,7 @@ public final class DtoConverter
         serviceContractDto.setAuthorizedMerge( serviceContract.getAuthorizedMerge( ) );
         serviceContractDto.setAuthorizedDecertification( serviceContract.getAuthorizedDecertification( ) );
         serviceContractDto.setAuthorizedAgentHistoryRead( serviceContract.getAuthorizedAgentHistoryRead( ) );
+        serviceContractDto.setAuthorizedAttachementCertification( serviceContract.getAuthorizedAttachmentCertification( ) );
         serviceContractDto.setDataRetentionPeriodInMonths( serviceContract.getDataRetentionPeriodInMonths( ) );
 
         final List<AttributeDefinitionDto> attributeDefinitions = new ArrayList<>( );
