@@ -106,4 +106,8 @@
     <bean id="identitystore.indicatorsRest" class="fr.paris.lutece.plugins.identitystore.v3.web.rs.IndicatorsRestService" />
     <bean id="identitystore.indexingRest" class="fr.paris.lutece.plugins.identitystore.v3.web.rs.IndexingRestService"/>
 
+    <!-- compatibility Rest v1 / v2 -->
+    <bean id="identitystore.v1.identityStoreRestService"  class="fr.paris.lutece.plugins.identitystore.v1.web.rs.IdentityStoreRestService" />
+    <bean id="identitystore.v2.identityStoreRestService"  class="fr.paris.lutece.plugins.identitystore.v2.web.rs.IdentityStoreRestService" />
+
 </beans>
