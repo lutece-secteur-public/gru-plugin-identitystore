@@ -214,6 +214,7 @@ CREATE TABLE identitystore_service_contract (
     authorized_account_update smallint DEFAULT 0 NOT NULL,
     authorized_decertification smallint DEFAULT 0 NOT NULL,
     authorized_agent_history_read smallint DEFAULT 0 NOT NULL,
+    authorized_attachment_certification SMALLINT DEFAULT 0 NOT NULL,
     PRIMARY KEY (id_service_contract)
 );
 
