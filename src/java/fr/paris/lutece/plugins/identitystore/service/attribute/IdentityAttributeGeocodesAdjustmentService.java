@@ -53,6 +53,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 public class IdentityAttributeGeocodesAdjustmentService
 {
@@ -171,12 +172,6 @@ public class IdentityAttributeGeocodesAdjustmentService
                 // If sent label is different than the Geocodes label, modify the request to override with the Geocodes value
                 if ( sentCountryLabel != null && !sentCountryLabel.getValue( ).equals( countryGeocodesLabel ) )
                 {
-                    final AttributeStatus attributeStatus = new AttributeStatus( );
-                    attributeStatus.setKey( sentCountryLabel.getKey( ) );
-                    attributeStatus.setStatus( AttributeChangeStatus.OVERRIDDEN_GEOCODES_LABEL );
-                    attributeStatus.setMessageKey( Constants.PROPERTY_ATTRIBUTE_STATUS_GEOCODES_LABEL_OVERRIDDEN );
-                    attrStatusList.add( attributeStatus );
-
                     request.getIdentity( ).getAttributes( ).remove( sentCountryLabel );
                     sentCountryLabel.setValue( countryGeocodesLabel );
                     request.getIdentity( ).getAttributes( ).add( sentCountryLabel );
@@ -210,45 +205,49 @@ public class IdentityAttributeGeocodesAdjustmentService
                 {
                     birthdate = null;
                 }
-
+                final List<Country> countries = new ArrayList<>();
                 if( birthdate != null )
                 {
-                    final List<Country> countries = GeoCodesService.getInstance().getCountriesListByNameAndDate(sentCountryLabel.getValue(), birthdate);
-                    if (CollectionUtils.isEmpty(countries))
-                    {
-                        // Country doesn't exist in Geocodes for provided label : discard attribute and notify with an AttributeStatus
-                        request.getIdentity().getAttributes().remove(sentCountryLabel);
-
-                        final AttributeStatus attributeStatus = new AttributeStatus();
-                        attributeStatus.setKey(sentCountryLabel.getKey());
-                        attributeStatus.setStatus(AttributeChangeStatus.UNKNOWN_GEOCODES_LABEL);
-                        attributeStatus.setMessageKey(Constants.PROPERTY_ATTRIBUTE_STATUS_VALIDATION_ERROR_UNKNOWN_GEOCODES_LABEL);
-                        attrStatusList.add(attributeStatus);
-                    } else if (countries.size() > 1)
-                    {
-                        // Multiple countries exist in Geocodes for provided label : discard attribute and notify with an AttributeStatus
-                        request.getIdentity().getAttributes().remove(sentCountryLabel);
-
-                        final AttributeStatus attributeStatus = new AttributeStatus();
-                        attributeStatus.setKey(sentCountryLabel.getKey());
-                        attributeStatus.setStatus(AttributeChangeStatus.MULTIPLE_GEOCODES_RESULTS_FOR_LABEL);
-                        attributeStatus.setMessageKey(Constants.PROPERTY_ATTRIBUTE_STATUS_VALIDATION_ERROR_GEOCODES_LABEL_MULTIPLE_RESULTS);
-                        attrStatusList.add(attributeStatus);
-                    } else
-                    {
-                        // One country exists in Geocodes for provided label : add the code attribute to the request with the Geocodes code value, and same
-                        // certifier as the sent label
-                        final String countryGeocodesCode = countries.get(0).getCode();
-
-                        sentCountryCode = new AttributeDto();
-                        sentCountryCode.setKey(Constants.PARAM_BIRTH_COUNTRY_CODE);
-                        sentCountryCode.setValue(countryGeocodesCode);
-                        sentCountryCode.setCertifier(sentCountryLabel.getCertifier());
-                        sentCountryCode.setCertificationDate(sentCountryLabel.getCertificationDate());
-
-                        request.getIdentity().getAttributes().add(sentCountryCode);
-                    }
+                    countries.addAll(GeoCodesService.getInstance().getCountriesListByNameAndDate(sentCountryLabel.getValue(), birthdate));
+                } else
+                {
+                    countries.addAll(GeoCodesService.getInstance().getCountriesListByName(sentCountryLabel.getValue()));
                 }
+                if (CollectionUtils.isEmpty(countries))
+                {
+                    // Country doesn't exist in Geocodes for provided label : discard attribute and notify with an AttributeStatus
+                    request.getIdentity().getAttributes().remove(sentCountryLabel);
+
+                    final AttributeStatus attributeStatus = new AttributeStatus();
+                    attributeStatus.setKey(sentCountryLabel.getKey());
+                    attributeStatus.setStatus(AttributeChangeStatus.UNKNOWN_GEOCODES_LABEL);
+                    attributeStatus.setMessageKey(Constants.PROPERTY_ATTRIBUTE_STATUS_VALIDATION_ERROR_UNKNOWN_GEOCODES_LABEL);
+                    attrStatusList.add(attributeStatus);
+                } else if (countries.size() > 1)
+                {
+                    // Multiple countries exist in Geocodes for provided label : discard attribute and notify with an AttributeStatus
+                    request.getIdentity().getAttributes().remove(sentCountryLabel);
+
+                    final AttributeStatus attributeStatus = new AttributeStatus();
+                    attributeStatus.setKey(sentCountryLabel.getKey());
+                    attributeStatus.setStatus(AttributeChangeStatus.MULTIPLE_GEOCODES_RESULTS_FOR_LABEL);
+                    attributeStatus.setMessageKey(Constants.PROPERTY_ATTRIBUTE_STATUS_VALIDATION_ERROR_GEOCODES_LABEL_MULTIPLE_RESULTS);
+                    attrStatusList.add(attributeStatus);
+                } else
+                {
+                    // One country exists in Geocodes for provided label : add the code attribute to the request with the Geocodes code value, and same
+                    // certifier as the sent label
+                    final String countryGeocodesCode = countries.get(0).getCode();
+
+                    sentCountryCode = new AttributeDto();
+                    sentCountryCode.setKey(Constants.PARAM_BIRTH_COUNTRY_CODE);
+                    sentCountryCode.setValue(countryGeocodesCode);
+                    sentCountryCode.setCertifier(sentCountryLabel.getCertifier());
+                    sentCountryCode.setCertificationDate(sentCountryLabel.getCertificationDate());
+
+                    request.getIdentity().getAttributes().add(sentCountryCode);
+                }
+
             }
         }
         return attrStatusList;
@@ -277,47 +276,76 @@ public class IdentityAttributeGeocodesAdjustmentService
         // City code was sent
         if ( sentCityCode != null && StringUtils.isNotBlank( sentCityCode.getValue( ) ) )
         {
-            final City city = birthdate != null ? GeoCodesService.getInstance( ).getCityByDateAndCode( birthdate, sentCityCode.getValue( ) ).orElse( null )
-                    : GeoCodesService.getInstance( ).getCityByCode( sentCityCode.getValue( ) ).orElse( null );
-            if ( city == null && ( sentCityCode.getCertificationLevel( ) == null || sentCityCode.getCertificationLevel( ) < 600 ) )
+            final List<City> cities = new ArrayList<>();
+            if(birthdate != null)
             {
-                // city doesn't exist in Geocodes for provided code, and code is not FC certified : discard attribute and notify with an AttributeStatus
-                request.getIdentity( ).getAttributes( ).remove( sentCityCode );
-
-                final AttributeStatus attributeStatus = new AttributeStatus( );
-                attributeStatus.setKey( sentCityCode.getKey( ) );
-                attributeStatus.setStatus( AttributeChangeStatus.UNKNOWN_GEOCODES_CODE );
-                attributeStatus.setMessageKey( Constants.PROPERTY_ATTRIBUTE_STATUS_VALIDATION_ERROR_UNKNOWN_GEOCODES_CODE );
-                attrStatusList.add( attributeStatus );
+                GeoCodesService.getInstance().getCityByDateAndCode( birthdate, sentCityCode.getValue( ) ).ifPresent( cities::add );
             }
             else
             {
-                // city exists in Geocodes for provided code, or provided code is FC certified - adjust city label attribute if needed
-                final String cityGeocodesLabel = city != null ? city.getValueMinComplete( ) : "commune inconnue";
-
-                // If sent label is different than the Geocodes label, modify the request to override with the Geocodes value
-                if ( sentCityLabel != null && !cityGeocodesLabel.equals( sentCityLabel.getValue( ) ) )
+                cities.addAll( GeoCodesService.getInstance( ).getCityByCode( sentCityCode.getValue( ) ) );
+            }
+            if (!cities.isEmpty())
+            {
+                if( cities.size( ) == 1 )
                 {
-                    final AttributeStatus attributeStatus = new AttributeStatus( );
-                    attributeStatus.setKey( sentCityLabel.getKey( ) );
-                    attributeStatus.setStatus( AttributeChangeStatus.OVERRIDDEN_GEOCODES_LABEL );
-                    attributeStatus.setMessageKey( Constants.PROPERTY_ATTRIBUTE_STATUS_GEOCODES_LABEL_OVERRIDDEN );
-                    attrStatusList.add( attributeStatus );
+                    City city = cities.get(0);
+                    if (city == null && (sentCityCode.getCertificationLevel() == null || sentCityCode.getCertificationLevel() < 600))
+                    {
+                        // city doesn't exist in Geocodes for provided code, and code is not FC certified : discard attribute and notify with an AttributeStatus
+                        request.getIdentity().getAttributes().remove(sentCityCode);
 
-                    request.getIdentity( ).getAttributes( ).remove( sentCityLabel );
-                    sentCityLabel.setValue( cityGeocodesLabel );
-                    request.getIdentity( ).getAttributes( ).add( sentCityLabel );
-                }
-                // If no country label was sent, we add the attribute to the request with the Geocodes value, and same certifier as the sent code
-                if ( sentCityLabel == null )
+                        final AttributeStatus attributeStatus = new AttributeStatus();
+                        attributeStatus.setKey(sentCityCode.getKey());
+                        attributeStatus.setStatus(AttributeChangeStatus.UNKNOWN_GEOCODES_CODE);
+                        attributeStatus.setMessageKey(Constants.PROPERTY_ATTRIBUTE_STATUS_VALIDATION_ERROR_UNKNOWN_GEOCODES_CODE);
+                        attrStatusList.add(attributeStatus);
+                    } else
+                    {
+                        // city exists in Geocodes for provided code, or provided code is FC certified - adjust city label attribute if needed
+                        final String cityGeocodesLabel = city != null ? city.getValueMinComplete() : "commune inconnue";
+
+                        // If sent label is different than the Geocodes label, modify the request to override with the Geocodes value
+                        if (sentCityLabel != null && !cityGeocodesLabel.equals(sentCityLabel.getValue()))
+                        {
+                            request.getIdentity().getAttributes().remove(sentCityLabel);
+                            sentCityLabel.setValue(cityGeocodesLabel);
+                            request.getIdentity().getAttributes().add(sentCityLabel);
+                        }
+                        // If no country label was sent, we add the attribute to the request with the Geocodes value, and same certifier as the sent code
+                        if (sentCityLabel == null)
+                        {
+                            sentCityLabel = new AttributeDto();
+                            sentCityLabel.setKey(Constants.PARAM_BIRTH_PLACE);
+                            sentCityLabel.setValue(cityGeocodesLabel);
+                            sentCityLabel.setCertifier(sentCityCode.getCertifier());
+                            sentCityLabel.setCertificationDate(sentCityCode.getCertificationDate());
+                            request.getIdentity().getAttributes().add(sentCityLabel);
+                        }
+                    }
+                } else
                 {
-                    sentCityLabel = new AttributeDto( );
-                    sentCityLabel.setKey( Constants.PARAM_BIRTH_PLACE );
-                    sentCityLabel.setValue( cityGeocodesLabel );
-                    sentCityLabel.setCertifier( sentCityCode.getCertifier( ) );
-                    sentCityLabel.setCertificationDate( sentCityCode.getCertificationDate( ) );
-                    request.getIdentity( ).getAttributes( ).add( sentCityLabel );
+                    // The provided city code is linked to multiples cities
+                    request.getIdentity().getAttributes().remove(sentCityCode);
+
+                    final AttributeStatus attributeStatus = new AttributeStatus();
+                    attributeStatus.setKey(sentCityCode.getKey());
+                    attributeStatus.setStatus(AttributeChangeStatus.MULTIPLE_GEOCODES_RESULTS_FOR_CODE);
+                    attributeStatus.setMessageKey(Constants.PROPERTY_ATTRIBUTE_STATUS_VALIDATION_ERROR_GEOCODES_CODE_MULTIPLE_RESULTS);
+                    attrStatusList.add(attributeStatus);
                 }
+
+            }
+            else
+            {
+                // city doesn't exist in Geocodes for provided code
+                request.getIdentity().getAttributes().remove(sentCityCode);
+
+                final AttributeStatus attributeStatus = new AttributeStatus();
+                attributeStatus.setKey(sentCityCode.getKey());
+                attributeStatus.setStatus(AttributeChangeStatus.UNKNOWN_GEOCODES_CODE);
+                attributeStatus.setMessageKey(Constants.PROPERTY_ATTRIBUTE_STATUS_VALIDATION_ERROR_UNKNOWN_GEOCODES_CODE);
+                attrStatusList.add(attributeStatus);
             }
         }
         // No city code sent
