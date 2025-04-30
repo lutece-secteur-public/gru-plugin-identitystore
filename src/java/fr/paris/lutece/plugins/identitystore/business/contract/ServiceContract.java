@@ -39,8 +39,9 @@ import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.Size;
 import java.io.Serializable;
 import java.sql.Date;
-import java.sql.Timestamp;
 import java.time.Instant;
+import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -116,8 +117,8 @@ public class ServiceContract implements Serializable
 
     public boolean isActive( )
     {
-        final Timestamp actualTimestamp = Timestamp.from( Instant.now( ) );
-        return ( this.getStartingDate( ).before( actualTimestamp ) && ( this.getEndingDate( ) == null || this.getEndingDate( ).after( actualTimestamp ) ) );
+        final Date actualDate = new Date( Instant.now().atZone(ZoneId.systemDefault()).truncatedTo(ChronoUnit.DAYS).toInstant().toEpochMilli() );
+        return ( (this.getStartingDate( ).before( actualDate ) || this.getStartingDate( ).equals( actualDate )) && ( this.getEndingDate( ) == null || this.getEndingDate( ).after( actualDate ) || this.getEndingDate( ).equals( actualDate ) ) );
     }
 
     /**

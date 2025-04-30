@@ -234,17 +234,18 @@ public final class ServiceContractDAO implements IServiceContractDAO
                     switch( key )
                     {
                         case QUERY_PARAM_ACTIVE:
+                            Date now = new Date(new java.util.Date( ).getTime( ) );
                             if ( StringUtils.equalsAny( trimmedValue, "0", "n" ) )
                             {
                                 sqlQuerySelectallId.append(
-                                        " CASE WHEN a.ending_date IS NULL THEN NOW() < a.starting_date ELSE NOW() NOT BETWEEN a.starting_date AND a.ending_date END " );
+                                        " CASE WHEN a.ending_date IS NULL THEN '" + now + "' < a.starting_date ELSE '" + now + "' NOT BETWEEN a.starting_date AND a.ending_date END " );
                                 nbParamsAdded.getAndIncrement( );
                             }
                             else
                                 if ( StringUtils.equalsAny( trimmedValue, "1", "o", "y" ) )
                                 {
                                     sqlQuerySelectallId.append(
-                                            " CASE WHEN a.ending_date IS NULL THEN NOW() >= a.starting_date ELSE NOW() BETWEEN a.starting_date AND a.ending_date END " );
+                                            " CASE WHEN a.ending_date IS NULL THEN '" + now + "' >= a.starting_date ELSE '" + now + "' BETWEEN a.starting_date AND a.ending_date END " );
                                     nbParamsAdded.getAndIncrement( );
                                 }
                             break;
