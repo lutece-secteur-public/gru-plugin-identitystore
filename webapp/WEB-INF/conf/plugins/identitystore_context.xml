@@ -63,7 +63,7 @@
     </bean>
 
 	<!-- Notification Store impl  -->
-	<bean id="notificationStore.impl" class="fr.paris.lutece.plugins.notificationstore.v1.web.rs.service.NotificationStoreMock">
+	<bean id="notificationStore.impl" class="fr.paris.lutece.plugins.notificationstore.v1.web.rs.service.NotificationStoreTransportRest">
 	</bean>	
 	<!-- Notification Store Service  -->
 	<bean id="notificationStore.notificationStoreService" class="fr.paris.lutece.plugins.notificationstore.v1.web.service.NotificationStoreService">
@@ -106,8 +106,10 @@
     <bean id="identitystore.indicatorsRest" class="fr.paris.lutece.plugins.identitystore.v3.web.rs.IndicatorsRestService" />
     <bean id="identitystore.indexingRest" class="fr.paris.lutece.plugins.identitystore.v3.web.rs.IndexingRestService"/>
 
-    <!-- compatibility Rest v1 / v2 -->
-    <bean id="identitystore.v1.identityStoreRestService"  class="fr.paris.lutece.plugins.identitystore.v1.web.rs.IdentityStoreRestService" />
-    <bean id="identitystore.v2.identityStoreRestService"  class="fr.paris.lutece.plugins.identitystore.v2.web.rs.IdentityStoreRestService" />
+    <bean id="identitystore.httpAccessTransport.notification" class="fr.paris.lutece.plugins.notificationstore.v1.web.rs.service.HttpAccessTransport" >
+        <property name="apiEndPointUrl">
+            <value>${identitystore.notification.endpoint}</value>
+        </property>
+    </bean>
 
 </beans>

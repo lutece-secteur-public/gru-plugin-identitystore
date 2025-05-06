@@ -33,6 +33,7 @@
  */
 package fr.paris.lutece.plugins.identitystore.service.identity;
 
+import fr.paris.lutece.plugins.grubusiness.service.notification.NotificationException;
 import fr.paris.lutece.plugins.identitystore.business.application.ClientApplication;
 import fr.paris.lutece.plugins.identitystore.business.attribute.AttributeKey;
 import fr.paris.lutece.plugins.identitystore.business.contract.ServiceContract;
@@ -75,6 +76,7 @@ import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
 import fr.paris.lutece.plugins.identitystore.web.exception.RequestFormatException;
 import fr.paris.lutece.plugins.identitystore.web.exception.ResourceNotFoundException;
+import fr.paris.lutece.plugins.notificationstore.v1.web.service.NotificationStoreService;
 import fr.paris.lutece.portal.service.security.AccessLogService;
 import fr.paris.lutece.portal.service.security.AccessLoggerConstants;
 import fr.paris.lutece.portal.service.spring.SpringContextService;
@@ -115,6 +117,7 @@ public class IdentityService
     private final IdentityAttributeService _identityAttributeService = IdentityAttributeService.instance( );
     private final InternalUserService _internalUserService = InternalUserService.getInstance( );
     private final ISearchIdentityService _elasticSearchIdentityService = SpringContextService.getBean( "identitystore.searchIdentityService.elasticsearch" );
+    private final NotificationStoreService _notificationStoreService = SpringContextService.getBean( "notificationStore.notificationStoreService" );
 
     // CACHE
     private final IdentityDtoCache _identityDtoCache = SpringContextService.getBean( "identitystore.identityDtoCache" );
@@ -328,6 +331,13 @@ public class IdentityService
             secondaryIdentity.setMasterIdentityId( primaryIdentity.getId( ) );
             IdentityHome.merge( secondaryIdentity );
             IdentityAttributeHome.removeAllAttributes( secondaryIdentity.getId( ) );
+            try
+            {
+                _notificationStoreService.createLink( secondaryIdentity.getCustomerId(), primaryIdentity.getCustomerId() );
+            } catch (NotificationException e)
+            {
+                throw new IdentityStoreException( e.getMessage( ), e, Constants.PROPERTY_REST_ERROR_DURING_TREATMENT );
+            }
 
             TransactionManager.commitTransaction( null );
 
