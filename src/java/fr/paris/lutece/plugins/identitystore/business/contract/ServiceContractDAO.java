@@ -60,7 +60,7 @@ public final class ServiceContractDAO implements IServiceContractDAO
     private static final String SQL_QUERY_SELECT_ACTIVE_WITH_CLIENT_APP_CODE = "SELECT" + JOINED_COLUMNS + JOIN
             + " WHERE b.client_code = ? AND CASE WHEN a.ending_date IS NULL THEN NOW() >= a.starting_date ELSE NOW() BETWEEN a.starting_date AND a.ending_date END";
     private static final String SQL_QUERY_INSERT = "INSERT INTO identitystore_service_contract (id_client_app, " + COLUMNS
-            + " ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? ) ";
+            + " ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? ) ";
     private static final String SQL_QUERY_DELETE = "DELETE FROM identitystore_service_contract WHERE id_service_contract = ?";
     private static final String SQL_QUERY_DELETE_WITH_CLIENT_APP_ID = "DELETE FROM identitystore_service_contract WHERE id_client_app = ?";
     private static final String SQL_QUERY_UPDATE = "UPDATE identitystore_service_contract SET name = ?, id_client_app = ?, moa_entity_name = ?, moe_responsible_name = ?, moa_contact_name = ?, moe_entity_name = ?, data_retention_period_in_months = ?, service_type = ?, starting_date = ?, ending_date = ?, authorized_creation = ?, authorized_update = ?, authorized_search = ?, authorized_merge = ?, authorized_account_update = ?, authorized_deletion = ?, authorized_import = ?, authorized_export = ?, authorized_decertification = ?, authorized_agent_history_read = ?, authorized_attachment_certification = ?, last_update_date = ?, author_name = ? WHERE id_service_contract = ?";
