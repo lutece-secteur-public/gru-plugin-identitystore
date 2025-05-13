@@ -275,6 +275,7 @@ public final class IdentityDAO implements IIdentityDAO
     @Override
     public void merge( Identity identity, Plugin plugin )
     {
+        identity.setMerged( true );
         try ( final DAOUtil daoUtil = new DAOUtil( SQL_QUERY_MERGE, plugin ) )
         {
             daoUtil.setInt( 1, identity.getMasterIdentityId( ) );

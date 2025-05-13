@@ -107,6 +107,7 @@ public final class IdentityHome
     public static Identity merge( Identity identity )
     {
         _dao.merge( identity, _plugin );
+        IdentityAttributeHome.removeAllAttributes( identity.getId() );
 
         return identity;
     }

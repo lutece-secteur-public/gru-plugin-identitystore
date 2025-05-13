@@ -325,12 +325,13 @@ public class IdentityService
             {
                 attrStatusList.addAll( this.updateIdentity( primaryIdentity, identityForConsolidate, clientCode, primaryMetadata ) );
             }
+            primaryIdentity.setId( IdentityHome.findIdByCustomerId( primaryIdentity.getCustomerId( ) ) );
+
+            secondaryIdentity.setId( IdentityHome.findIdByCustomerId( secondaryIdentity.getCustomerId( ) ) );
+            secondaryIdentity.setMasterIdentityId( primaryIdentity.getId( ) );
 
             /* Tag de l'identité secondaire */
-            secondaryIdentity.setMerged( true );
-            secondaryIdentity.setMasterIdentityId( primaryIdentity.getId( ) );
             IdentityHome.merge( secondaryIdentity );
-            IdentityAttributeHome.removeAllAttributes( secondaryIdentity.getId( ) );
             try
             {
                 _notificationStoreService.createLink( secondaryIdentity.getCustomerId(), primaryIdentity.getCustomerId() );
