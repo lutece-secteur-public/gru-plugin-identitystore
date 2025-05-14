@@ -144,6 +144,7 @@ public class IdentityJspBean extends ManageIdentitiesJspBean
     private static final String DATASOURCE_ES = "es";
     private static final int BATCH_PARTITION_SIZE = AppPropertiesService.getPropertyInt( "identitystore.export.batch.size", 100 );
     private static final int PROPERTY_MAX_NB_IDENTITY_RETURNED = AppPropertiesService.getPropertyInt("identitystore.search.maxNbIdentityReturned", 0);
+    private static final String RESOURCE_SEARCH_LINK = AppPropertiesService.getProperty("identitystore.search.resource.link", "");
 
     // Session variable to store working values
     private Identity _identity;
@@ -342,6 +343,7 @@ public class IdentityJspBean extends ManageIdentitiesJspBean
         model.put( MARK_IDENTITY_IS_SUSPICIOUS, SuspiciousIdentityHome.hasSuspicious( Collections.singletonList( _identity.getCustomerId( ) ) ) );
         model.put( MARK_HAS_ATTRIBUTS_HISTO_ROLE,
                 IdentityManagementResourceIdService.isAuthorized( IdentityManagementResourceIdService.PERMISSION_ATTRIBUTS_HISTO, getUser( ) ) );
+        model.put( QUERY_PARAM_CUID_LINK, RESOURCE_SEARCH_LINK );
 
         return getPage( PROPERTY_PAGE_TITLE_VIEW_IDENTITY, TEMPLATE_VIEW_IDENTITY, model );
     }

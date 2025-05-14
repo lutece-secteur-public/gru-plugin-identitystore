@@ -90,7 +90,12 @@
             <tbody>
                 <#list merged_identities as identity>
                     <tr>
-                        <td><span>${identity.customerId!''}</span></td>
+                        <td>
+                            <a href="${cuid_link}${identity.customerId!}"
+                               title="#i18n{identitystore.manage_identities.buttonView}">
+                                ${identity.customerId!''}
+                            </a>
+                        </td>
                         <td><span>${identity.mergeDate?string["dd/MM/yyyy HH:mm"]!}</span></td>
                     </tr>
                 </#list>

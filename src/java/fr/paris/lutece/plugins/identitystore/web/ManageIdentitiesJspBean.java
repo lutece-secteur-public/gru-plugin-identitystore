@@ -84,6 +84,7 @@ public abstract class ManageIdentitiesJspBean extends MVCAdminJspBean
     public static final String QUERY_PARAM_CLIENT_CODE = "client_code";
     public static final String QUERY_PARAM_STATUS_LIST = "status_list";
     public static final String QUERY_PARAM_TYPE_LIST = "type_list";
+    public static final String QUERY_PARAM_CUID_LINK = "cuid_link";
 
     // Variables
     private final int _nDefaultItemsPerPage = AppPropertiesService.getPropertyInt( PROPERTY_DEFAULT_LIST_ITEM_PER_PAGE, 50 );
