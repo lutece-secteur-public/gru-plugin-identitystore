@@ -35,6 +35,7 @@ package fr.paris.lutece.plugins.identitystore.service;
 
 import fr.paris.lutece.plugins.grubusiness.business.demand.DemandType;
 import fr.paris.lutece.plugins.grubusiness.business.web.rs.DemandDisplay;
+import fr.paris.lutece.plugins.grubusiness.business.web.rs.DemandResult;
 import fr.paris.lutece.plugins.grubusiness.business.web.rs.EnumGenericStatus;
 import fr.paris.lutece.plugins.identitystore.business.identity.Identity;
 import fr.paris.lutece.plugins.identitystore.business.identity.IdentityHome;
@@ -100,8 +101,8 @@ public final class PurgeIdentityService
                 final List<Identity> mergedIdentities = IdentityHome.findMergedIdentities( expiredIdentity.getId( ) );
                 // - check if exists recent Demands associated to each identity or its merged ones
                 // >> if true, calculate the new expiration date (date of demand last update + CGUs term)
-                final List<DemandDisplay> demandDisplayList = new ArrayList<>(
-                        _notificationStoreService.getListDemand( expiredIdentity.getCustomerId( ), null, null, null, null ).getListDemandDisplay( ) );
+                DemandResult demandResult = _notificationStoreService.getListDemand( expiredIdentity.getCustomerId( ), null, null, null, null );
+                final List<DemandDisplay> demandDisplayList = demandResult.getListDemandDisplay() == null ? new ArrayList<>() : new ArrayList<>(demandResult.getListDemandDisplay());
                 for ( final Identity mergedIdentity : mergedIdentities )
                 {
                     demandDisplayList
