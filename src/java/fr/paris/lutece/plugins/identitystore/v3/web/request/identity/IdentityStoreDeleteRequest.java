@@ -81,8 +81,7 @@ public class IdentityStoreDeleteRequest extends AbstractIdentityStoreAppCodeRequ
     }
 
     @Override
-    protected void fetchResources( ) throws ResourceNotFoundException
-    {
+    protected void fetchResources( ) throws ResourceNotFoundException, ClientAuthorizationException {
         serviceContract = ServiceContractService.instance( ).getActiveServiceContract( _strClientCode );
         if (_strCustomerId != null) {
             existingIdentityToDelete = _identityDtoCache.getByCustomerId(_strCustomerId, serviceContract);

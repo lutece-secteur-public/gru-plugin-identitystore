@@ -102,8 +102,7 @@ public class IdentityStoreCreateRequest extends AbstractIdentityStoreAppCodeRequ
     }
 
     @Override
-    protected void fetchResources( ) throws ResourceNotFoundException
-    {
+    protected void fetchResources( ) throws ResourceNotFoundException, ClientAuthorizationException {
         serviceContract = ServiceContractService.instance( ).getActiveServiceContract( _strClientCode );
     }
 

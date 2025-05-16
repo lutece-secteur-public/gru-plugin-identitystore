@@ -113,8 +113,7 @@ public class IdentityStoreUpdateRequest extends AbstractIdentityStoreAppCodeRequ
     }
 
     @Override
-    protected void fetchResources( ) throws ResourceNotFoundException
-    {
+    protected void fetchResources( ) throws ResourceNotFoundException, ClientAuthorizationException {
         if (_strCustomerId != null) {
             serviceContract = ServiceContractService.instance( ).getActiveServiceContract( _strClientCode );
             existingIdentityToUpdate = _identityDtoCache.getByCustomerId( _strCustomerId, serviceContract );

@@ -86,8 +86,7 @@ public class IdentityStoreCancelMergeRequest extends AbstractIdentityStoreAppCod
     }
 
     @Override
-    protected void fetchResources( ) throws ResourceNotFoundException
-    {
+    protected void fetchResources( ) throws ResourceNotFoundException, ClientAuthorizationException {
         serviceContract = ServiceContractService.instance( ).getActiveServiceContract( _strClientCode );
         primaryIdentity = _identityDtoCache.getByCustomerId( _identityMergeRequest.getPrimaryCuid( ), serviceContract );
         if ( primaryIdentity == null )

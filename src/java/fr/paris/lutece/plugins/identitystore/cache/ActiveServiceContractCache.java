@@ -38,6 +38,7 @@ import fr.paris.lutece.plugins.identitystore.business.application.ClientApplicat
 import fr.paris.lutece.plugins.identitystore.business.contract.ServiceContract;
 import fr.paris.lutece.plugins.identitystore.business.contract.ServiceContractHome;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
+import fr.paris.lutece.plugins.identitystore.web.exception.ClientAuthorizationException;
 import fr.paris.lutece.plugins.identitystore.web.exception.ResourceNotFoundException;
 import fr.paris.lutece.portal.service.cache.AbstractCacheableService;
 import fr.paris.lutece.portal.service.util.AppLogService;
@@ -67,7 +68,7 @@ public class ActiveServiceContractCache extends AbstractCacheableService
                 final ServiceContract activeServiceContract = this.getActiveServiceContractFromDatabase( clientApplication.getClientCode( ) );
                 this.put( clientApplication.getClientCode( ), activeServiceContract );
             }
-            catch( final ResourceNotFoundException e )
+            catch( final ClientAuthorizationException e )
             {
                 AppLogService.debug( e.getMessage( ) );
             }
@@ -100,14 +101,14 @@ public class ActiveServiceContractCache extends AbstractCacheableService
                     this.removeKey( key );
                 }
             }
-            catch( final ResourceNotFoundException e )
+            catch( final ClientAuthorizationException e )
             {
                 AppLogService.error( "Cannot delete service contract with id" + id + " : {}", e );
             }
         } );
     }
 
-    public ServiceContract get( final String clientCode ) throws ResourceNotFoundException
+    public ServiceContract get( final String clientCode ) throws ClientAuthorizationException
     {
         ServiceContract serviceContract = (ServiceContract) this.getFromCache( clientCode );
         if ( serviceContract == null )
@@ -118,18 +119,18 @@ public class ActiveServiceContractCache extends AbstractCacheableService
         return serviceContract;
     }
 
-    private ServiceContract getActiveServiceContractFromDatabase( final String clientCode ) throws ResourceNotFoundException
+    private ServiceContract getActiveServiceContractFromDatabase( final String clientCode ) throws ClientAuthorizationException
     {
         final List<ServiceContract> serviceContracts = ClientApplicationHome.selectActiveServiceContract( clientCode );
         if ( CollectionUtils.isEmpty( serviceContracts ) )
         {
-            throw new ResourceNotFoundException( "No contract service found for client application with code " + clientCode,
+            throw new ClientAuthorizationException( "No contract service found for client application with code " + clientCode,
                     Constants.PROPERTY_REST_ERROR_SERVICE_CONTRACT_NOT_FOUND );
         }
         else
             if ( CollectionUtils.size( serviceContracts ) > 1 )
             {
-                throw new ResourceNotFoundException(
+                throw new ClientAuthorizationException(
                         "There is more than one active service contract for the application with code " + clientCode + ". There must be only one",
                         Constants.PROPERTY_REST_ERROR_MULTIPLE_ACTIVE_SERVICE_CONTRACTS );
             }

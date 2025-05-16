@@ -106,8 +106,7 @@ public class ServiceContractService
      * @return the active {@link ServiceContract}
      * @throws ResourceNotFoundException
      */
-    public ServiceContract getActiveServiceContract( final String clientCode ) throws ResourceNotFoundException
-    {
+    public ServiceContract getActiveServiceContract( final String clientCode ) throws ClientAuthorizationException {
         return _cache.get( clientCode );
     }
 
@@ -120,7 +119,7 @@ public class ServiceContractService
                 .distinct( ).collect( Collectors.toList( ) );
     }
 
-    public int getDataRetentionPeriodInMonths( final String clientCode ) throws ResourceNotFoundException
+    public int getDataRetentionPeriodInMonths( final String clientCode ) throws ClientAuthorizationException
     {
         final ServiceContract serviceContract = this.getActiveServiceContract( clientCode );
         return serviceContract.getDataRetentionPeriodInMonths( );
