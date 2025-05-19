@@ -252,6 +252,9 @@ public final class DtoConverter
         serviceContractDto.setAuthorizedAgentHistoryRead( serviceContract.getAuthorizedAgentHistoryRead( ) );
         serviceContractDto.setAuthorizedAttachementCertification( serviceContract.getAuthorizedAttachmentCertification( ) );
         serviceContractDto.setDataRetentionPeriodInMonths( serviceContract.getDataRetentionPeriodInMonths( ) );
+        serviceContractDto.setCreationDate( serviceContract.getCreationDate( ) );
+        serviceContractDto.setLastUpdateDate( serviceContract.getLastUpdateDate( ) );
+        serviceContractDto.setAuthorName( serviceContract.getAuthorName( ) );
 
         final List<AttributeDefinitionDto> attributeDefinitions = new ArrayList<>( );
 
@@ -361,6 +364,9 @@ public final class DtoConverter
         serviceContract.setAuthorizedDecertification( serviceContractDto.isAuthorizedDecertification( ) );
         serviceContract.setAuthorizedAgentHistoryRead( serviceContractDto.isAuthorizedAgentHistoryRead( ) );
         serviceContract.setDataRetentionPeriodInMonths( serviceContractDto.getDataRetentionPeriodInMonths( ) );
+        serviceContract.setCreationDate( serviceContractDto.getCreationDate( ) );
+        serviceContract.setLastUpdateDate( serviceContractDto.getLastUpdateDate( ) );
+        serviceContract.setAuthorName( serviceContractDto.getAuthorName( ) );
 
         for ( final AttributeDefinitionDto attributeDefinition : serviceContractDto.getAttributeDefinitions( ) )
         {

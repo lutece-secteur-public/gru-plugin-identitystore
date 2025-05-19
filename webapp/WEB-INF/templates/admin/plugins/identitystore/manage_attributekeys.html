@@ -29,6 +29,9 @@
             <th>#i18n{identitystore.manage_attributekeys.columnCertifiable}</th>
             <th>#i18n{identitystore.manage_attributekeys.columnMandatoryForCreation}</th>
             <th>#i18n{identitystore.manage_attributekeys.columnCommonSearchKey}</th>
+            <th>#i18n{identitystore.manage_attributekeys.columnCreationDate}</th>
+            <th>#i18n{identitystore.manage_attributekeys.columnLastUpdateDate}</th>
+            <th>#i18n{identitystore.manage_attributekeys.columnAuthorName}</th>
             <th>#i18n{portal.util.labelActions}</th>
         </tr>
         <@tableHeadBodySeparator />
@@ -80,17 +83,26 @@
             <td>
                 ${attributekey.commonSearchKeyName!''}
             </td>
-        <td>
-            <a href="jsp/admin/plugins/identitystore/ManageAttributeKeys.jsp?view=modifyAttributeKey&id=${attributekey.id}"
-               class="btn btn-primary" title="#i18n{portal.util.labelModify}">
-                <i class="fa fa-edit"></i>
-            </a>
+            <td>
+                ${attributekey.creationDate!''}
+            </td>
+            <td>
+                ${attributekey.lastUpdateDate!''}
+            </td>
+            <td>
+                ${attributekey.authorName!''}
+            </td>
+            <td>
+                <a href="jsp/admin/plugins/identitystore/ManageAttributeKeys.jsp?view=modifyAttributeKey&id=${attributekey.id}"
+                   class="btn btn-primary" title="#i18n{portal.util.labelModify}">
+                    <i class="fa fa-edit"></i>
+                </a>
 
-            <a href="jsp/admin/plugins/identitystore/ManageAttributeKeys.jsp?action=confirmRemoveAttributeKey&id=${attributekey.id}"
-               class="btn btn-danger" title="#i18n{portal.util.labelDelete}" >
-                <i class="fa fa-trash"></i>
-            </a>
-        </td>
+                <a href="jsp/admin/plugins/identitystore/ManageAttributeKeys.jsp?action=confirmRemoveAttributeKey&id=${attributekey.id}"
+                   class="btn btn-danger" title="#i18n{portal.util.labelDelete}" >
+                    <i class="fa fa-trash"></i>
+                </a>
+            </td>
         </tr>
         </#list>
     </@table>

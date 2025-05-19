@@ -48,16 +48,16 @@ public final class ClientApplicationDAO implements IClientApplicationDAO
 {
     // Constants
     private static final String SQL_QUERY_NEW_PK = "SELECT max( id_client_app ) FROM identitystore_client_application";
-    private static final String SQL_QUERY_SELECT = "SELECT id_client_app, name, client_code, application_code  FROM identitystore_client_application WHERE id_client_app = ?";
-    private static final String SQL_QUERY_SELECT_BY_CODE = "SELECT id_client_app, name, client_code, application_code FROM identitystore_client_application WHERE client_code = ?";
+    private static final String SQL_QUERY_SELECT = "SELECT id_client_app, name, client_code, application_code, creation_date, last_update_date, author_name  FROM identitystore_client_application WHERE id_client_app = ?";
+    private static final String SQL_QUERY_SELECT_BY_CODE = "SELECT id_client_app, name, client_code, application_code, creation_date, last_update_date, author_name FROM identitystore_client_application WHERE client_code = ?";
     private static final String SQL_QUERY_SELECT_BY_APP_CODE = "SELECT id_client_app, name, client_code, application_code FROM identitystore_client_application WHERE application_code = ?";
     private static final String SQL_QUERY_INSERT = "INSERT INTO identitystore_client_application ( id_client_app, name, client_code, application_code, creation_date, last_update_date, author_name) VALUES ( ?, ?, ?, ?, ?, ?, ? ) ";
     private static final String SQL_QUERY_DELETE = "DELETE FROM identitystore_client_application WHERE id_client_app = ? ";
     private static final String SQL_QUERY_UPDATE = "UPDATE identitystore_client_application SET id_client_app = ?, name = ?, client_code = ?, application_code = ?, last_update_date = ?, author_name = ? WHERE id_client_app = ?";
-    private static final String SQL_QUERY_SELECTALL = "SELECT id_client_app, name, client_code, application_code FROM identitystore_client_application";
+    private static final String SQL_QUERY_SELECTALL = "SELECT id_client_app, name, client_code, application_code, creation_date, last_update_date, author_name FROM identitystore_client_application";
     private static final String SQL_QUERY_SELECTALL_ID = "SELECT id_client_app FROM identitystore_client_application";
     private static final String SQL_QUERY_SELECTALL_APP_CERTIFIER = "SELECT ica.id_client_app, ica.name, ica.client_code, ica.application_code FROM identitystore_client_application ica JOIN identitystore_client_application_certifiers icac ON ica.id_client_app=icac.id_client_app WHERE icac.certifier_code = ? ORDER BY ica.id_client_app";
-    private static final String SQL_QUERY_SELECT_BY_CONTRACT_ID = "SELECT a.id_client_app, a.name, a.client_code, a.application_code FROM identitystore_client_application a JOIN identitystore_service_contract b ON a.id_client_app = b.id_client_app WHERE b.id_service_contract = ?";
+    private static final String SQL_QUERY_SELECT_BY_CONTRACT_ID = "SELECT a.id_client_app, a.name, a.client_code, a.application_code, a.creation_date, a.last_update_date, a.author_name FROM identitystore_client_application a JOIN identitystore_service_contract b ON a.id_client_app = b.id_client_app WHERE b.id_service_contract = ?";
 
     /**
      * Generates a new primary key
@@ -125,7 +125,10 @@ public final class ClientApplicationDAO implements IClientApplicationDAO
                 clientApplication.setId( daoUtil.getInt( nIndex++ ) );
                 clientApplication.setName( daoUtil.getString( nIndex++ ) );
                 clientApplication.setClientCode( daoUtil.getString( nIndex++ ) );
-                clientApplication.setApplicationCode( daoUtil.getString( nIndex ) );
+                clientApplication.setApplicationCode( daoUtil.getString( nIndex++ ) );
+                clientApplication.setCreationDate( daoUtil.getDate( nIndex++ ) );
+                clientApplication.setLastUpdateDate( daoUtil.getDate( nIndex++ ) );
+                clientApplication.setAuthorName( daoUtil.getString( nIndex ) );
 
             }
 
@@ -155,7 +158,10 @@ public final class ClientApplicationDAO implements IClientApplicationDAO
                 clientApplication.setId( daoUtil.getInt( nIndex++ ) );
                 clientApplication.setName( daoUtil.getString( nIndex++ ) );
                 clientApplication.setClientCode( daoUtil.getString( nIndex++ ) );
-                clientApplication.setApplicationCode( daoUtil.getString( nIndex ) );
+                clientApplication.setApplicationCode( daoUtil.getString( nIndex++ ) );
+                clientApplication.setCreationDate( daoUtil.getDate( nIndex++ ) );
+                clientApplication.setLastUpdateDate( daoUtil.getDate( nIndex++ ) );
+                clientApplication.setAuthorName( daoUtil.getString( nIndex ) );
 
             }
 
@@ -218,7 +224,10 @@ public final class ClientApplicationDAO implements IClientApplicationDAO
                 clientApplication.setId( daoUtil.getInt( nIndex++ ) );
                 clientApplication.setName( daoUtil.getString( nIndex++ ) );
                 clientApplication.setClientCode( daoUtil.getString( nIndex++ ) );
-                clientApplication.setApplicationCode( daoUtil.getString( nIndex ) );
+                clientApplication.setApplicationCode( daoUtil.getString( nIndex++ ) );
+                clientApplication.setCreationDate( daoUtil.getDate( nIndex++ ) );
+                clientApplication.setLastUpdateDate( daoUtil.getDate( nIndex++ ) );
+                clientApplication.setAuthorName( daoUtil.getString( nIndex ) );
 
                 clientApplicationList.add( clientApplication );
             }
@@ -291,7 +300,10 @@ public final class ClientApplicationDAO implements IClientApplicationDAO
                 clientApplication.setId( daoUtil.getInt( nIndex++ ) );
                 clientApplication.setName( daoUtil.getString( nIndex++ ) );
                 clientApplication.setClientCode( daoUtil.getString( nIndex++ ) );
-                clientApplication.setApplicationCode( daoUtil.getString( nIndex ) );
+                clientApplication.setApplicationCode( daoUtil.getString( nIndex++ ) );
+                clientApplication.setCreationDate( daoUtil.getDate( nIndex++ ) );
+                clientApplication.setLastUpdateDate( daoUtil.getDate( nIndex++ ) );
+                clientApplication.setAuthorName( daoUtil.getString( nIndex ) );
 
             }
 

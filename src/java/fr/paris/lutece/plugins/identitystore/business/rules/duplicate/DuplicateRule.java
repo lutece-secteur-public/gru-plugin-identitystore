@@ -39,6 +39,7 @@ import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreExceptio
 import fr.paris.lutece.portal.service.i18n.I18nService;
 
 import java.io.Serializable;
+import java.sql.Date;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
@@ -104,6 +105,10 @@ public class DuplicateRule implements Serializable
     private boolean _bDaemon;
     private Timestamp _dateDaemonLastExecDate;
     private int _nDetectionLimit = -1;
+    @JsonIgnore
+    private Date creationDate;
+    @JsonIgnore
+    private Date lastUpdateDate;
     @JsonIgnore
     private String _strAuthorName;
 
@@ -283,5 +288,21 @@ public class DuplicateRule implements Serializable
     public void setAuthorName(String _strAuthorName)
     {
         this._strAuthorName = _strAuthorName;
+    }
+
+    public Date getLastUpdateDate() {
+        return lastUpdateDate;
+    }
+
+    public void setLastUpdateDate(Date lastUpdateDate) {
+        this.lastUpdateDate = lastUpdateDate;
+    }
+
+    public Date getCreationDate() {
+        return creationDate;
+    }
+
+    public void setCreationDate(Date creationDate) {
+        this.creationDate = creationDate;
     }
 }

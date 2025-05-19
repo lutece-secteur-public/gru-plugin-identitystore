@@ -38,6 +38,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.Size;
 import java.io.Serializable;
+import java.sql.Date;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -71,6 +72,10 @@ public class AttributeKey implements Serializable
     private String _strValidationErrorMessageKey;
     private List<AttributeValue> _listAttributeValues = new ArrayList<>( );
 
+    @JsonIgnore
+    private Date creationDate;
+    @JsonIgnore
+    private Date lastUpdateDate;
     @JsonIgnore
     private String _strAuthorName;
 
@@ -360,5 +365,21 @@ public class AttributeKey implements Serializable
     public void setAuthorName(String _strAuthorName)
     {
         this._strAuthorName = _strAuthorName;
+    }
+
+    public Date getLastUpdateDate() {
+        return lastUpdateDate;
+    }
+
+    public void setLastUpdateDate(Date lastUpdateDate) {
+        this.lastUpdateDate = lastUpdateDate;
+    }
+
+    public Date getCreationDate() {
+        return creationDate;
+    }
+
+    public void setCreationDate(Date creationDate) {
+        this.creationDate = creationDate;
     }
 }

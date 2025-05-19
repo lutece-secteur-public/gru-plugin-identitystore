@@ -24,12 +24,18 @@
             <th>#i18n{identitystore.manage_clientapplications.columnName}</th>
             <th>#i18n{identitystore.manage_clientapplications.columnClientCode}</th>
             <th>#i18n{identitystore.manage_clientapplications.columnApplicationCode}</th>
+            <th>#i18n{identitystore.manage_clientapplications.columnCreationDate}</th>
+            <th>#i18n{identitystore.manage_clientapplications.columnLastUpdateDate}</th>
+            <th>#i18n{identitystore.manage_clientapplications.columnAuthorName}</th>
             <th>#i18n{portal.util.labelActions}</th>
         </tr>
         <tr class="table-sort-inputs">
             <th><input class="form-control search-field" type="text" value="${client_application_name!''}" name="client_application_name" placeholder="Recherche par #i18n{identitystore.manage_clientapplications.columnName}.."></th>
             <th><input class="form-control search-field" type="text" value="${client_code_search!''}" name="client_code_search" placeholder="Recherche par #i18n{identitystore.manage_clientapplications.columnClientCode}.."></th>
             <th><input class="form-control search-field" type="text" value="${application_code_search!''}" name="application_code_search" placeholder="Recherche par #i18n{identitystore.manage_clientapplications.columnApplicationCode}.."></th>
+            <th></th>
+            <th></th>
+            <th></th>
             <th>
                 <span class="input-group-btn">
                     <button class="btn btn-default" type="submit">
@@ -54,6 +60,15 @@
             </td>
             <td>
                 ${clientapplication.applicationCode!''}
+            </td>
+            <td>
+                ${clientapplication.creationDate!''}
+            </td>
+            <td>
+                ${clientapplication.lastUpdateDate!''}
+            </td>
+            <td>
+                ${clientapplication.authorName!''}
             </td>
         <td>
             <a href="jsp/admin/plugins/identitystore/ManageClientApplications.jsp?view=modifyClientApplication&id=${clientapplication.id}&client_application_name=${client_application_name!''}&client_code_search=${client_code_search!''}&application_code_search=${application_code_search!''}"

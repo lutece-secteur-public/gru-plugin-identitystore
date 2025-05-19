@@ -52,7 +52,7 @@ import java.util.Optional;
 public final class DuplicateRuleDAO implements IDuplicateRuleDAO
 {
     // Constants
-    private static final String SELECT_ATTRIBUTES = "id_rule, name, code, description, nb_filled_attributes, nb_equal_attributes, nb_missing_attributes, priority, active, daemon, daemon_last_exec_date, detection_limit";
+    private static final String SELECT_ATTRIBUTES = "id_rule, name, code, description, nb_filled_attributes, nb_equal_attributes, nb_missing_attributes, priority, active, daemon, daemon_last_exec_date, detection_limit, creation_date, last_update_date, author_name";
     /** Rule */
     private static final String SQL_QUERY_SELECT_RULE = "SELECT " + SELECT_ATTRIBUTES + " FROM identitystore_duplicate_rule WHERE id_rule = ? ";
     private static final String SQL_QUERY_SELECT_RULE_BY_NAME = "SELECT " + SELECT_ATTRIBUTES + " FROM identitystore_duplicate_rule WHERE name = ? ";
@@ -320,6 +320,9 @@ public final class DuplicateRuleDAO implements IDuplicateRuleDAO
         duplicateRule.setDetectionLimit( daoUtil.getInt( ++nIndex ) );
         duplicateRule.getCheckedAttributes( ).addAll( this.getCheckedAttributes( duplicateRule.getId( ), plugin ) );
         duplicateRule.getAttributeTreatments( ).addAll( this.getAttributeTreatments( duplicateRule.getId( ), plugin ) );
+        duplicateRule.setCreationDate( daoUtil.getDate( ++nIndex ) );
+        duplicateRule.setLastUpdateDate( daoUtil.getDate( ++nIndex ) );
+        duplicateRule.setAuthorName( daoUtil.getString( ++nIndex ) );
         return duplicateRule;
     }
 

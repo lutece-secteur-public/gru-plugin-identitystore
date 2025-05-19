@@ -62,6 +62,9 @@
             <th onclick="sortTable(4, 'table-service-contracts')">#i18n{identitystore.manage_servicecontracts.columnMoeResponsibleName}</th>
             <th onclick="sortTable(5, 'table-service-contracts')">#i18n{identitystore.manage_servicecontracts.columnStartingDate}</th>
             <th onclick="sortTable(6, 'table-service-contracts')">#i18n{identitystore.manage_servicecontracts.columnEndingDate}</th>
+            <th onclick="sortTable(7, 'table-service-contracts')">#i18n{identitystore.manage_servicecontracts.columnCreationDate}</th>
+            <th onclick="sortTable(8, 'table-service-contracts')">#i18n{identitystore.manage_servicecontracts.columnLastUpdateDate}</th>
+            <th onclick="sortTable(9, 'table-service-contracts')">#i18n{identitystore.manage_servicecontracts.columnAuthorName}</th>
             <th>#i18n{portal.util.labelActions}</th>
         </tr>
         <#list servicecontract_list as servicecontract >
@@ -90,6 +93,15 @@
             </td>
             <td>
                 ${servicecontract.key.endingDate!''}
+            </td>
+            <td>
+                ${servicecontract.key.creationDate!''}
+            </td>
+            <td>
+                ${servicecontract.key.lastUpdateDate!''}
+            </td>
+            <td>
+                ${servicecontract.key.authorName!''}
             </td>
             <td>
                 <@aButton href='jsp/admin/plugins/identitystore/ManageServiceContracts.jsp?view=modifyServiceContract&id=${servicecontract.key.id}&active=${active!""}&contract_name=${contract_name!""}&client_code=${client_code!""}&start_date=${start_date!""}&end_date=${end_date!""}' title='#i18n{portal.util.labelModify}' hideTitle=['all'] buttonIcon='pencil' />

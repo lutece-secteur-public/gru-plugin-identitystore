@@ -459,6 +459,9 @@ public class DuplicateRulesJspBean extends ManageIdentitiesJspBean
                 treatmentType = treatmentType.concat(" ").concat(treatment.getType().getLabel()).concat("/");
             }
             csvDuplicateRule.settreatmentType(!treatmentType.isEmpty() ? treatmentType.substring( 0, treatmentType.length( ) - 1 ) : treatmentType );
+            csvDuplicateRule.setCreationDate( duplicateRule.getCreationDate( ) );
+            csvDuplicateRule.setLastUpdatedDate( duplicateRule.getLastUpdateDate( ) );
+            csvDuplicateRule.setAuthorName( duplicateRule.getAuthorName( ) );
 
             csvDuplicateRules.add( csvDuplicateRule );
         }

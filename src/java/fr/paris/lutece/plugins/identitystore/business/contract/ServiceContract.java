@@ -113,6 +113,10 @@ public class ServiceContract implements Serializable
     private List<AttributeRequirement> _listAttributeRequirements = new ArrayList<>( );
 
     @JsonIgnore
+    private Date creationDate;
+    @JsonIgnore
+    private Date lastUpdateDate;
+    @JsonIgnore
     private String _strAuthorName;
 
     public boolean isActive( )
@@ -501,4 +505,21 @@ public class ServiceContract implements Serializable
     {
         this._strAuthorName = _strAuthorName;
     }
+
+    public Date getLastUpdateDate() {
+        return lastUpdateDate;
+    }
+
+    public void setLastUpdateDate(Date lastUpdateDate) {
+        this.lastUpdateDate = lastUpdateDate;
+    }
+
+    public Date getCreationDate() {
+        return creationDate;
+    }
+
+    public void setCreationDate(Date creationDate) {
+        this.creationDate = creationDate;
+    }
+
 }

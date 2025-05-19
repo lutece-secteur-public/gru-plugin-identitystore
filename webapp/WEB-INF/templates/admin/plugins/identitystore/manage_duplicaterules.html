@@ -22,6 +22,9 @@
             <th>#i18n{identitystore.manage_duplicaterules.columnDetectionLimit}</th>
             <th>#i18n{identitystore.manage_duplicaterules.columnActive}</th>
             <th>#i18n{identitystore.manage_duplicaterules.columnDaemon}</th>
+            <th>#i18n{identitystore.manage_duplicaterules.columnCreationDate}</th>
+            <th>#i18n{identitystore.manage_duplicaterules.columnLastUpdateDate}</th>
+            <th>#i18n{identitystore.manage_duplicaterules.columnAuthorName}</th>
             <th>#i18n{portal.util.labelActions}</th>
         </tr>
         <@tableHeadBodySeparator />
@@ -59,6 +62,15 @@
                 <#else>
                     <i class="ti ti-x"></i>
                 </#if>
+            </td>
+            <td>
+                ${duplicaterule.creationDate!''}
+            </td>
+            <td>
+                ${duplicaterule.lastUpdateDate!''}
+            </td>
+            <td>
+                ${duplicaterule.authorName!''}
             </td>
         	<td>
 				<@aButton href='jsp/admin/plugins/identitystore/ManageDuplicateRules.jsp?view=modifyDuplicateRule&id=${duplicaterule.id}' title='#i18n{portal.util.labelModify}' hideTitle=['all'] buttonIcon='pencil' />

@@ -39,6 +39,7 @@ import fr.paris.lutece.plugins.identitystore.business.contract.ServiceContract;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.Size;
 import java.io.Serializable;
+import java.sql.Date;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -65,6 +66,10 @@ public class ClientApplication implements Serializable
 
     private List<ServiceContract> serviceContracts = new ArrayList<>( );
 
+    @JsonIgnore
+    private Date creationDate;
+    @JsonIgnore
+    private Date lastUpdateDate;
     @JsonIgnore
     private String _strAuthorName;
 
@@ -159,4 +164,21 @@ public class ClientApplication implements Serializable
     {
         this._strAuthorName = _strAuthorName;
     }
+
+    public Date getLastUpdateDate() {
+        return lastUpdateDate;
+    }
+
+    public void setLastUpdateDate(Date lastUpdateDate) {
+        this.lastUpdateDate = lastUpdateDate;
+    }
+
+    public Date getCreationDate() {
+        return creationDate;
+    }
+
+    public void setCreationDate(Date creationDate) {
+        this.creationDate = creationDate;
+    }
+
 }
