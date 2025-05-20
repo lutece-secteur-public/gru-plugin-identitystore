@@ -1,6 +1,2 @@
-/nb-configuration.xml
-/target/
-.idea/
-*.iml
-.sdkmanrc
-/target_test-classes/
+.factorypath
+target_test-classes
