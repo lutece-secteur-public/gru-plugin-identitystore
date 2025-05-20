@@ -28,14 +28,14 @@ CREATE TABLE identitystore_identity
     id_identity        int AUTO_INCREMENT,
     connection_id      varchar(100) NULL UNIQUE,
     customer_id        varchar(50)  NOT NULL UNIQUE,
-    date_create        timestamp(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    date_create        timestamp(3) DEFAULT CURRENT_TIMESTAMP NOT NULL ,
     last_update_date   timestamp(3) DEFAULT CURRENT_TIMESTAMP,
     is_deleted         smallint     default 0,
     date_delete        timestamp(3) NULL,
     is_merged          smallint     default 0,
     date_merge         timestamp(3) NULL,
     id_master_identity int          NULL,
-    is_mon_paris_active smallint NOT NULL DEFAULT 0,
+    is_mon_paris_active smallint DEFAULT 0 NOT NULL ,
     expiration_date timestamp(3) NOT NULL,
     PRIMARY KEY (id_identity)
 );
@@ -52,18 +52,21 @@ CREATE INDEX identitystore_identity_expiration_date ON identitystore_identity (e
 CREATE TABLE identitystore_ref_attribute
 (
     id_attribute int AUTO_INCREMENT,
-    name         varchar(100) NOT NULL default '' UNIQUE,
-    key_name     varchar(100) NOT NULL default '' UNIQUE,
+    name         varchar(100) default '' UNIQUE NOT NULL ,
+    key_name     varchar(100) default '' UNIQUE NOT NULL ,
     description  varchar(255) NULL,
-    key_type     int          NOT NULL default '0',
-    key_weight   int          NOT NULL default '0',
+    key_type     int          default '0' NOT NULL ,
+    key_weight   int          default '0' NOT NULL ,
     certifiable  smallint              default 0,
     pivot        smallint              default 0,
-    mandatory_for_creation smallint NOT NULL DEFAULT 0,
+    mandatory_for_creation smallint DEFAULT 0 NOT NULL ,
     common_search_key VARCHAR(100) NULL, 
     validation_regex varchar(510) DEFAULT '^[A-Za-zÀ-Üà-ü\d\s''-]+$',
     validation_error_message varchar(255) DEFAULT 'uniquement caractères alphanumériques, apostrophe, espace et tirets.',
-    validation_error_message_key varchar(128) NOT NULL DEFAULT 'identitystore.attribute.status.validation.error.only.alphanum.apostrophe.space.dash',
+    validation_error_message_key varchar(128) DEFAULT 'identitystore.attribute.status.validation.error.only.alphanum.apostrophe.space.dash' NOT NULL ,
+    creation_date  TIMESTAMP(3)  DEFAULT CURRENT_TIMESTAMP NOT NULL, 
+    last_update_date TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP NOT NULL, 
+    author_name VARCHAR(255),
     PRIMARY KEY (id_attribute)
 );
 
@@ -106,12 +109,12 @@ ALTER TABLE identitystore_ref_certification_attribute_level
 
 CREATE TABLE identitystore_identity_attribute
 (
-    id_identity            int          NOT NULL default '0',
-    id_attribute           int          NOT NULL default '0',
+    id_identity            int          default '0' NOT NULL ,
+    id_attribute           int          default '0' NOT NULL ,
     attribute_value        LONG VARCHAR NULL,
-    id_certification       int          NOT NULL default '0',
+    id_certification       int          default '0' NOT NULL ,
     id_file                int                   default '0',
-    lastupdate_date        timestamp(3)    NOT NULL default CURRENT_TIMESTAMP,
+    lastupdate_date        timestamp(3)    default CURRENT_TIMESTAMP NOT NULL ,
     lastupdate_application VARCHAR(100) NULL,
     PRIMARY KEY (id_identity, id_attribute)
 );
@@ -128,10 +131,10 @@ CREATE INDEX ix_attribute_value ON identitystore_identity_attribute (attribute_v
 CREATE TABLE identitystore_identity_attribute_certificate
 (
     id_attribute_certificate int AUTO_INCREMENT,
-    certifier_code           varchar(255) NOT NULL default '',
+    certifier_code           varchar(255) default '' NOT NULL ,
     certificate_date         timestamp(3)    NOT NULL,
-    certificate_level        int          NOT NULL default '0',
-    expiration_date          timestamp(3)    NULL     default NULL,
+    certificate_level        int           default '0' NOT NULL,
+    expiration_date          timestamp(3)     default NULL,
     PRIMARY KEY (id_attribute_certificate)
 );
 
@@ -142,7 +145,7 @@ CREATE TABLE identitystore_identity_attribute_certificate
 CREATE TABLE identitystore_client_application_certifiers
 (
     id_client_app  int          NOT NULL,
-    certifier_code varchar(255) NOT NULL default '',
+    certifier_code varchar(255)  default '' NOT NULL,
     PRIMARY KEY (id_client_app, certifier_code)
 );
 CREATE INDEX identitystore_client_application_certifiers_id_client_app ON identitystore_client_application_certifiers (id_client_app);
@@ -155,9 +158,12 @@ CREATE INDEX identitystore_client_application_certifiers_id_client_app ON identi
 CREATE TABLE identitystore_client_application
 (
     id_client_app int AUTO_INCREMENT,
-    name                 varchar(255) NOT NULL UNIQUE,
+    name                 varchar(255)  UNIQUE NOT NULL,
     client_code          varchar(255) NOT NULL ,
     application_code     varchar(255) NOT NULL ,
+	creation_date  TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP NOT NULL ,
+	last_update_date TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP NOT NULL ,
+	author_name VARCHAR(255),
     PRIMARY KEY (id_client_app)
 );
 
@@ -179,7 +185,7 @@ CREATE TABLE identitystore_identity_attribute_history
     attribute_value       varchar(255)          default null,
     certification_process varchar(255)          default null,
     certification_date    timestamp(3)             default null,
-    modification_date     timestamp(3)    NOT NULL default CURRENT_TIMESTAMP,
+    modification_date     timestamp(3)   default CURRENT_TIMESTAMP  NOT NULL ,
     metadata              json         DEFAULT NULL,
     PRIMARY KEY (id_history)
 );
@@ -215,6 +221,9 @@ CREATE TABLE identitystore_service_contract (
     authorized_decertification smallint DEFAULT 0 NOT NULL,
     authorized_agent_history_read smallint DEFAULT 0 NOT NULL,
     authorized_attachment_certification SMALLINT DEFAULT 0 NOT NULL,
+    creation_date  TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    last_update_date TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    author_name VARCHAR(255),
     PRIMARY KEY (id_service_contract)
 );
 
@@ -229,10 +238,10 @@ CREATE TABLE identitystore_service_contract_attribute_right
 (
     id_service_contract int      NOT NULL,
     id_attribute        int      NOT NULL,
-    searchable          smallint NOT NULL default 0,
-    readable            smallint NOT NULL default 0,
-    writable            smallint NOT NULL default 0,
-    mandatory           smallint NOT NULL default 0,
+    searchable          smallint  default 0 NOT NULL,
+    readable            smallint  default 0 NOT NULL,
+    writable            smallint  default 0 NOT NULL,
+    mandatory           smallint  default 0 NOT NULL,
     PRIMARY KEY (id_service_contract, id_attribute)
 );
 ALTER TABLE identitystore_service_contract_attribute_right
@@ -308,14 +317,6 @@ ALTER TABLE identitystore_identity_search_rule_attribute
 ALTER TABLE identitystore_identity_search_rule_attribute
     ADD CONSTRAINT fk_identity_search_rule_attribute_id_attribute FOREIGN KEY (id_attribute) REFERENCES identitystore_ref_attribute (id_attribute);
 
-INSERT INTO identitystore_identity_search_rule (type) VALUES ('OR');
-INSERT INTO identitystore_identity_search_rule_attribute (id_rule, id_attribute) SELECT MAX(r.id_rule), a.id_attribute FROM identitystore_identity_search_rule r, identitystore_ref_attribute a WHERE a.key_name = 'login' GROUP BY a.id_attribute;
-INSERT INTO identitystore_identity_search_rule_attribute (id_rule, id_attribute) SELECT MAX(r.id_rule), a.id_attribute FROM identitystore_identity_search_rule r, identitystore_ref_attribute a WHERE a.key_name = 'email' GROUP BY a.id_attribute;
-
-INSERT INTO identitystore_identity_search_rule (type) VALUES ('AND');
-INSERT INTO identitystore_identity_search_rule_attribute (id_rule, id_attribute) SELECT MAX(r.id_rule), a.id_attribute FROM identitystore_identity_search_rule r, identitystore_ref_attribute a WHERE a.key_name = 'family_name' GROUP BY a.id_attribute;
-INSERT INTO identitystore_identity_search_rule_attribute (id_rule, id_attribute) SELECT MAX(r.id_rule), a.id_attribute FROM identitystore_identity_search_rule r, identitystore_ref_attribute a WHERE a.key_name = 'first_name' GROUP BY a.id_attribute;
-INSERT INTO identitystore_identity_search_rule_attribute (id_rule, id_attribute) SELECT MAX(r.id_rule), a.id_attribute FROM identitystore_identity_search_rule r, identitystore_ref_attribute a WHERE a.key_name = 'birthdate' GROUP BY a.id_attribute;
 
 
 --
@@ -344,17 +345,20 @@ CREATE INDEX identitystore_identity_history_cuid ON identitystore_identity_histo
 --
 CREATE TABLE identitystore_duplicate_rule (
     id_rule                 int AUTO_INCREMENT,
-    code                    varchar(100) NOT NULL UNIQUE,
+    code                    varchar(100)  UNIQUE NOT NULL,
     name                    varchar(100) NOT NULL,
     description             varchar(255),
     nb_filled_attributes    int,
     nb_equal_attributes     int,
     nb_missing_attributes   int,
-    priority INT NOT NULL DEFAULT 100,
-    active smallint NOT NULL DEFAULT 0,
-    daemon smallint NOT NULL DEFAULT 0,
+    priority INT  DEFAULT 100 NOT NULL,
+    active smallint  DEFAULT 0 NOT NULL,
+    daemon smallint  DEFAULT 0 NOT NULL,
     daemon_last_exec_date TIMESTAMP(3) DEFAULT NULL,
     detection_limit         int default -1,
+    creation_date  TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP NOT NULL ,
+	last_update_date TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP NOT NULL ,
+	author_name VARCHAR(255),
     PRIMARY KEY (id_rule)
 );
 
@@ -367,8 +371,8 @@ DROP TABLE IF EXISTS identitystore_quality_suspicious_identity;
 CREATE TABLE identitystore_quality_suspicious_identity (
     id_suspicious_identity int AUTO_INCREMENT,
     customer_id varchar(50) default '' NOT NULL,
-    id_duplicate_rule INT NOT NULL DEFAULT 0,
-    date_create timestamp(3) default CURRENT_TIMESTAMP not null,
+    id_duplicate_rule INT DEFAULT 0 NOT NULL ,
+    date_create timestamp(3) default CURRENT_TIMESTAMP NOT NULL ,
     last_update_date timestamp(3),
     date_delete timestamp(3),
     is_deleted smallint default 0,
