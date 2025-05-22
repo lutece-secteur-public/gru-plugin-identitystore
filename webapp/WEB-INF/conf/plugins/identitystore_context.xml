@@ -62,13 +62,18 @@
         <constructor-arg name="_searchIdentityService" ref="identitystore.searchIdentityService.elasticsearch"/>
     </bean>
 
-	<!-- Notification Store impl  -->
-	<bean id="notificationStore.impl" class="fr.paris.lutece.plugins.notificationstore.v1.web.rs.service.NotificationStoreTransportRest">
-	</bean>	
-	<!-- Notification Store Service  -->
-	<bean id="notificationStore.notificationStoreService" class="fr.paris.lutece.plugins.notificationstore.v1.web.service.NotificationStoreService">
-	    <constructor-arg ref="notificationStore.impl"/>
-	</bean>
+    <!-- Notification Store config  -->
+    <bean id="identitystore.httpAccessTransport.notification" class="fr.paris.lutece.plugins.notificationstore.v1.web.rs.service.HttpAccessTransport" >
+        <property name="apiEndPointUrl">
+            <value>${identitystore.notification.endpoint}</value>
+        </property>
+    </bean>
+    <bean id="notificationStore.transport" class="fr.paris.lutece.plugins.notificationstore.v1.web.rs.service.NotificationStoreTransportRest">
+    	<constructor-arg ref="identitystore.httpAccessTransport.notification"/>
+    </bean>	
+    <bean id="notificationStore.notificationStoreService" class="fr.paris.lutece.plugins.notificationstore.v1.web.service.NotificationStoreService">
+	    <constructor-arg ref="notificationStore.transport"/>
+    </bean>
 	
     <!-- Listeners -->
     <bean id="identitystore.listener.logging" class="fr.paris.lutece.plugins.identitystore.service.listeners.LoggingListener" />
@@ -106,10 +111,5 @@
     <bean id="identitystore.indicatorsRest" class="fr.paris.lutece.plugins.identitystore.v3.web.rs.IndicatorsRestService" />
     <bean id="identitystore.indexingRest" class="fr.paris.lutece.plugins.identitystore.v3.web.rs.IndexingRestService"/>
 
-    <bean id="identitystore.httpAccessTransport.notification" class="fr.paris.lutece.plugins.notificationstore.v1.web.rs.service.HttpAccessTransport" >
-        <property name="apiEndPointUrl">
-            <value>${identitystore.notification.endpoint}</value>
-        </property>
-    </bean>
 
 </beans>

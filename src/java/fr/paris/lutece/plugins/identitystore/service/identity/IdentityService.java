@@ -129,7 +129,7 @@ public class IdentityService
         if ( _instance == null )
         {
             _instance = new IdentityService( );
-        }
+        } 
         return _instance;
     }
 
@@ -252,7 +252,7 @@ public class IdentityService
             }
 
             // => process update :
-            final List<AttributeStatus> attrStatusList = this.updateIdentity( identity, request.getIdentity( ), clientCode, metadata );
+            final List<AttributeStatus> attrStatusList = this.updateIdentity( identity, request.getIdentity( ), clientCode, metadata, false);
 
             TransactionManager.commitTransaction( null );
 
@@ -312,7 +312,6 @@ public class IdentityService
      * @throws IdentityStoreException
      *             in case of error
      */
-    // TODO: récupérer la plus haute date d'expiration des deux identités
     public Pair<Identity, List<AttributeStatus>> merge( final Identity primaryIdentity, final Identity secondaryIdentity, final IdentityDto identityForConsolidate, final String duplicateRuleCode, final RequestAuthor author, final String clientCode,
             final List<AttributeStatus> formatStatuses ) throws IdentityStoreException
     {
@@ -321,27 +320,37 @@ public class IdentityService
         {
             final List<AttributeStatus> attrStatusList = new ArrayList<>( );
             final Map<String, String> primaryMetadata = new HashMap<>( );
+            
+            Identity consolidatedIdentity = IdentityHome.findByCustomerId( primaryIdentity.getCustomerId( ) );
+            primaryIdentity.setId( consolidatedIdentity.getId() );
+
+            Identity mergedIdentity = IdentityHome.findByCustomerId( secondaryIdentity.getCustomerId( ) );
+            secondaryIdentity.setId( mergedIdentity.getId() );
+            
+            boolean identityUpdateRequested = false;
+            
+            // update expiration date if necessary
+            if ( consolidatedIdentity.getExpirationDate( ).before( mergedIdentity.getExpirationDate( ) ) )
+            {
+            	primaryIdentity.setExpirationDate( mergedIdentity.getExpirationDate( ) );
+            	identityUpdateRequested = true;
+            }
+            
             if ( identityForConsolidate != null && CollectionUtils.isNotEmpty( identityForConsolidate.getAttributes( ) ) )
             {
-                attrStatusList.addAll( this.updateIdentity( primaryIdentity, identityForConsolidate, clientCode, primaryMetadata ) );
+                attrStatusList.addAll( this.updateIdentity( primaryIdentity, identityForConsolidate, clientCode, primaryMetadata, identityUpdateRequested ) );
             }
-            primaryIdentity.setId( IdentityHome.findIdByCustomerId( primaryIdentity.getCustomerId( ) ) );
-
-            secondaryIdentity.setId( IdentityHome.findIdByCustomerId( secondaryIdentity.getCustomerId( ) ) );
+            
+            // Mise à jour du lien entre les identités
             secondaryIdentity.setMasterIdentityId( primaryIdentity.getId( ) );
-
-            /* Tag de l'identité secondaire */
             IdentityHome.merge( secondaryIdentity );
-            try
-            {
-                _notificationStoreService.createLink( secondaryIdentity.getCustomerId(), primaryIdentity.getCustomerId() );
-            } catch (NotificationException e)
-            {
-                throw new IdentityStoreException( e.getMessage( ), e, Constants.PROPERTY_REST_ERROR_DURING_TREATMENT );
-            }
-
+            
+            // ré-affecter les notifications sur l'identité consolidée
+            _notificationStoreService.reassignNotifications( secondaryIdentity.getCustomerId(), primaryIdentity.getCustomerId() );
+            
+            // commit
             TransactionManager.commitTransaction( null );
-
+            
             /* Historique des modifications */
             for ( AttributeStatus attributeStatus : attrStatusList )
             {
@@ -376,13 +385,14 @@ public class IdentityService
 
             return Pair.of( primaryIdentity, attrStatusList );
         }
-        catch( final Exception e )
+        catch( IdentityStoreException e )
         {
             TransactionManager.rollBack( null );
-            if ( e instanceof IdentityStoreException )
-            {
-                throw e;
-            }
+            throw e;
+        }
+        catch( Exception e )
+        { 
+            TransactionManager.rollBack( null );
             throw new IdentityStoreException( e.getMessage( ), e, Constants.PROPERTY_REST_ERROR_DURING_TREATMENT );
         }
     }
@@ -614,7 +624,18 @@ public class IdentityService
                 .collect( Collectors.toList( ) );
     }
 
-    private List<AttributeStatus> updateIdentity( final Identity identity, final IdentityDto requestIdentity, final String clientCode, final Map<String, String> metadata )
+    /**
+     * Process full identity update with attributes of the requestIdentity
+     * 
+     * @param identity
+     * @param requestIdentity
+     * @param clientCode
+     * @param metadata
+     * @param identityUpdateRequested
+     * @return the list of attribute status
+     * @throws IdentityStoreException
+     */
+    private List<AttributeStatus> updateIdentity( final Identity identity, final IdentityDto requestIdentity, final String clientCode, final Map<String, String> metadata, boolean identityUpdateRequested)
             throws IdentityStoreException
     {
         final List<AttributeStatus> attrStatusList = new ArrayList<>( );
@@ -650,7 +671,7 @@ public class IdentityService
             identity.setMonParisActive( requestIdentity.isMonParisActive( ) );
         }
 
-        if ( monParisUpdated || !Collections.disjoint( AttributeChangeStatus.getSuccessStatuses( ),
+        if ( identityUpdateRequested || monParisUpdated || !Collections.disjoint( AttributeChangeStatus.getSuccessStatuses( ),
                 attrStatusList.stream( ).map( AttributeStatus::getStatus ).collect( Collectors.toList( ) ) ) )
         {
             // If there was an update on the monParis flag or in the attributes, we update the identity
