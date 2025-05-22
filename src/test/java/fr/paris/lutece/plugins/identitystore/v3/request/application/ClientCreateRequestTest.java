@@ -28,10 +28,22 @@ public class ClientCreateRequestTest extends AbstractIdentityStoreRequestTest {
             TimeUnit.SECONDS.sleep(1);
             assertNotNull(strTestCase + " : could not find the new client application in database after creation", ClientApplicationHome.findByPrimaryKey(response.getClientApplication().getId()));
 
-            ClientApplicationHome.remove(DtoConverter.convertDtoToClient(response.getClientApplication()));
+            
         } catch (final IdentityStoreException e) {
             fail(strTestCase + " : FAIL : " + e.getMessage());
         }
+        
+        strTestCase = "2.3. Create client application with existing client code";
+        //clientApplicationDto = getClientApplicationDtoForCreate();
+        clientApplicationDto.setClientCode("ClientCodeMock");
+        try {
+            final ClientCreateRequest request = new ClientCreateRequest(clientApplicationDto, H_CLIENT_CODE, H_APP_CODE, H_AUTHOR_NAME, H_AUTHOR_TYPE);
+            this.executeRequestKO(request, strTestCase, ResourceConsistencyException.class, Constants.PROPERTY_REST_ERROR_CLIENT_ALREADY_EXISTS);
+        } catch (final IdentityStoreException e) {
+            fail(strTestCase + " : FAIL : " + e.getMessage());
+        }
+        
+        ClientApplicationHome.remove(DtoConverter.convertDtoToClient( clientApplicationDto ));
 
     }
 
@@ -56,15 +68,7 @@ public class ClientCreateRequestTest extends AbstractIdentityStoreRequestTest {
             fail(strTestCase + " : FAIL : " + e.getMessage());
         }
 
-        strTestCase = "2.3. Create client application with existing client code";
-        clientApplicationDto = getClientApplicationDtoForCreate();
-        clientApplicationDto.setClientCode(H_CLIENT_CODE);
-        try {
-            final ClientCreateRequest request = new ClientCreateRequest(clientApplicationDto, H_CLIENT_CODE, H_APP_CODE, H_AUTHOR_NAME, H_AUTHOR_TYPE);
-            this.executeRequestKO(request, strTestCase, ResourceConsistencyException.class, Constants.PROPERTY_REST_ERROR_CLIENT_ALREADY_EXISTS);
-        } catch (final IdentityStoreException e) {
-            fail(strTestCase + " : FAIL : " + e.getMessage());
-        }
+
 
     }
 
