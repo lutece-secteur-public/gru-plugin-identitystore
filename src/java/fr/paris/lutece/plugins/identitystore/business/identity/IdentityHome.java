@@ -425,9 +425,9 @@ public final class IdentityHome
      *            the max number of returned identities
      * @return a list of customer IDs
      */
-    public static List<String> findNotMergedNotConnectedWithNonCertifiedAttributeCustomerIds( final String attributeKey, final int limit )
+    public static List<String> findNotMergedNotConnectedWithNonCertifiedAttributeCustomerIds( final String attributeKey, String certProcess, final int limit )
     {
-        return _dao.selectNotMergedNotConnectedWithNonCertifiedAttributeCustomerIds( attributeKey, limit, _plugin );
+        return _dao.selectNotMergedNotConnectedWithNonCertifiedAttributeCustomerIds( attributeKey, certProcess, limit, _plugin );
     }
 
     /**

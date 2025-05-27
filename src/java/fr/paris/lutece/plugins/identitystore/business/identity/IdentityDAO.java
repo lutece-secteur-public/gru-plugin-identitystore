@@ -933,13 +933,13 @@ public final class IdentityDAO implements IIdentityDAO
      * {@inheritDoc}
      */
     @Override
-    public List<String> selectNotMergedNotConnectedWithNonCertifiedAttributeCustomerIds( final String attributeKey, final int limit, final Plugin plugin )
+    public List<String> selectNotMergedNotConnectedWithNonCertifiedAttributeCustomerIds( final String attributeKey, String certProcess, final int limit, final Plugin plugin )
     {
         final List<String> listCuids = new ArrayList<>( );
         try ( final DAOUtil daoUtil = new DAOUtil( SQL_QUERY_SELECT_NOT_MERGED_NOT_CONNECTED_WITH_UNCERTIFIED_ATTRIBUTE, plugin ) )
         {
             daoUtil.setString( 1, attributeKey );
-            daoUtil.setString( 2, AppPropertiesService.getProperty("identitystore.identity.uncertify.processus", "DEC") );
+            daoUtil.setString( 2, certProcess );
             daoUtil.setInt( 3, limit );
             daoUtil.executeQuery( );
             while ( daoUtil.next( ) )

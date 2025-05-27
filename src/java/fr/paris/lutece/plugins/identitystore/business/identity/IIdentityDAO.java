@@ -298,7 +298,7 @@ public interface IIdentityDAO
      *            the max number of returned identities
      * @return a list of customer IDs
      */
-    List<String> selectNotMergedNotConnectedWithNonCertifiedAttributeCustomerIds(String attributeKey, int limit, Plugin plugin);
+    List<String> selectNotMergedNotConnectedWithNonCertifiedAttributeCustomerIds(String attributeKey, String certProcess, int limit, Plugin plugin);
 
     /**
      * Search for identities that are merged to the provided identity ID.
