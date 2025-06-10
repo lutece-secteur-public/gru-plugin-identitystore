@@ -33,7 +33,20 @@
  */
 package fr.paris.lutece.plugins.identitystore.service.identity;
 
-import fr.paris.lutece.plugins.grubusiness.service.notification.NotificationException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
+
 import fr.paris.lutece.plugins.identitystore.business.application.ClientApplication;
 import fr.paris.lutece.plugins.identitystore.business.attribute.AttributeKey;
 import fr.paris.lutece.plugins.identitystore.business.contract.ServiceContract;
@@ -42,7 +55,6 @@ import fr.paris.lutece.plugins.identitystore.business.duplicates.suspicions.Susp
 import fr.paris.lutece.plugins.identitystore.business.duplicates.suspicions.SuspiciousIdentityHome;
 import fr.paris.lutece.plugins.identitystore.business.identity.Identity;
 import fr.paris.lutece.plugins.identitystore.business.identity.IdentityAttribute;
-import fr.paris.lutece.plugins.identitystore.business.identity.IdentityAttributeHome;
 import fr.paris.lutece.plugins.identitystore.business.identity.IdentityHome;
 import fr.paris.lutece.plugins.identitystore.business.rules.duplicate.DuplicateRule;
 import fr.paris.lutece.plugins.identitystore.cache.IdentityDtoCache;
@@ -83,13 +95,6 @@ import fr.paris.lutece.portal.service.spring.SpringContextService;
 import fr.paris.lutece.portal.service.util.AppPropertiesService;
 import fr.paris.lutece.util.http.SecurityUtil;
 import fr.paris.lutece.util.sql.TransactionManager;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.Pair;
-
-import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class IdentityService
 {
@@ -490,8 +495,9 @@ public class IdentityService
                 return filteredIdentities;
             }
         }
-
-        throw new ResourceNotFoundException( "No identity found", Constants.PROPERTY_REST_ERROR_NO_IDENTITY_FOUND );
+       
+        // return the empty list
+        return result.getQualifiedIdentities( ); 
     }
 
     /**
