@@ -33,13 +33,24 @@
  */
 package fr.paris.lutece.plugins.identitystore.service;
 
+import static fr.paris.lutece.plugins.identitystore.service.identity.IdentityService.UPDATE_IDENTITY_EVENT_CODE;
+
+import java.sql.Timestamp;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+import org.apache.commons.lang3.StringUtils;
+
 import fr.paris.lutece.plugins.grubusiness.business.demand.DemandType;
 import fr.paris.lutece.plugins.grubusiness.business.web.rs.DemandDisplay;
 import fr.paris.lutece.plugins.grubusiness.business.web.rs.DemandResult;
 import fr.paris.lutece.plugins.grubusiness.business.web.rs.EnumGenericStatus;
 import fr.paris.lutece.plugins.identitystore.business.identity.Identity;
 import fr.paris.lutece.plugins.identitystore.business.identity.IdentityHome;
-import fr.paris.lutece.plugins.identitystore.cache.DemandTypeCacheService;
 import fr.paris.lutece.plugins.identitystore.service.contract.ServiceContractService;
 import fr.paris.lutece.plugins.identitystore.service.identity.IdentityService;
 import fr.paris.lutece.plugins.identitystore.service.listeners.IdentityStoreNotifyListenerService;
@@ -50,26 +61,13 @@ import fr.paris.lutece.plugins.notificationstore.v1.web.service.NotificationStor
 import fr.paris.lutece.portal.service.security.AccessLogService;
 import fr.paris.lutece.portal.service.security.AccessLoggerConstants;
 import fr.paris.lutece.portal.service.spring.SpringContextService;
-import fr.paris.lutece.portal.service.util.AppLogService;
-import org.apache.commons.lang3.StringUtils;
-
-import java.sql.Timestamp;
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
-import static fr.paris.lutece.plugins.identitystore.service.identity.IdentityService.UPDATE_IDENTITY_EVENT_CODE;
 
 public final class PurgeIdentityService
 {
     private static PurgeIdentityService _instance;
 
     private final NotificationStoreService _notificationStoreService = SpringContextService.getBean( "notificationStore.notificationStoreService" );
-    private final DemandTypeCacheService _demandTypeCacheService = SpringContextService.getBean( "identitystore.demandTypeCacheService" );
-
+   
     public static PurgeIdentityService getInstance( )
     {
         if ( _instance == null )
@@ -197,51 +195,14 @@ public final class PurgeIdentityService
      */
     private String getAppCodeFromDemandTypeId( final String strTypeId )
     {
-        DemandType demandType = _demandTypeCacheService.getResource( strTypeId );
-        if ( demandType == null )
+        DemandType demandType = _notificationStoreService.getDemandType( strTypeId );
+
+        if ( demandType != null )
         {
-            // refresh cache & search again
-            demandType = reinitDemandTypeCacheAndGetDemandType( strTypeId );
-            if ( demandType == null )
-            {
-                return null;
-            }
+            return demandType.getAppCode( );
         }
-        return demandType.getAppCode( );
+        
+        return null;
     }
 
-    /**
-     * reinit Demand Type cache & search mandatory DemandType
-     *
-     * @param strDemandTypeId
-     * @return the DemandType
-     */
-    private DemandType reinitDemandTypeCacheAndGetDemandType( String strDemandTypeId )
-    {
-        DemandType foundDemandType = null;
-        try
-        {
-            for ( final DemandType demand : _notificationStoreService.getDemandTypes( ) )
-            {
-                if ( _demandTypeCacheService.isCacheEnable( ) )
-                {
-                    // refresh cache
-                    _demandTypeCacheService.putResourceInCache( demand );
-                }
-                if ( strDemandTypeId.equals( String.valueOf( demand.getIdDemandType( ) ) ) )
-                {
-                    foundDemandType = demand;
-                    if ( !_demandTypeCacheService.isCacheEnable( ) )
-                    {
-                        return foundDemandType;
-                    }
-                }
-            }
-        }
-        catch( final Exception e )
-        {
-            AppLogService.debug( "Notification Store Service Error", e );
-        }
-        return foundDemandType;
-    }
 }
