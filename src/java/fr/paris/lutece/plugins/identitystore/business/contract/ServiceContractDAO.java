@@ -57,7 +57,7 @@ public final class ServiceContractDAO implements IServiceContractDAO
     private static final String SQL_QUERY_SELECT_ALL = "SELECT" + JOINED_COLUMNS + JOIN;
     private static final String SQL_QUERY_SELECT_WITH_CLIENT_APP_ID = "SELECT" + JOINED_COLUMNS + JOIN + " WHERE a.id_client_app = ?";
     private static final String SQL_QUERY_SELECT_ACTIVE_WITH_CLIENT_APP_CODE = "SELECT" + JOINED_COLUMNS + JOIN
-            + " WHERE b.client_code = ? AND CASE WHEN a.ending_date IS NULL THEN NOW() >= a.starting_date ELSE NOW() BETWEEN a.starting_date AND a.ending_date END";
+            + " WHERE b.client_code = ? AND CASE WHEN a.ending_date IS NULL THEN CURRENT_DATE >= a.starting_date ELSE CURRENT_DATE BETWEEN a.starting_date AND a.ending_date END";
     private static final String SQL_QUERY_INSERT = "INSERT INTO identitystore_service_contract (id_client_app, " + COLUMNS
             + " ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? ) ";
     private static final String SQL_QUERY_DELETE = "DELETE FROM identitystore_service_contract WHERE id_service_contract = ?";
