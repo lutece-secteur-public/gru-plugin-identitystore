@@ -142,7 +142,7 @@ public final class IdentityDAO implements IIdentityDAO
             + " JOIN identitystore_ref_attribute c ON c.id_attribute = b.id_attribute"
             + " JOIN identitystore_identity_attribute_certificate d ON b.id_certification = d.id_attribute_certificate"
             + " WHERE c.key_name = ? AND a.is_merged = 0 AND a.is_mon_paris_active = 0 AND d.certifier_code = ?"
-            + " LIMIT ?";
+            + " ORDER BY RANDOM( ) LIMIT ?";
 
     private static final String SQL_QUERY_SELECT_MERGED_TO = "SELECT " + COLUMNS
             + " FROM identitystore_identity a WHERE a.is_merged = 1 AND a.id_master_identity = ?";
