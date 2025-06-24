@@ -729,11 +729,10 @@ public class IdentityService
             TransactionManager.commitTransaction(null);
 
             /* Notify listeners for indexation, history, ... */
-            _identityStoreNotifyListenerService.notifyListenersIdentityChange(IdentityChangeType.DELETE, identity, ResponseStatusType.SUCCESS.name(),
+            _identityStoreNotifyListenerService.notifyListenersIdentityChange(IdentityChangeType.DELETE_REQUEST, identity, ResponseStatusType.SUCCESS.name(),
                     ResponseStatusType.SUCCESS.name(), author, clientCode, new HashMap<>());
 
-            AccessLogService.getInstance().info(AccessLoggerConstants.EVENT_TYPE_DELETE, DELETE_IDENTITY_EVENT_CODE,
-                    _internalUserService.getApiUser(author, clientCode), SecurityUtil.logForgingProtect(customerId), SPECIFIC_ORIGIN);
+            
         } catch (final Exception e) {
             TransactionManager.rollBack(null);
             if (e instanceof IdentityStoreException) {
@@ -834,10 +833,10 @@ public class IdentityService
      */
     public void delete( final String customerId )
     {
-        final int identityId = IdentityHome.findIdByCustomerId( customerId );
-        if ( identityId != -1 )
+        Identity identity = IdentityHome.findByCustomerId( customerId );
+        if ( identity != null && identity.getId( ) != -1 )
         {
-            final List<Identity> mergedIdentities = IdentityHome.findMergedIdentities( identityId );
+            final List<Identity> mergedIdentities = IdentityHome.findMergedIdentities( identity.getId( ) );
             TransactionManager.beginTransaction( null );
             try
             {
@@ -852,9 +851,16 @@ public class IdentityService
                 // Delete the actual identity
                 SuspiciousIdentityHome.remove( customerId );
                 SuspiciousIdentityHome.removeExcludedIdentities( customerId );
-                IdentityHome.deleteAttributeHistory( identityId );
-                IdentityHome.hardRemove( identityId );
+                IdentityHome.deleteAttributeHistory( identity.getId( ) );
+                IdentityHome.hardRemove( identity.getId( ) );
 
+                /* Notify listeners for indexation, history, ... */
+                _identityStoreNotifyListenerService.notifyListenersIdentityChange(IdentityChangeType.DELETE_REQUEST, identity, ResponseStatusType.SUCCESS.name(),
+                        ResponseStatusType.SUCCESS.name(), new RequestAuthor ("DAEMON", AuthorType.application.name ( ) ), "DAEMON", new HashMap<>());
+                
+                AccessLogService.getInstance().info(AccessLoggerConstants.EVENT_TYPE_DELETE, DELETE_IDENTITY_EVENT_CODE,
+                        null, SecurityUtil.logForgingProtect(customerId), SPECIFIC_ORIGIN);
+                
                 TransactionManager.commitTransaction( null );
             }
             catch( final Exception e )
