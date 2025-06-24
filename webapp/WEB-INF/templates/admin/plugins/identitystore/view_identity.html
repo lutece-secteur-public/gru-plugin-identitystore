@@ -16,12 +16,7 @@
     <li>Date de création : ${identity.creationDate?string["dd/MM/yyyy HH:mm"]!}</li>
     <li>Date de dernière modification : ${identity.lastUpdateDate?string["dd/MM/yyyy HH:mm"]!}</li>
     <li>Date d'expiration : ${identity.expirationDate?string["dd/MM/yyyy"]!}</li>
-    <#if identity.deleted == true>
-        <li>Supprimé : <i class="fas fa-check" aria-hidden="true"></i></li>
-        <li>Date de suppression : ${identity.deleteDate?string["dd/MM/yyyy HH:mm"]!}</li>
-    <#else>
-        <li>Supprimé : <i class="fas fa-times" aria-hidden="true"></i></li>
-    </#if>
+    <li>Date de demande de suppression : <#if identity.deleteDate?? >${identity.deleteDate?string["dd/MM/yyyy HH:mm"]!}</#if></li>
     <#if identity.merged == true>
         <li>Consolidé : <i class="fas fa-check" aria-hidden="true"></i></li>
     <#else>
