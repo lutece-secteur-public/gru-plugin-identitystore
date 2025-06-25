@@ -381,11 +381,21 @@ public class ServiceContractService
      */
     public void validateGetAuthorization( final ServiceContract serviceContract ) throws ClientAuthorizationException
     {
-        if ( !serviceContract.getAuthorizedSearch( ) )
-        {
-            throw new ClientAuthorizationException( "The service contract of the sent client code doesn't allow searching identities",
+	List<AttributeRight> attrList = serviceContract.getAttributeRights ( );
+	
+	// at least one attribute should be readable
+	for ( AttributeRight right : attrList )
+	{
+	    if ( right.isReadable ( ) )
+	    {
+		return ;
+	    }
+	}
+	
+	// otherwise
+        throw new ClientAuthorizationException( "The service contract of the sent client code doesn't contain any readable attribute.",
                     Constants.PROPERTY_REST_ERROR_CLIENT_AUTHORIZATION_SEARCH );
-        }
+        
     }
 
     /**
