@@ -142,7 +142,12 @@
                 </td>
                 <td>
                     CUID : <strong>${identity.customerId!''}</strong>
-                    <br> GUID : <strong>${identity.connectionId!''}</strong>
+                    <br> GUID : 
+                    <#if identity.monParisActive >
+                       <strong>${identity.connectionId!''}</strong>
+                    <#else>
+                       <i>${identity.connectionId!''}</i> <i  class="fas fa-times" aria-hidden="true"></i>
+                     </#if>
                 </td>
                 <td>
                     <a href="jsp/admin/plugins/identitystore/ManageIdentities.jsp?view=viewIdentity&id=${identity.customerId}"

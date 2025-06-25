@@ -12,7 +12,7 @@
 
 <ul>
     <li>Customer ID : ${identity.customerId!}</li>
-    <li>Connection ID : ${identity.connectionId!}</li>
+    <li><#if !identity.monParisActive ><i></#if>Connection ID : ${identity.connectionId!} <#if !identity.monParisActive></i> <i  class="fas fa-times" aria-hidden="true"></i></#if></li>
     <li>Date de création : ${identity.creationDate?string["dd/MM/yyyy HH:mm"]!}</li>
     <li>Date de dernière modification : ${identity.lastUpdateDate?string["dd/MM/yyyy HH:mm"]!}</li>
     <li>Date d'expiration : ${identity.expirationDate?string["dd/MM/yyyy"]!}</li>

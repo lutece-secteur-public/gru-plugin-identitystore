@@ -46,7 +46,7 @@
                 ${identity.customerId!''}
             </td>
             <td>
-                ${identity.connectionId!''}
+               <#if !identity.monParisActive ><i></#if>${identity.connectionId!''} <#if !identity.monParisActive></i> <i  class="fas fa-times" aria-hidden="true"></i></#if>
             </td>
         <td>
             <a href="jsp/admin/plugins/identitystore/ManageIdentities.jsp?view=viewIdentity&id=${identity.id}"
