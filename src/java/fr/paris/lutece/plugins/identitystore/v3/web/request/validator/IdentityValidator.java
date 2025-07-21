@@ -197,17 +197,19 @@ public class IdentityValidator
     }
 
     /**
-     * #27998 : Dans le cas d'une interrogation sur un CUID/GUID rapproché, ajouter une ligne dans le bloc "Alerte" dans la réponse de l'identité consolidée
-     * @param result
-     * @param cuid
-     * @param guid
-     * @return
+     * When the searched identity was merged, returns an IdentitySearchMessage to indicate that 
+     * the returned Identity is the consolidated identity.
+     * 
+     * @param result the returned identity
+     * @param cuid (requested or null)
+     * @param guid (requested or null)
+     * @return a warning  IdentitySearchMessage
      */
     public IdentitySearchMessage verifyIfConsolidatedIdentitySearchResult(final IdentityDto result, final String cuid, final String guid) {
         if (result != null) {
             if ((cuid != null && !Objects.equals(result.getCustomerId(), cuid)) || (guid != null && !Objects.equals(result.getConnectionId(), guid))) {
                 final IdentitySearchMessage alert = new IdentitySearchMessage();
-                alert.setMessage("Le CUID ou GUID demandé correspond à une identité rapprochée. Cette réponse contient l'identité consilidée.");
+                alert.setMessage("Warning : the requested identity was merged, the returned Identity is the consolidated identity.");
                 return alert;
             }
         }
