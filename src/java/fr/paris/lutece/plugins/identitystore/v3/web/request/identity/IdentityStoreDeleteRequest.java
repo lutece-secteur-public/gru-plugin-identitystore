@@ -34,6 +34,8 @@
 package fr.paris.lutece.plugins.identitystore.v3.web.request.identity;
 
 import fr.paris.lutece.plugins.identitystore.business.contract.ServiceContract;
+import fr.paris.lutece.plugins.identitystore.business.identity.Identity;
+import fr.paris.lutece.plugins.identitystore.business.identity.IdentityHome;
 import fr.paris.lutece.plugins.identitystore.cache.IdentityDtoCache;
 import fr.paris.lutece.plugins.identitystore.service.contract.ServiceContractService;
 import fr.paris.lutece.plugins.identitystore.service.identity.IdentityService;
@@ -135,9 +137,12 @@ public class IdentityStoreDeleteRequest extends AbstractIdentityStoreAppCodeRequ
         IdentityChangeResponse response = new IdentityChangeResponse( );
 
         IdentityService.instance( ).deleteRequest( _strCustomerId, _strClientCode, _author );
+        
+        final Identity identity = IdentityHome.findByCustomerId( _strCustomerId );
 
         response.setStatus( ResponseStatusFactory.success( ).setMessageKey( Constants.PROPERTY_REST_INFO_SUCCESSFUL_OPERATION ) );
         response.setCustomerId( _strCustomerId );
+        response.setLastUpdateDate( identity.getLastUpdateDate ( ) );
 
         return response;
     }
