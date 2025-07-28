@@ -343,7 +343,16 @@ public class IdentityService
             
             if ( identityForConsolidate != null && CollectionUtils.isNotEmpty( identityForConsolidate.getAttributes( ) ) )
             {
-                attrStatusList.addAll( this.updateIdentity( primaryIdentity, identityForConsolidate, clientCode, primaryMetadata, identityUpdateRequested ) );
+        	// search and keep the original certifier client (and certification date) in merge request
+        	identityForConsolidate.getAttributes ( ).stream ( )
+	            .filter( attr -> secondaryIdentity.getAttributes( ).containsKey( attr.getKey( ) ) )
+	            .forEach( attr -> {
+	        	String lastClientCode = secondaryIdentity.getAttributes( ).get( attr.getKey( ) ).getLastUpdateClientCode( );
+	        	attr.setLastUpdateClientCode ( lastClientCode );
+	            });
+        	
+        	// try to update 
+                attrStatusList.addAll( this.updateIdentity( primaryIdentity, identityForConsolidate, clientCode, primaryMetadata, identityUpdateRequested, true ) );
             }
             
             // Mise à jour du lien entre les identités
@@ -644,6 +653,24 @@ public class IdentityService
     private List<AttributeStatus> updateIdentity( final Identity identity, final IdentityDto requestIdentity, final String clientCode, final Map<String, String> metadata, boolean identityUpdateRequested)
             throws IdentityStoreException
     {
+	return updateIdentity( identity, requestIdentity, clientCode, metadata, identityUpdateRequested, false);
+    }
+            
+    /**
+     * Process full identity update with attributes of the requestIdentity
+     * 
+     * @param identity
+     * @param requestIdentity
+     * @param clientCode
+     * @param metadata
+     * @param identityUpdateRequested
+     * @return the list of attribute status
+     * @throws IdentityStoreException
+     */
+    private List<AttributeStatus> updateIdentity( final Identity identity, final IdentityDto requestIdentity, final String clientCode, 
+	    final Map<String, String> metadata, boolean identityUpdateRequested, boolean keepOriginalCertification)
+            throws IdentityStoreException
+    {
         final List<AttributeStatus> attrStatusList = new ArrayList<>( );
 
         /* Récupération des attributs déja existants ou non */
@@ -657,14 +684,16 @@ public class IdentityService
         /* Create new attributes */
         for ( final AttributeDto attributeToWrite : newWritableAttributes )
         {
-            final AttributeStatus attributeStatus = _identityAttributeService.createAttribute( attributeToWrite, identity, clientCode );
+            final AttributeStatus attributeStatus = _identityAttributeService.createAttribute( attributeToWrite, 
+        	    identity, ( keepOriginalCertification?attributeToWrite.getLastUpdateClientCode ( ):clientCode ) );
             attrStatusList.add( attributeStatus );
         }
 
         /* Update existing attributes */
         for ( final AttributeDto attributeToUpdate : existingWritableAttributes )
         {
-            final AttributeStatus attributeStatus = _identityAttributeService.updateAttribute( attributeToUpdate, identity, clientCode );
+            final AttributeStatus attributeStatus = _identityAttributeService.updateAttribute( attributeToUpdate, 
+        	    identity, ( keepOriginalCertification?attributeToUpdate.getLastUpdateClientCode ( ):clientCode ) );
             attrStatusList.add( attributeStatus );
         }
 

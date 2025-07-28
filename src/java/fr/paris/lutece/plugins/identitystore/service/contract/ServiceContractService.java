@@ -560,11 +560,14 @@ public class ServiceContractService
      */
     public void validateMergeAuthorization( final IdentityMergeRequest request, final ServiceContract serviceContract ) throws ClientAuthorizationException
     {
+	// check if service contract is allowed to merge
         if ( !serviceContract.getAuthorizedMerge( ) )
         {
             throw new ClientAuthorizationException( "The client application is not authorized to merge identities",
                     Constants.PROPERTY_REST_ERROR_MERGE_UNAUTHORIZED );
         }
+        
+        // check if service contract is allowed to update identity
         if ( request.getIdentity( ) != null )
         {
             if ( !serviceContract.getAuthorizedUpdate( ) )
@@ -572,7 +575,10 @@ public class ServiceContractService
                 throw new ClientAuthorizationException( "The service contract of the sent client code doesn't allow updating identities",
                         Constants.PROPERTY_REST_ERROR_CLIENT_AUTHORIZATION_UPDATE );
             }
-            this.validateWritableAndCertifiableAttributes( request.getIdentity( ).getAttributes( ), serviceContract );
+            
+            // check if service contract is allowed to update attributes 
+            // (the requested certification process are not mandatory in merge case)
+            this.validateWritableAndCertifiableAttributes( request.getIdentity( ).getAttributes( ), serviceContract, false );
         }
     }
 
@@ -650,12 +656,33 @@ public class ServiceContractService
         }
     }
 
+    /**
+     * Check if the service contracts contains the certifications allowing the attributes update.
+     *  
+     * @param attributes
+     * @param serviceContract
+     * @throws ClientAuthorizationException if the service contract does not allow the update
+     */
     private void validateWritableAndCertifiableAttributes( final List<AttributeDto> attributes, final ServiceContract serviceContract )
+            throws ClientAuthorizationException
+    {
+	validateWritableAndCertifiableAttributes( attributes, serviceContract, true );        
+    }
+    
+    /**
+     * Check if the service contracts contains the certifications allowing the attributes update.
+     *  
+     * @param attributes
+     * @param serviceContract
+     * @throws ClientAuthorizationException if the service contract does not allow the update
+     */
+    private void validateWritableAndCertifiableAttributes( final List<AttributeDto> attributes, final ServiceContract serviceContract, boolean checkCertififiers )
             throws ClientAuthorizationException
     {
         final List<AttributeStatus> attrStatusList = new ArrayList<>( );
         for ( final AttributeDto attributeDto : attributes )
         {
+            // check if attribute is writable
             boolean canWriteAttribute = serviceContract.getAttributeRights( ).stream( )
                     .anyMatch( attributeRight -> StringUtils.equals( attributeRight.getAttributeKey( ).getKeyName( ), attributeDto.getKey( ) )
                             && attributeRight.isWritable( ) );
@@ -665,7 +692,8 @@ public class ServiceContractService
                 continue;
             }
 
-            if ( attributeDto.getCertifier( ) != null )
+            // check if the certification process of the attribute is allowed in the service contract
+            if ( checkCertififiers && attributeDto.getCertifier( ) != null )
             {
                 canWriteAttribute = serviceContract.getAttributeCertifications( ).stream( ).anyMatch(
                         attributeCertification -> StringUtils.equals( attributeCertification.getAttributeKey( ).getKeyName( ), attributeDto.getKey( ) )
