@@ -434,28 +434,29 @@ public class IdentityService
 
             TransactionManager.commitTransaction( null );
 
-            /* Indexation */
-            final Map<String, String> secondaryMetadata = new HashMap<>( );
-            secondaryMetadata.put( Constants.METADATA_UNMERGED_MASTER_CUID, primaryIdentity.getCustomerId( ) );
-            _identityStoreNotifyListenerService.notifyListenersIdentityChange( IdentityChangeType.MERGE_CANCELLED, secondaryIdentity,
-                    ResponseStatusType.SUCCESS.name( ), ResponseStatusType.SUCCESS.name( ), author, clientCode, secondaryMetadata );
-            AccessLogService.getInstance( ).info( AccessLoggerConstants.EVENT_TYPE_MODIFY, CANCEL_MERGE_IDENTITY_EVENT_CODE,
-                    _internalUserService.getApiUser( author, clientCode ), SecurityUtil.logForgingProtect( secondaryIdentity.getCustomerId( ) ),
-                    SPECIFIC_ORIGIN );
-
-            final Map<String, String> primaryMetadata = new HashMap<>( );
-            primaryMetadata.put( Constants.METADATA_UNMERGED_CHILD_CUID, secondaryIdentity.getCustomerId( ) );
-            _identityStoreNotifyListenerService.notifyListenersIdentityChange( IdentityChangeType.CONSOLIDATION_CANCELLED, primaryIdentity,
-                    ResponseStatusType.SUCCESS.name( ), ResponseStatusType.SUCCESS.name( ), author, clientCode, primaryMetadata );
-            AccessLogService.getInstance( ).info( AccessLoggerConstants.EVENT_TYPE_MODIFY, CANCEL_CONSOLIDATE_IDENTITY_EVENT_CODE,
-                    _internalUserService.getApiUser( author, clientCode ), SecurityUtil.logForgingProtect( primaryIdentity.getCustomerId( ) ),
-                    SPECIFIC_ORIGIN );
         }
         catch( final Exception e )
         {
             TransactionManager.rollBack( null );
             throw new IdentityStoreException( e.getMessage( ), e, Constants.PROPERTY_REST_ERROR_DURING_TREATMENT );
         }
+        
+        /* Notification listeners pour indexation/historique */
+        final Map<String, String> secondaryMetadata = new HashMap<>( );
+        secondaryMetadata.put( Constants.METADATA_UNMERGED_MASTER_CUID, primaryIdentity.getCustomerId( ) );
+        _identityStoreNotifyListenerService.notifyListenersIdentityChange( IdentityChangeType.MERGE_CANCELLED, secondaryIdentity,
+                ResponseStatusType.SUCCESS.name( ), ResponseStatusType.SUCCESS.name( ), author, clientCode, secondaryMetadata );
+        AccessLogService.getInstance( ).info( AccessLoggerConstants.EVENT_TYPE_MODIFY, CANCEL_MERGE_IDENTITY_EVENT_CODE,
+                _internalUserService.getApiUser( author, clientCode ), SecurityUtil.logForgingProtect( secondaryIdentity.getCustomerId( ) ),
+                SPECIFIC_ORIGIN );
+
+        final Map<String, String> primaryMetadata = new HashMap<>( );
+        primaryMetadata.put( Constants.METADATA_UNMERGED_CHILD_CUID, secondaryIdentity.getCustomerId( ) );
+        _identityStoreNotifyListenerService.notifyListenersIdentityChange( IdentityChangeType.CONSOLIDATION_CANCELLED, primaryIdentity,
+                ResponseStatusType.SUCCESS.name( ), ResponseStatusType.SUCCESS.name( ), author, clientCode, primaryMetadata );
+        AccessLogService.getInstance( ).info( AccessLoggerConstants.EVENT_TYPE_MODIFY, CANCEL_CONSOLIDATE_IDENTITY_EVENT_CODE,
+                _internalUserService.getApiUser( author, clientCode ), SecurityUtil.logForgingProtect( primaryIdentity.getCustomerId( ) ),
+                SPECIFIC_ORIGIN );
     }
 
     /**

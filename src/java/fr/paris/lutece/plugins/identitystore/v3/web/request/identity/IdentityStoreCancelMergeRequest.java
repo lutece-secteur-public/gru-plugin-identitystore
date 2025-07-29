@@ -34,6 +34,8 @@
 package fr.paris.lutece.plugins.identitystore.v3.web.request.identity;
 
 import fr.paris.lutece.plugins.identitystore.business.contract.ServiceContract;
+import fr.paris.lutece.plugins.identitystore.business.identity.Identity;
+import fr.paris.lutece.plugins.identitystore.business.identity.IdentityHome;
 import fr.paris.lutece.plugins.identitystore.cache.IdentityDtoCache;
 import fr.paris.lutece.plugins.identitystore.v3.web.request.AbstractIdentityStoreAppCodeRequest;
 import fr.paris.lutece.plugins.identitystore.v3.web.request.validator.IdentityAttributeValidator;
@@ -42,6 +44,7 @@ import fr.paris.lutece.plugins.identitystore.service.identity.IdentityService;
 import fr.paris.lutece.plugins.identitystore.v3.web.request.validator.IdentityValidator;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.IdentityRequestValidator;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.IdentityDto;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.MergeDefinition;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.merge.IdentityMergeRequest;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.merge.IdentityMergeResponse;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
@@ -93,11 +96,25 @@ public class IdentityStoreCancelMergeRequest extends AbstractIdentityStoreAppCod
         {
             throw new ResourceNotFoundException( "Could not find primary identity", Constants.PROPERTY_REST_ERROR_PRIMARY_IDENTITY_NOT_FOUND );
         }
+        
         secondaryIdentity = _identityDtoCache.getByCustomerId( _identityMergeRequest.getSecondaryCuid( ), serviceContract );
         if ( secondaryIdentity == null )
         {
             throw new ResourceNotFoundException( "Could not find secondary identity", Constants.PROPERTY_REST_ERROR_SECONDARY_IDENTITY_NOT_FOUND );
         }
+
+        // if merged, the secondary identity request should have been redirected to the primary identity
+        if ( !secondaryIdentity.getCustomerId ( ).equals ( primaryIdentity.getCustomerId ( ) ) )
+        {
+            throw new ResourceNotFoundException( "Those identities are not merged together", Constants.PROPERTY_REST_ERROR_SECONDARY_IDENTITY_NOT_FOUND );
+        }
+        
+        secondaryIdentity = new IdentityDto ( );
+        secondaryIdentity.setCustomerId (_identityMergeRequest.getSecondaryCuid( ) );
+        MergeDefinition md = new MergeDefinition ( );
+        md.setMerged( true );
+        md.setMasterCustomerId ( primaryIdentity.getCustomerId ( ) );
+        secondaryIdentity.setMerge( md );
     }
 
     @Override
