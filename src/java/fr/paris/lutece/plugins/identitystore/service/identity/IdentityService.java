@@ -421,17 +421,28 @@ public class IdentityService
      * @param clientCode
      *            the client code of the calling application
      */
-    public void cancelMerge( final IdentityMergeRequest request, final RequestAuthor author, final String clientCode ) throws IdentityStoreException
+    public Pair<Identity, List<AttributeStatus>>  cancelMerge( final IdentityMergeRequest request, final RequestAuthor author, final String clientCode ) throws IdentityStoreException
     {
+	final List<AttributeStatus> attrStatusList = new ArrayList<>( );
+        final Map<String, String> metadata = new HashMap<>( );
+	
         final Identity primaryIdentity = IdentityHome.findByCustomerId( request.getPrimaryCuid( ) );
-        final Identity secondaryIdentity = IdentityHome.findByCustomerId( request.getSecondaryCuid( ) );
+        Identity secondaryIdentity = IdentityHome.findByCustomerId( request.getSecondaryCuid( ) );
+        
+        final IdentityDto dtoWithNewAttributes = request.getIdentity( );
 
         TransactionManager.beginTransaction( null );
         try
         {
-            /* Tag de l'identité secondaire */
+            // Annulation du merge
             IdentityHome.cancelMerge( secondaryIdentity );
-
+            
+            // ajout des attributs minimum
+            if ( !dtoWithNewAttributes.getAttributes ( ).isEmpty ( ) )
+            {
+        	attrStatusList.addAll( this.updateIdentity( secondaryIdentity, dtoWithNewAttributes, clientCode, metadata, false ) );
+            }
+        
             TransactionManager.commitTransaction( null );
 
         }
@@ -457,6 +468,10 @@ public class IdentityService
         AccessLogService.getInstance( ).info( AccessLoggerConstants.EVENT_TYPE_MODIFY, CANCEL_CONSOLIDATE_IDENTITY_EVENT_CODE,
                 _internalUserService.getApiUser( author, clientCode ), SecurityUtil.logForgingProtect( primaryIdentity.getCustomerId( ) ),
                 SPECIFIC_ORIGIN );
+        
+        // refresh
+        secondaryIdentity = IdentityHome.findByCustomerId( request.getSecondaryCuid( ) );
+        return Pair.of( secondaryIdentity, attrStatusList );
     }
 
     /**

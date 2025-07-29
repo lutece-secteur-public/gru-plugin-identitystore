@@ -33,18 +33,28 @@
  */
 package fr.paris.lutece.plugins.identitystore.v3.web.request.identity;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.tuple.Pair;
+
 import fr.paris.lutece.plugins.identitystore.business.contract.ServiceContract;
 import fr.paris.lutece.plugins.identitystore.business.identity.Identity;
 import fr.paris.lutece.plugins.identitystore.business.identity.IdentityHome;
 import fr.paris.lutece.plugins.identitystore.cache.IdentityDtoCache;
 import fr.paris.lutece.plugins.identitystore.v3.web.request.AbstractIdentityStoreAppCodeRequest;
 import fr.paris.lutece.plugins.identitystore.v3.web.request.validator.IdentityAttributeValidator;
+import fr.paris.lutece.plugins.identitystore.service.attribute.IdentityAttributeFormatterService;
 import fr.paris.lutece.plugins.identitystore.service.contract.ServiceContractService;
 import fr.paris.lutece.plugins.identitystore.service.identity.IdentityService;
 import fr.paris.lutece.plugins.identitystore.v3.web.request.validator.IdentityValidator;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.IdentityRequestValidator;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.AttributeChangeStatusType;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.AttributeStatus;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.IdentityDto;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.MergeDefinition;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.ResponseStatus;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.merge.IdentityMergeRequest;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.merge.IdentityMergeResponse;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
@@ -66,6 +76,7 @@ public class IdentityStoreCancelMergeRequest extends AbstractIdentityStoreAppCod
     private final IdentityDtoCache _identityDtoCache = SpringContextService.getBean( "identitystore.identityDtoCache" );
 
     private final IdentityMergeRequest _identityMergeRequest;
+    private final List<AttributeStatus> formatStatuses;
 
     private ServiceContract serviceContract;
     private IdentityDto primaryIdentity;
@@ -86,6 +97,7 @@ public class IdentityStoreCancelMergeRequest extends AbstractIdentityStoreAppCod
             throw new RequestFormatException( "Provided Identity Merge request is null", Constants.PROPERTY_REST_ERROR_MERGE_REQUEST_NULL );
         }
         this._identityMergeRequest = identityMergeRequest;
+        this.formatStatuses = new ArrayList<>( );
     }
 
     @Override
@@ -121,6 +133,12 @@ public class IdentityStoreCancelMergeRequest extends AbstractIdentityStoreAppCod
     protected void validateRequestFormat( ) throws RequestFormatException
     {
         IdentityRequestValidator.instance( ).checkCancelMergeRequest( _identityMergeRequest );
+        
+        if ( _identityMergeRequest.getIdentity( ) != null && CollectionUtils.isNotEmpty( _identityMergeRequest.getIdentity( ).getAttributes( ) ) )
+        {
+            IdentityAttributeValidator.instance( ).checkAttributeExistence( _identityMergeRequest.getIdentity( ) );
+            IdentityAttributeValidator.instance( ).validatePivotAttributesIntegrity( primaryIdentity, _identityMergeRequest.getIdentity( ), true );
+        }
     }
 
     @Override
@@ -139,7 +157,11 @@ public class IdentityStoreCancelMergeRequest extends AbstractIdentityStoreAppCod
     @Override
     protected void formatRequestContent( ) throws RequestContentFormattingException
     {
-        // do nothing
+	if ( _identityMergeRequest.getIdentity( ) != null && CollectionUtils.isNotEmpty( _identityMergeRequest.getIdentity( ).getAttributes( ) ) )
+        {
+            formatStatuses.addAll( IdentityAttributeFormatterService.instance( ).formatIdentityMergeRequestAttributeValues( _identityMergeRequest ) );
+            IdentityAttributeValidator.instance( ).validateIdentityAttributeValues( _identityMergeRequest.getIdentity( ) );
+        }
     }
 
     @Override
@@ -153,8 +175,18 @@ public class IdentityStoreCancelMergeRequest extends AbstractIdentityStoreAppCod
     {
         final IdentityMergeResponse response = new IdentityMergeResponse( );
 
-        IdentityService.instance( ).cancelMerge( _identityMergeRequest, _author, _strClientCode );
+        final Pair<Identity, List<AttributeStatus>> result = IdentityService.instance( ).cancelMerge( _identityMergeRequest, _author, _strClientCode );
+        
+        final Identity updatedSecondaryIdentity = result.getKey( );
+        final List<AttributeStatus> attrStatuses = result.getValue( );
+        attrStatuses.addAll( formatStatuses );
+        
+        final boolean allAttributesCreatedOrUpdated = attrStatuses.stream( ).map( AttributeStatus::getStatus )
+                .allMatch( status -> status.getType( ) == AttributeChangeStatusType.SUCCESS );
+        final ResponseStatus status = allAttributesCreatedOrUpdated ? ResponseStatusFactory.success( ) : ResponseStatusFactory.incompleteSuccess( );
 
+        response.setCustomerId( updatedSecondaryIdentity.getCustomerId( ) );
+        response.setLastUpdateDate( updatedSecondaryIdentity.getLastUpdateDate( ) );
         response.setStatus( ResponseStatusFactory.success( ).setMessageKey( Constants.PROPERTY_REST_INFO_SUCCESSFUL_OPERATION ) );
 
         return response;
