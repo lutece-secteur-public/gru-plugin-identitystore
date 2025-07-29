@@ -330,6 +330,8 @@ public class IdentityAttributeService
                 attributeToUpdate.getKey( ) );
         int existingAttributeLevelInt = _attributeCertificationDefinitionService.getLevelAsInteger( existingAttribute.getCertificate( ).getCertifierCode( ),
                 existingAttribute.getAttributeKey( ).getKeyName( ) );
+        
+        // si l'attribut existe déjà avec la même valeur et le même niveau de certif : pas de mise à jour
         if ( attributeToUpdateLevelInt == existingAttributeLevelInt && StringUtils.equals( attributeToUpdate.getValue( ), existingAttribute.getValue( ) )
                 && ( attributeToUpdate.getCertificationDate( ).equals( existingAttribute.getCertificate( ).getCertificateDate( ) )
                         || attributeToUpdate.getCertificationDate( ).before( existingAttribute.getCertificate( ).getCertificateDate( ) ) ) )
@@ -340,14 +342,14 @@ public class IdentityAttributeService
             attributeStatus.setMessageKey( Constants.PROPERTY_ATTRIBUTE_STATUS_NOT_UPDATED );
             return attributeStatus;
         }
+        
+        // le niveau de certification est supérieur ou égal au niveau existant : on met à jour
         if ( attributeToUpdateLevelInt >= existingAttributeLevelInt )
         {
+            // la valeur envoyée est vide = demande de suppression d'attribut
             if ( StringUtils.isBlank( attributeToUpdate.getValue( ) ) )
             {
-                // #232 : remove attribute if :
-                // - attribute is not mandatory
-                // - new value is null or blank
-                // - sent certification level is >= to existing one
+                // chesk if attribute is mandatory 
                 final Optional<AttributeRight> right = _serviceContractService.getActiveServiceContract( clientCode ).getAttributeRights( ).stream( )
                         .filter( ar -> ar.getAttributeKey( ).getKeyName( ).equals( attributeToUpdate.getKey( ) ) ).findAny( );
                 if ( right.isPresent( ) && right.get( ).isMandatory( ) )
@@ -358,6 +360,8 @@ public class IdentityAttributeService
                     attributeStatus.setMessageKey( Constants.PROPERTY_ATTRIBUTE_STATUS_NOT_REMOVED );
                     return attributeStatus;
                 }
+                
+                // suppression attribut
                 IdentityAttributeHome.remove( identity.getId( ), existingAttribute.getAttributeKey( ).getId( ) );
                 identity.getAttributes( ).remove( existingAttribute.getAttributeKey( ).getKeyName( ) );
 
@@ -368,8 +372,17 @@ public class IdentityAttributeService
                 return attributeStatus;
             }
 
+            // Update
             existingAttribute.setValue( attributeToUpdate.getValue( ) );
             existingAttribute.setLastUpdateClientCode( clientCode );
+            if ( existingAttribute.getIdIdentity ( ) <= 0 )
+            {
+        	existingAttribute.setIdIdentity ( identity.getId ( ) );
+            }
+            if ( existingAttribute.getAttributeKey ( ).getId ( ) <= 0 )
+            {
+        	existingAttribute.getAttributeKey( ).setId ( getAttributeKey ( existingAttribute.getAttributeKey( ).getKeyName ( ) ).getId ( ) );
+            }
 
             if ( attributeToUpdate.getCertifier( ) != null )
             {
