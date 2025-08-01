@@ -113,14 +113,17 @@ public class IdentityQualityService
         if ( computeDuplicateDefinition )
         {
             /* Compute Duplicate Definition */
-            final SuspiciousIdentity suspiciousIdentity = SuspiciousIdentityHome.selectByCustomerID( identity.getCustomerId( ) );
-            if ( suspiciousIdentity != null )
+            final List<SuspiciousIdentity> suspiciousIdentityList = SuspiciousIdentityHome.selectByCustomerIDs( List.of(identity.getCustomerId( )) );
+            if ( suspiciousIdentityList != null && !suspiciousIdentityList.isEmpty() )
             {
                 identity.setDuplicateDefinition( new IdentityDuplicateDefinition( ) );
-                final IdentityDuplicateSuspicion duplicateSuspicion = new IdentityDuplicateSuspicion( );
-                identity.getDuplicateDefinition( ).setDuplicateSuspicion( duplicateSuspicion );
-                duplicateSuspicion.setDuplicateRuleCode( suspiciousIdentity.getDuplicateRuleCode( ) );
-                duplicateSuspicion.setCreationDate( suspiciousIdentity.getCreationDate( ) );
+                for(final SuspiciousIdentity suspiciousIdentity : suspiciousIdentityList){
+                    final IdentityDuplicateSuspicion duplicateSuspicion = new IdentityDuplicateSuspicion( );
+                    duplicateSuspicion.setDuplicateRuleCode( suspiciousIdentity.getDuplicateRuleCode( ) );
+                    duplicateSuspicion.setCreationDate( suspiciousIdentity.getCreationDate( ) );
+                    duplicateSuspicion.setSuspiciousCuid( suspiciousIdentity.getDuplicateCuid());
+                    identity.getDuplicateDefinition().getDuplicateSuspicions().add( duplicateSuspicion );
+                }
             }
 
             final List<ExcludedIdentities> excludedIdentitiesList = SuspiciousIdentityHome.getExcludedIdentitiesList( identity.getCustomerId( ) );

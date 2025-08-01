@@ -86,6 +86,18 @@ public interface ISuspiciousIdentityDAO
      */
     void delete( String customerId, Plugin plugin );
 
+    /**
+     * Delete a record from the table
+     *
+     * @param customerId
+     *            The identifier of the SuspiciousIdentity to delete
+     * @param emptyDuplicateCuid
+     *            delete only if the column duplicate_customer_id is empty
+     * @param plugin
+     *            the Plugin
+     */
+    void delete( String customerId, boolean emptyDuplicateCuid, Plugin plugin );
+
     ///////////////////////////////////////////////////////////////////////////
     // Finders
 
@@ -122,6 +134,7 @@ public interface ISuspiciousIdentityDAO
      */
     boolean checkIfContainsSuspicious( List<String> customerIds, Plugin plugin );
 
+    boolean checkIfExistsSuspicious( String cuid1, String cuid2, int ruleId, Plugin plugin );
     /**
      * Load the data from the table
      * 
@@ -196,17 +209,6 @@ public interface ISuspiciousIdentityDAO
      * @return The list which contains the data of all the avant objects
      */
     List<SuspiciousIdentity> selectSuspiciousIdentitysListByIds( Plugin plugin, List<Integer> listIds );
-
-    /**
-     * Load the data of suspiciousIdentity with customerID matching argument
-     *
-     * @param plugin
-     *            the Plugin
-     * @param customerId
-     *            id of the customer
-     * @return The SuspiciousIdentity
-     */
-    SuspiciousIdentity selectByCustomerID( String customerId, Plugin plugin );
 
     /**
      * Get the {@link SuspiciousIdentity} list that has been marked for this list of CUIDs, if any

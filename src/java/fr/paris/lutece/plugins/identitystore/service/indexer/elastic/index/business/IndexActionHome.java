@@ -70,4 +70,8 @@ public class IndexActionHome
     {
         return _dao.selectAll( _plugin );
     }
+
+    public static List<IndexAction> selectWithCuidAndActionType(final String cuid, final String type) {
+        return _dao.selectWithCuidAndActionType( cuid, type, _plugin );
+    }
 }

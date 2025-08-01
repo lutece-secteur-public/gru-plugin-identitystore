@@ -60,6 +60,7 @@ public class SuspiciousIdentity implements Serializable
     private Timestamp _dateLastUpdateDate;
     private SuspiciousIdentityLock lock;
     protected Map<String, String> metadata = new HashMap<>( );
+    protected String _duplicateCuid;
 
     /**
      * Returns the Id
@@ -199,5 +200,13 @@ public class SuspiciousIdentity implements Serializable
     public void setMetadata( Map<String, String> metadata )
     {
         this.metadata = metadata;
+    }
+
+    public String getDuplicateCuid() {
+        return _duplicateCuid;
+    }
+
+    public void setDuplicateCuid(final String _duplicateCuid) {
+        this._duplicateCuid = _duplicateCuid;
     }
 }

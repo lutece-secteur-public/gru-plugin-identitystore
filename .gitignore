@@ -1,2 +1,7 @@
 .factorypath
 target_test-classes
+
+/nb-configuration.xml
+/target/
+.idea/
+.sdkmanrc

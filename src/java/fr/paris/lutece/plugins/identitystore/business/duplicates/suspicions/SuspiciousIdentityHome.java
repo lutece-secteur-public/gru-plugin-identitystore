@@ -150,6 +150,18 @@ public final class SuspiciousIdentityHome
     }
 
     /**
+     * Verify if at least one SuspiciousIdentity exists for the cuid pair.
+     * This method is searching in the columns customer_id and duplicate_customer_id.
+     * @param cuid1 the cuid 1
+     * @param cuid2 the cuid 2
+     * @param ruleId the rule ID
+     * @return true if there is at least one existing SuspiciousIdentity, false otherwise.
+     */
+    public static boolean exists(final String cuid1, final String cuid2, final int ruleId) {
+        return _dao.checkIfExistsSuspicious( cuid1, cuid2, ruleId, _plugin );
+    }
+
+    /**
      * Remove the suspiciousIdentity whose identifier is specified in parameter
      * 
      * @param nId
@@ -169,6 +181,10 @@ public final class SuspiciousIdentityHome
     public static void remove( String customerId )
     {
         _dao.delete( customerId, _plugin );
+    }
+
+    public static void remove( String customerId, boolean emptyDuplicateCuid) {
+        _dao.delete( customerId, emptyDuplicateCuid, _plugin );
     }
 
     /**
@@ -285,11 +301,6 @@ public final class SuspiciousIdentityHome
         return _dao.selectSuspiciousIdentitysListByIds( _plugin, listIds );
     }
 
-    public static SuspiciousIdentity selectByCustomerID( String customerId )
-    {
-        return _dao.selectByCustomerID( customerId, _plugin );
-    }
-
     public static List<SuspiciousIdentity> selectByCustomerIDs( List<String> customerIds )
     {
         return _dao.selectByCustomerIDs( customerIds, _plugin );
@@ -330,37 +341,39 @@ public final class SuspiciousIdentityHome
             throw new IdentityStoreException( "Could not find identity with customerId " + customerId );
         }
 
-        final SuspiciousIdentity suspiciousIdentity = SuspiciousIdentityHome.selectByCustomerID( customerId );
-        if ( suspiciousIdentity == null )
+        final List<SuspiciousIdentity> suspiciousIdentityList = SuspiciousIdentityHome.selectByCustomerIDs( List.of(customerId) );
+        if ( suspiciousIdentityList.isEmpty() )
         {
             throw new IdentityStoreException( "Could not find suspicious identity with customerId " + customerId );
         }
 
-        final boolean isAlreadyLocked = suspiciousIdentity.getLock( ).isLocked( );
-        final boolean sameAuthorName = Objects.equals( suspiciousIdentity.getLock( ).getAuthorName( ), authorName );
-        final boolean sameAuthorType = Objects.equals( suspiciousIdentity.getLock( ).getAuthorType( ), authorType );
-        final boolean sameAuthor = sameAuthorName && sameAuthorType;
-        if ( lock && isAlreadyLocked && !sameAuthor )
-        {
-            throw new IdentityStoreException(
-                    "Suspicious identity with customerId " + customerId + " is locked by " + suspiciousIdentity.getLock( ).getAuthorName( ) + "." );
-        }
+        for(final SuspiciousIdentity suspiciousIdentity : suspiciousIdentityList){
+            final boolean isAlreadyLocked = suspiciousIdentity.getLock( ).isLocked( );
+            final boolean sameAuthorName = Objects.equals( suspiciousIdentity.getLock( ).getAuthorName( ), authorName );
+            final boolean sameAuthorType = Objects.equals( suspiciousIdentity.getLock( ).getAuthorType( ), authorType );
+            final boolean sameAuthor = sameAuthorName && sameAuthorType;
+            if ( lock && isAlreadyLocked && !sameAuthor )
+            {
+                throw new IdentityStoreException(
+                        "Suspicious identity with customerId " + customerId + " is locked by " + suspiciousIdentity.getLock( ).getAuthorName( ) + "." );
+            }
 
-        if ( !lock && !isAlreadyLocked )
-        {
-            throw new IdentityStoreException( "Suspicious identity with customerId " + customerId + " is already unlocked." );
-        }
+            if ( !lock && !isAlreadyLocked )
+            {
+                throw new IdentityStoreException( "Suspicious identity with customerId " + customerId + " is already unlocked." );
+            }
 
-        if ( !lock && isAlreadyLocked && !sameAuthor )
-        {
-            throw new IdentityStoreException( "Suspicious identity with customerId " + customerId + " is locked by "
-                    + suspiciousIdentity.getLock( ).getAuthorName( ) + ". User" + authorName + " is not allowed to unlock." );
-        }
+            if ( !lock && isAlreadyLocked && !sameAuthor )
+            {
+                throw new IdentityStoreException( "Suspicious identity with customerId " + customerId + " is locked by "
+                                                  + suspiciousIdentity.getLock( ).getAuthorName( ) + ". User" + authorName + " is not allowed to unlock." );
+            }
 
-        if ( lock && isAlreadyLocked && sameAuthor )
-        {
-            // the request user has already locked the resource, do nothing.
-            return true;
+            if ( lock && isAlreadyLocked && sameAuthor )
+            {
+                // the request user has already locked the resource, do nothing.
+                return true;
+            }
         }
 
         return _dao.manageLock( customerId, lock, authorType, authorName, _plugin );

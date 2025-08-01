@@ -68,8 +68,8 @@ import java.util.stream.Collectors;
 public class IdentityDuplicateValidator
 {
 
-    private static final String PROPERTY_DUPLICATES_CREATION_RULES = "identitystore.identity.duplicates.creation.rules";
-    private static final String PROPERTY_DUPLICATES_UPDATE_RULES = "identitystore.identity.duplicates.update.rules";
+    public static final String PROPERTY_DUPLICATES_CREATION_RULES = "identitystore.identity.duplicates.creation.rules";
+    public static final String PROPERTY_DUPLICATES_UPDATE_RULES = "identitystore.identity.duplicates.update.rules";
     private static final String PROPERTY_DUPLICATES_IMPORT_RULES_SUSPICION = "identitystore.identity.duplicates.import.rules.suspicion";
     private static final String PROPERTY_DUPLICATES_IMPORT_RULES_STRICT = "identitystore.identity.duplicates.import.rules.strict";
     private static final String PROPERTY_DUPLICATES_CHECK_DATABASE_ACTIVATED = "identitystore.identity.duplicates.check.database";

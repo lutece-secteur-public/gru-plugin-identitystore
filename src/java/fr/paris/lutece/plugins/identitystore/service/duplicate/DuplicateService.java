@@ -115,8 +115,9 @@ public class DuplicateService implements IDuplicateService {
                 qualifiedIdentity.setMatchedDuplicateRuleCode(duplicateRule.getCode());
                 // ==== FIXME - remove this block (#420)
                 qualifiedIdentity.setDuplicateDefinition(new IdentityDuplicateDefinition());
-                qualifiedIdentity.getDuplicateDefinition().setDuplicateSuspicion(new IdentityDuplicateSuspicion());
-                qualifiedIdentity.getDuplicateDefinition().getDuplicateSuspicion().setDuplicateRuleCode(duplicateRule.getCode());
+                final IdentityDuplicateSuspicion identityDuplicateSuspicion = new IdentityDuplicateSuspicion();
+                identityDuplicateSuspicion.setDuplicateRuleCode(duplicateRule.getCode());
+                qualifiedIdentity.getDuplicateDefinition().getDuplicateSuspicions().add(identityDuplicateSuspicion);
                 // ====
             });
             return result;

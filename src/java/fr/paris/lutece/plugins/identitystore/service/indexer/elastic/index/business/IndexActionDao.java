@@ -50,6 +50,7 @@ public class IndexActionDao implements IIndexActionDao
     private static final String SQL_QUERY_DELETE = "DELETE FROM identitystore_index_action WHERE id_index_action IN ";
     private static final String SQL_QUERY_SELECTALL = "SELECT id_index_action, customer_id, action_type, date_index FROM identitystore_index_action ORDER BY date_index asc";
     private static final String SQL_QUERY_SELECTALL_WITH_LIMIT = SQL_QUERY_SELECTALL + " LIMIT ?";
+    private static final String SQL_QUERY_SELECTALL_WITH_CUID_AND_TYPE = "SELECT id_index_action, customer_id, action_type, date_index FROM identitystore_index_action WHERE customer_id = ? AND action_type = ? ORDER BY date_index asc";
 
     @Override
     public void insert( IndexAction indexAction, Plugin plugin )
@@ -122,4 +123,31 @@ public class IndexActionDao implements IIndexActionDao
             return actions;
         }
     }
+
+    @Override
+    public List<IndexAction> selectWithCuidAndActionType(final String cuid, final String type, final Plugin plugin ) {
+        final List<IndexAction> actions = new ArrayList<>( );
+        try ( final DAOUtil daoUtil = new DAOUtil( SQL_QUERY_SELECTALL_WITH_CUID_AND_TYPE, plugin ) )
+        {
+            int index = 1;
+            daoUtil.setString( index++, cuid);
+            daoUtil.setString( index++, type);
+            daoUtil.executeQuery( );
+
+            while ( daoUtil.next( ) )
+            {
+                final IndexAction indexAction = new IndexAction( );
+                int nIndex = 1;
+
+                indexAction.setId( daoUtil.getInt( nIndex++ ) );
+                indexAction.setCustomerId( daoUtil.getString( nIndex++ ) );
+                indexAction.setActionType( IndexActionType.valueOf( daoUtil.getString( nIndex++ ) ) );
+                indexAction.setDateIndex( daoUtil.getDate( nIndex ) );
+                actions.add( indexAction );
+            }
+
+            return actions;
+        }
+    }
+
 }

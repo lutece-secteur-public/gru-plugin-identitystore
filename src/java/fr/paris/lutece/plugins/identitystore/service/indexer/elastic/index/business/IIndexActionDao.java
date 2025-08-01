@@ -48,4 +48,6 @@ public interface IIndexActionDao
     List<IndexAction> select( int limit, final Plugin plugin );
 
     List<IndexAction> selectAll( Plugin plugin );
+
+    List<IndexAction> selectWithCuidAndActionType(final String cuid, final String type, final Plugin plugin );
 }
