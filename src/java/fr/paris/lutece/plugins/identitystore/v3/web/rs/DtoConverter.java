@@ -110,6 +110,7 @@ public final class DtoConverter
         identityDto.setCustomerId( identity.getCustomerId( ) );
         identityDto.setLastUpdateDate( identity.getLastUpdateDate( ) );
         identityDto.setCreationDate( identity.getCreationDate( ) );
+        identityDto.setDeleteDate( identity.getDeleteDate( ) );
         identityDto.setMonParisActive( identity.isMonParisActive( ) );
 
         if ( identity.isMerged( ) )
