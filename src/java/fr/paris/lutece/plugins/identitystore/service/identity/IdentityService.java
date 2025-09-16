@@ -317,7 +317,9 @@ public class IdentityService
      * @throws IdentityStoreException
      *             in case of error
      */
-    public Pair<Identity, List<AttributeStatus>> merge( final Identity primaryIdentity, final Identity secondaryIdentity, final IdentityDto identityForConsolidate, final String duplicateRuleCode, final RequestAuthor author, final String clientCode,
+    public Pair<Identity, List<AttributeStatus>> merge( final Identity primaryIdentity, final Identity secondaryIdentity, 
+    		final IdentityDto identityForConsolidate, final String duplicateRuleCode, final RequestAuthor author, 
+    		final String clientCode, boolean isResetFlagMonParisActive, 
             final List<AttributeStatus> formatStatuses ) throws IdentityStoreException
     {
         TransactionManager.beginTransaction( null );
@@ -355,8 +357,16 @@ public class IdentityService
                 attrStatusList.addAll( this.updateIdentity( primaryIdentity, identityForConsolidate, clientCode, primaryMetadata, identityUpdateRequested, true ) );
             }
             
-            // Mise à jour du lien entre les identités
+            // Link the identities
             secondaryIdentity.setMasterIdentityId( primaryIdentity.getId( ) );
+            
+            // reset of the is_mon_paris_active flag of the secondary identity if necessary 
+            if ( isResetFlagMonParisActive )
+            {
+            	secondaryIdentity.setMonParisActive( false ); 
+            }
+            
+            // merge
             IdentityHome.merge( secondaryIdentity );
             
             // ré-affecter les notifications sur l'identité consolidée

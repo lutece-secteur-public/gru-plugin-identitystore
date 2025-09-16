@@ -181,7 +181,8 @@ public class IdentityStoreMergeRequest extends AbstractIdentityStoreAppCodeReque
                                                                                               DtoConverter.convertDtoToIdentity(secondaryIdentity),
                                                                                               _identityMergeRequest.getIdentity(),
                                                                                               _identityMergeRequest.getDuplicateRuleCode(), _author,
-                                                                                              _strClientCode, formatStatuses);
+                                                                                              _strClientCode, _identityMergeRequest.isResetIsmonparisactiveForSecondaryIdentity( ), 
+                                                                                              formatStatuses);
         final Identity updatedPrimaryIdentity = result.getKey( );
         final List<AttributeStatus> attrStatuses = result.getValue( );
         attrStatuses.addAll( formatStatuses );
