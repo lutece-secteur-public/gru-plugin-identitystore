@@ -35,6 +35,7 @@ package fr.paris.lutece.plugins.identitystore.v3.web.request;
 
 import fr.paris.lutece.plugins.identitystore.business.application.ClientApplication;
 import fr.paris.lutece.plugins.identitystore.business.application.ClientApplicationHome;
+import fr.paris.lutece.plugins.identitystore.service.application.ClientApplicationService;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.AbstractIdentityStoreRequest;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
 import fr.paris.lutece.plugins.identitystore.web.exception.RequestFormatException;
@@ -43,6 +44,8 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public abstract class AbstractIdentityStoreAppCodeRequest extends AbstractIdentityStoreRequest
@@ -50,7 +53,9 @@ public abstract class AbstractIdentityStoreAppCodeRequest extends AbstractIdenti
     private static final List<String> EXCEPTION_APP_CODES = Arrays
             .stream( AppPropertiesService.getProperty( "identitystore.header.application.code.verif.exception", "" ).split( "," ) )
             .collect( Collectors.toList( ) );
-
+    private static final String APPCODE_DEFAULT_REGEXP = "^[A-Za-z][0-9]{2}";  // => "must start with one alphabetical character and two numerical caracters"
+    private static final String APPCODE_REGEXP = AppPropertiesService.getProperty( "identitystore.header.application.code.verif.regexp", APPCODE_DEFAULT_REGEXP );
+    
     protected final String _strAppCode;
 
     protected AbstractIdentityStoreAppCodeRequest( final String strClientCode, final String strAppCode, final String authorName, final String authorType )
@@ -64,14 +69,33 @@ public abstract class AbstractIdentityStoreAppCodeRequest extends AbstractIdenti
     protected void validateRequestHeaderFormat( ) throws RequestFormatException
     {
         super.validateRequestHeaderFormat( );
+        
+        // check if client code is related to the AppCode
+        
+        // if appCode is not provided, or this is an authorized AppCode => do not check
         if ( StringUtils.isBlank( _strAppCode ) || EXCEPTION_APP_CODES.contains( _strAppCode ) )
         {
             return;
         }
-        final List<ClientApplication> clientApplicationList = ClientApplicationHome.findByApplicationCode( _strAppCode );
-        if ( clientApplicationList.stream( ).map( ClientApplication::getClientCode ).noneMatch( clientCode -> clientCode.equals( _strClientCode ) ) )
+        
+        // check if appCode corresponds to (or starts with) a valid pattern of application code :
+        final Pattern pattern = Pattern.compile( APPCODE_REGEXP );
+        final Matcher matcher = pattern.matcher( _strAppCode );
+        boolean isValidAppCodePattern = matcher.find( );
+        
+        if ( !isValidAppCodePattern )
         {
-            throw new RequestFormatException( "The provided client code and application code are not correlating.",
+            // this code doesn't correspond to (or starts with) a valid appCode, can't check
+            return;
+        }
+        
+        String strAppCode  = matcher.group(0) ;
+        final List<String> clientCodeList = ClientApplicationService.instance( ).getClientCodes( strAppCode );
+        
+        // Check if the client code exists and is related to the AppCode        
+        if ( clientCodeList.stream( ).noneMatch( clientCode -> clientCode.equals( _strClientCode ) ) )
+        {
+            throw new RequestFormatException( "The provided client code and application code are not correlated.",
                     Constants.PROPERTY_REST_ERROR_CLIENT_AND_APP_CODE_NOT_MATCHING );
         }
 

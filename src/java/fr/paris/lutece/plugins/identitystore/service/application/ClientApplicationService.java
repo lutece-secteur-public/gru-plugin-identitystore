@@ -33,18 +33,25 @@
  */
 package fr.paris.lutece.plugins.identitystore.service.application;
 
+import java.util.List;
+
 import fr.paris.lutece.plugins.identitystore.business.application.ClientApplication;
 import fr.paris.lutece.plugins.identitystore.business.application.ClientApplicationHome;
+import fr.paris.lutece.plugins.identitystore.cache.ActiveServiceContractCache;
+import fr.paris.lutece.plugins.identitystore.cache.ClientApplicationCache;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.DtoConverter;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.application.ClientApplicationDto;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.application.ClientChangeResponse;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.ResponseStatusFactory;
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
+import fr.paris.lutece.portal.service.spring.SpringContextService;
 import fr.paris.lutece.util.sql.TransactionManager;
 
 public class ClientApplicationService
 {
+    private final ClientApplicationCache _cache = SpringContextService.getBean( "identitystore.clientApplicationCache" );
+    
     private static ClientApplicationService _instance;
 
     public static ClientApplicationService instance( )
@@ -83,6 +90,7 @@ public class ClientApplicationService
             client.setAuthorName( authorName );
             final ClientApplication updatedClientApp = ClientApplicationHome.update( client );
             TransactionManager.commitTransaction( null );
+            _cache.remove ( client.getApplicationCode ( ) );
             return updatedClientApp;
         }
         catch( final Exception e )
@@ -90,5 +98,15 @@ public class ClientApplicationService
             TransactionManager.rollBack( null );
             throw new IdentityStoreException( e.getMessage( ), e, Constants.PROPERTY_REST_ERROR_DURING_TREATMENT );
         }
+    }
+    
+    /**
+     * get client codes of an appcode
+     * @param clientAppCode
+     * @return the list
+     */
+    public List<String> getClientCodes( final String clientAppCode )
+    {
+	return _cache.getClientCodes ( clientAppCode );
     }
 }
