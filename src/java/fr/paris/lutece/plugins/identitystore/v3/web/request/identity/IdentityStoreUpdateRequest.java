@@ -166,6 +166,7 @@ public class IdentityStoreUpdateRequest extends AbstractIdentityStoreAppCodeRequ
     protected void checkDuplicatesConsistency( ) throws DuplicatesConsistencyException
     {
         IdentityDuplicateValidator.instance( ).checkConnectionIdUniquenessForUpdate( _identityChangeRequest, existingIdentityToUpdate );
+        IdentityDuplicateValidator.instance( ).checkLoginUniquenessForUpdate( _identityChangeRequest, existingIdentityToUpdate );
         IdentityDuplicateValidator.instance( ).checkDuplicateExistenceForUpdate( _identityChangeRequest, existingIdentityToUpdate );
     }
 
