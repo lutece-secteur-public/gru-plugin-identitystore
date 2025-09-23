@@ -41,11 +41,13 @@ import fr.paris.lutece.plugins.identitystore.business.rules.duplicate.DuplicateR
 import fr.paris.lutece.plugins.identitystore.service.duplicate.DuplicateRuleService;
 import fr.paris.lutece.plugins.identitystore.service.duplicate.IDuplicateService;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.AttributeDto;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.AttributeTreatmentType;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.IdentityDto;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.crud.IdentityChangeRequest;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.crud.IdentityChangeResponse;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.search.DuplicateSearchResponse;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.search.QualifiedIdentitySearchResult;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.search.SearchAttribute;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.ResponseStatusFactory;
 import fr.paris.lutece.plugins.identitystore.web.exception.DuplicatesConsistencyException;
@@ -110,6 +112,34 @@ public class IdentityDuplicateValidator
     }
 
     /**
+     * Checks if the Login attribute already exists for create request
+     * @param request the create request
+     * @throws DuplicatesConsistencyException
+     */
+    public void checkLoginUniquenessForCreate(final IdentityChangeRequest request) throws DuplicatesConsistencyException
+    {
+        final AttributeDto loginAttr =
+                request.getIdentity().getAttributes().stream().filter(attr -> attr.getKey().equals(Constants.PARAM_LOGIN)).findFirst().orElse(null);
+        if(loginAttr != null &&  StringUtils.isNotEmpty( loginAttr.getValue( ) ) )
+        {
+            final SearchAttribute searchLogin = new SearchAttribute();
+            searchLogin.setKey( loginAttr.getKey( ) );
+            searchLogin.setValue( loginAttr.getValue( ) );
+            searchLogin.setOutputKeys(List.of( loginAttr.getKey( ) ) );
+            searchLogin.setTreatmentType(AttributeTreatmentType.STRICT);
+            final List<Identity> sameLoginList = IdentityHome.findByAttributesValueForApiSearch(List.of(searchLogin), 1);
+            if(!sameLoginList.isEmpty())
+            {
+                final DuplicatesConsistencyException exception = new DuplicatesConsistencyException(
+                        "An identity already exists with the given login. The customer ID of that identity is provided in the response.",
+                        Constants.PROPERTY_REST_ERROR_CONFLICT_LOGIN, IdentityChangeResponse.class );
+                ( (IdentityChangeResponse) exception.getResponse( ) ).setCustomerId( sameLoginList.get(0).getCustomerId( ) );
+                throw exception;
+            }
+        }
+    }
+
+    /**
      * Checks if GUID is already in use for update request
      *
      * @param request
@@ -129,6 +159,37 @@ public class IdentityDuplicateValidator
                         "An identity already exists with the given connection ID. The customer ID of that identity is provided in the response.",
                         Constants.PROPERTY_REST_ERROR_CONFLICT_CONNECTION_ID, IdentityChangeResponse.class );
                 ( (IdentityChangeResponse) exception.getResponse( ) ).setCustomerId( byConnectionId.getCustomerId( ) );
+                throw exception;
+            }
+        }
+    }
+
+    /**
+     * Checks if the Login attribute already exists for update request
+     * @param request the create request
+     * @throws DuplicatesConsistencyException
+     */
+    public void checkLoginUniquenessForUpdate(final IdentityChangeRequest request, final IdentityDto existingIdentityToUpdate) throws DuplicatesConsistencyException
+    {
+        final AttributeDto requestLoginAttr =
+                request.getIdentity().getAttributes().stream().filter(attr -> attr.getKey().equals(Constants.PARAM_LOGIN)).findFirst().orElse(null);
+        final AttributeDto loginAttrToUpdate =
+                existingIdentityToUpdate.getAttributes().stream().filter(attr -> attr.getKey().equals(Constants.PARAM_LOGIN)).findFirst().orElse(null);
+
+        if(requestLoginAttr != null &&  StringUtils.isNotEmpty( requestLoginAttr.getValue( ) ) && (loginAttrToUpdate == null || !StringUtils.equalsIgnoreCase( loginAttrToUpdate.getValue( ), requestLoginAttr.getValue( ) ) ) )
+        {
+            final SearchAttribute searchLogin = new SearchAttribute();
+            searchLogin.setKey( requestLoginAttr.getKey( ) );
+            searchLogin.setValue( requestLoginAttr.getValue( ) );
+            searchLogin.setOutputKeys(List.of( requestLoginAttr.getKey( ) ) );
+            searchLogin.setTreatmentType(AttributeTreatmentType.STRICT);
+            final List<Identity> sameLoginList = IdentityHome.findByAttributesValueForApiSearch(List.of(searchLogin), 1);
+            if(!sameLoginList.isEmpty())
+            {
+                final DuplicatesConsistencyException exception = new DuplicatesConsistencyException(
+                        "An identity already exists with the given login. The customer ID of that identity is provided in the response.",
+                        Constants.PROPERTY_REST_ERROR_CONFLICT_LOGIN, IdentityChangeResponse.class );
+                ( (IdentityChangeResponse) exception.getResponse( ) ).setCustomerId( sameLoginList.get(0).getCustomerId( ) );
                 throw exception;
             }
         }

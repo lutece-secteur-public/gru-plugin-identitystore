@@ -139,6 +139,7 @@ public class IdentityStoreCreateRequest extends AbstractIdentityStoreAppCodeRequ
     protected void checkDuplicatesConsistency( ) throws DuplicatesConsistencyException
     {
         IdentityDuplicateValidator.instance( ).checkConnectionIdUniquenessForCreate( _identityChangeRequest );
+        IdentityDuplicateValidator.instance( ).checkLoginUniquenessForCreate( _identityChangeRequest );
         IdentityDuplicateValidator.instance( ).checkDuplicateExistenceForCreation( _identityChangeRequest );
     }
 
