@@ -52,7 +52,7 @@ public final class IdentityObjectDAO implements IIdentityObjectDAO
     private static final String LIST_IDS = "%{list_ids}";
     private static final String SQL_QUERY_GET_ELIGIBLE_ID_FOR_INDEX = "SELECT i.id_identity FROM identitystore_identity i WHERE is_deleted = 0 AND is_merged = 0 AND exists(SELECT a.id_attribute FROM identitystore_identity_attribute a WHERE i.id_identity = a.id_identity)";
     private static final String SQL_QUERY_LOAD_IDENTITY_BY_CUSTOMER_ID = "SELECT "
-            + "    identity.connection_id, identity.customer_id, identity.date_create, identity.last_update_date, identity.expiration_date, identity.is_mon_paris_active,"
+            + "    identity.connection_id, identity.customer_id, identity.date_create, identity.last_update_date, identity.expiration_date, identity.date_delete, identity.is_mon_paris_active,"
             + "    attributeKey.name, attributeKey.key_name, attributeKey.key_type, attributeKey.description, attributeKey.pivot, "
             + "    attribute.attribute_value, attribute.lastupdate_client, "
             + "    certificate.certifier_code, certificate.certifier_code, certificate.certificate_date, certificate.expiration_date "
@@ -62,7 +62,7 @@ public final class IdentityObjectDAO implements IIdentityObjectDAO
             + "    LEFT JOIN identitystore_identity_attribute_certificate certificate on attribute.id_certification = certificate.id_attribute_certificate "
             + " WHERE identity.customer_id = ? ";
     private static final String SQL_QUERY_SELECT_IDENTITIES_BY_IDS = "SELECT "
-            + "    identity.connection_id as connection_id, identity.customer_id as customer_id, identity.date_create as date_create, identity.last_update_date as last_update_date, identity.expiration_date as expiration_date, identity.is_mon_paris_active as is_mon_paris_active, "
+            + "    identity.connection_id as connection_id, identity.customer_id as customer_id, identity.date_create as date_create, identity.last_update_date as last_update_date, identity.expiration_date as expiration_date, identity.date_delete as date_delete, identity.is_mon_paris_active as is_mon_paris_active, "
             + "    attribute_key.name as  attribute_key_name,  attribute_key.key_name as  attribute_key_key_name,  attribute_key.key_type as  attribute_key_key_type,  attribute_key.description as  attribute_key_description,  attribute_key.pivot as  attribute_key_pivot, "
             + "    attribute.attribute_value as  attribute_attribute_value,  attribute.lastupdate_client as  attribute_lastupdate_client, "
             + "    certificate.certifier_code as  certificate_certifier_code,  certificate.certifier_code as  certificate_certifier_code,  certificate.certificate_date as  certificate_certificate_date,  certificate.expiration_date as  certificate_expiration_date "
@@ -96,6 +96,7 @@ public final class IdentityObjectDAO implements IIdentityObjectDAO
                 identity.setCreationDate( daoUtil.getTimestamp( nIndex++ ) );
                 identity.setLastUpdateDate( daoUtil.getTimestamp( nIndex++ ) );
                 identity.setExpirationDate( daoUtil.getTimestamp( nIndex++ ) );
+                identity.setDeleteDate( daoUtil.getTimestamp( nIndex++ ) );
                 identity.setMonParisActive( daoUtil.getBoolean( nIndex++ ) );
 
                 final AttributeObject firstAttribute = getAttributeObject( daoUtil, nIndex );
@@ -181,6 +182,7 @@ public final class IdentityObjectDAO implements IIdentityObjectDAO
                     identity.setCreationDate( daoUtil.getTimestamp( "date_create" ) );
                     identity.setLastUpdateDate( daoUtil.getTimestamp( "last_update_date" ) );
                     identity.setExpirationDate( daoUtil.getTimestamp( "expiration_date" ) );
+                    identity.setDeleteDate( daoUtil.getTimestamp( "date_delete" ) );
                     identity.setMonParisActive( daoUtil.getBoolean( "is_mon_paris_active" ) );
                     identityObjects.add( identity );
                 }
