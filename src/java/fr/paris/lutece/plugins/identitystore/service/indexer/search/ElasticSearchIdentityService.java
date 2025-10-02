@@ -147,6 +147,7 @@ public class ElasticSearchIdentityService implements ISearchIdentityService
             identity.getExpiration().setExpirationDate(identityObject.getExpirationDate());
             identity.getExpiration().setDeleted(identityObject.getDeleteDate() != null);
             identity.getExpiration().setDeleteDate(identityObject.getDeleteDate());
+            identity.setDeleteDate( identityObject.getDeleteDate() );
         }
         Identity identityDetails = IdentityHome.findByCustomerId( identity.getCustomerId( ) );
         if( identityDetails != null && identityDetails.isMerged( ) ) {
