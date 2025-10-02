@@ -53,7 +53,7 @@ public final class AttributeKeyDAO implements IAttributeKeyDAO
     private static final String SQL_QUERY_INSERT_VALUE = "INSERT INTO identitystore_ref_attribute_values(id_attribute, value, label) VALUES (?,?,?)";
     private static final String SQL_QUERY_DELETE_VALUES = "DELETE FROM identitystore_ref_attribute_values WHERE id_attribute = ?";
     private static final String SQL_QUERY_DELETE = "DELETE FROM identitystore_ref_attribute WHERE id_attribute = ? ";
-    private static final String SQL_QUERY_UPDATE = "UPDATE identitystore_ref_attribute SET id_attribute = ?, name = ?, key_name = ?, common_search_key = ?, description = ?, key_type = ?, certifiable = ?, pivot = ?, key_weight = ?, mandatory_for_creation = ?, validation_regex = ?, validation_error_message = ?, validation_error_message_key, last_update_date = ?, author_name = ? = ? WHERE id_attribute = ?";
+    private static final String SQL_QUERY_UPDATE = "UPDATE identitystore_ref_attribute SET name = ?, key_name = ?, common_search_key = ?, description = ?, key_type = ?, certifiable = ?, pivot = ?, key_weight = ?, mandatory_for_creation = ?, validation_regex = ?, validation_error_message = ?, validation_error_message_key = ?, last_update_date = ?, author_name = ?  WHERE id_attribute = ?";
     private static final String SQL_QUERY_SELECTALL = "SELECT id_attribute, name, key_name, common_search_key, description, key_type, certifiable, pivot, key_weight, mandatory_for_creation, validation_regex, validation_error_message, validation_error_message_key, creation_date, last_update_date, author_name FROM identitystore_ref_attribute";
     private static final String SQL_QUERY_SELECTALL_KEYS = "SELECT key_name FROM identitystore_ref_attribute";
     private static final String SQL_QUERY_SELECT_BY_KEY = "SELECT id_attribute, name, key_name, common_search_key, description, key_type, certifiable, pivot, key_weight, mandatory_for_creation, validation_regex, validation_error_message, validation_error_message_key, creation_date, last_update_date, author_name FROM identitystore_ref_attribute WHERE key_name = ?";
@@ -182,7 +182,6 @@ public final class AttributeKeyDAO implements IAttributeKeyDAO
         {
             int nIndex = 1;
 
-            daoUtil.setInt( nIndex++, attributeKey.getId( ) );
             daoUtil.setString( nIndex++, attributeKey.getName( ) );
             daoUtil.setString( nIndex++, attributeKey.getKeyName( ) );
             daoUtil.setString( nIndex++, attributeKey.getCommonSearchKeyName( ) );
@@ -197,6 +196,7 @@ public final class AttributeKeyDAO implements IAttributeKeyDAO
             daoUtil.setString( nIndex++, attributeKey.getValidationErrorMessageKey( ) );
             daoUtil.setTimestamp( nIndex++, new Timestamp( new java.util.Date( ).getTime( ) ) );
             daoUtil.setString( nIndex++, attributeKey.getAuthorName( ) );
+            
             daoUtil.setInt( nIndex, attributeKey.getId( ) );
 
             daoUtil.executeUpdate( );

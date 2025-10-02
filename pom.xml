@@ -19,7 +19,7 @@
 		<testcontainers.version>1.17.6</testcontainers.version>
 		<flyway.version>9.8.1</flyway.version>
 		<swagger-jaxrs.version>1.6.11</swagger-jaxrs.version>
-		<swagger.library-identitybusiness.version>[3.1.5-SNAPSHOT,)</swagger.library-identitybusiness.version>
+		<swagger.library-identitybusiness.version>[3.2.1-SNAPSHOT,)</swagger.library-identitybusiness.version>
 	</properties>
 
 	<repositories>
