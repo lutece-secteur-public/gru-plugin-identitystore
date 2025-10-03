@@ -885,6 +885,7 @@ public class IdentityService
      * 
      * @param customerId
      *            the customerId of the identity to delete
+     *            the customerId of the identity to delete
      */
     public void delete( final String customerId )
     {
@@ -910,7 +911,7 @@ public class IdentityService
                 IdentityHome.hardRemove( identity.getId( ) );
 
                 /* Notify listeners for indexation, history, ... */
-                _identityStoreNotifyListenerService.notifyListenersIdentityChange(IdentityChangeType.DELETE_REQUEST, identity, ResponseStatusType.SUCCESS.name(),
+                _identityStoreNotifyListenerService.notifyListenersIdentityChange(IdentityChangeType.DELETE, identity, ResponseStatusType.SUCCESS.name(),
                         ResponseStatusType.SUCCESS.name(), new RequestAuthor ("DAEMON", AuthorType.application.name ( ) ), "DAEMON", new HashMap<>());
                 
                 AccessLogService.getInstance().info(AccessLoggerConstants.EVENT_TYPE_DELETE, DELETE_IDENTITY_EVENT_CODE,

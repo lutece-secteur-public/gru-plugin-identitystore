@@ -86,6 +86,7 @@ public class IdentityIndexListener implements IdentityChangeListener
                 AppLogService.debug( "Indexing identity change (" + identityChangeType.name( ) + ") with customerId = " + identity.getCustomerId( ) );
                 this._identityIndexer.create( identityObject, CURRENT_INDEX_ALIAS );
                 break;
+            case DELETE_REQUEST:
             case UPDATE:
             case CONSOLIDATED:
                 AppLogService.debug( "Indexing identity change (" + identityChangeType.name( ) + ") with customerId = " + identity.getCustomerId( ) );
