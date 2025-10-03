@@ -130,6 +130,14 @@ public interface IServiceContractDAO
     List<ServiceContract> selectServiceContractBetweenDate( Plugin plugin, Date startingDate, Date endingDate );
 
     /**
+     * Load the data of all the service contracts with a min end date as specified
+     * @param plugin - the plugin
+     * @param minEndDate - the min end date
+     * @return List
+     */
+    List<ServiceContract> getServiceContractsListWithMinEndDate(final Plugin plugin, final Date minEndDate);
+
+    /**
      * Load the data of all the service contracts and returns them as a list
      * 
      * @param plugin

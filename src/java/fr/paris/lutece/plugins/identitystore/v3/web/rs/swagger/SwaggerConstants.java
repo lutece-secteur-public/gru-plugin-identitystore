@@ -83,6 +83,8 @@ public final class SwaggerConstants
     public static final String PARAM_APPLICATION_CODE_DESCRIPTION = "Application code of the requester. If sent, the adequation between the client code and this application code will be verified.";
     public static final String PARAM_TARGET_CLIENT_CODE_DESCRIPTION = "Target client code to which the request is related";
     public static final String CLIENT_APPLICATION_CODE_DESCRIPTION = "Client application code of the requester that is used to validate every request over its service contract";
+    public static final String PARAM_MIN_END_DATE_DESCRIPTION = "Min end date value for the service contract to have to be returned";
+    public static final String PARAM_LOAD_DETAILS_DESCRIPTION = "false means that only the base informations of the service contract will be loaded. True means that everything will be loaded.";
 
     /**
      * private constructor

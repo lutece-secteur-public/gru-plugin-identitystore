@@ -70,6 +70,7 @@ public final class ServiceContractDAO implements IServiceContractDAO
     private static final String SQL_QUERY_SELECTALL_BY_IDS = "SELECT" + JOINED_COLUMNS + JOIN + " WHERE a.id_service_contract IN (  ";
     private static final String SQL_QUERY_SELECT_BETWEEN_ACTIVE_DATES = "SELECT" + JOINED_COLUMNS + JOIN
             + " WHERE a.starting_date BETWEEN ? AND ? OR a.ending_date BETWEEN ? AND ?";
+    private static final String SQL_QUERY_SELECT_MIN_END_DATE =  "SELECT" + JOINED_COLUMNS + JOIN + " WHERE a.ending_date >= ?";
     private static final String QUERY_SELECT_ALL_FILTERED_IDS = "SELECT a.id_service_contract" + JOIN;
 
     public static final String QUERY_PARAM_ACTIVE = "active";
@@ -440,6 +441,24 @@ public final class ServiceContractDAO implements IServiceContractDAO
             return serviceContractList;
         }
     }
+
+    @Override
+    public List<ServiceContract> getServiceContractsListWithMinEndDate(final Plugin plugin, final Date minEndDate)
+    {
+        final List<ServiceContract> serviceContractList = new ArrayList<>( );
+        try ( final DAOUtil daoUtil = new DAOUtil( SQL_QUERY_SELECT_MIN_END_DATE, plugin ) )
+        {
+            daoUtil.setDate( 1, minEndDate );
+            daoUtil.executeQuery( );
+
+            while ( daoUtil.next( ) )
+            {
+                serviceContractList.add( this.extractServiceContract( daoUtil, 1 ) );
+            }
+            return serviceContractList;
+        }
+    }
+
 
     public List<ServiceContract> selectAllServiceContractsList( final Plugin plugin )
     {

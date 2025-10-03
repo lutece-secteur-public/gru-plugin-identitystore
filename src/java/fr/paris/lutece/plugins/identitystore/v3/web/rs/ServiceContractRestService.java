@@ -38,6 +38,7 @@ import fr.paris.lutece.plugins.identitystore.v3.web.request.contract.ServiceCont
 import fr.paris.lutece.plugins.identitystore.v3.web.request.contract.ServiceContractGetRequest;
 import fr.paris.lutece.plugins.identitystore.v3.web.request.contract.ServiceContractListGetAllRequest;
 import fr.paris.lutece.plugins.identitystore.v3.web.request.contract.ServiceContractListGetRequest;
+import fr.paris.lutece.plugins.identitystore.v3.web.request.contract.ServiceContractListSearchRequest;
 import fr.paris.lutece.plugins.identitystore.v3.web.request.contract.ServiceContractPutEndDateRequest;
 import fr.paris.lutece.plugins.identitystore.v3.web.request.contract.ServiceContractUpdateRequest;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.contract.ServiceContractChangeResponse;
@@ -102,6 +103,63 @@ public class ServiceContractRestService implements IRestService
     {
         // TODO paginer l'appel
         final ServiceContractListGetAllRequest request = new ServiceContractListGetAllRequest( clientCode, strHeaderAppCode, authorName, authorType );
+        return this.buildJsonResponse( request.doRequest( ) );
+    }
+
+    /**
+     * Get ServiceContract List
+     *
+     * @param clientCode
+     *            client code
+     * @return the ServiceContract
+     */
+    @Path( Constants.SERVICECONTRACTS_PATH + "/search/{" + Constants.PARAM_LOAD_DETAILS + "}" )
+    @GET
+    @Produces( MediaType.APPLICATION_JSON )
+    @ApiOperation( value = "Get all service contracts including the attribute details or not", response = ServiceContractsSearchResponse.class )
+    @ApiResponses( value = {
+            @ApiResponse( code = 200, message = "Service contract Found" ),
+            @ApiResponse( code = 400, message = ERROR_DURING_TREATMENT + " with explanation message" ), @ApiResponse( code = 403, message = "Failure" ),
+            @ApiResponse( code = 404, message = ERROR_RESOURCE_NOT_FOUND )
+    } )
+    public Response searchServiceContractList(
+            @ApiParam( name = Constants.PARAM_LOAD_DETAILS, value = SwaggerConstants.PARAM_LOAD_DETAILS_DESCRIPTION ) @PathParam( Constants.PARAM_LOAD_DETAILS ) String strLoadDetails,
+            @ApiParam( name = Constants.PARAM_CLIENT_CODE, value = SwaggerConstants.PARAM_CLIENT_CODE_DESCRIPTION ) @HeaderParam( Constants.PARAM_CLIENT_CODE ) String clientCode,
+            @ApiParam( name = Constants.PARAM_AUTHOR_NAME, value = SwaggerConstants.PARAM_AUTHOR_NAME_DESCRIPTION ) @HeaderParam( Constants.PARAM_AUTHOR_NAME ) String authorName,
+            @ApiParam( name = Constants.PARAM_AUTHOR_TYPE, value = SwaggerConstants.PARAM_AUTHOR_TYPE_DESCRIPTION ) @HeaderParam( Constants.PARAM_AUTHOR_TYPE ) String authorType,
+            @ApiParam( name = Constants.PARAM_APPLICATION_CODE, value = SwaggerConstants.PARAM_APPLICATION_CODE_DESCRIPTION ) @HeaderParam( Constants.PARAM_APPLICATION_CODE ) @DefaultValue( "" ) String strHeaderAppCode )
+            throws IdentityStoreException
+    {
+        final ServiceContractListSearchRequest request = new ServiceContractListSearchRequest(strLoadDetails, null, clientCode, strHeaderAppCode, authorName, authorType );
+        return this.buildJsonResponse( request.doRequest( ) );
+    }
+
+    /**
+     * Search service contract
+     *
+     * @param clientCode
+     *            client code
+     * @return the ServiceContract
+     */
+    @Path( Constants.SERVICECONTRACTS_PATH + "/search/{" + Constants.PARAM_LOAD_DETAILS + "}/{" + Constants.PARAM_MIN_END_DATE + "}" )
+    @GET
+    @Produces( MediaType.APPLICATION_JSON )
+    @ApiOperation( value = "Search service contract matching the given criterias", response = ServiceContractsSearchResponse.class )
+    @ApiResponses( value = {
+            @ApiResponse( code = 200, message = "Service contract Found" ),
+            @ApiResponse( code = 400, message = ERROR_DURING_TREATMENT + " with explanation message" ), @ApiResponse( code = 403, message = "Failure" ),
+            @ApiResponse( code = 404, message = ERROR_RESOURCE_NOT_FOUND )
+    } )
+    public Response searchServiceContractWithMinEndDate(
+            @ApiParam( name = Constants.PARAM_LOAD_DETAILS, value = SwaggerConstants.PARAM_LOAD_DETAILS_DESCRIPTION ) @PathParam( Constants.PARAM_LOAD_DETAILS ) String strLoadDetails,
+            @ApiParam( name = Constants.PARAM_MIN_END_DATE, value = SwaggerConstants.PARAM_MIN_END_DATE_DESCRIPTION ) @PathParam( Constants.PARAM_MIN_END_DATE ) String strMinEndDate,
+            @ApiParam( name = Constants.PARAM_CLIENT_CODE, value = SwaggerConstants.PARAM_CLIENT_CODE_DESCRIPTION ) @HeaderParam( Constants.PARAM_CLIENT_CODE ) String clientCode,
+            @ApiParam( name = Constants.PARAM_AUTHOR_NAME, value = SwaggerConstants.PARAM_AUTHOR_NAME_DESCRIPTION ) @HeaderParam( Constants.PARAM_AUTHOR_NAME ) String authorName,
+            @ApiParam( name = Constants.PARAM_AUTHOR_TYPE, value = SwaggerConstants.PARAM_AUTHOR_TYPE_DESCRIPTION ) @HeaderParam( Constants.PARAM_AUTHOR_TYPE ) String authorType,
+            @ApiParam( name = Constants.PARAM_APPLICATION_CODE, value = SwaggerConstants.PARAM_APPLICATION_CODE_DESCRIPTION ) @HeaderParam( Constants.PARAM_APPLICATION_CODE ) @DefaultValue( "" ) String strHeaderAppCode )
+            throws IdentityStoreException
+    {
+        final ServiceContractListSearchRequest request = new ServiceContractListSearchRequest(strLoadDetails, strMinEndDate, clientCode, strHeaderAppCode, authorName, authorType );
         return this.buildJsonResponse( request.doRequest( ) );
     }
 
