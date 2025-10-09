@@ -51,8 +51,6 @@ import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.IdentityDto;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.contract.ServiceContractDto;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.crud.IdentityChangeRequest;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.crud.IdentityChangeResponse;
-import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.exporting.IdentityExportRequest;
-import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.exporting.IdentityExportResponse;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.merge.IdentityMergeRequest;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.merge.IdentityMergeResponse;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.search.IdentitySearchMessage;
@@ -745,6 +743,28 @@ public class ServiceContractService
             throw new ResourceNotFoundException( "No service contract found", Constants.PROPERTY_REST_ERROR_NO_SERVICE_CONTRACT_FOUND );
         }
         serviceContracts.forEach( serviceContract -> result.add( this.enrichAndConvertToDto( serviceContract ) ) );
+        return result;
+    }
+
+    /**
+     * Search and exports service contracts corresponding to the given criterias
+     * @param loadDetails - to load the details or not (only base object)
+     * @param minEndDate - the min end date value to have
+     * @return List<ServiceContractDto>
+     */
+    public List<ServiceContractDto> searchServiceContracts(final boolean loadDetails, final java.sql.Date minEndDate) throws IdentityStoreException {
+        if ( loadDetails && minEndDate == null )
+        {
+            return this.exportAllServiceContracts();
+        }
+        final List<ServiceContractDto> result = new ArrayList<>( );
+        final List<ServiceContract> serviceContracts = minEndDate == null ? ServiceContractHome.getAllServiceContractsList() : ServiceContractHome.getServiceContractsListWithMinEndDate(minEndDate);
+
+        if ( CollectionUtils.isEmpty( serviceContracts ) )
+        {
+            throw new ResourceNotFoundException( "No service contract found", Constants.PROPERTY_REST_ERROR_NO_SERVICE_CONTRACT_FOUND );
+        }
+        serviceContracts.forEach( serviceContract -> result.add( loadDetails ? this.enrichAndConvertToDto( serviceContract ) : DtoConverter.convertContractToDto( serviceContract ) ) );
         return result;
     }
 

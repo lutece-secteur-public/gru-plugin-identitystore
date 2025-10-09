@@ -34,7 +34,12 @@
 package fr.paris.lutece.plugins.identitystore.business.contract;
 
 import fr.paris.lutece.plugins.identitystore.business.attribute.AttributeKey;
-import fr.paris.lutece.plugins.identitystore.business.referentiel.*;
+import fr.paris.lutece.plugins.identitystore.business.referentiel.IRefAttributeCertificationLevelDAO;
+import fr.paris.lutece.plugins.identitystore.business.referentiel.IRefAttributeCertificationProcessusDAO;
+import fr.paris.lutece.plugins.identitystore.business.referentiel.IRefCertificationLevelDAO;
+import fr.paris.lutece.plugins.identitystore.business.referentiel.RefAttributeCertificationLevel;
+import fr.paris.lutece.plugins.identitystore.business.referentiel.RefAttributeCertificationProcessus;
+import fr.paris.lutece.plugins.identitystore.business.referentiel.RefCertificationLevel;
 import fr.paris.lutece.plugins.identitystore.service.IdentityStorePlugin;
 import fr.paris.lutece.plugins.identitystore.web.ServiceContractAttributeDefinitionDto;
 import fr.paris.lutece.portal.service.plugin.Plugin;
@@ -42,8 +47,8 @@ import fr.paris.lutece.portal.service.plugin.PluginService;
 import fr.paris.lutece.portal.service.spring.SpringContextService;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 
-import java.sql.Date;
 import java.util.ArrayList;
+import java.sql.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -186,6 +191,16 @@ public final class ServiceContractHome
     public static List<ServiceContract> getServiceContractsListBetweenDates( Date startingDate, Date endingDate )
     {
         return _serviceContractDAO.selectServiceContractBetweenDate( _plugin, startingDate, endingDate );
+    }
+
+    /**
+     * Load the data of all the service contracts with a min end date as specified
+     * @param minEndDate - the min end date
+     * @return List
+     */
+    public static List<ServiceContract> getServiceContractsListWithMinEndDate(final Date minEndDate)
+    {
+        return _serviceContractDAO.getServiceContractsListWithMinEndDate( _plugin, minEndDate );
     }
 
     /**
