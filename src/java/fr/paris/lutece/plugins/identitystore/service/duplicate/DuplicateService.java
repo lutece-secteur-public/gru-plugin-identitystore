@@ -93,7 +93,11 @@ public class DuplicateService implements IDuplicateService {
         duplicateRules.sort(Comparator.comparingInt(DuplicateRule::getPriority));
         final Map<String, QualifiedIdentitySearchResult> result = new HashMap<>();
         for (final DuplicateRule duplicateRule : duplicateRules) {
-            result.put(duplicateRule.getCode(), this.findDuplicates(attributeValues, customerId, duplicateRule, attributesFilter));
+            final QualifiedIdentitySearchResult duplicates = this.findDuplicates(attributeValues, customerId, duplicateRule, attributesFilter);
+            if( !duplicates.getQualifiedIdentities().isEmpty( ) )
+            {
+                result.put(duplicateRule.getCode(), duplicates);
+            }
         }
         return result;
     }

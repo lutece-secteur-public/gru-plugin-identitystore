@@ -148,7 +148,7 @@ public class IdentityIndexListener implements IdentityChangeListener
                 final Map<String, QualifiedIdentitySearchResult> duplicates = _duplicateServiceElasticSearch.findDuplicates(attributeMap, identity.getCustomerId(), Collections.singletonList(duplicateRule), Collections.emptyList());
                 final QualifiedIdentitySearchResult qualifiedIdentitySearchResult = duplicates.get(suspiciousIdentity.getDuplicateRuleCode());
 
-                if ( qualifiedIdentitySearchResult.getQualifiedIdentities( ).isEmpty( ) )
+                if ( qualifiedIdentitySearchResult == null || qualifiedIdentitySearchResult.getQualifiedIdentities( ).isEmpty( ) )
                 {
                     TransactionManager.beginTransaction( null );
                     SuspiciousIdentityHome.remove( identity.getCustomerId( ) );
