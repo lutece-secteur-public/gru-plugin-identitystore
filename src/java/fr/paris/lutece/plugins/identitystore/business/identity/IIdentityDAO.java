@@ -283,11 +283,12 @@ public interface IIdentityDAO
      *
      * @param limit
      *            the max number of results
+     * @param withGuidOnly 
      * @param plugin
      *            the plugin
      * @return a list of {@link Identity}
      */
-    List<Identity> selectExpiredNotMergedAndNotConnectedIdentities( int limit, Plugin plugin );
+    List<Identity> selectExpiredNotMergedAndNotConnectedIdentities( int limit, boolean withGuidOnly, Plugin plugin );
 
     /**
      * Search for identity customer IDs that are not connected, not merged, and have the specified attribute non-certified.

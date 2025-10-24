@@ -411,9 +411,9 @@ public final class IdentityHome
      *            the max number of returned results
      * @return a list of expired {@link Identity}
      */
-    public static List<Identity> findExpiredNotMergedAndNotConnectedIdentities( final int limit )
+    public static List<Identity> findExpiredNotMergedAndNotConnectedIdentities( final int limit, boolean withGuidOnly )
     {
-        return _dao.selectExpiredNotMergedAndNotConnectedIdentities( limit, _plugin );
+        return _dao.selectExpiredNotMergedAndNotConnectedIdentities( limit, withGuidOnly, _plugin );
     }
 
     /**

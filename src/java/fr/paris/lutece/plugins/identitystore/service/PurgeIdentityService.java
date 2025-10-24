@@ -61,6 +61,7 @@ import fr.paris.lutece.plugins.notificationstore.v1.web.service.NotificationStor
 import fr.paris.lutece.portal.service.security.AccessLogService;
 import fr.paris.lutece.portal.service.security.AccessLoggerConstants;
 import fr.paris.lutece.portal.service.spring.SpringContextService;
+import fr.paris.lutece.portal.service.util.AppPropertiesService;
 
 public final class PurgeIdentityService
 {
@@ -87,7 +88,8 @@ public final class PurgeIdentityService
         final StringBuilder msg = new StringBuilder( );
 
         // search identities with a passed peremption date, not merged to a primary identity, and not associated to a MonParis account
-        final List<Identity> expiredIdentities = IdentityHome.findExpiredNotMergedAndNotConnectedIdentities( batchLimit );
+        final List<Identity> expiredIdentities = IdentityHome.findExpiredNotMergedAndNotConnectedIdentities( 
+        	batchLimit, AppPropertiesService.getPropertyBoolean ( "daemon.purgeIdentityDaemon.withGuidOnly", true) );
         final Timestamp now = Timestamp.from( Instant.now( ) );
 
         msg.append( expiredIdentities.size( ) ).append( " expired identities found" ).append( "\n" );

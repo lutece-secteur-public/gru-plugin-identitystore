@@ -134,8 +134,10 @@ public final class IdentityDAO implements IIdentityDAO
 
     private static final String SQL_QUERY_REFRESH_LAST_UPDATE_DATE = "UPDATE identitystore_identity SET last_update_date = now() WHERE id_identity = ?";
     private static final String SQL_QUERY_SELECT_EXPIRED_NOT_MERGED_AND_NOT_CONNECTED = "SELECT " + COLUMNS
-            + " FROM identitystore_identity a WHERE a.expiration_date < NOW() AND a.is_merged = 0 AND a.is_mon_paris_active = 0 LIMIT ?";
-
+            + " FROM identitystore_identity a WHERE a.expiration_date < NOW() AND a.is_merged = 0 AND a.is_mon_paris_active = 0 ";
+    private static final String SQL_FILTER_WITH_GUID_ONLY = " and a.connection_id is not null ";
+    private static final String SQL_LIMIT = " LIMIT ?";
+    
     private static final String SQL_QUERY_SELECT_NOT_MERGED_NOT_CONNECTED_WITH_UNCERTIFIED_ATTRIBUTE =
             "SELECT a.customer_id FROM identitystore_identity a"
             + " JOIN identitystore_identity_attribute b ON a.id_identity = b.id_identity"
@@ -910,12 +912,22 @@ public final class IdentityDAO implements IIdentityDAO
      * {@inheritDoc}
      */
     @Override
-    public List<Identity> selectExpiredNotMergedAndNotConnectedIdentities( final int limit, final Plugin plugin )
+    public List<Identity> selectExpiredNotMergedAndNotConnectedIdentities( final int limit, boolean withGuidOnly, final Plugin plugin )
     {
         final List<Identity> listIdentities = new ArrayList<>( );
-        try ( final DAOUtil daoUtil = new DAOUtil( SQL_QUERY_SELECT_EXPIRED_NOT_MERGED_AND_NOT_CONNECTED, plugin ) )
+        String sql = SQL_QUERY_SELECT_EXPIRED_NOT_MERGED_AND_NOT_CONNECTED;
+        
+        if ( withGuidOnly )
+        {
+            sql += SQL_FILTER_WITH_GUID_ONLY;
+        }
+        
+        sql += SQL_LIMIT;
+        
+        try ( final DAOUtil daoUtil = new DAOUtil( sql, plugin ) )
         {
             daoUtil.setInt( 1, limit );
+            
             daoUtil.executeQuery( );
             while ( daoUtil.next( ) )
             {

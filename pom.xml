@@ -19,7 +19,7 @@
 		<testcontainers.version>1.17.6</testcontainers.version>
 		<flyway.version>9.8.1</flyway.version>
 		<swagger-jaxrs.version>1.6.11</swagger-jaxrs.version>
-		<swagger.library-identitybusiness.version>[3.2.1-SNAPSHOT,)</swagger.library-identitybusiness.version>
+		<swagger.library-identitybusiness.version>3.2.1-SNAPSHOT</swagger.library-identitybusiness.version>
 	</properties>
 
 	<repositories>
@@ -127,7 +127,8 @@
 		<tag>gru-plugin-identitystore-1.0.0</tag>
 	</scm>
 
-	<!-- G&#233;n&#233;ration du fichier swagger.json -->
+	<!-- Swagger.json file generation -->
+	<!-- $ mvn io.openapitools.swagger:swagger-maven-plugin:1.0.3:generate -->
 	<profiles>
 		<profile>
 			<id>swagger-json</id>
