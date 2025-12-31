@@ -82,6 +82,7 @@ public class IdentityAttributeValidator
     private static final String PIVOT_CERTIF_LEVEL_THRESHOLD = "identitystore.identity.attribute.update.pivot.certif.level.threshold";
     private static final String IDENTITY_CONNECTED_ALLOWED_ATTRIBUTES_MODIFICATION = "identitystore.identity.connected.allowed.attributes.modification";
     private static final String PROPERTY_EMAIL_FORBIDDEN_DOMAINS = AppPropertiesService.getProperty("identitystore.identity.attribute.email.forbidden_domains");
+    private static final Object FR_CODE = "99100";
 
     private final IdentityAttributeValidationCache _cache = SpringContextService.getBean( "identitystore.identityAttributeValidationCache" );
     private final int pivotCertificationLevelThreshold = AppPropertiesService
@@ -483,9 +484,20 @@ public class IdentityAttributeValidator
 
         // - If one "PIVOT" attribute is certified at a certain level N (conf), all "PIVOT" attributes must be set and certified with level >= N.
         final int threshold = AppPropertiesService.getPropertyInt( PIVOT_CERTIF_LEVEL_THRESHOLD, 400 );
-        // get all pivot attributes from database
+        // get all pivot attributes 
         final List<String> pivotAttributeKeys = allAttributesByKey.values( ).stream( ).filter( AttributeKey::getPivot ).map( AttributeKey::getKeyName )
                                                                   .collect( Collectors.toList( ) );
+        
+        // ... Foreign born identities case : if existing or requested identity is foreign born, do not consider birthplace_code as pivot
+        AttributeDto existingBirthCountryCode = existingIdentityToUpdate.getAttributes( ).stream( ).filter( a -> a.getKey ( ).equals ( Constants.PARAM_BIRTH_COUNTRY_CODE ) ).findFirst ( ).orElse ( null); 
+        AttributeDto newBirthCountryCode = requestAttributes.stream( ).filter( a -> a.getKey ( ).equals ( Constants.PARAM_BIRTH_COUNTRY_CODE ) ).findFirst ( ).orElse ( null); 
+        if ( 	( newBirthCountryCode != null && !newBirthCountryCode.getValue ( ).equals ( FR_CODE ) ) // new country code is a foreign country	 
+        	|| ( newBirthCountryCode == null && existingBirthCountryCode != null && !existingBirthCountryCode.getValue ( ).equals ( FR_CODE ) ) ) // no new country code, old country code exists and is a  foreign country
+        {
+            pivotAttributeKeys.removeIf( a -> a.equals ( Constants.PARAM_BIRTH_PLACE_CODE ) );
+        }
+        	  
+
         final boolean breakingThreshold = existingIdentityToUpdate.getAttributes( ).stream( ).filter( a -> allAttributesByKey.get( a.getKey( ) ).getPivot( ) )
                 .map( a -> RefAttributeCertificationLevelHome.findByProcessusAndAttributeKeyName( a.getCertifier( ), a.getKey( ) ) )
                 .anyMatch( c -> Integer.parseInt( c.getRefCertificationLevel( ).getLevel( ) ) >= threshold )
