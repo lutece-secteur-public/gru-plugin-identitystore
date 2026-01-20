@@ -36,6 +36,7 @@ package fr.paris.lutece.plugins.identitystore.business.identity;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.AuthorType;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.RequestAuthor;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.crud.UpdatedIdentityDto;
@@ -48,6 +49,8 @@ import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreExceptio
 import fr.paris.lutece.portal.service.plugin.Plugin;
 import fr.paris.lutece.portal.service.util.AppPropertiesService;
 import fr.paris.lutece.util.sql.DAOUtil;
+
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -98,8 +101,14 @@ public final class IdentityDAO implements IIdentityDAO
     private static final String SQL_QUERY_WITH_CLAUSE_FOR_API_SEARCH = "WITH ${with_clause} ";
     private static final String SQL_QUERY_JOIN_CLAUSE_FOR_API_SEARCH = "JOIN ${tmp_table_name} on ${tmp_table_name}.id_identity = a.id_identity ";
     private static final String SQL_QUERY_TMP_TABLE_FOR_API_SEARCH = " AS (SELECT ${distinct} b.id_identity AS id_identity FROM identitystore_identity_attribute b JOIN identitystore_ref_attribute c ON b.id_attribute = c.id_attribute AND ${filter})";
-    private static final String SQL_QUERY_FILTER_ATTRIBUTE_FOR_API_SEARCH = "c.key_name IN (${key_name_list}) AND LOWER(b.attribute_value) = '${value}'";
-    private static final String SQL_QUERY_FILTER_NORMALIZED_ATTRIBUTE_FOR_API_SEARCH = "c.key_name IN (${key_name_list}) AND TRANSLATE(REPLACE(REPLACE(LOWER(b.attribute_value), 'œ', 'oe'), 'æ', 'ae'), 'àâäéèêëîïôöùûüÿçñ', 'aaaeeeeiioouuuycn') = '${value}'";
+    
+    private static final String SQL_QUERY_TMP_TABLE_FOR_API_SEARCH_PREPARED_WITH_DISTINCT = " AS (SELECT DISTINCT b.id_identity AS id_identity FROM identitystore_identity_attribute b JOIN identitystore_ref_attribute c ON b.id_attribute = c.id_attribute AND ";
+    private static final String SQL_QUERY_TMP_TABLE_FOR_API_SEARCH_PREPARED_WITHOUT_DISTINCT = " AS (SELECT b.id_identity AS id_identity FROM identitystore_identity_attribute b JOIN identitystore_ref_attribute c ON b.id_attribute = c.id_attribute AND ";
+    private static final String SQL_QUERY_FILTER_ATTRIBUTE_FOR_API_SEARCH_PREPARED = "c.key_name IN ( "; 
+    private static final String SQL_QUERY_FILTER_ATTRIBUTE_FOR_API_SEARCH_PREPARED_ATTRIBUTEVALUE = " AND LOWER(b.attribute_value) = ?";
+    private static final String SQL_QUERY_FILTER_NORMALIZED_ATTRIBUTE_FOR_API_SEARCH_PREPARED = "c.key_name IN ( ";
+    private static final String SQL_QUERY_FILTER_NORMALIZED_ATTRIBUTE_FOR_API_SEARCH_PREPARED_ATTRIBUTEVALUE = "AND TRANSLATE(REPLACE(REPLACE(LOWER(b.attribute_value), 'œ', 'oe'), 'æ', 'ae'), 'àâäéèêëîïôöùûüÿçñ', 'aaaeeeeiioouuuycn') = ? ";
+    
     private static final String SQL_QUERY_SOFT_DELETE = "UPDATE identitystore_identity SET  date_delete = now( ), is_mon_paris_active = 0, expiration_date=now( ), last_update_date=now( )  WHERE customer_id = ?";
     private static final String SQL_QUERY_MERGE = "UPDATE identitystore_identity SET is_merged = 1, date_merge = now(), last_update_date = now(), id_master_identity = ?, is_mon_paris_active = ? WHERE id_identity = ?";
     private static final String SQL_QUERY_CANCEL_MERGE = "UPDATE identitystore_identity SET is_merged = 0, date_merge = null, last_update_date = now(), id_master_identity = null WHERE id_identity = ?";
@@ -527,6 +536,7 @@ public final class IdentityDAO implements IIdentityDAO
     {
         final List<Identity> listIdentities = new ArrayList<>( );
         final Map<String, String> withClauses = new HashMap<>( );
+        List<String> lstValueParameter = new ArrayList<String>();
 
         if ( searchAttributes == null || searchAttributes.isEmpty( ) )
         {
@@ -540,29 +550,34 @@ public final class IdentityDAO implements IIdentityDAO
                 continue;
             }
 
-            final String filter;
+            StringBuilder filterBuilder = new StringBuilder();
             if ( attribute.getKey( ).equals( Constants.PARAM_FIRST_NAME ) || attribute.getKey( ).equals( Constants.PARAM_FAMILY_NAME )
                     ||  ( attribute.getOutputKeys( ) != null && !attribute.getOutputKeys( ).isEmpty( ) && ( attribute.getOutputKeys( ).contains( Constants.PARAM_FIRST_NAME ) || attribute.getOutputKeys( ).contains( Constants.PARAM_FAMILY_NAME ) ) ) )
             {
-                filter = SQL_QUERY_FILTER_NORMALIZED_ATTRIBUTE_FOR_API_SEARCH.replace("${key_name_list}", "'" + String.join("', '", attribute.getOutputKeys( ) ) + "'" ).replace("${value}", this.normalizeValue( attribute.getValue( ) ) );
+            	filterBuilder = new StringBuilder( SQL_QUERY_FILTER_NORMALIZED_ATTRIBUTE_FOR_API_SEARCH_PREPARED );
+            	addFilterParameter(lstValueParameter, attribute, filterBuilder);
+            	filterBuilder.append( SQL_QUERY_FILTER_NORMALIZED_ATTRIBUTE_FOR_API_SEARCH_PREPARED_ATTRIBUTEVALUE );
             }
             else
             {
-                filter = SQL_QUERY_FILTER_ATTRIBUTE_FOR_API_SEARCH.replace("${key_name_list}", "'" + String.join("', '", attribute.getOutputKeys( ) ) + "'" ).replace("${value}", StringUtils.lowerCase( attribute.getValue( ) ) );
+            	filterBuilder = new StringBuilder( SQL_QUERY_FILTER_ATTRIBUTE_FOR_API_SEARCH_PREPARED );
+            	addFilterParameter(lstValueParameter, attribute, filterBuilder);
+            	filterBuilder.append( SQL_QUERY_FILTER_ATTRIBUTE_FOR_API_SEARCH_PREPARED_ATTRIBUTEVALUE );
             }
 
+            StringBuilder sqlBuilder =  new StringBuilder();
             if(attribute.getKey( ).equals(Constants.PARAM_COMMON_EMAIL)
                     || attribute.getKey( ).equals( Constants.PARAM_COMMON_LASTNAME )
                     || attribute.getKey( ).equals(Constants.PARAM_COMMON_PHONE) )
             {
-                withClauses.put(attribute.getKey(), SQL_QUERY_TMP_TABLE_FOR_API_SEARCH.replace("${filter}", filter )
-                        .replace("${distinct}", "DISTINCT") );
+                sqlBuilder = new StringBuilder( SQL_QUERY_TMP_TABLE_FOR_API_SEARCH_PREPARED_WITH_DISTINCT );
             }
             else
             {
-                withClauses.put(attribute.getKey(), SQL_QUERY_TMP_TABLE_FOR_API_SEARCH.replace("${filter}", filter )
-                        .replace("${distinct}", "") );
+                sqlBuilder = new StringBuilder( SQL_QUERY_TMP_TABLE_FOR_API_SEARCH_PREPARED_WITHOUT_DISTINCT );
             }
+            sqlBuilder.append( filterBuilder ).append( " ) " );
+            withClauses.put(attribute.getKey(), sqlBuilder.toString() );
         }
 
         if ( withClauses.isEmpty( ) )
@@ -574,7 +589,14 @@ public final class IdentityDAO implements IIdentityDAO
                 + SQL_QUERY_SELECT_BY_ATTRIBUTES_FOR_API_SEARCH.replace( "${join_clause}", withClauses.keySet( ).stream( ).map( key -> SQL_QUERY_JOIN_CLAUSE_FOR_API_SEARCH.replace( "${tmp_table_name}", key ) ).collect(Collectors.joining( " " )) ).replace( "${limit}", String.valueOf( nMaxNbIdentityReturned ) );
         try ( final DAOUtil daoUtil = new DAOUtil( strSQL, plugin ) )
         {
-            daoUtil.executeQuery( );
+        	int i = 1;
+            for ( String strValueParam : lstValueParameter )
+            {
+            	String strValue =  StringEscapeUtils.unescapeHtml4( strValueParam );
+            	daoUtil.setString( i++, strValue);
+            }
+        	
+        	daoUtil.executeQuery( );
 
             while ( daoUtil.next( ) )
             {
@@ -585,6 +607,18 @@ public final class IdentityDAO implements IIdentityDAO
             return listIdentities;
         }
     }
+
+	private void addFilterParameter(List<String> lstValueParameter, final SearchAttribute attribute,
+			StringBuilder filterBuilder) {
+		for ( String strKey : attribute.getOutputKeys( ) )
+		{
+			filterBuilder.append( "?," );
+			lstValueParameter.add( strKey );
+		}
+		lstValueParameter.add( attribute.getValue( ) );
+		filterBuilder.deleteCharAt( filterBuilder.length( ) - 1 );
+		filterBuilder.append( ") " );
+	}
 
     private String normalizeValue( final String value )
     {
