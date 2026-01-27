@@ -41,6 +41,7 @@ import fr.paris.lutece.portal.service.plugin.Plugin;
 import fr.paris.lutece.portal.service.plugin.PluginService;
 import fr.paris.lutece.portal.service.spring.SpringContextService;
 
+import java.sql.Date;
 import java.util.List;
 
 /**
@@ -134,6 +135,17 @@ public final class ClientApplicationHome
     public static List<ServiceContract> selectActiveServiceContract( String clientCode )
     {
         return _daoServiceContract.selectActiveServiceContract( clientCode, _plugin );
+    }
+
+    /**
+     * select active service contract for a client code
+     * 
+     * @param clientCode
+     * @return the service contract list
+     */
+    public static List<ServiceContract> selectActiveServiceContractAtSpecificDate( String clientCode, Date specificDate )
+    {
+        return _daoServiceContract.selectActiveServiceContract( clientCode, specificDate, _plugin );
     }
 
     /**

@@ -35,8 +35,10 @@ package fr.paris.lutece.plugins.identitystore.service;
 
 import static fr.paris.lutece.plugins.identitystore.service.identity.IdentityService.UPDATE_IDENTITY_EVENT_CODE;
 
+import java.sql.Date;
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
@@ -49,18 +51,22 @@ import fr.paris.lutece.plugins.grubusiness.business.demand.DemandType;
 import fr.paris.lutece.plugins.grubusiness.business.web.rs.DemandDisplay;
 import fr.paris.lutece.plugins.grubusiness.business.web.rs.DemandResult;
 import fr.paris.lutece.plugins.grubusiness.business.web.rs.EnumGenericStatus;
+import fr.paris.lutece.plugins.identitystore.business.contract.ServiceContract;
 import fr.paris.lutece.plugins.identitystore.business.identity.Identity;
 import fr.paris.lutece.plugins.identitystore.business.identity.IdentityHome;
 import fr.paris.lutece.plugins.identitystore.service.contract.ServiceContractService;
 import fr.paris.lutece.plugins.identitystore.service.identity.IdentityService;
 import fr.paris.lutece.plugins.identitystore.service.listeners.IdentityStoreNotifyListenerService;
 import fr.paris.lutece.plugins.identitystore.service.user.InternalUserService;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.AuthorType;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.RequestAuthor;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.ResponseStatusType;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.history.IdentityChangeType;
 import fr.paris.lutece.plugins.notificationstore.v1.web.service.NotificationStoreService;
 import fr.paris.lutece.portal.service.security.AccessLogService;
 import fr.paris.lutece.portal.service.security.AccessLoggerConstants;
 import fr.paris.lutece.portal.service.spring.SpringContextService;
+import fr.paris.lutece.portal.service.util.AppLogService;
 import fr.paris.lutece.portal.service.util.AppPropertiesService;
 
 public final class PurgeIdentityService
@@ -68,7 +74,8 @@ public final class PurgeIdentityService
     private static PurgeIdentityService _instance;
 
     private final NotificationStoreService _notificationStoreService = SpringContextService.getBean( "notificationStore.notificationStoreService" );
-   
+    private final IdentityStoreNotifyListenerService _identityStoreNotifyListenerService = IdentityStoreNotifyListenerService.instance( );
+    
     public static PurgeIdentityService getInstance( )
     {
         if ( _instance == null )
@@ -86,11 +93,14 @@ public final class PurgeIdentityService
     public String purge( final RequestAuthor daemonAuthor, final String daemonClientCode, final List<String> excludedAppCodes, final int batchLimit )
     {
         final StringBuilder msg = new StringBuilder( );
-
+        final boolean isDryRun = AppPropertiesService.getPropertyBoolean ( "daemon.purgeIdentityDaemon.dryRun", false ); 
+        final int nMaxCguRetentionPeridodInMonths = AppPropertiesService.getPropertyInt( "daemon.purgeIdentityDaemon.maxCguRetentionPeridodInMonths", 120 ); 
+        
         // search identities with a passed peremption date, not merged to a primary identity, and not associated to a MonParis account
         final List<Identity> expiredIdentities = IdentityHome.findExpiredNotMergedAndNotConnectedIdentities( 
         	batchLimit, AppPropertiesService.getPropertyBoolean ( "daemon.purgeIdentityDaemon.withGuidOnly", true) );
         final Timestamp now = Timestamp.from( Instant.now( ) );
+        final Timestamp olderCguRetentionDate = Timestamp.valueOf ( now.toLocalDateTime ( ).minusMonths ( nMaxCguRetentionPeridodInMonths ) );
 
         msg.append( expiredIdentities.size( ) ).append( " expired identities found" ).append( "\n" );
 
@@ -99,8 +109,8 @@ public final class PurgeIdentityService
             try
             {
                 final List<Identity> mergedIdentities = IdentityHome.findMergedIdentities( expiredIdentity.getId( ) );
-                // - check if exists recent Demands associated to each identity or its merged ones
-                // >> if true, calculate the new expiration date (date of demand last update + CGUs term)
+                
+                // Get Demands notifications associated to each identity or its merged ones
                 DemandResult demandResult = _notificationStoreService.getListDemand( expiredIdentity.getCustomerId( ), null, null, null, null );
                 final List<DemandDisplay> demandDisplayList = demandResult.getListDemandDisplay() == null ? new ArrayList<>() : new ArrayList<>(demandResult.getListDemandDisplay());
                 for ( final Identity mergedIdentity : mergedIdentities )
@@ -109,13 +119,30 @@ public final class PurgeIdentityService
                             .addAll( _notificationStoreService.getListDemand( mergedIdentity.getCustomerId( ), null, null, null, null ).getListDemandDisplay( ) );
                 }
 
+                boolean isAtLeastOneServiceContractFound = false;
+                boolean isInfosAreMissing = false;
+                
+                // Calculate the new expiration date (date of demand last update + CGUs term)
                 Timestamp demandExpirationDateMAX = expiredIdentity.getExpirationDate( );
                 for ( final DemandDisplay demand : demandDisplayList )
                 {
+                    // ignore canceled demands
                     if (demand.getDemand().getStatusId() == EnumGenericStatus.CANCELED.getStatusId()) {
                         continue;
                     }
+                    
                     final String appCode = getAppCodeFromDemandTypeId( demand.getDemand( ).getTypeId( ) );
+                    if ( appCode == null )
+                    {
+                	msg.append( "Unknown AppCode for demand_type_id : ")
+                		.append ( (demand.getDemand( ).getTypeId( )!=null?demand.getDemand( ).getTypeId( ):"") )
+                		.append ( "\n" );
+                	AppLogService.info( "IdentityPurgDaemon / Unknown AppCode for demand_type_id : "  
+                		+ (demand.getDemand( ).getTypeId( )!=null?demand.getDemand( ).getTypeId( ):"") );
+
+                	isInfosAreMissing = true;
+                    }
+                    
                     if ( !excludedAppCodes.contains( appCode ) )
                     {
                         final List<String> clientCodeList = ServiceContractService.instance( ).getClientCodesFromAppCode( appCode );
@@ -124,10 +151,26 @@ public final class PurgeIdentityService
                         for ( final String clientCode : clientCodeList )
                         {
                             // if there is more than one client code for the app_code, keep the max value of cgus
-                            int nbMonthsCGUs = ServiceContractService.instance( ).getDataRetentionPeriodInMonths( clientCode );
-                            if ( nbMonthsCGUs > nbMonthsCGUsMAX )
+                            Timestamp tscreate = new Timestamp( demand.getDemand( ).getCreationDate( ) );
+                            Date demandCreationDate = Date.valueOf( tscreate.toLocalDateTime( ).toLocalDate( ) );
+                            
+                            ServiceContract sc = ServiceContractService.instance( ).getActiveServiceContractAtSpecificDate( clientCode, demandCreationDate );
+                            if ( sc == null )
                             {
-                                nbMonthsCGUsMAX = nbMonthsCGUs;
+                        	sc = ServiceContractService.instance( ).getActiveServiceContract( clientCode );
+                            }
+                            
+                            if ( sc != null )
+                            {
+                        	isAtLeastOneServiceContractFound = true;
+                                if ( sc.getDataRetentionPeriodInMonths( ) > nbMonthsCGUsMAX )
+                                {
+                                    nbMonthsCGUsMAX = sc.getDataRetentionPeriodInMonths( );
+                                }
+                            }
+                            else
+                            {
+                        	isInfosAreMissing = true;
                             }
                         }
 
@@ -143,6 +186,7 @@ public final class PurgeIdentityService
                     }
                 }
 
+                
                 // check if expiredIdentity should be preserved or can be deleted
                 if ( demandExpirationDateMAX.after( now ) )
                 {
@@ -159,12 +203,34 @@ public final class PurgeIdentityService
 
                     msg.append( "Identity expiration date updated : [" ).append( expiredIdentity.getCustomerId( ) ).append( "]" ).append( "\n" );
                 }
-                else
+                else if ( isInfosAreMissing && demandExpirationDateMAX.after( olderCguRetentionDate ) )
                 {
-                    // if the peremption date still passed, delete the identity (and children as merged identities,
+                    // if infos are missing (but the maximum CGU retention period has not been reached)
+                    if ( !isAtLeastOneServiceContractFound )
+                    {
+                        msg.append ( "No service contact found for identity [").append( expiredIdentity.getCustomerId( ) ).append ( "]\n");
+                    }
+                    
+                    // not enough infos to delete identity
+                    msg.append( "Unsufficient infos to delete [" ).append( expiredIdentity.getCustomerId( ) ).append( "]" ).append( "\n" );
+                    
+                    // Notify listeners 
+                    _identityStoreNotifyListenerService.notifyListenersIdentityChange(IdentityChangeType.DELETION_ATTEMPT_FAILED, expiredIdentity, 
+                	    ResponseStatusType.UNAUTHORIZED.name(),ResponseStatusType.UNAUTHORIZED.name(), 
+                	    new RequestAuthor ("DAEMON", AuthorType.application.name ( ) ), "DAEMON");
+                    
+                }
+                else if ( isDryRun )
+                {
+                    // Dry run : test mode only (no deletion)
+                    msg.append( "(Dry run) should Detete Identity [" ).append( expiredIdentity.getCustomerId( ) ).append( "]" ).append( "\n" );
+                }
+                else 
+                {
+                    // if the updated peremption date still passed, delete the identity (and children as merged identities,
                     // suspicious, attributes and attributes history, etc ...) EXCEPT the identity history
                     IdentityService.instance( ).delete( expiredIdentity.getCustomerId( ) );
-                    msg.append( "Identity deleted for [" ).append( expiredIdentity.getCustomerId( ) ).append( "]" ).append( "\n" );
+                    msg.append( "Detete Identity [" ).append( expiredIdentity.getCustomerId( ) ).append( "]" ).append( "\n" );
 
                     // delete notifications
                     _notificationStoreService.deleteNotificationByCuid( expiredIdentity.getCustomerId( ) );

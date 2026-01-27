@@ -58,7 +58,7 @@ public final class ServiceContractDAO implements IServiceContractDAO
     private static final String SQL_QUERY_SELECT_ALL = "SELECT" + JOINED_COLUMNS + JOIN;
     private static final String SQL_QUERY_SELECT_WITH_CLIENT_APP_ID = "SELECT" + JOINED_COLUMNS + JOIN + " WHERE a.id_client_app = ?";
     private static final String SQL_QUERY_SELECT_ACTIVE_WITH_CLIENT_APP_CODE = "SELECT" + JOINED_COLUMNS + JOIN
-            + " WHERE b.client_code = ? AND CASE WHEN a.ending_date IS NULL THEN CURRENT_DATE >= a.starting_date ELSE CURRENT_DATE BETWEEN a.starting_date AND a.ending_date END";
+            + " WHERE b.client_code = ? AND CASE WHEN a.ending_date IS NULL THEN ? >= a.starting_date ELSE ? BETWEEN a.starting_date AND a.ending_date END";
     private static final String SQL_QUERY_INSERT = "INSERT INTO identitystore_service_contract (id_client_app, " + COLUMNS
             + " ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? ) ";
     private static final String SQL_QUERY_DELETE = "DELETE FROM identitystore_service_contract WHERE id_service_contract = ?";
@@ -167,10 +167,24 @@ public final class ServiceContractDAO implements IServiceContractDAO
     @Override
     public List<ServiceContract> selectActiveServiceContract( String clientCode, Plugin plugin )
     {
+	return selectActiveServiceContract( clientCode, null, plugin );
+    }
+    
+    @Override
+    public List<ServiceContract> selectActiveServiceContract( String clientCode, Date specificDate, Plugin plugin )
+    {
         List<ServiceContract> serviceContractList = new ArrayList<>( );
+        
+        if ( specificDate == null )
+        {
+            specificDate = new java.sql.Date( System.currentTimeMillis( ) ); // now
+        }
+        
         try ( final DAOUtil daoUtil = new DAOUtil( SQL_QUERY_SELECT_ACTIVE_WITH_CLIENT_APP_CODE, plugin ) )
         {
             daoUtil.setString( 1, clientCode );
+            daoUtil.setDate( 2, specificDate );
+            daoUtil.setDate( 3, specificDate );
             daoUtil.executeQuery( );
 
             while ( daoUtil.next( ) )

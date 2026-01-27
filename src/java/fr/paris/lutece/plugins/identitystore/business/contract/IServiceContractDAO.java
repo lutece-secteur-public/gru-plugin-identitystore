@@ -146,11 +146,49 @@ public interface IServiceContractDAO
      */
     List<ServiceContract> selectAllServiceContractsList( Plugin plugin );
 
+    /**
+     * get active service contratc list (must contains only one)
+     * 
+     * @param clientCode
+     * @param plugin
+     * @return the list of service contracts 
+     */
     List<ServiceContract> selectActiveServiceContract( String clientCode, Plugin plugin );
 
+    /**
+     * get active service contratc list (must contains only one) 
+     * for a specific date
+     * 
+     * @param clientCode
+     * @param specificDate
+     * @param plugin
+     * @return the list of service contracts 
+     */
+    List<ServiceContract> selectActiveServiceContract( String clientCode, Date specificDate, Plugin plugin );
+
+    /**
+     * Close service contract
+     * 
+     * @param serviceContract
+     * @param plugin
+     */
     void close( ServiceContract serviceContract, Plugin plugin );
 
+    /**
+     * update author
+     * 
+     * @param idService
+     * @param authorName
+     * @param plugin
+     */
     void updateLastUpdateAuthor(int idService, String authorName, Plugin plugin );
 
+    /**
+     * Select service contract Ids by filtre
+     * 
+     * @param params
+     * @param plugin
+     * @return the list of ids
+     */
     List<Integer> selectFilterdIdServiceContractsList( final Map<String, String> params, Plugin plugin );
 }

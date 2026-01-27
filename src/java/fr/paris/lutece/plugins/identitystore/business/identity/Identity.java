@@ -292,4 +292,28 @@ public class Identity implements Serializable
     {
         this._dateDeleteDate = _dateDeleteDate;
     }
+
+    /**
+     * get Identity values
+     * @return the map of values
+     */
+    public Map<String, String> toMap( )
+    {
+	Map<String,String> map = new HashMap<> ( );
+	map.put( "cuid", _strCustomerId );
+	map.put( "guid", (_strConnectionId!=null ? _strConnectionId : "" ) );
+	
+	map.put( "creationDate", _dateCreationDate.toString ( ) );
+	map.put( "lastUpdateDate", _dateLastUpdateDate.toString ( ) );
+	map.put( "isMonParisActive", (_bIsMonParisActive?"1":"0") );
+	map.put( "expirationDate", _dateExpirationDate.toString ( ) );
+	map.put( "deleteRequestDate", (_dateDeleteDate!=null?_dateDeleteDate.toString( ):"") );
+	
+	for ( String key : _mapAttributes.keySet( ) )
+	{
+	    map.putAll( _mapAttributes.get( key ).toMap( ) );
+	}
+	
+	return map;
+    }
 }

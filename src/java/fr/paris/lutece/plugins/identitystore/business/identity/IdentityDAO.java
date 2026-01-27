@@ -74,7 +74,7 @@ public final class IdentityDAO implements IIdentityDAO
     private static final String SQL_QUERY_SELECT = "SELECT id_identity, connection_id, customer_id, is_deleted, is_merged, id_master_identity, date_create, last_update_date, date_merge, is_mon_paris_active, expiration_date  FROM identitystore_identity WHERE id_identity = ?";
     private static final String SQL_QUERY_INSERT = "INSERT INTO identitystore_identity (  connection_id, customer_id, date_create, last_update_date, is_mon_paris_active, expiration_date ) VALUES ( ?, ?, ?, ?, ?, ? ) ";
     private static final String SQL_QUERY_DELETE = "DELETE FROM identitystore_identity WHERE id_identity = ? ";
-    private static final String SQL_QUERY_UPDATE = "UPDATE identitystore_identity SET connection_id = ?, customer_id = ?, last_update_date = ?, is_mon_paris_active = ? WHERE id_identity = ?";
+    private static final String SQL_QUERY_UPDATE = "UPDATE identitystore_identity SET connection_id = ?, customer_id = ?, last_update_date = ?, is_mon_paris_active = ?, expiration_date = ? WHERE id_identity = ?";
     private static final String SQL_QUERY_SELECTALL_FULL = "SELECT id_identity, connection_id, customer_id, is_deleted, is_merged, id_master_identity, date_create, last_update_date, date_merge, is_mon_paris_active, expiration_date FROM identitystore_identity";
     private static final String SQL_QUERY_SELECT_BY_CONNECTION_ID = "SELECT " + COLUMNS
             + " FROM identitystore_identity a WHERE lower(a.connection_id) = lower(?)";
@@ -136,6 +136,7 @@ public final class IdentityDAO implements IIdentityDAO
     private static final String SQL_QUERY_SELECT_EXPIRED_NOT_MERGED_AND_NOT_CONNECTED = "SELECT " + COLUMNS
             + " FROM identitystore_identity a WHERE a.expiration_date < NOW() AND a.is_merged = 0 AND a.is_mon_paris_active = 0 ";
     private static final String SQL_FILTER_WITH_GUID_ONLY = " and a.connection_id is not null ";
+    private static final String SQL_ORDER_BY = " ORDER BY last_update_date ASC ";
     private static final String SQL_LIMIT = " LIMIT ?";
     
     private static final String SQL_QUERY_SELECT_NOT_MERGED_NOT_CONNECTED_WITH_UNCERTIFIED_ATTRIBUTE =
@@ -318,6 +319,8 @@ public final class IdentityDAO implements IIdentityDAO
             daoUtil.setString( nIndex++, identity.getCustomerId( ) );
             daoUtil.setTimestamp( nIndex++, identity.getLastUpdateDate( ) );
             daoUtil.setBoolean( nIndex++, identity.isMonParisActive( ) );
+            daoUtil.setTimestamp( nIndex++, identity.getExpirationDate( ) );
+                        
             daoUtil.setInt( nIndex, identity.getId( ) );
 
             daoUtil.executeUpdate( );
@@ -915,16 +918,17 @@ public final class IdentityDAO implements IIdentityDAO
     public List<Identity> selectExpiredNotMergedAndNotConnectedIdentities( final int limit, boolean withGuidOnly, final Plugin plugin )
     {
         final List<Identity> listIdentities = new ArrayList<>( );
-        String sql = SQL_QUERY_SELECT_EXPIRED_NOT_MERGED_AND_NOT_CONNECTED;
+        StringBuilder sql = new StringBuilder ( SQL_QUERY_SELECT_EXPIRED_NOT_MERGED_AND_NOT_CONNECTED );
         
         if ( withGuidOnly )
         {
-            sql += SQL_FILTER_WITH_GUID_ONLY;
+            sql.append( SQL_FILTER_WITH_GUID_ONLY );
         }
         
-        sql += SQL_LIMIT;
+        sql.append( SQL_ORDER_BY );
+        sql.append( SQL_LIMIT );
         
-        try ( final DAOUtil daoUtil = new DAOUtil( sql, plugin ) )
+        try ( final DAOUtil daoUtil = new DAOUtil( sql.toString( ), plugin ) )
         {
             daoUtil.setInt( 1, limit );
             

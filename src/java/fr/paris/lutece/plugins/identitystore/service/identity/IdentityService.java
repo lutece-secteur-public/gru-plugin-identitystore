@@ -896,6 +896,12 @@ public class IdentityService
             TransactionManager.beginTransaction( null );
             try
             {
+        	Map<String,String> mapIdentityValues = new HashMap<> ( );
+        	if ( AppPropertiesService.getPropertyBoolean ( "daemon.purgeIdentityDaemon.keepIdentityValuesInHistory", false ) )
+        	{
+        	    mapIdentityValues = identity.toMap( );
+        	}
+        	
                 // Delete eventual merged identities first
                 for ( final Identity mergedIdentity : mergedIdentities )
                 {
@@ -912,7 +918,7 @@ public class IdentityService
 
                 /* Notify listeners for indexation, history, ... */
                 _identityStoreNotifyListenerService.notifyListenersIdentityChange(IdentityChangeType.DELETE, identity, ResponseStatusType.SUCCESS.name(),
-                        ResponseStatusType.SUCCESS.name(), new RequestAuthor ("DAEMON", AuthorType.application.name ( ) ), "DAEMON", new HashMap<>());
+                        ResponseStatusType.SUCCESS.name(), new RequestAuthor ("DAEMON", AuthorType.application.name ( ) ), "DAEMON", mapIdentityValues);
                 
                 AccessLogService.getInstance().info(AccessLoggerConstants.EVENT_TYPE_DELETE, DELETE_IDENTITY_EVENT_CODE,
                         null, SecurityUtil.logForgingProtect(customerId), SPECIFIC_ORIGIN);

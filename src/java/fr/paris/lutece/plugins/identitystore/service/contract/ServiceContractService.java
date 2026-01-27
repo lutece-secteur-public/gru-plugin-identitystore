@@ -107,7 +107,35 @@ public class ServiceContractService
     public ServiceContract getActiveServiceContract( final String clientCode ) throws ClientAuthorizationException {
         return _cache.get( clientCode );
     }
-
+    
+    /**
+     * Get the active ServiceContract} associated to the given ClientApplication
+     * at a specific date
+     * 
+     * @param clientCode
+     * @param specificDate
+     * @return the service contract
+     * @throws ClientAuthorizationException
+     */
+    public ServiceContract getActiveServiceContractAtSpecificDate( final String clientCode, Date specificDate ) throws ClientAuthorizationException {
+	// TODO : add cache ?
+	 final List<ServiceContract> serviceContracts = ClientApplicationHome.selectActiveServiceContract( clientCode );
+	 
+	 if ( serviceContracts != null && !serviceContracts.isEmpty( ) )
+	 {
+	     return serviceContracts.get( 0 );
+	 }
+	 
+	 return null;
+    }
+    
+    /**
+     * get mandatory attributes 
+     * 
+     * @param serviceContract
+     * @param sharedMandatoryAttributeList
+     * @return the attribute key list
+     */
     public List<String> getMandatoryAttributes( final ServiceContract serviceContract, final List<AttributeKey> sharedMandatoryAttributeList )
     {
         final List<AttributeRight> rights = serviceContract.getAttributeRights( );
@@ -117,6 +145,12 @@ public class ServiceContractService
                 .distinct( ).collect( Collectors.toList( ) );
     }
 
+    /**
+     * get data retention period in months
+     * @param clientCode
+     * @return the nb of months
+     * @throws ClientAuthorizationException
+     */
     public int getDataRetentionPeriodInMonths( final String clientCode ) throws ClientAuthorizationException
     {
         final ServiceContract serviceContract = this.getActiveServiceContract( clientCode );

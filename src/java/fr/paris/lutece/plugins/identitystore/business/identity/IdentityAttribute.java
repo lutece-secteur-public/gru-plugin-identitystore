@@ -41,6 +41,8 @@ import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Size;
 import java.io.Serializable;
 import java.sql.Timestamp;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * This is the business class for the object IdentityAttribute
@@ -224,6 +226,22 @@ public class IdentityAttribute implements Serializable
     public void setLastUpdateClientCode( String strLastUpdateClientCode )
     {
         this._strLastUpdateClientCode = strLastUpdateClientCode;
+    }
+    
+    /**
+     * get a map with the attribute values
+     * @return the map
+     */
+    public Map<String, String> toMap( )
+    {
+	Map<String,String> map = new HashMap<> ( );	
+	map.put( _attributeKey.getKeyName ( ) + ".value", _strValue );
+	map.put( _attributeKey.getKeyName ( ) + ".certCode", _certificate.getCertifierCode ( ) );
+	map.put( _attributeKey.getKeyName ( ) + ".certDate", _certificate.getCertificateDate( ).toString ( ) );
+	map.put( _attributeKey.getKeyName ( ) + ".lastUpdate", _dateLastUpdate.toString( ) );
+	map.put( _attributeKey.getKeyName ( ) + ".clientCode", _strLastUpdateClientCode );
+	
+	return map;
     }
 
 }
