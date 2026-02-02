@@ -1,0 +1,77 @@
+<div class="row">
+    <@rowBox>
+    <@boxHeader i18nTitleKey="identitystore.view_notifications.identityNotificationsTitle"></@boxHeader>
+    <@boxBody>
+        <table id="identity-table" class="table table-condensed table-striped">
+            <tr>
+                <th onclick="sortTable(0, 'identity-table')">status</th>
+                <th onclick="sortTable(2, 'identity-table')">id</th>
+                <th onclick="sortTable(3, 'identity-table')">type_id</th>
+                <th onclick="sortTable(4, 'identity-table')">reference</th>
+                <th onclick="sortTable(5, 'identity-table')">creationDate</th>
+                <th onclick="sortTable(6, 'identity-table')">modifyDate</th>
+                <th onclick="sortTable(7, 'identity-table')">statusId</th>
+            </tr>
+            <#if demandList??  && demandList?has_content>
+                <tbody>
+                    <#list demandList as demandDisplay>
+                        <tr>
+                            <td>${demandDisplay.status!}</td>
+                            <td>${demandDisplay.demand.id!}</td>
+                            <td>${demandDisplay.demand.typeId!}</td>
+                            <td>${demandDisplay.demand.reference!}
+                            	<#if demandDisplay.demand.title??><br>${demandDisplay.demand.title!}</#if></td>
+                            <td>${demandDisplay.demand.creationDate!}</td>
+                            <td>${demandDisplay.demand.modifyDate!}</td>
+                            <td>${demandDisplay.demand.statusId!}</td>
+                        </tr>
+                    </#list>
+                </tbody>
+            </#if>
+        </table>
+    </@boxBody>
+</@rowBox>
+</div>
+<script src="./js/admin/plugins/identitystore/table.js"></script>
+<style>
+    table th{
+        cursor: pointer;
+    }
+    .custom-tooltip {
+        position: relative;
+        display: inline-block;
+    }
+
+    .custom-tooltip .custom-tooltiptext {
+        visibility: hidden;
+        width: 500px;
+        background-color: #555;
+        color: #fff;
+        text-align: center;
+        border-radius: 6px;
+        padding: 10% 10%;
+        position: absolute;
+        z-index: 1;
+        bottom: 125%;
+        left: 50%;
+        margin-left: -60px;
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+
+    .custom-tooltip .custom-tooltiptext::after {
+        content: "";
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        margin-left: -5px;
+        border-width: 5px;
+        border-style: solid;
+        border-color: #555 transparent transparent transparent;
+    }
+
+    .custom-tooltip:hover .custom-tooltiptext {
+        visibility: visible;
+        opacity: 1;
+    }
+</style>

@@ -2,8 +2,10 @@
     <@boxHeader i18nTitleKey="">
     <@headerButtons>
         <form class="form-inline pull-right" method="post" name="manage_identities" action="jsp/admin/plugins/identitystore/ManageIdentities.jsp">
+            <@input name="id" type="hidden" value=identity.customerId! />
             <!-- Add pull-right to class1 -->
             <@actionButtons button1Name="view_viewIdentityHistory" icon1="fa fa-eye" i18nValue1Key="identitystore.manage_identities.buttonViewHistory" />
+            <@actionButtons button1Name="view_viewIdentityNotifications" icon1="fa fa-envelope" i18nValue1Key="identitystore.manage_identities.buttonViewNotifications" />
         </form>
     </@headerButtons>
     </@boxHeader>

@@ -36,6 +36,11 @@ package fr.paris.lutece.plugins.identitystore.web;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+
+import fr.paris.lutece.plugins.grubusiness.business.notification.Notification;
+import fr.paris.lutece.plugins.grubusiness.business.web.rs.DemandDisplay;
+import fr.paris.lutece.plugins.grubusiness.business.web.rs.DemandResult;
+import fr.paris.lutece.plugins.grubusiness.service.notification.NotificationException;
 import fr.paris.lutece.plugins.identitystore.business.duplicates.suspicions.SuspiciousIdentityHome;
 import fr.paris.lutece.plugins.identitystore.business.identity.Identity;
 import fr.paris.lutece.plugins.identitystore.business.identity.IdentityAttribute;
@@ -57,10 +62,12 @@ import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.importing.BatchImport
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.search.SearchAttribute;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
+import fr.paris.lutece.plugins.notificationstore.v1.web.service.NotificationStoreService;
 import fr.paris.lutece.portal.service.admin.AccessDeniedException;
 import fr.paris.lutece.portal.service.security.AccessLogService;
 import fr.paris.lutece.portal.service.security.AccessLoggerConstants;
 import fr.paris.lutece.portal.service.spring.SpringContextService;
+import fr.paris.lutece.portal.service.util.AppLogService;
 import fr.paris.lutece.portal.service.util.AppPropertiesService;
 import fr.paris.lutece.portal.util.mvc.admin.annotations.Controller;
 import fr.paris.lutece.portal.util.mvc.commons.annotations.Action;
@@ -98,11 +105,16 @@ public class IdentityJspBean extends ManageIdentitiesJspBean
      * 
      */
     private static final long serialVersionUID = 6053504380426222888L;
+    
     // Templates
     private static final String TEMPLATE_SEARCH_IDENTITIES = "/admin/plugins/identitystore/search_identities.html";
     private static final String TEMPLATE_VIEW_IDENTITY = "/admin/plugins/identitystore/view_identity.html";
     private static final String TEMPLATE_VIEW_IDENTITY_HISTORY = "/admin/plugins/identitystore/view_identity_change_history.html";
+    private static final String TEMPLATE_VIEW_IDENTITY_NOTIFICATIONS = "/admin/plugins/identitystore/view_identity_notifications.html";
 
+    // jsp
+    private static final String JSP_MANAGE_IDENTITIES = "jsp/admin/plugins/identitystore/ManageIdentities.jsp";
+    
     // Parameters
     private static final String PARAMETER_ID_IDENTITY = "id";
 
@@ -110,7 +122,8 @@ public class IdentityJspBean extends ManageIdentitiesJspBean
     private static final String PROPERTY_PAGE_TITLE_MANAGE_IDENTITIES = "identitystore.manage_identities.pageTitle";
     private static final String PROPERTY_PAGE_TITLE_VIEW_IDENTITY = "identitystore.create_identity.pageTitle";
     private static final String PROPERTY_PAGE_TITLE_VIEW_CHANGE_HISTORY = "identitystore.view_change_history.pageTitle";
-
+    private static final String PROPERTY_PAGE_TITLE_VIEW_NOTIFICATIONS = "identitystore.view_notifications.pageTitle";
+    
     // Markers
     private static final String MARK_IDENTITY_LIST = "identity_list";
     private static final String MARK_IDENTITY = "identity";
@@ -124,12 +137,13 @@ public class IdentityJspBean extends ManageIdentitiesJspBean
     private static final String MARK_HAS_DELETE_ROLE = "deleteIdentityRole";
     private static final String MARK_HAS_VIEW_ROLE = "viewIdentityRole";
     private static final String MARK_HAS_ATTRIBUTS_HISTO_ROLE = "histoAttributsRole";
-    private static final String JSP_MANAGE_IDENTITIES = "jsp/admin/plugins/identitystore/ManageIdentities.jsp";
+    private static final String MARK_IDENTITY_NOTIFICATIONS_LIST = "demandList";
 
     // Views
     private static final String VIEW_MANAGE_IDENTITIES = "manageIdentitys";
     private static final String VIEW_IDENTITY = "viewIdentity";
     private static final String VIEW_IDENTITY_HISTORY = "viewIdentityHistory";
+    private static final String VIEW_IDENTITY_NOTIFICATIONS = "viewIdentityNotifications";
 
     // Actions
     private static final String ACTION_EXPORT_IDENTITIES = "exportIdentities";
@@ -153,6 +167,7 @@ public class IdentityJspBean extends ManageIdentitiesJspBean
 
     private final ISearchIdentityService _searchIdentityServiceDB = SpringContextService.getBean( "identitystore.searchIdentityService.database" );
     private final ISearchIdentityService _searchIdentityServiceES = SpringContextService.getBean( "identitystore.searchIdentityService.elasticsearch" );
+    private final NotificationStoreService _notificationStoreService = SpringContextService.getBean( "notificationStore.notificationStoreService" );
 
     @View( value = VIEW_MANAGE_IDENTITIES, defaultView = true )
     public String getManageIdentitys( HttpServletRequest request )
@@ -358,6 +373,13 @@ public class IdentityJspBean extends ManageIdentitiesJspBean
     @View( value = VIEW_IDENTITY_HISTORY )
     public String getIdentityHistoryView( HttpServletRequest request )
     {
+	final String CUID = request.getParameter( PARAMETER_ID_IDENTITY );
+
+	if ( CUID != null && ( _identity == null || !_identity.getCustomerId( ).equals( CUID ) ) )
+	{
+	    _identity = IdentityHome.findByCustomerId( CUID );
+	}
+
         // here we use a LinkedHashMap to have same attributs order as in viewIdentity
         final List<AttributeChange> attributeChangeList = new ArrayList<>( );
         final List<IdentityChange> identityChangeList = new ArrayList<>( );
@@ -389,6 +411,56 @@ public class IdentityJspBean extends ManageIdentitiesJspBean
         return getPage( PROPERTY_PAGE_TITLE_VIEW_CHANGE_HISTORY, TEMPLATE_VIEW_IDENTITY_HISTORY, model );
     }
 
+    /**
+     * Build the attribute history View
+     *
+     * @param request
+     *            The HTTP request
+     * @return The page
+     * @throws NotificationException 
+     */
+    @View( value = VIEW_IDENTITY_NOTIFICATIONS )
+    public String getIdentityNotificationsView( HttpServletRequest request )
+    {
+	final String CUID = request.getParameter( PARAMETER_ID_IDENTITY );
+
+	if ( CUID != null && ( _identity == null || !_identity.getCustomerId( ).equals( CUID ) ) )
+	{
+	    _identity = IdentityHome.findByCustomerId( CUID );
+	}
+	
+	List<DemandDisplay> demandDisplayList = new ArrayList<>( );
+	
+        if ( _identity != null )
+        {
+            final List<Identity> mergedIdentities = IdentityHome.findMergedIdentities( _identity.getId( ) );
+            
+            // Get Demands notifications associated to each identity or its merged ones
+            DemandResult demandResult;
+	    try
+	    {
+		demandResult = _notificationStoreService.getListDemand( _identity.getCustomerId( ), null, null, null, null );
+	    
+                demandDisplayList = demandResult.getListDemandDisplay() == null ? new ArrayList<>() : new ArrayList<>(demandResult.getListDemandDisplay());
+                for ( final Identity mergedIdentity : mergedIdentities )
+                {
+                    demandDisplayList
+                            .addAll( _notificationStoreService.getListDemand( mergedIdentity.getCustomerId( ), null, null, null, null ).getListDemandDisplay( ) );
+                }
+	    } 
+	    catch ( NotificationException e )
+	    {
+		AppLogService.error( "Error on Notification request", e );
+		addError( "Error on Notification request : " + e.getMessage( ) );
+	    }
+        }
+
+        final Map<String, Object> model = getModel( );
+        model.put( MARK_IDENTITY_NOTIFICATIONS_LIST, demandDisplayList );
+
+        return getPage( PROPERTY_PAGE_TITLE_VIEW_NOTIFICATIONS, TEMPLATE_VIEW_IDENTITY_NOTIFICATIONS, model );
+    }
+    
     /**
      * Process the data capture form of a new suspiciousidentity
      *
