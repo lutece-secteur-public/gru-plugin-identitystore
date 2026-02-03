@@ -44,6 +44,7 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -217,7 +218,7 @@ public final class PurgeIdentityService
                     // Notify listeners 
                     _identityStoreNotifyListenerService.notifyListenersIdentityChange(IdentityChangeType.DELETION_ATTEMPT_FAILED, expiredIdentity, 
                 	    ResponseStatusType.UNAUTHORIZED.name(),ResponseStatusType.UNAUTHORIZED.name(), 
-                	    new RequestAuthor ("DAEMON", AuthorType.application.name ( ) ), "DAEMON");
+                	    new RequestAuthor ("DAEMON", AuthorType.application.name ( ) ), "DAEMON", null);
                     
                 }
                 else if ( isDryRun )
