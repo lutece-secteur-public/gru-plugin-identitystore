@@ -2,28 +2,43 @@
     <@rowBox>
     <@boxHeader i18nTitleKey="identitystore.view_notifications.identityNotificationsTitle"></@boxHeader>
     <@boxBody>
+        Infos are missing : <#if !infos_are_missing ><span style="color:green">No</span><#else><span style="color:red">Yes</span></#if><br>
+        At least one service contract found : <#if at_least_one_service_contract_found ><span style="color:green">Yes</span><#else><span style="color:red">No</span></#if><br>
+        <br>
+        
         <table id="identity-table" class="table table-condensed table-striped">
             <tr>
-                <th onclick="sortTable(0, 'identity-table')">status</th>
+                <th onclick="sortTable(0, 'identity-table')">status Dem</th>
+                <th onclick="sortTable(1, 'identity-table')">status Notif</th>
                 <th onclick="sortTable(2, 'identity-table')">id</th>
                 <th onclick="sortTable(3, 'identity-table')">type_id</th>
                 <th onclick="sortTable(4, 'identity-table')">reference</th>
                 <th onclick="sortTable(5, 'identity-table')">creationDate</th>
                 <th onclick="sortTable(6, 'identity-table')">modifyDate</th>
-                <th onclick="sortTable(7, 'identity-table')">statusId</th>
+                <th onclick="sortTable(7, 'identity-table')">Retention</th>
             </tr>
-            <#if demandList??  && demandList?has_content>
+            <#if demand_list??  && demand_list?has_content>
                 <tbody>
-                    <#list demandList as demandDisplay>
+                    <#list demand_list as demandDisplay>
                         <tr>
+                        
+                            <td><#if demandDisplay.demand.statusId?? && generic_status_list[demandDisplay.demand.statusId?c]??>
+                             ${i18n(generic_status_list[demandDisplay.demand.statusId?c])}
+                             </#if></td>
                             <td>${demandDisplay.status!}</td>
                             <td>${demandDisplay.demand.id!}</td>
-                            <td>${demandDisplay.demand.typeId!}</td>
+                            <td>${demandDisplay.demand.typeId!}
+                               [<a href='jsp/admin/plugins/identitystore/ManageClientApplications.jsp?application_code_search=${demandDisplay.appCode!''}'>${demandDisplay.appCode!''}</a>]
+                            </td>
                             <td>${demandDisplay.demand.reference!}
                             	<#if demandDisplay.demand.title??><br>${demandDisplay.demand.title!}</#if></td>
-                            <td>${demandDisplay.demand.creationDate!}</td>
-                            <td>${demandDisplay.demand.modifyDate!}</td>
-                            <td>${demandDisplay.demand.statusId!}</td>
+                            <td>${demandDisplay.demand.creationDate?number_to_datetime!''}</td>
+                            <td>${demandDisplay.demand.modifyDate?number_to_datetime!''}</td>
+                            <td><#if demandDisplay.regulatoryDateForIdentityRetention?? >
+                                       <span style='color:<#if demandDisplay.regulatoryDateForIdentityRetention?long gt .now?long>green<#else>red</#if>'>
+                                         ${demandDisplay.regulatoryDateForIdentityRetention!''}
+                                       </span>
+                                </#if></td>
                         </tr>
                     </#list>
                 </tbody>

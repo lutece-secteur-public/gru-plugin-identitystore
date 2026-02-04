@@ -40,6 +40,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import fr.paris.lutece.plugins.grubusiness.business.notification.Notification;
 import fr.paris.lutece.plugins.grubusiness.business.web.rs.DemandDisplay;
 import fr.paris.lutece.plugins.grubusiness.business.web.rs.DemandResult;
+import fr.paris.lutece.plugins.grubusiness.business.web.rs.EnumGenericStatus;
 import fr.paris.lutece.plugins.grubusiness.service.notification.NotificationException;
 import fr.paris.lutece.plugins.identitystore.business.duplicates.suspicions.SuspiciousIdentityHome;
 import fr.paris.lutece.plugins.identitystore.business.identity.Identity;
@@ -48,6 +49,7 @@ import fr.paris.lutece.plugins.identitystore.business.identity.IdentityAttribute
 import fr.paris.lutece.plugins.identitystore.business.identity.IdentityConstants;
 import fr.paris.lutece.plugins.identitystore.business.identity.IdentityHome;
 import fr.paris.lutece.plugins.identitystore.service.IdentityManagementResourceIdService;
+import fr.paris.lutece.plugins.identitystore.service.PurgeIdentityService;
 import fr.paris.lutece.plugins.identitystore.service.identity.IdentityService;
 import fr.paris.lutece.plugins.identitystore.service.search.ISearchIdentityService;
 import fr.paris.lutece.plugins.identitystore.utils.Batch;
@@ -61,6 +63,7 @@ import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.history.IdentityChang
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.importing.BatchImportRequest;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.search.SearchAttribute;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
+import fr.paris.lutece.plugins.identitystore.web.exception.ClientAuthorizationException;
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
 import fr.paris.lutece.plugins.notificationstore.v1.web.service.NotificationStoreService;
 import fr.paris.lutece.portal.service.admin.AccessDeniedException;
@@ -86,6 +89,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -105,7 +109,7 @@ public class IdentityJspBean extends ManageIdentitiesJspBean
      * 
      */
     private static final long serialVersionUID = 6053504380426222888L;
-    
+
     // Templates
     private static final String TEMPLATE_SEARCH_IDENTITIES = "/admin/plugins/identitystore/search_identities.html";
     private static final String TEMPLATE_VIEW_IDENTITY = "/admin/plugins/identitystore/view_identity.html";
@@ -114,7 +118,7 @@ public class IdentityJspBean extends ManageIdentitiesJspBean
 
     // jsp
     private static final String JSP_MANAGE_IDENTITIES = "jsp/admin/plugins/identitystore/ManageIdentities.jsp";
-    
+
     // Parameters
     private static final String PARAMETER_ID_IDENTITY = "id";
 
@@ -123,7 +127,7 @@ public class IdentityJspBean extends ManageIdentitiesJspBean
     private static final String PROPERTY_PAGE_TITLE_VIEW_IDENTITY = "identitystore.create_identity.pageTitle";
     private static final String PROPERTY_PAGE_TITLE_VIEW_CHANGE_HISTORY = "identitystore.view_change_history.pageTitle";
     private static final String PROPERTY_PAGE_TITLE_VIEW_NOTIFICATIONS = "identitystore.view_notifications.pageTitle";
-    
+
     // Markers
     private static final String MARK_IDENTITY_LIST = "identity_list";
     private static final String MARK_IDENTITY = "identity";
@@ -137,7 +141,10 @@ public class IdentityJspBean extends ManageIdentitiesJspBean
     private static final String MARK_HAS_DELETE_ROLE = "deleteIdentityRole";
     private static final String MARK_HAS_VIEW_ROLE = "viewIdentityRole";
     private static final String MARK_HAS_ATTRIBUTS_HISTO_ROLE = "histoAttributsRole";
-    private static final String MARK_IDENTITY_NOTIFICATIONS_LIST = "demandList";
+    private static final String MARK_IDENTITY_NOTIFICATIONS_LIST = "demand_list";
+    private static final String MARK_GENERIC_STATUS = "generic_status_list";
+    private static final String MARK_INFOS_ARE_MISSING = "infos_are_missing";
+    private static final String MARK_AT_LEAST_ONE_SC_FOUND = "at_least_one_service_contract_found";
 
     // Views
     private static final String VIEW_MANAGE_IDENTITIES = "manageIdentitys";
@@ -169,163 +176,166 @@ public class IdentityJspBean extends ManageIdentitiesJspBean
     private final ISearchIdentityService _searchIdentityServiceES = SpringContextService.getBean( "identitystore.searchIdentityService.elasticsearch" );
     private final NotificationStoreService _notificationStoreService = SpringContextService.getBean( "notificationStore.notificationStoreService" );
 
+    private final List<String> excludedAppCodes = Arrays
+	    .asList( AppPropertiesService.getProperty( "daemon.purgeIdentityDaemon.excluded.app.codes", "" ).split( "," ) );
+
     @View( value = VIEW_MANAGE_IDENTITIES, defaultView = true )
     public String getManageIdentitys( HttpServletRequest request )
     {
-        _identity = null;
-        _identities.clear( );
-        final Map<String, String> queryParameters = this.getQueryParameters( request );
+	_identity = null;
+	_identities.clear( );
+	final Map<String, String> queryParameters = this.getQueryParameters( request );
 
-        final List<SearchAttribute> atttributes = new ArrayList<>( );
-        final String cuid = queryParameters.get( QUERY_PARAM_CUID );
-        final String guid = queryParameters.get( QUERY_PARAM_GUID );
-        final String insee_city = queryParameters.get( QUERY_PARAM_INSEE_CITY );
-        final String insee_country = queryParameters.get( QUERY_PARAM_INSEE_COUNTRY );
-        final String email = queryParameters.get( QUERY_PARAM_EMAIL );
-        final String gender = queryParameters.get( QUERY_PARAM_GENDER );
-        final String common_name = queryParameters.get(QUERY_PARAM_COMMON_LASTNAME);
-        final String first_name = queryParameters.get( QUERY_PARAM_FIRST_NAME );
-        final String birthdate = queryParameters.get( QUERY_PARAM_BIRTHDATE );
-        final String birthplace = queryParameters.get( QUERY_PARAM_INSEE_BIRTHPLACE_LABEL );
-        final String birthcountry = queryParameters.get( QUERY_PARAM_INSEE_BIRTHCOUNTRY_LABEL );
-        final String phone = queryParameters.get( QUERY_PARAM_PHONE );
-        final String datasource = Optional.ofNullable( queryParameters.get( QUERY_PARAM_DATASOURCE ) ).orElse( DATASOURCE_DB );
+	final List<SearchAttribute> atttributes = new ArrayList<>( );
+	final String cuid = queryParameters.get( QUERY_PARAM_CUID );
+	final String guid = queryParameters.get( QUERY_PARAM_GUID );
+	final String insee_city = queryParameters.get( QUERY_PARAM_INSEE_CITY );
+	final String insee_country = queryParameters.get( QUERY_PARAM_INSEE_COUNTRY );
+	final String email = queryParameters.get( QUERY_PARAM_EMAIL );
+	final String gender = queryParameters.get( QUERY_PARAM_GENDER );
+	final String common_name = queryParameters.get(QUERY_PARAM_COMMON_LASTNAME);
+	final String first_name = queryParameters.get( QUERY_PARAM_FIRST_NAME );
+	final String birthdate = queryParameters.get( QUERY_PARAM_BIRTHDATE );
+	final String birthplace = queryParameters.get( QUERY_PARAM_INSEE_BIRTHPLACE_LABEL );
+	final String birthcountry = queryParameters.get( QUERY_PARAM_INSEE_BIRTHCOUNTRY_LABEL );
+	final String phone = queryParameters.get( QUERY_PARAM_PHONE );
+	final String datasource = Optional.ofNullable( queryParameters.get( QUERY_PARAM_DATASOURCE ) ).orElse( DATASOURCE_DB );
 
-        try
-        {
-            if ( StringUtils.isNotEmpty( cuid ) )
-            {
-                if ( datasource.equals( DATASOURCE_DB ) )
-                {
-                    final Identity identity = IdentityHome.findMasterIdentityByCustomerId( cuid );
-                    if ( identity != null )
-                    {
-                        final IdentityDto qualifiedIdentity = DtoConverter.convertIdentityToDto( identity );
-                        _identities.add( qualifiedIdentity );
-                    }
-                }
-                else
-                if ( datasource.equals( DATASOURCE_ES ) )
-                {
-                    _identities.addAll( _searchIdentityServiceES.getQualifiedIdentities( cuid, Collections.emptyList() )
-                            .getQualifiedIdentities( ) );
-                }
-            }
-            else
-            {
-                if ( StringUtils.isNotEmpty( guid ) )
-                {
-                    if ( datasource.equals( DATASOURCE_DB ) )
-                    {
-                        final Identity identity = IdentityHome.findMasterIdentityByConnectionId( guid );
-                        if ( identity != null )
-                        {
-                            final IdentityDto qualifiedIdentity = DtoConverter.convertIdentityToDto( identity );
-                            _identities.add( qualifiedIdentity );
-                        }
-                    }
-                    else
-                    if ( datasource.equals( DATASOURCE_ES ) )
-                    {
-                        _identities.addAll( _searchIdentityServiceES.getQualifiedIdentitiesByConnectionId( guid, Collections.emptyList() )
-                                .getQualifiedIdentities( ) );
-                    }
-                }
-                else
-                {
-                    if ( StringUtils.isNotEmpty( insee_city ) )
-                    {
-                        atttributes.add( new SearchAttribute( Constants.PARAM_BIRTH_PLACE_CODE, insee_city, AttributeTreatmentType.STRICT ) );
-                    }
-                    if ( StringUtils.isNotEmpty( insee_country ) )
-                    {
-                        atttributes.add( new SearchAttribute( Constants.PARAM_BIRTH_COUNTRY_CODE, insee_country, AttributeTreatmentType.STRICT ) );
-                    }
-                    if ( StringUtils.isNotEmpty( email ) )
-                    {
-                        atttributes.add( new SearchAttribute( Constants.PARAM_COMMON_EMAIL, email, AttributeTreatmentType.STRICT ) );
-                    }
-                    if ( StringUtils.isNotEmpty( gender ) )
-                    {
-                        atttributes.add( new SearchAttribute( Constants.PARAM_GENDER, gender, AttributeTreatmentType.STRICT ) );
-                    }
-                    if ( StringUtils.isNotEmpty( common_name ) )
-                    {
-                        atttributes.add( new SearchAttribute( Constants.PARAM_COMMON_LASTNAME, common_name, AttributeTreatmentType.APPROXIMATED ) );
-                    }
-                    if ( StringUtils.isNotEmpty( first_name ) )
-                    {
-                        atttributes.add( new SearchAttribute( Constants.PARAM_FIRST_NAME, first_name, AttributeTreatmentType.APPROXIMATED ) );
-                    }
-                    if ( StringUtils.isNotEmpty( birthdate ) )
-                    {
-                        atttributes.add( new SearchAttribute( Constants.PARAM_BIRTH_DATE, birthdate, AttributeTreatmentType.STRICT ) );
-                    }
-                    if ( StringUtils.isNotEmpty( birthplace ) )
-                    {
-                        atttributes.add( new SearchAttribute( Constants.PARAM_BIRTH_PLACE, birthplace, AttributeTreatmentType.APPROXIMATED ) );
-                    }
-                    if ( StringUtils.isNotEmpty( birthcountry ) )
-                    {
-                        atttributes.add( new SearchAttribute( Constants.PARAM_BIRTH_COUNTRY, birthcountry, AttributeTreatmentType.APPROXIMATED ) );
-                    }
-                    if ( StringUtils.isNotEmpty( phone ) )
-                    {
-                        atttributes.add( new SearchAttribute( Constants.PARAM_COMMON_PHONE, phone, AttributeTreatmentType.STRICT ) );
-                    }
-                    if ( CollectionUtils.isNotEmpty( atttributes ) )
-                    {
-                        if ( datasource.equals( DATASOURCE_DB ) )
-                        {
-                            _identities.addAll( _searchIdentityServiceDB.getQualifiedIdentities( atttributes, PROPERTY_MAX_NB_IDENTITY_RETURNED, false, Collections.emptyList( ) )
-                                    .getQualifiedIdentities( ) );
-                        }
-                        else
-                            if ( datasource.equals( DATASOURCE_ES ) )
-                            {
-                                _identities.addAll( _searchIdentityServiceES.getQualifiedIdentities( atttributes, PROPERTY_MAX_NB_IDENTITY_RETURNED, false, Collections.emptyList( ) )
-                                        .getQualifiedIdentities( ) );
-                            }
-                    }
-                }
-            }
-        }
-        catch( Exception e )
-        {
-            addError( e.getMessage( ) );
-            this.clearParameters( request );
-            return redirectView( request, VIEW_MANAGE_IDENTITIES );
-        }
+	try
+	{
+	    if ( StringUtils.isNotEmpty( cuid ) )
+	    {
+		if ( datasource.equals( DATASOURCE_DB ) )
+		{
+		    final Identity identity = IdentityHome.findMasterIdentityByCustomerId( cuid );
+		    if ( identity != null )
+		    {
+			final IdentityDto qualifiedIdentity = DtoConverter.convertIdentityToDto( identity );
+			_identities.add( qualifiedIdentity );
+		    }
+		}
+		else
+		    if ( datasource.equals( DATASOURCE_ES ) )
+		    {
+			_identities.addAll( _searchIdentityServiceES.getQualifiedIdentities( cuid, Collections.emptyList() )
+				.getQualifiedIdentities( ) );
+		    }
+	    }
+	    else
+	    {
+		if ( StringUtils.isNotEmpty( guid ) )
+		{
+		    if ( datasource.equals( DATASOURCE_DB ) )
+		    {
+			final Identity identity = IdentityHome.findMasterIdentityByConnectionId( guid );
+			if ( identity != null )
+			{
+			    final IdentityDto qualifiedIdentity = DtoConverter.convertIdentityToDto( identity );
+			    _identities.add( qualifiedIdentity );
+			}
+		    }
+		    else
+			if ( datasource.equals( DATASOURCE_ES ) )
+			{
+			    _identities.addAll( _searchIdentityServiceES.getQualifiedIdentitiesByConnectionId( guid, Collections.emptyList() )
+				    .getQualifiedIdentities( ) );
+			}
+		}
+		else
+		{
+		    if ( StringUtils.isNotEmpty( insee_city ) )
+		    {
+			atttributes.add( new SearchAttribute( Constants.PARAM_BIRTH_PLACE_CODE, insee_city, AttributeTreatmentType.STRICT ) );
+		    }
+		    if ( StringUtils.isNotEmpty( insee_country ) )
+		    {
+			atttributes.add( new SearchAttribute( Constants.PARAM_BIRTH_COUNTRY_CODE, insee_country, AttributeTreatmentType.STRICT ) );
+		    }
+		    if ( StringUtils.isNotEmpty( email ) )
+		    {
+			atttributes.add( new SearchAttribute( Constants.PARAM_COMMON_EMAIL, email, AttributeTreatmentType.STRICT ) );
+		    }
+		    if ( StringUtils.isNotEmpty( gender ) )
+		    {
+			atttributes.add( new SearchAttribute( Constants.PARAM_GENDER, gender, AttributeTreatmentType.STRICT ) );
+		    }
+		    if ( StringUtils.isNotEmpty( common_name ) )
+		    {
+			atttributes.add( new SearchAttribute( Constants.PARAM_COMMON_LASTNAME, common_name, AttributeTreatmentType.APPROXIMATED ) );
+		    }
+		    if ( StringUtils.isNotEmpty( first_name ) )
+		    {
+			atttributes.add( new SearchAttribute( Constants.PARAM_FIRST_NAME, first_name, AttributeTreatmentType.APPROXIMATED ) );
+		    }
+		    if ( StringUtils.isNotEmpty( birthdate ) )
+		    {
+			atttributes.add( new SearchAttribute( Constants.PARAM_BIRTH_DATE, birthdate, AttributeTreatmentType.STRICT ) );
+		    }
+		    if ( StringUtils.isNotEmpty( birthplace ) )
+		    {
+			atttributes.add( new SearchAttribute( Constants.PARAM_BIRTH_PLACE, birthplace, AttributeTreatmentType.APPROXIMATED ) );
+		    }
+		    if ( StringUtils.isNotEmpty( birthcountry ) )
+		    {
+			atttributes.add( new SearchAttribute( Constants.PARAM_BIRTH_COUNTRY, birthcountry, AttributeTreatmentType.APPROXIMATED ) );
+		    }
+		    if ( StringUtils.isNotEmpty( phone ) )
+		    {
+			atttributes.add( new SearchAttribute( Constants.PARAM_COMMON_PHONE, phone, AttributeTreatmentType.STRICT ) );
+		    }
+		    if ( CollectionUtils.isNotEmpty( atttributes ) )
+		    {
+			if ( datasource.equals( DATASOURCE_DB ) )
+			{
+			    _identities.addAll( _searchIdentityServiceDB.getQualifiedIdentities( atttributes, PROPERTY_MAX_NB_IDENTITY_RETURNED, false, Collections.emptyList( ) )
+				    .getQualifiedIdentities( ) );
+			}
+			else
+			    if ( datasource.equals( DATASOURCE_ES ) )
+			    {
+				_identities.addAll( _searchIdentityServiceES.getQualifiedIdentities( atttributes, PROPERTY_MAX_NB_IDENTITY_RETURNED, false, Collections.emptyList( ) )
+					.getQualifiedIdentities( ) );
+			    }
+		    }
+		}
+	    }
+	}
+	catch( Exception e )
+	{
+	    addError( e.getMessage( ) );
+	    this.clearParameters( request );
+	    return redirectView( request, VIEW_MANAGE_IDENTITIES );
+	}
 
-        _identities.forEach(
-                qualifiedIdentity -> AccessLogService.getInstance( ).info( AccessLoggerConstants.EVENT_TYPE_READ, IdentityService.SEARCH_IDENTITY_EVENT_CODE,
-                        getUser( ), SecurityUtil.logForgingProtect( qualifiedIdentity.getCustomerId( ) ), IdentityService.SPECIFIC_ORIGIN ) );
+	_identities.forEach(
+		qualifiedIdentity -> AccessLogService.getInstance( ).info( AccessLoggerConstants.EVENT_TYPE_READ, IdentityService.SEARCH_IDENTITY_EVENT_CODE,
+			getUser( ), SecurityUtil.logForgingProtect( qualifiedIdentity.getCustomerId( ) ), IdentityService.SPECIFIC_ORIGIN ) );
 
-        final Map<String, Object> model = getPaginatedListModel( request, MARK_IDENTITY_LIST, _identities, JSP_MANAGE_IDENTITIES );
-        model.put( MARK_HAS_CREATE_ROLE,
-                IdentityManagementResourceIdService.isAuthorized( IdentityManagementResourceIdService.PERMISSION_CREATE_IDENTITY, getUser( ) ) );
-        model.put( MARK_HAS_MODIFY_ROLE,
-                IdentityManagementResourceIdService.isAuthorized( IdentityManagementResourceIdService.PERMISSION_MODIFY_IDENTITY, getUser( ) ) );
-        model.put( MARK_HAS_DELETE_ROLE,
-                IdentityManagementResourceIdService.isAuthorized( IdentityManagementResourceIdService.PERMISSION_DELETE_IDENTITY, getUser( ) ) );
-        model.put( MARK_HAS_VIEW_ROLE,
-                IdentityManagementResourceIdService.isAuthorized( IdentityManagementResourceIdService.PERMISSION_VIEW_IDENTITY, getUser( ) ) );
+	final Map<String, Object> model = getPaginatedListModel( request, MARK_IDENTITY_LIST, _identities, JSP_MANAGE_IDENTITIES );
+	model.put( MARK_HAS_CREATE_ROLE,
+		IdentityManagementResourceIdService.isAuthorized( IdentityManagementResourceIdService.PERMISSION_CREATE_IDENTITY, getUser( ) ) );
+	model.put( MARK_HAS_MODIFY_ROLE,
+		IdentityManagementResourceIdService.isAuthorized( IdentityManagementResourceIdService.PERMISSION_MODIFY_IDENTITY, getUser( ) ) );
+	model.put( MARK_HAS_DELETE_ROLE,
+		IdentityManagementResourceIdService.isAuthorized( IdentityManagementResourceIdService.PERMISSION_DELETE_IDENTITY, getUser( ) ) );
+	model.put( MARK_HAS_VIEW_ROLE,
+		IdentityManagementResourceIdService.isAuthorized( IdentityManagementResourceIdService.PERMISSION_VIEW_IDENTITY, getUser( ) ) );
 
-        model.put( QUERY_PARAM_CUID, cuid );
-        model.put( QUERY_PARAM_GUID, guid );
-        model.put( QUERY_PARAM_INSEE_CITY, insee_city );
-        model.put( QUERY_PARAM_INSEE_COUNTRY, insee_country );
-        model.put( QUERY_PARAM_COMMON_LASTNAME, common_name );
-        model.put( QUERY_PARAM_FIRST_NAME, first_name );
-        model.put( QUERY_PARAM_EMAIL, email );
-        model.put( QUERY_PARAM_INSEE_BIRTHPLACE_LABEL, birthplace );
-        model.put( QUERY_PARAM_INSEE_BIRTHCOUNTRY_LABEL, birthcountry );
-        model.put( QUERY_PARAM_PHONE, phone );
-        model.put( QUERY_PARAM_BIRTHDATE, birthdate );
-        model.put( QUERY_PARAM_GENDER, gender );
-        model.put( QUERY_PARAM_DATASOURCE, datasource );
+	model.put( QUERY_PARAM_CUID, cuid );
+	model.put( QUERY_PARAM_GUID, guid );
+	model.put( QUERY_PARAM_INSEE_CITY, insee_city );
+	model.put( QUERY_PARAM_INSEE_COUNTRY, insee_country );
+	model.put( QUERY_PARAM_COMMON_LASTNAME, common_name );
+	model.put( QUERY_PARAM_FIRST_NAME, first_name );
+	model.put( QUERY_PARAM_EMAIL, email );
+	model.put( QUERY_PARAM_INSEE_BIRTHPLACE_LABEL, birthplace );
+	model.put( QUERY_PARAM_INSEE_BIRTHCOUNTRY_LABEL, birthcountry );
+	model.put( QUERY_PARAM_PHONE, phone );
+	model.put( QUERY_PARAM_BIRTHDATE, birthdate );
+	model.put( QUERY_PARAM_GENDER, gender );
+	model.put( QUERY_PARAM_DATASOURCE, datasource );
 
-        return getPage( PROPERTY_PAGE_TITLE_MANAGE_IDENTITIES, TEMPLATE_SEARCH_IDENTITIES, model );
+	return getPage( PROPERTY_PAGE_TITLE_MANAGE_IDENTITIES, TEMPLATE_SEARCH_IDENTITIES, model );
     }
 
     /**
@@ -335,269 +345,295 @@ public class IdentityJspBean extends ManageIdentitiesJspBean
      *            http request
      * @return The HTML form to view info
      */
-    @View( VIEW_IDENTITY )
+     @View( VIEW_IDENTITY )
     public String getViewIdentity( HttpServletRequest request )
-    {
-        final String nId = request.getParameter( PARAMETER_ID_IDENTITY );
+     {
+	 final String nId = request.getParameter( PARAMETER_ID_IDENTITY );
 
-        _identity = IdentityHome.findByCustomerId( nId );
+	 _identity = IdentityHome.findByCustomerId( nId );
 
-        List<Identity> mergedIdentities = IdentityHome.findMergedIdentities(_identity.getId());
-        _identity.setMerged(mergedIdentities != null && !mergedIdentities.isEmpty());
+	 List<Identity> mergedIdentities = IdentityHome.findMergedIdentities(_identity.getId());
+	 _identity.setMerged(mergedIdentities != null && !mergedIdentities.isEmpty());
 
-        final String filteredCustomerId = SecurityUtil.logForgingProtect( _identity.getCustomerId( ) );
-        AccessLogService.getInstance( ).info( AccessLoggerConstants.EVENT_TYPE_READ, DISPLAY_IDENTITY_EVENT_CODE, getUser( ), filteredCustomerId,
-                IdentityService.SPECIFIC_ORIGIN );
+	 final String filteredCustomerId = SecurityUtil.logForgingProtect( _identity.getCustomerId( ) );
+	 AccessLogService.getInstance( ).info( AccessLoggerConstants.EVENT_TYPE_READ, DISPLAY_IDENTITY_EVENT_CODE, getUser( ), filteredCustomerId,
+		 IdentityService.SPECIFIC_ORIGIN );
 
-        List<IdentityAttribute> attributes = sortIdentityttributes( );
+	 List<IdentityAttribute> attributes = sortIdentityttributes( );
 
-        final Map<String, Object> model = getModel( );
-        model.put( MARK_IDENTITY, _identity );
-        model.put( MARK_ATTRIBUTES, attributes );
-        model.put( MARK_MERGED_IDENTITIES, mergedIdentities );
-        model.put( MARK_IDENTITY_IS_SUSPICIOUS, SuspiciousIdentityHome.hasSuspicious( Collections.singletonList( _identity.getCustomerId( ) ) ) );
-        model.put( MARK_HAS_ATTRIBUTS_HISTO_ROLE,
-                IdentityManagementResourceIdService.isAuthorized( IdentityManagementResourceIdService.PERMISSION_ATTRIBUTS_HISTO, getUser( ) ) );
-        model.put( QUERY_PARAM_CUID_LINK, RESOURCE_SEARCH_LINK );
+	 final Map<String, Object> model = getModel( );
+	 model.put( MARK_IDENTITY, _identity );
+	 model.put( MARK_ATTRIBUTES, attributes );
+	 model.put( MARK_MERGED_IDENTITIES, mergedIdentities );
+	 model.put( MARK_IDENTITY_IS_SUSPICIOUS, SuspiciousIdentityHome.hasSuspicious( Collections.singletonList( _identity.getCustomerId( ) ) ) );
+	 model.put( MARK_HAS_ATTRIBUTS_HISTO_ROLE,
+		 IdentityManagementResourceIdService.isAuthorized( IdentityManagementResourceIdService.PERMISSION_ATTRIBUTS_HISTO, getUser( ) ) );
+	 model.put( QUERY_PARAM_CUID_LINK, RESOURCE_SEARCH_LINK );
 
-        return getPage( PROPERTY_PAGE_TITLE_VIEW_IDENTITY, TEMPLATE_VIEW_IDENTITY, model );
-    }
+	 return getPage( PROPERTY_PAGE_TITLE_VIEW_IDENTITY, TEMPLATE_VIEW_IDENTITY, model );
+     }
 
-    /**
-     * Build the attribute history View
-     *
-     * @param request
-     *            The HTTP request
-     * @return The page
-     */
-    @View( value = VIEW_IDENTITY_HISTORY )
-    public String getIdentityHistoryView( HttpServletRequest request )
-    {
-	final String CUID = request.getParameter( PARAMETER_ID_IDENTITY );
+     /**
+      * Build the attribute history View
+      *
+      * @param request
+      *            The HTTP request
+      * @return The page
+      */
+     @View( value = VIEW_IDENTITY_HISTORY )
+     public String getIdentityHistoryView( HttpServletRequest request )
+     {
+	 final String CUID = request.getParameter( PARAMETER_ID_IDENTITY );
 
-	if ( CUID != null && ( _identity == null || !_identity.getCustomerId( ).equals( CUID ) ) )
-	{
-	    _identity = IdentityHome.findByCustomerId( CUID );
-	}
+	 if ( CUID != null && ( _identity == null || !_identity.getCustomerId( ).equals( CUID ) ) )
+	 {
+	     _identity = IdentityHome.findByCustomerId( CUID );
+	 }
 
-        // here we use a LinkedHashMap to have same attributs order as in viewIdentity
-        final List<AttributeChange> attributeChangeList = new ArrayList<>( );
-        final List<IdentityChange> identityChangeList = new ArrayList<>( );
+	 // here we use a LinkedHashMap to have same attributs order as in viewIdentity
+	 final List<AttributeChange> attributeChangeList = new ArrayList<>( );
+	 final List<IdentityChange> identityChangeList = new ArrayList<>( );
 
-        if ( _identity != null && MapUtils.isNotEmpty( _identity.getAttributes( ) ) )
-        {
-            try
-            {
-                attributeChangeList.addAll( IdentityAttributeHome.getAttributeChangeHistory( _identity.getId( ) ) );
-                identityChangeList.addAll( IdentityHome.findHistoryByCustomerId( _identity.getCustomerId( ) ) );
-            }
-            catch( IdentityStoreException e )
-            {
-                addError( e.getMessage( ) );
-                return getViewIdentity( request );
-            }
-        }
-        if ( _identity != null )
-        {
-            final String filteredCustomerId = SecurityUtil.logForgingProtect( _identity.getCustomerId( ) );
-            AccessLogService.getInstance( ).info( AccessLoggerConstants.EVENT_TYPE_READ, DISPLAY_IDENTITY_HISTORY_EVENT_CODE, getUser( ), filteredCustomerId,
-                    IdentityService.SPECIFIC_ORIGIN );
-        }
+	 if ( _identity != null && MapUtils.isNotEmpty( _identity.getAttributes( ) ) )
+	 {
+	     try
+	     {
+		 attributeChangeList.addAll( IdentityAttributeHome.getAttributeChangeHistory( _identity.getId( ) ) );
+		 identityChangeList.addAll( IdentityHome.findHistoryByCustomerId( _identity.getCustomerId( ) ) );
+	     }
+	     catch( IdentityStoreException e )
+	     {
+		 addError( e.getMessage( ) );
+		 return getViewIdentity( request );
+	     }
+	 }
+	 if ( _identity != null )
+	 {
+	     final String filteredCustomerId = SecurityUtil.logForgingProtect( _identity.getCustomerId( ) );
+	     AccessLogService.getInstance( ).info( AccessLoggerConstants.EVENT_TYPE_READ, DISPLAY_IDENTITY_HISTORY_EVENT_CODE, getUser( ), filteredCustomerId,
+		     IdentityService.SPECIFIC_ORIGIN );
+	 }
 
-        final Map<String, Object> model = getModel( );
-        model.put( MARK_IDENTITY_CHANGE_LIST, identityChangeList );
-        model.put( MARK_ATTRIBUTES_CHANGE_LIST, attributeChangeList );
+	 final Map<String, Object> model = getModel( );
+	 model.put( MARK_IDENTITY_CHANGE_LIST, identityChangeList );
+	 model.put( MARK_ATTRIBUTES_CHANGE_LIST, attributeChangeList );
 
-        return getPage( PROPERTY_PAGE_TITLE_VIEW_CHANGE_HISTORY, TEMPLATE_VIEW_IDENTITY_HISTORY, model );
-    }
+	 return getPage( PROPERTY_PAGE_TITLE_VIEW_CHANGE_HISTORY, TEMPLATE_VIEW_IDENTITY_HISTORY, model );
+     }
 
-    /**
-     * Build the attribute history View
-     *
-     * @param request
-     *            The HTTP request
-     * @return The page
-     * @throws NotificationException 
-     */
-    @View( value = VIEW_IDENTITY_NOTIFICATIONS )
-    public String getIdentityNotificationsView( HttpServletRequest request )
-    {
-	final String CUID = request.getParameter( PARAMETER_ID_IDENTITY );
+     /**
+      * Build the attribute history View
+      *
+      * @param request
+      *            The HTTP request
+      * @return The page
+      * @throws NotificationException 
+      */
+     @View( value = VIEW_IDENTITY_NOTIFICATIONS )
+     public String getIdentityNotificationsView( HttpServletRequest request )
+     {
+	 final String CUID = request.getParameter( PARAMETER_ID_IDENTITY );
 
-	if ( CUID != null && ( _identity == null || !_identity.getCustomerId( ).equals( CUID ) ) )
-	{
-	    _identity = IdentityHome.findByCustomerId( CUID );
-	}
-	
-	List<DemandDisplay> demandDisplayList = new ArrayList<>( );
-	
-        if ( _identity != null )
-        {
-            final List<Identity> mergedIdentities = IdentityHome.findMergedIdentities( _identity.getId( ) );
-            
-            // Get Demands notifications associated to each identity or its merged ones
-            DemandResult demandResult;
-	    try
-	    {
-		demandResult = _notificationStoreService.getListDemand( _identity.getCustomerId( ), null, null, null, null );
-	    
-                demandDisplayList = demandResult.getListDemandDisplay() == null ? new ArrayList<>() : new ArrayList<>(demandResult.getListDemandDisplay());
-                for ( final Identity mergedIdentity : mergedIdentities )
-                {
-                    demandDisplayList
-                            .addAll( _notificationStoreService.getListDemand( mergedIdentity.getCustomerId( ), null, null, null, null ).getListDemandDisplay( ) );
-                }
-	    } 
-	    catch ( NotificationException e )
-	    {
-		AppLogService.error( "Error on Notification request", e );
-		addError( "Error on Notification request : " + e.getMessage( ) );
-	    }
-        }
+	 if ( CUID != null && ( _identity == null || !_identity.getCustomerId( ).equals( CUID ) ) )
+	 {
+	     _identity = IdentityHome.findByCustomerId( CUID );
+	 }
 
-        final Map<String, Object> model = getModel( );
-        model.put( MARK_IDENTITY_NOTIFICATIONS_LIST, demandDisplayList );
+	 List<DemandDisplay> demandDisplayList = new ArrayList<>( );
+	 Map<String,Boolean> indicators = new HashMap<>( );
+	 indicators.put( PurgeIdentityService.KEY_AT_LEAST_ONE_CS_FOUND, false);
+	 indicators.put( PurgeIdentityService.KEY_INFOS_ARE_MISSING, false);
+	 StringBuilder msg = new StringBuilder( );
 
-        return getPage( PROPERTY_PAGE_TITLE_VIEW_NOTIFICATIONS, TEMPLATE_VIEW_IDENTITY_NOTIFICATIONS, model );
-    }
-    
-    /**
-     * Process the data capture form of a new suspiciousidentity
-     *
-     * @param request
-     *            The Http Request
-     * @return The Jsp URL of the process result
-     * @throws AccessDeniedException
-     */
-    @Action( ACTION_EXPORT_IDENTITIES )
-    public void doExportIdentities( HttpServletRequest request )
-    {
-        try
-        {
-            final List<IdentityDto> identitiesToProcess = _identities.stream( ).filter( this::validateMinimumAttributes )
-                    .peek( identityDto -> identityDto.setExternalCustomerId( UUID.randomUUID( ).toString( ) ) ).collect( Collectors.toList( ) );
-            final Batch<IdentityDto> batches = Batch.ofSize( identitiesToProcess, BATCH_PARTITION_SIZE );
+	 if ( _identity != null )
+	 {
+	     final List<Identity> mergedIdentities = IdentityHome.findMergedIdentities( _identity.getId( ) );
 
-            final ByteArrayOutputStream outputStream = new ByteArrayOutputStream( );
-            final ZipOutputStream zipOut = new ZipOutputStream( outputStream );
+	     // Get Demands notifications associated to each identity or its merged ones
+	     DemandResult demandResult;
+	     try
+	     {
+		 demandResult = _notificationStoreService.getListDemand( _identity.getCustomerId( ), null, null, null, null );
 
-            int i = 0;
-            for ( final List<IdentityDto> batch : batches )
-            {
-                final byte [ ] bytes = CsvIdentityService.instance( ).write( batch );
-                final ZipEntry zipEntry = new ZipEntry( "identities-" + ++i + ".csv" );
-                zipEntry.setSize( bytes.length );
-                zipOut.putNextEntry( zipEntry );
-                zipOut.write( bytes );
-            }
-            zipOut.closeEntry( );
-            zipOut.close( );
-            this.download( outputStream.toByteArray( ), "identities.zip", "application/zip" );
-        }
-        catch( Exception e )
-        {
-            addError( e.getMessage( ) );
-            redirectView( request, VIEW_MANAGE_IDENTITIES );
-        }
-    }
+		 demandDisplayList = demandResult.getListDemandDisplay() == null ? new ArrayList<>() : new ArrayList<>(demandResult.getListDemandDisplay());
+		 for ( final Identity mergedIdentity : mergedIdentities )
+		 {
+		     List<DemandDisplay> mergedIdsDemands = _notificationStoreService.getListDemand( mergedIdentity.getCustomerId( ), null, null, null, null ).getListDemandDisplay( );
+		     if ( mergedIdsDemands != null )
+		     {
+			 demandDisplayList.addAll( mergedIdsDemands );                  
+		     }
+		 }
 
-    private boolean validateMinimumAttributes( final IdentityDto identity )
-    {
-        return this.checkAttributeExists( identity, Constants.PARAM_FAMILY_NAME ) && this.checkAttributeExists( identity, Constants.PARAM_FIRST_NAME )
-                && this.checkAttributeExists( identity, Constants.PARAM_BIRTH_DATE );
-    }
+		 for ( final DemandDisplay demand : demandDisplayList )
+		 { 
+		     final Timestamp expirationDateFromDemand = PurgeIdentityService.checkExpirationDateByDemand( demand, 
+			     indicators, excludedAppCodes, msg, _notificationStoreService);
 
-    private boolean checkAttributeExists( final IdentityDto identity, final String attributeKey )
-    {
-        return identity.getAttributes( ).stream( )
-                .anyMatch( attributeDto -> Objects.equals( attributeDto.getKey( ), attributeKey ) && StringUtils.isNotBlank( attributeDto.getValue( ) ) );
-    }
+		     demand.setRegulatoryDateForIdentityRetention( expirationDateFromDemand );
+		     demand.setAppCode( PurgeIdentityService.getAppCodeFromDemandTypeId( 
+			     demand.getDemand( ).getTypeId( ), _notificationStoreService ) );   
+		 }
 
-    /**
-     * Process the data capture form of a new suspiciousidentity
-     *
-     * @param request
-     *            The Http Request
-     * @return The Jsp URL of the process result
-     * @throws AccessDeniedException
-     */
-    @Action( ACTION_BATCH_GENERATE_REQUESTS )
-    public void doGenerateBatchIdentities( HttpServletRequest request )
-    {
-        try
-        {
-            // Prepare identities for import (clear not used params)
-            _identities.forEach( identityDto -> {
-                identityDto.setExternalCustomerId( UUID.randomUUID( ).toString( ) );
-                identityDto.setCustomerId( null );
-                identityDto.setQuality( null );
-                identityDto.setExpiration( null );
-                identityDto.setMerge( null );
-                identityDto.setLastUpdateDate( null );
-                identityDto.setConnectionId( null );
-                identityDto.setMonParisActive( null );
-                identityDto.setCreationDate( null );
-                identityDto.setDuplicateDefinition( null );
-                identityDto.setSuspicious( null );
-            } );
-            final Batch<IdentityDto> batches = Batch.ofSize( _identities, BATCH_PARTITION_SIZE );
+	     } 
+	     catch ( NotificationException | ClientAuthorizationException e )
+	     {
+		 AppLogService.error( "Error on Notification request", e );
+		 addError( "Error on Notification request : " + e.getMessage( ) );
+	     }
+	 }
 
-            final ByteArrayOutputStream outputStream = new ByteArrayOutputStream( );
-            final ZipOutputStream zipOut = new ZipOutputStream( outputStream );
+	 if ( msg.length( ) > 0 )
+	 {
+	     addWarning( msg.toString( ) );
+	 }
 
-            int i = 0;
-            final String reference = UUID.randomUUID( ).toString( );
+	 final Map<String, Object> model = getModel( );
+	 model.put( MARK_IDENTITY_NOTIFICATIONS_LIST, demandDisplayList );
+	 model.put( MARK_GENERIC_STATUS, EnumGenericStatus.getGenericStatusAsMap( ) );
+	 model.put( MARK_AT_LEAST_ONE_SC_FOUND, indicators.get( PurgeIdentityService.KEY_AT_LEAST_ONE_CS_FOUND ) );
+	 model.put( MARK_INFOS_ARE_MISSING, indicators.get( PurgeIdentityService.KEY_INFOS_ARE_MISSING ) );
 
-            final ObjectMapper mapper = new ObjectMapper( );
-            mapper.enable( SerializationFeature.INDENT_OUTPUT );
-            mapper.disable( DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES );
+	 return getPage( PROPERTY_PAGE_TITLE_VIEW_NOTIFICATIONS, TEMPLATE_VIEW_IDENTITY_NOTIFICATIONS, model );
+     }
 
-            for ( final List<IdentityDto> batch : batches )
-            {
-                final BatchImportRequest batchImportRequest = new BatchImportRequest( );
-                batchImportRequest.setBatch( new BatchDto( ) );
-                batchImportRequest.getBatch( ).setReference( reference );
-                batchImportRequest.getBatch( ).setComment( "Batch exporté depuis identity store" );
-                batchImportRequest.getBatch( ).setCreationDate( Timestamp.from( Instant.now( ) ) );
-                batchImportRequest.getBatch( ).setUser( getUser( ).getEmail( ) );
-                batchImportRequest.getBatch( ).setAppCode( "TEST" );
-                batchImportRequest.getBatch( ).setIdentities( batch );
-                final ZipEntry zipEntry = new ZipEntry( "identities-" + ++i + ".json" );
-                final byte [ ] bytes = mapper.writeValueAsBytes( batchImportRequest );
-                zipEntry.setSize( bytes.length );
-                zipOut.putNextEntry( zipEntry );
-                zipOut.write( bytes );
-            }
-            zipOut.closeEntry( );
-            zipOut.close( );
-            this.download( outputStream.toByteArray( ), "identity_requests.zip", "application/zip" );
-        }
-        catch( Exception e )
-        {
-            addError( e.getMessage( ) );
-            redirectView( request, VIEW_MANAGE_IDENTITIES );
-        }
-    }
+     /**
+      * Process the data capture form of a new suspiciousidentity
+      *
+      * @param request
+      *            The Http Request
+      * @return The Jsp URL of the process result
+      * @throws AccessDeniedException
+      */
+     @Action( ACTION_EXPORT_IDENTITIES )
+     public void doExportIdentities( HttpServletRequest request )
+     {
+	 try
+	 {
+	     final List<IdentityDto> identitiesToProcess = _identities.stream( ).filter( this::validateMinimumAttributes )
+		     .peek( identityDto -> identityDto.setExternalCustomerId( UUID.randomUUID( ).toString( ) ) ).collect( Collectors.toList( ) );
+	     final Batch<IdentityDto> batches = Batch.ofSize( identitiesToProcess, BATCH_PARTITION_SIZE );
 
-    private List<IdentityAttribute> sortIdentityttributes( )
-    {
-        if ( _identity != null )
-        {
-            final List<String> _sortedAttributeKeyList = Arrays.asList( AppPropertiesService.getProperty(IdentityConstants.PROPERTY_IDENTITY_ATTRIBUTE_ORDER, "" ).split( "," ) );
-            List<IdentityAttribute> valueList = new ArrayList<>(_identity.getAttributes( ).values());
-            valueList.sort( ( a1, a2 ) -> {
-                final int index1 = _sortedAttributeKeyList.indexOf( a1.getAttributeKey( ).getKeyName() );
-                final int index2 = _sortedAttributeKeyList.indexOf( a2.getAttributeKey( ).getKeyName() );
-                final int i1 = index1 == -1 ? 999 : index1;
-                final int i2 = index2 == -1 ? 999 : index2;
-                if ( i1 == i2 )
-                {
-                    return a1.getAttributeKey( ).getKeyName().compareTo( a2.getAttributeKey( ).getKeyName() );
-                }
-                return Integer.compare( i1, i2 );
-            } );
-            return valueList;
-        }
-        return null;
-    }
+	     final ByteArrayOutputStream outputStream = new ByteArrayOutputStream( );
+	     final ZipOutputStream zipOut = new ZipOutputStream( outputStream );
+
+	     int i = 0;
+	     for ( final List<IdentityDto> batch : batches )
+	     {
+		 final byte [ ] bytes = CsvIdentityService.instance( ).write( batch );
+		 final ZipEntry zipEntry = new ZipEntry( "identities-" + ++i + ".csv" );
+		 zipEntry.setSize( bytes.length );
+		 zipOut.putNextEntry( zipEntry );
+		 zipOut.write( bytes );
+	     }
+	     zipOut.closeEntry( );
+	     zipOut.close( );
+	     this.download( outputStream.toByteArray( ), "identities.zip", "application/zip" );
+	 }
+	 catch( Exception e )
+	 {
+	     addError( e.getMessage( ) );
+	     redirectView( request, VIEW_MANAGE_IDENTITIES );
+	 }
+     }
+
+     private boolean validateMinimumAttributes( final IdentityDto identity )
+     {
+	 return this.checkAttributeExists( identity, Constants.PARAM_FAMILY_NAME ) && this.checkAttributeExists( identity, Constants.PARAM_FIRST_NAME )
+		 && this.checkAttributeExists( identity, Constants.PARAM_BIRTH_DATE );
+     }
+
+     private boolean checkAttributeExists( final IdentityDto identity, final String attributeKey )
+     {
+	 return identity.getAttributes( ).stream( )
+		 .anyMatch( attributeDto -> Objects.equals( attributeDto.getKey( ), attributeKey ) && StringUtils.isNotBlank( attributeDto.getValue( ) ) );
+     }
+
+     /**
+      * Process the data capture form of a new suspiciousidentity
+      *
+      * @param request
+      *            The Http Request
+      * @return The Jsp URL of the process result
+      * @throws AccessDeniedException
+      */
+     @Action( ACTION_BATCH_GENERATE_REQUESTS )
+     public void doGenerateBatchIdentities( HttpServletRequest request )
+     {
+	 try
+	 {
+	     // Prepare identities for import (clear not used params)
+	     _identities.forEach( identityDto -> {
+		 identityDto.setExternalCustomerId( UUID.randomUUID( ).toString( ) );
+		 identityDto.setCustomerId( null );
+		 identityDto.setQuality( null );
+		 identityDto.setExpiration( null );
+		 identityDto.setMerge( null );
+		 identityDto.setLastUpdateDate( null );
+		 identityDto.setConnectionId( null );
+		 identityDto.setMonParisActive( null );
+		 identityDto.setCreationDate( null );
+		 identityDto.setDuplicateDefinition( null );
+		 identityDto.setSuspicious( null );
+	     } );
+	     final Batch<IdentityDto> batches = Batch.ofSize( _identities, BATCH_PARTITION_SIZE );
+
+	     final ByteArrayOutputStream outputStream = new ByteArrayOutputStream( );
+	     final ZipOutputStream zipOut = new ZipOutputStream( outputStream );
+
+	     int i = 0;
+	     final String reference = UUID.randomUUID( ).toString( );
+
+	     final ObjectMapper mapper = new ObjectMapper( );
+	     mapper.enable( SerializationFeature.INDENT_OUTPUT );
+	     mapper.disable( DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES );
+
+	     for ( final List<IdentityDto> batch : batches )
+	     {
+		 final BatchImportRequest batchImportRequest = new BatchImportRequest( );
+		 batchImportRequest.setBatch( new BatchDto( ) );
+		 batchImportRequest.getBatch( ).setReference( reference );
+		 batchImportRequest.getBatch( ).setComment( "Batch exporté depuis identity store" );
+		 batchImportRequest.getBatch( ).setCreationDate( Timestamp.from( Instant.now( ) ) );
+		 batchImportRequest.getBatch( ).setUser( getUser( ).getEmail( ) );
+		 batchImportRequest.getBatch( ).setAppCode( "TEST" );
+		 batchImportRequest.getBatch( ).setIdentities( batch );
+		 final ZipEntry zipEntry = new ZipEntry( "identities-" + ++i + ".json" );
+		 final byte [ ] bytes = mapper.writeValueAsBytes( batchImportRequest );
+		 zipEntry.setSize( bytes.length );
+		 zipOut.putNextEntry( zipEntry );
+		 zipOut.write( bytes );
+	     }
+	     zipOut.closeEntry( );
+	     zipOut.close( );
+	     this.download( outputStream.toByteArray( ), "identity_requests.zip", "application/zip" );
+	 }
+	 catch( Exception e )
+	 {
+	     addError( e.getMessage( ) );
+	     redirectView( request, VIEW_MANAGE_IDENTITIES );
+	 }
+     }
+
+     private List<IdentityAttribute> sortIdentityttributes( )
+     {
+	 if ( _identity != null )
+	 {
+	     final List<String> _sortedAttributeKeyList = Arrays.asList( AppPropertiesService.getProperty(IdentityConstants.PROPERTY_IDENTITY_ATTRIBUTE_ORDER, "" ).split( "," ) );
+	     List<IdentityAttribute> valueList = new ArrayList<>(_identity.getAttributes( ).values());
+	     valueList.sort( ( a1, a2 ) -> {
+		 final int index1 = _sortedAttributeKeyList.indexOf( a1.getAttributeKey( ).getKeyName() );
+		 final int index2 = _sortedAttributeKeyList.indexOf( a2.getAttributeKey( ).getKeyName() );
+		 final int i1 = index1 == -1 ? 999 : index1;
+		 final int i2 = index2 == -1 ? 999 : index2;
+		 if ( i1 == i2 )
+		 {
+		     return a1.getAttributeKey( ).getKeyName().compareTo( a2.getAttributeKey( ).getKeyName() );
+		 }
+		 return Integer.compare( i1, i2 );
+	     } );
+	     return valueList;
+	 }
+	 return null;
+     }
 }

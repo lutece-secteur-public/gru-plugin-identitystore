@@ -43,6 +43,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -63,6 +64,7 @@ import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.AuthorType;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.RequestAuthor;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.ResponseStatusType;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.history.IdentityChangeType;
+import fr.paris.lutece.plugins.identitystore.web.exception.ClientAuthorizationException;
 import fr.paris.lutece.plugins.notificationstore.v1.web.service.NotificationStoreService;
 import fr.paris.lutece.portal.service.security.AccessLogService;
 import fr.paris.lutece.portal.service.security.AccessLoggerConstants;
@@ -72,18 +74,21 @@ import fr.paris.lutece.portal.service.util.AppPropertiesService;
 
 public final class PurgeIdentityService
 {
+    public static final String KEY_INFOS_ARE_MISSING = "isInfosAreMissing";
+    public static final String KEY_AT_LEAST_ONE_CS_FOUND = "isAtLeastOneServiceContractFound";
+
     private static PurgeIdentityService _instance;
 
     private final NotificationStoreService _notificationStoreService = SpringContextService.getBean( "notificationStore.notificationStoreService" );
     private final IdentityStoreNotifyListenerService _identityStoreNotifyListenerService = IdentityStoreNotifyListenerService.instance( );
-    
+
     public static PurgeIdentityService getInstance( )
     {
-        if ( _instance == null )
-        {
-            _instance = new PurgeIdentityService( );
-        }
-        return _instance;
+	if ( _instance == null )
+	{
+	    _instance = new PurgeIdentityService( );
+	}
+	return _instance;
     }
 
     /**
@@ -93,166 +98,117 @@ public final class PurgeIdentityService
      */
     public String purge( final RequestAuthor daemonAuthor, final String daemonClientCode, final List<String> excludedAppCodes, final int batchLimit )
     {
-        final StringBuilder msg = new StringBuilder( );
-        final boolean isDryRun = AppPropertiesService.getPropertyBoolean ( "daemon.purgeIdentityDaemon.dryRun", false ); 
-        final int nMaxCguRetentionPeridodInMonths = AppPropertiesService.getPropertyInt( "daemon.purgeIdentityDaemon.maxCguRetentionPeridodInMonths", 120 ); 
-        
-        // search identities with a passed peremption date, not merged to a primary identity, and not associated to a MonParis account
-        final List<Identity> expiredIdentities = IdentityHome.findExpiredNotMergedAndNotConnectedIdentities( 
-        	batchLimit, AppPropertiesService.getPropertyBoolean ( "daemon.purgeIdentityDaemon.withGuidOnly", true) );
-        final Timestamp now = Timestamp.from( Instant.now( ) );
-        final Timestamp olderCguRetentionDate = Timestamp.valueOf ( now.toLocalDateTime ( ).minusMonths ( nMaxCguRetentionPeridodInMonths ) );
+	final StringBuilder msg = new StringBuilder( );
+	final boolean isDryRun = AppPropertiesService.getPropertyBoolean ( "daemon.purgeIdentityDaemon.dryRun", false ); 
+	final int nMaxCguRetentionPeridodInMonths = AppPropertiesService.getPropertyInt( "daemon.purgeIdentityDaemon.maxCguRetentionPeridodInMonths", 120 ); 
 
-        msg.append( expiredIdentities.size( ) ).append( " expired identities found" ).append( "\n" );
+	// search identities with a passed peremption date, not merged to a primary identity, and not associated to a MonParis account
+	final List<Identity> expiredIdentities = IdentityHome.findExpiredNotMergedAndNotConnectedIdentities( 
+		batchLimit, AppPropertiesService.getPropertyBoolean ( "daemon.purgeIdentityDaemon.withGuidOnly", true) );
+	final Timestamp now = Timestamp.from( Instant.now( ) );
+	final Timestamp olderCguRetentionDate = Timestamp.valueOf ( now.toLocalDateTime ( ).minusMonths ( nMaxCguRetentionPeridodInMonths ) );
 
-        for ( final Identity expiredIdentity : expiredIdentities )
-        {
-            try
-            {
-                final List<Identity> mergedIdentities = IdentityHome.findMergedIdentities( expiredIdentity.getId( ) );
-                
-                // Get Demands notifications associated to each identity or its merged ones
-                DemandResult demandResult = _notificationStoreService.getListDemand( expiredIdentity.getCustomerId( ), null, null, null, null );
-                final List<DemandDisplay> demandDisplayList = demandResult.getListDemandDisplay() == null ? new ArrayList<>() : new ArrayList<>(demandResult.getListDemandDisplay());
-                for ( final Identity mergedIdentity : mergedIdentities )
-                {
-                    demandDisplayList
-                            .addAll( _notificationStoreService.getListDemand( mergedIdentity.getCustomerId( ), null, null, null, null ).getListDemandDisplay( ) );
-                }
+	msg.append( expiredIdentities.size( ) ).append( " expired identities found" ).append( "\n" );
 
-                boolean isAtLeastOneServiceContractFound = false;
-                boolean isInfosAreMissing = false;
-                
-                // Calculate the new expiration date (date of demand last update + CGUs term)
-                Timestamp demandExpirationDateMAX = expiredIdentity.getExpirationDate( );
-                for ( final DemandDisplay demand : demandDisplayList )
-                {
-                    // ignore canceled demands
-                    if (demand.getDemand().getStatusId() == EnumGenericStatus.CANCELED.getStatusId()) {
-                        continue;
-                    }
-                    
-                    final String appCode = getAppCodeFromDemandTypeId( demand.getDemand( ).getTypeId( ) );
-                    if ( appCode == null )
-                    {
-                	msg.append( "Unknown AppCode for demand_type_id : ")
-                		.append ( (demand.getDemand( ).getTypeId( )!=null?demand.getDemand( ).getTypeId( ):"") )
-                		.append ( "\n" );
-                	AppLogService.info( "IdentityPurgDaemon / Unknown AppCode for demand_type_id : "  
-                		+ (demand.getDemand( ).getTypeId( )!=null?demand.getDemand( ).getTypeId( ):"") );
+	for ( final Identity expiredIdentity : expiredIdentities )
+	{
+	    try
+	    {
+		final List<Identity> mergedIdentities = IdentityHome.findMergedIdentities( expiredIdentity.getId( ) );
 
-                	isInfosAreMissing = true;
-                    }
-                    
-                    if ( !excludedAppCodes.contains( appCode ) )
-                    {
-                        final List<String> clientCodeList = ServiceContractService.instance( ).getClientCodesFromAppCode( appCode );
+		// Get Demands notifications associated to each identity or its merged ones
+		DemandResult demandResult = _notificationStoreService.getListDemand( expiredIdentity.getCustomerId( ), null, null, null, null );
+		final List<DemandDisplay> demandDisplayList = demandResult.getListDemandDisplay() == null ? new ArrayList<>() : new ArrayList<>(demandResult.getListDemandDisplay());
+		for ( final Identity mergedIdentity : mergedIdentities )
+		{
+		    demandDisplayList
+		    .addAll( _notificationStoreService.getListDemand( mergedIdentity.getCustomerId( ), null, null, null, null ).getListDemandDisplay( ) );
+		}
 
-                        int nbMonthsCGUsMAX = 0;
-                        for ( final String clientCode : clientCodeList )
-                        {
-                            // if there is more than one client code for the app_code, keep the max value of cgus
-                            Timestamp tscreate = new Timestamp( demand.getDemand( ).getCreationDate( ) );
-                            Date demandCreationDate = Date.valueOf( tscreate.toLocalDateTime( ).toLocalDate( ) );
-                            
-                            ServiceContract sc = ServiceContractService.instance( ).getActiveServiceContractAtSpecificDate( clientCode, demandCreationDate );
-                            if ( sc == null )
-                            {
-                        	sc = ServiceContractService.instance( ).getActiveServiceContract( clientCode );
-                            }
-                            
-                            if ( sc != null )
-                            {
-                        	isAtLeastOneServiceContractFound = true;
-                                if ( sc.getDataRetentionPeriodInMonths( ) > nbMonthsCGUsMAX )
-                                {
-                                    nbMonthsCGUsMAX = sc.getDataRetentionPeriodInMonths( );
-                                }
-                            }
-                            else
-                            {
-                        	isInfosAreMissing = true;
-                            }
-                        }
+		Map<String,Boolean> indicators = new HashMap<>( );
+		indicators.put( KEY_AT_LEAST_ONE_CS_FOUND, false);
+		indicators.put( KEY_INFOS_ARE_MISSING, false);
 
-                        final ZonedDateTime demandDate = ZonedDateTime.ofInstant( Instant.ofEpochMilli( demand.getDemand( ).getModifyDate( ) ),
-                                ZoneId.systemDefault( ) );
-                        final Timestamp expirationDateFromDemand = Timestamp.from( demandDate.plusMonths( nbMonthsCGUsMAX ).toInstant( ) );
+		// Calculate the new expiration date (date of demand last update + CGUs term)
+		Timestamp demandExpirationDateMAX = expiredIdentity.getExpirationDate( );
+		for ( final DemandDisplay demand : demandDisplayList )
+		{
+		    final Timestamp expirationDateFromDemand = checkExpirationDateByDemand( demand, 
+			    indicators, excludedAppCodes, msg, _notificationStoreService );
 
-                        // keep the max expiration date
-                        if ( demandExpirationDateMAX.before( expirationDateFromDemand ) )
-                        {
-                            demandExpirationDateMAX = expirationDateFromDemand;
-                        }
-                    }
-                }
+		    // keep the max expiration date
+		    if ( expirationDateFromDemand != null && demandExpirationDateMAX.before( expirationDateFromDemand ) )
+		    {
+			demandExpirationDateMAX = expirationDateFromDemand;
+		    }
+		}
 
-                
-                // check if expiredIdentity should be preserved or can be deleted
-                if ( demandExpirationDateMAX.after( now ) )
-                {
-                    // expiration date calculated from most recent demand is later than today
-                    // => update the expiration date of expiredIdentity : it will be deleted later
-                    expiredIdentity.setExpirationDate( demandExpirationDateMAX );
-                    IdentityHome.update( expiredIdentity );
 
-                    // re-index and add history
-                    IdentityStoreNotifyListenerService.instance( ).notifyListenersIdentityChange( IdentityChangeType.UPDATE, expiredIdentity,
-                            "EXPIRATION_POSTPONED", StringUtils.EMPTY, daemonAuthor, daemonClientCode, Collections.emptyMap( ) );
-                    AccessLogService.getInstance( ).info( AccessLoggerConstants.EVENT_TYPE_MODIFY, UPDATE_IDENTITY_EVENT_CODE,
-                            InternalUserService.getInstance( ).getApiUser( daemonAuthor, daemonClientCode ), null, "PURGE_DAEMON" );
+		// check if expiredIdentity should be preserved or can be deleted
+		if ( demandExpirationDateMAX.after( now ) )
+		{
+		    // expiration date calculated from most recent demand is later than today
+		    // => update the expiration date of expiredIdentity : it will be deleted later
+		    expiredIdentity.setExpirationDate( demandExpirationDateMAX );
+		    IdentityHome.update( expiredIdentity );
 
-                    msg.append( "Identity expiration date updated : [" ).append( expiredIdentity.getCustomerId( ) ).append( "]" ).append( "\n" );
-                }
-                else if ( isInfosAreMissing && demandExpirationDateMAX.after( olderCguRetentionDate ) )
-                {
-                    // if infos are missing (but the maximum CGU retention period has not been reached)
-                    if ( !isAtLeastOneServiceContractFound )
-                    {
-                        msg.append ( "No service contact found for identity [").append( expiredIdentity.getCustomerId( ) ).append ( "]\n");
-                    }
-                    
-                    // not enough infos to delete identity
-                    msg.append( "Unsufficient infos to delete [" ).append( expiredIdentity.getCustomerId( ) ).append( "]" ).append( "\n" );
-                    
-                    // Notify listeners 
-                    _identityStoreNotifyListenerService.notifyListenersIdentityChange(IdentityChangeType.DELETION_ATTEMPT_FAILED, expiredIdentity, 
-                	    ResponseStatusType.UNAUTHORIZED.name(),ResponseStatusType.UNAUTHORIZED.name(), 
-                	    new RequestAuthor ("DAEMON", AuthorType.application.name ( ) ), "DAEMON", null);
-                    
-                }
-                else if ( isDryRun )
-                {
-                    // Dry run : test mode only (no deletion)
-                    msg.append( "(Dry run) should Detete Identity [" ).append( expiredIdentity.getCustomerId( ) ).append( "]" ).append( "\n" );
-                }
-                else 
-                {
-                    // if the updated peremption date still passed, delete the identity (and children as merged identities,
-                    // suspicious, attributes and attributes history, etc ...) EXCEPT the identity history
-                    IdentityService.instance( ).delete( expiredIdentity.getCustomerId( ) );
-                    msg.append( "Detete Identity [" ).append( expiredIdentity.getCustomerId( ) ).append( "]" ).append( "\n" );
+		    // re-index and add history
+		    IdentityStoreNotifyListenerService.instance( ).notifyListenersIdentityChange( IdentityChangeType.UPDATE, expiredIdentity,
+			    "EXPIRATION_POSTPONED", StringUtils.EMPTY, daemonAuthor, daemonClientCode, Collections.emptyMap( ) );
+		    AccessLogService.getInstance( ).info( AccessLoggerConstants.EVENT_TYPE_MODIFY, UPDATE_IDENTITY_EVENT_CODE,
+			    InternalUserService.getInstance( ).getApiUser( daemonAuthor, daemonClientCode ), null, "PURGE_DAEMON" );
 
-                    // delete notifications
-                    _notificationStoreService.deleteNotificationByCuid( expiredIdentity.getCustomerId( ) );
-                    msg.append( "Notifications deleted for main identity [" ).append( expiredIdentity.getCustomerId( ) ).append( "]" ).append( "\n" );
-                    for ( final Identity mergedIdentity : mergedIdentities )
-                    {
-                        _notificationStoreService.deleteNotificationByCuid( mergedIdentity.getCustomerId( ) );
-                        msg.append( "Notifications deleted for merged identity [" ).append( mergedIdentity.getCustomerId( ) ).append( "]" ).append( "\n" );
-                    }
-                }
-            }
-            catch( final Exception e )
-            {
-                msg.append( "Daemon execution error for identity : " ).append( expiredIdentity.getCustomerId( ) ).append( " :: " ).append( e.getMessage( ) )
-                        .append( "\n" );
-                return msg.toString( );
-            }
-        }
+		    msg.append( "Identity expiration date updated : [" ).append( expiredIdentity.getCustomerId( ) ).append( "]" ).append( "\n" );
+		}
+		else if ( indicators.get( KEY_INFOS_ARE_MISSING ) && demandExpirationDateMAX.after( olderCguRetentionDate ) )
+		{
+		    // if infos are missing (but the maximum CGU retention period has not been reached)
+		    if ( !indicators.get(  KEY_AT_LEAST_ONE_CS_FOUND ) )
+		    {
+			msg.append ( "No service contact found for identity [").append( expiredIdentity.getCustomerId( ) ).append ( "]\n");
+		    }
 
-        // return message for daemons
-        return msg.toString( );
+		    // not enough infos to delete identity
+		    msg.append( "Unsufficient infos to delete [" ).append( expiredIdentity.getCustomerId( ) ).append( "]" ).append( "\n" );
+
+		    // Notify listeners 
+		    _identityStoreNotifyListenerService.notifyListenersIdentityChange(IdentityChangeType.DELETION_ATTEMPT_FAILED, expiredIdentity, 
+			    ResponseStatusType.UNAUTHORIZED.name(),ResponseStatusType.UNAUTHORIZED.name(), 
+			    new RequestAuthor ("DAEMON", AuthorType.application.name ( ) ), "DAEMON", null);
+
+		}
+		else if ( isDryRun )
+		{
+		    // Dry run : test mode only (no deletion)
+		    msg.append( "(Dry run) should Detete Identity [" ).append( expiredIdentity.getCustomerId( ) ).append( "]" ).append( "\n" );
+		}
+		else 
+		{
+		    // if the updated peremption date still passed, delete the identity (and children as merged identities,
+		    // suspicious, attributes and attributes history, etc ...) EXCEPT the identity history
+		    IdentityService.instance( ).delete( expiredIdentity.getCustomerId( ) );
+		    msg.append( "Detete Identity [" ).append( expiredIdentity.getCustomerId( ) ).append( "]" ).append( "\n" );
+
+		    // delete notifications
+		    _notificationStoreService.deleteNotificationByCuid( expiredIdentity.getCustomerId( ) );
+		    msg.append( "Notifications deleted for main identity [" ).append( expiredIdentity.getCustomerId( ) ).append( "]" ).append( "\n" );
+		    for ( final Identity mergedIdentity : mergedIdentities )
+		    {
+			_notificationStoreService.deleteNotificationByCuid( mergedIdentity.getCustomerId( ) );
+			msg.append( "Notifications deleted for merged identity [" ).append( mergedIdentity.getCustomerId( ) ).append( "]" ).append( "\n" );
+		    }
+		}
+	    }
+	    catch( final Exception e )
+	    {
+		msg.append( "Daemon execution error for identity : " ).append( expiredIdentity.getCustomerId( ) ).append( " :: " ).append( e.getMessage( ) )
+		.append( "\n" );
+		return msg.toString( );
+	    }
+	}
+
+	// return message for daemons
+	return msg.toString( );
     }
 
     /**
@@ -262,16 +218,89 @@ public final class PurgeIdentityService
      *            the type id
      * @return the app code
      */
-    private String getAppCodeFromDemandTypeId( final String strTypeId )
+    public static String getAppCodeFromDemandTypeId( final String strTypeId, NotificationStoreService notificationStoreService )
     {
-        DemandType demandType = _notificationStoreService.getDemandType( strTypeId );
+	DemandType demandType = notificationStoreService.getDemandType( strTypeId );
 
-        if ( demandType != null )
-        {
-            return demandType.getAppCode( );
-        }
-        
-        return null;
+	if ( demandType != null )
+	{
+	    return demandType.getAppCode( );
+	}
+
+	return null;
     }
 
+    /**
+     * check Expiration Date By Demand
+     * 
+     * @param demand
+     * @param isAtLeastOneServiceContractFound
+     * @param isInfosAreMissing
+     * @param excludedAppCodes
+     * @param msg
+     * @return 
+     * @throws ClientAuthorizationException 
+     */
+    public static Timestamp checkExpirationDateByDemand( DemandDisplay demand, 
+	    Map<String,Boolean> indicators, List<String> excludedAppCodes, StringBuilder msg,
+	    NotificationStoreService notificationStoreService) throws ClientAuthorizationException
+    {
+	// ignore canceled demands
+	if (demand.getDemand().getStatusId() == EnumGenericStatus.CANCELED.getStatusId()) {
+	    return null;
+	}
+
+	final String appCode = getAppCodeFromDemandTypeId( demand.getDemand( ).getTypeId( ), notificationStoreService );
+	if ( appCode == null )
+	{
+	    msg.append( "Unknown AppCode for demand_type_id : ")
+	    .append ( (demand.getDemand( ).getTypeId( )!=null?demand.getDemand( ).getTypeId( ):"") )
+	    .append ( "\n" );
+	    AppLogService.info( "IdentityPurgDaemon / Unknown AppCode for demand_type_id : "  
+		    + (demand.getDemand( ).getTypeId( )!=null?demand.getDemand( ).getTypeId( ):"") );
+
+	    indicators.put( KEY_INFOS_ARE_MISSING, true);
+	}
+
+	if ( !excludedAppCodes.contains( appCode ) )
+	{
+	    final List<String> clientCodeList = ServiceContractService.instance( ).getClientCodesFromAppCode( appCode );
+
+	    int nbMonthsCGUsMAX = 0;
+	    for ( final String clientCode : clientCodeList )
+	    {
+		// if there is more than one client code for the app_code, keep the max value of cgus
+		Timestamp tscreate = new Timestamp( demand.getDemand( ).getCreationDate( ) );
+		Date demandCreationDate = Date.valueOf( tscreate.toLocalDateTime( ).toLocalDate( ) );
+
+		ServiceContract sc = ServiceContractService.instance( ).getActiveServiceContractAtSpecificDate( clientCode, demandCreationDate );
+		if ( sc == null )
+		{
+		    sc = ServiceContractService.instance( ).getActiveServiceContract( clientCode );
+		}
+
+		if ( sc != null )
+		{
+		    indicators.put( KEY_AT_LEAST_ONE_CS_FOUND, true); 
+		    
+		    if ( sc.getDataRetentionPeriodInMonths( ) > nbMonthsCGUsMAX )
+		    {
+			nbMonthsCGUsMAX = sc.getDataRetentionPeriodInMonths( );
+		    }
+		}
+		else
+		{
+		    indicators.put( KEY_INFOS_ARE_MISSING, true);
+		}
+	    }
+
+	    final ZonedDateTime demandDate = ZonedDateTime.ofInstant( Instant.ofEpochMilli( demand.getDemand( ).getModifyDate( ) ),
+		    ZoneId.systemDefault( ) );
+	    final Timestamp expirationDateFromDemand = Timestamp.from( demandDate.plusMonths( nbMonthsCGUsMAX ).toInstant( ) );
+
+	    return expirationDateFromDemand;
+	}
+
+	return null;
+    }
 }
