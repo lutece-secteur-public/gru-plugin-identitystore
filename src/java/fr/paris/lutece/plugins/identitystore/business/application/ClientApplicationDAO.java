@@ -50,7 +50,7 @@ public final class ClientApplicationDAO implements IClientApplicationDAO
     private static final String SQL_QUERY_NEW_PK = "SELECT max( id_client_app ) FROM identitystore_client_application";
     private static final String SQL_QUERY_SELECT = "SELECT id_client_app, name, client_code, application_code, creation_date, last_update_date, author_name  FROM identitystore_client_application WHERE id_client_app = ?";
     private static final String SQL_QUERY_SELECT_BY_CODE = "SELECT id_client_app, name, client_code, application_code, creation_date, last_update_date, author_name FROM identitystore_client_application WHERE client_code = ?";
-    private static final String SQL_QUERY_SELECT_BY_APP_CODE = "SELECT id_client_app, name, client_code, application_code FROM identitystore_client_application WHERE application_code = ?";
+    private static final String SQL_QUERY_SELECT_BY_APP_CODE = "SELECT id_client_app, name, client_code, application_code FROM identitystore_client_application WHERE upper( application_code ) = upper( ? ) ";
     private static final String SQL_QUERY_INSERT = "INSERT INTO identitystore_client_application ( id_client_app, name, client_code, application_code, creation_date, last_update_date, author_name) VALUES ( ?, ?, ?, ?, ?, ?, ? ) ";
     private static final String SQL_QUERY_DELETE = "DELETE FROM identitystore_client_application WHERE id_client_app = ? ";
     private static final String SQL_QUERY_UPDATE = "UPDATE identitystore_client_application SET id_client_app = ?, name = ?, client_code = ?, application_code = ?, last_update_date = ?, author_name = ? WHERE id_client_app = ?";

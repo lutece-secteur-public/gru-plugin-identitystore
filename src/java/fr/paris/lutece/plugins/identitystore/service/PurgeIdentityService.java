@@ -121,8 +121,11 @@ public final class PurgeIdentityService
 		final List<DemandDisplay> demandDisplayList = demandResult.getListDemandDisplay() == null ? new ArrayList<>() : new ArrayList<>(demandResult.getListDemandDisplay());
 		for ( final Identity mergedIdentity : mergedIdentities )
 		{
-		    demandDisplayList
-		    .addAll( _notificationStoreService.getListDemand( mergedIdentity.getCustomerId( ), null, null, null, null ).getListDemandDisplay( ) );
+		    final DemandResult mergedDemands = _notificationStoreService.getListDemand( mergedIdentity.getCustomerId( ), null, null, null, null );
+		    if ( mergedDemands.getListDemandDisplay( ) != null )
+		    {
+			demandDisplayList.addAll( mergedDemands.getListDemandDisplay( ) );
+		    }
 		}
 
 		Map<String,Boolean> indicators = new HashMap<>( );
@@ -256,15 +259,15 @@ public final class PurgeIdentityService
 	    msg.append( "Unknown AppCode for demand_type_id : ")
 	    .append ( (demand.getDemand( ).getTypeId( )!=null?demand.getDemand( ).getTypeId( ):"") )
 	    .append ( "\n" );
-	    AppLogService.info( "IdentityPurgDaemon / Unknown AppCode for demand_type_id : "  
+	    AppLogService.info( "CheckExpirationDate / Unknown AppCode for demand_type_id : "  
 		    + (demand.getDemand( ).getTypeId( )!=null?demand.getDemand( ).getTypeId( ):"") );
 
 	    indicators.put( KEY_INFOS_ARE_MISSING, true);
 	}
 
-	if ( !excludedAppCodes.contains( appCode ) )
+	if ( appCode!=null && !excludedAppCodes.contains( appCode.toUpperCase( ) ) )
 	{
-	    final List<String> clientCodeList = ServiceContractService.instance( ).getClientCodesFromAppCode( appCode );
+	    final List<String> clientCodeList = ServiceContractService.instance( ).getClientCodesFromAppCode( appCode.toUpperCase( ) );
 
 	    int nbMonthsCGUsMAX = 0;
 	    for ( final String clientCode : clientCodeList )
