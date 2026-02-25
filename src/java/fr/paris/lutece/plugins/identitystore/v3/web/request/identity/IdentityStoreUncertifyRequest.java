@@ -42,9 +42,8 @@ import fr.paris.lutece.plugins.identitystore.service.contract.ServiceContractSer
 import fr.paris.lutece.plugins.identitystore.service.identity.IdentityService;
 import fr.paris.lutece.plugins.identitystore.v3.web.request.AbstractIdentityStoreAppCodeRequest;
 import fr.paris.lutece.plugins.identitystore.v3.web.request.validator.IdentityAttributeValidator;
-import fr.paris.lutece.plugins.identitystore.v3.web.rs.AbstractIdentityStoreRequest;
+import fr.paris.lutece.plugins.identitystore.v3.web.request.validator.IdentityValidator;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.IdentityRequestValidator;
-import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.AttributeChangeStatus;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.AttributeStatus;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.IdentityDto;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.crud.IdentityChangeResponse;
@@ -69,6 +68,7 @@ public class IdentityStoreUncertifyRequest extends AbstractIdentityStoreAppCodeR
     private final IdentityDtoCache _identityDtoCache = SpringContextService.getBean( "identitystore.identityDtoCache" );
     private final String _strCustomerId;
     private final UncertifyIdentityRequest request;
+    private IdentityDto identityDto;
 
     private ServiceContract serviceContract;
 
@@ -82,9 +82,10 @@ public class IdentityStoreUncertifyRequest extends AbstractIdentityStoreAppCodeR
 
     @Override
     protected void fetchResources( ) throws ResourceNotFoundException, ClientAuthorizationException {
-        if (_strCustomerId != null) {
+        if ( _strCustomerId != null ) {
             serviceContract = ServiceContractService.instance( ).getActiveServiceContract( _strClientCode );
-            if ( _identityDtoCache.getByCustomerId( _strCustomerId, serviceContract ) == null )
+            identityDto = _identityDtoCache.getIdentityByCustomerId( _strCustomerId, serviceContract );
+            if ( identityDto == null )
             {
                 throw new ResourceNotFoundException( "No matching identity could be found", Constants.PROPERTY_REST_ERROR_NO_MATCHING_IDENTITY );
             }
@@ -95,8 +96,8 @@ public class IdentityStoreUncertifyRequest extends AbstractIdentityStoreAppCodeR
     protected void validateRequestFormat( ) throws RequestFormatException
     {
         IdentityRequestValidator.instance( ).checkCustomerId( _strCustomerId );
-        if (request != null && request.getAttributeKeyList() != null) {
-            IdentityAttributeValidator.instance().checkAttributeExistence(request.getAttributeKeyList());
+        if ( request != null && request.getAttributeKeyList( ) != null ) {
+            IdentityAttributeValidator.instance( ).checkAttributeExistence( request.getAttributeKeyList( ) );
         }
     }
 
@@ -109,7 +110,7 @@ public class IdentityStoreUncertifyRequest extends AbstractIdentityStoreAppCodeR
     @Override
     protected void validateResourcesConsistency( ) throws ResourceConsistencyException
     {
-        // do nothing
+        IdentityValidator.instance( ).checkIdentityMergedStatusForUpdate( identityDto, serviceContract );
     }
 
     @Override
@@ -129,9 +130,9 @@ public class IdentityStoreUncertifyRequest extends AbstractIdentityStoreAppCodeR
     {
         final IdentityChangeResponse response = new IdentityChangeResponse( );
         final List<AttributeKey> attributeKeys = new ArrayList<>( );
-        if (request != null && !request.getAttributeKeyList().isEmpty()) {
+        if ( request != null && !request.getAttributeKeyList().isEmpty( ) ) {
             for( final String key : request.getAttributeKeyList( ) ) {
-                attributeKeys.add(IdentityAttributeService.instance().getAttributeKey(key));
+                attributeKeys.add( IdentityAttributeService.instance( ).getAttributeKey( key ) );
             }
         }
 

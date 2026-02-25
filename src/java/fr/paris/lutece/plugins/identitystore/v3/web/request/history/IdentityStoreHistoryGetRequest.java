@@ -38,9 +38,7 @@ import fr.paris.lutece.plugins.identitystore.cache.IdentityDtoCache;
 import fr.paris.lutece.plugins.identitystore.service.contract.ServiceContractService;
 import fr.paris.lutece.plugins.identitystore.service.history.IdentityHistoryService;
 import fr.paris.lutece.plugins.identitystore.v3.web.request.AbstractIdentityStoreAppCodeRequest;
-import fr.paris.lutece.plugins.identitystore.v3.web.rs.AbstractIdentityStoreRequest;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.IdentityRequestValidator;
-import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.IdentityDto;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.history.IdentityHistory;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.history.IdentityHistoryGetResponse;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
@@ -73,7 +71,7 @@ public class IdentityStoreHistoryGetRequest extends AbstractIdentityStoreAppCode
     protected void fetchResources( ) throws ResourceNotFoundException, ClientAuthorizationException {
         if (_strCustomerId != null) {
             serviceContract = ServiceContractService.instance().getActiveServiceContract(_strClientCode);
-            if (_identityDtoCache.getByCustomerId(_strCustomerId, serviceContract) == null) {
+            if (_identityDtoCache.getIdentityByCustomerId(_strCustomerId, serviceContract) == null) {
                 throw new ResourceNotFoundException("No matching identity could be found", Constants.PROPERTY_REST_ERROR_NO_MATCHING_IDENTITY);
             }
         }
