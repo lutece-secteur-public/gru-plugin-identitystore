@@ -184,6 +184,13 @@ public final class PurgeIdentityService
 		{
 		    // Dry run : test mode only (no deletion)
 		    msg.append( "(Dry run) should Detete Identity [" ).append( expiredIdentity.getCustomerId( ) ).append( "]" ).append( "\n" );
+		    
+		    if ( demandExpirationDateMAX.before( olderCguRetentionDate ) )
+		    {
+			 msg.append( " ( demand Expiration Date MAX = " ).append( demandExpirationDateMAX )
+			 	.append( ") < MAX Cgu Retention Date = ").append( olderCguRetentionDate  )
+			 	.append( " )" );
+		    }
 		}
 		else 
 		{
@@ -191,7 +198,14 @@ public final class PurgeIdentityService
 		    // suspicious, attributes and attributes history, etc ...) EXCEPT the identity history
 		    IdentityService.instance( ).delete( expiredIdentity.getCustomerId( ) );
 		    msg.append( "Detete Identity [" ).append( expiredIdentity.getCustomerId( ) ).append( "]" ).append( "\n" );
-
+		    
+		    if ( demandExpirationDateMAX.before( olderCguRetentionDate ) )
+		    {
+			 msg.append( " ( demand Expiration Date MAX = " ).append( demandExpirationDateMAX )
+			 	.append( ") < MAX Cgu Retention Date = ").append( olderCguRetentionDate  )
+			 	.append( " )" );
+		    }
+		    
 		    // delete notifications
 		    _notificationStoreService.deleteNotificationByCuid( expiredIdentity.getCustomerId( ) );
 		    msg.append( "Notifications deleted for main identity [" ).append( expiredIdentity.getCustomerId( ) ).append( "]" ).append( "\n" );
@@ -254,6 +268,8 @@ public final class PurgeIdentityService
 	}
 
 	final String appCode = getAppCodeFromDemandTypeId( demand.getDemand( ).getTypeId( ), notificationStoreService );
+
+	// unknown app_code
 	if ( appCode == null )
 	{
 	    msg.append( "Unknown AppCode for demand_type_id : ")
@@ -263,47 +279,54 @@ public final class PurgeIdentityService
 		    + (demand.getDemand( ).getTypeId( )!=null?demand.getDemand( ).getTypeId( ):"") );
 
 	    indicators.put( KEY_INFOS_ARE_MISSING, true);
+	    return null;
 	}
 
-	if ( appCode!=null && !excludedAppCodes.contains( appCode.toUpperCase( ) ) )
+	// ignore excluded app_codes
+	if ( excludedAppCodes.contains( appCode.toUpperCase( ) ) )
 	{
-	    final List<String> clientCodeList = ServiceContractService.instance( ).getClientCodesFromAppCode( appCode.toUpperCase( ) );
+	    // do not consider notifications from excluded app_codes
+	    return null;
+	}
 
-	    int nbMonthsCGUsMAX = 0;
-	    for ( final String clientCode : clientCodeList )
+	final List<String> clientCodeList = ServiceContractService.instance( ).getClientCodesFromAppCode( appCode.toUpperCase( ) );
+
+	int nbMonthsCGUsMAX = 0;
+	for ( final String clientCode : clientCodeList )
+	{
+	    // if there is more than one client code for the app_code, keep the max value of cgus
+	    Timestamp tscreate = new Timestamp( demand.getDemand( ).getCreationDate( ) );
+	    Date demandCreationDate = Date.valueOf( tscreate.toLocalDateTime( ).toLocalDate( ) );
+
+	    // search active service contract at notification date
+	    ServiceContract sc = ServiceContractService.instance( ).getActiveServiceContractAtSpecificDate( clientCode, demandCreationDate );
+	    if ( sc == null )
 	    {
-		// if there is more than one client code for the app_code, keep the max value of cgus
-		Timestamp tscreate = new Timestamp( demand.getDemand( ).getCreationDate( ) );
-		Date demandCreationDate = Date.valueOf( tscreate.toLocalDateTime( ).toLocalDate( ) );
-
-		ServiceContract sc = ServiceContractService.instance( ).getActiveServiceContractAtSpecificDate( clientCode, demandCreationDate );
-		if ( sc == null )
-		{
-		    sc = ServiceContractService.instance( ).getActiveServiceContract( clientCode );
-		}
-
-		if ( sc != null )
-		{
-		    indicators.put( KEY_AT_LEAST_ONE_CS_FOUND, true); 
-		    
-		    if ( sc.getDataRetentionPeriodInMonths( ) > nbMonthsCGUsMAX )
-		    {
-			nbMonthsCGUsMAX = sc.getDataRetentionPeriodInMonths( );
-		    }
-		}
-		else
-		{
-		    indicators.put( KEY_INFOS_ARE_MISSING, true);
-		}
+		// otherwise, consider the active service contract
+		sc = ServiceContractService.instance( ).getActiveServiceContract( clientCode );
 	    }
 
-	    final ZonedDateTime demandDate = ZonedDateTime.ofInstant( Instant.ofEpochMilli( demand.getDemand( ).getModifyDate( ) ),
-		    ZoneId.systemDefault( ) );
-	    final Timestamp expirationDateFromDemand = Timestamp.from( demandDate.plusMonths( nbMonthsCGUsMAX ).toInstant( ) );
+	    if ( sc != null )
+	    {
+		// at least one service contract found
+		indicators.put( KEY_AT_LEAST_ONE_CS_FOUND, true); 
 
-	    return expirationDateFromDemand;
+		if ( sc.getDataRetentionPeriodInMonths( ) > nbMonthsCGUsMAX )
+		{
+		    nbMonthsCGUsMAX = sc.getDataRetentionPeriodInMonths( );
+		}
+	    }
+	    else
+	    {
+		// some informations are missing : this will be logged and stop deletion process
+		indicators.put( KEY_INFOS_ARE_MISSING, true);
+	    }
 	}
 
-	return null;
+	final ZonedDateTime demandDate = ZonedDateTime.ofInstant( Instant.ofEpochMilli( demand.getDemand( ).getModifyDate( ) ),
+		ZoneId.systemDefault( ) );
+	final Timestamp expirationDateFromDemand = Timestamp.from( demandDate.plusMonths( nbMonthsCGUsMAX ).toInstant( ) );
+
+	return expirationDateFromDemand;
     }
 }
