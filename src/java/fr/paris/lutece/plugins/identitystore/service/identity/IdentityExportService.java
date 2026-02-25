@@ -34,16 +34,11 @@
 package fr.paris.lutece.plugins.identitystore.service.identity;
 
 import fr.paris.lutece.plugins.identitystore.business.contract.ServiceContract;
-import fr.paris.lutece.plugins.identitystore.business.identity.Identity;
-import fr.paris.lutece.plugins.identitystore.business.identity.IdentityHome;
 import fr.paris.lutece.plugins.identitystore.cache.IdentityDtoCache;
-import fr.paris.lutece.plugins.identitystore.service.contract.ServiceContractService;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.AttributeDto;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.IdentityDto;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.exporting.IdentityExportRequest;
-import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.exporting.IdentityExportResponse;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
-import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.ResponseStatusFactory;
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
 import fr.paris.lutece.plugins.identitystore.web.exception.ResourceNotFoundException;
 import fr.paris.lutece.portal.service.spring.SpringContextService;
@@ -96,7 +91,7 @@ public class IdentityExportService
                 : includeDeletedIdentitiesDefault;
         for ( final String cuid : request.getCuidList( ) )
         {
-            final IdentityDto identity = _identityDtoCache.getByCustomerId( cuid, serviceContract );
+            final IdentityDto identity = _identityDtoCache.getMasterIdentityByCustomerId( cuid, serviceContract );
             if ( identity == null || ( !includeDeletedIdentities && identity.getExpiration( ) != null && identity.getExpiration( ).isDeleted( ) ) )
             {
                 continue;

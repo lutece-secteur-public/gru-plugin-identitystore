@@ -552,8 +552,8 @@ public class IdentityService
         AccessLogService.getInstance( ).info( AccessLoggerConstants.EVENT_TYPE_READ, GET_IDENTITY_EVENT_CODE, _internalUserService.getApiUser( clientCode ),
                 SecurityUtil.logForgingProtect( StringUtils.isNotBlank( customerId ) ? customerId : connectionId ), SPECIFIC_ORIGIN );
 
-        final IdentityDto identityDto = StringUtils.isNotBlank( customerId ) ? _identityDtoCache.getByCustomerId( customerId, serviceContract )
-                : _identityDtoCache.getByConnectionId( connectionId, serviceContract );
+        final IdentityDto identityDto = StringUtils.isNotBlank( customerId ) ? _identityDtoCache.getMasterIdentityByCustomerId( customerId, serviceContract )
+                : _identityDtoCache.getMasterIdentityByConnectionId( connectionId, serviceContract );
         if ( identityDto == null )
         {
             // #345 : If the identity doesn't exist, make an extra search in the history (only for CUID search).
@@ -950,7 +950,7 @@ public class IdentityService
         if ( request.getPage( ) != null && request.getSize( ) != null )
         {
             // Si pagination
-            // première requête qui ne ramène que les ID (avec un LIMIT ${maxResult} ), triés par date de derniere modification
+            // première requête qui ne ramène que les ID (avec un LIMIT ${maxResult}), triés par date de derniere modification
             final List<Integer> allUpdatedIdentityIds = IdentityHome.findUpdatedIdentityIds( request.getDays( ), request.getIdentityChangeTypes( ),
                     request.getUpdatedAttributes( ), maxResult );
 

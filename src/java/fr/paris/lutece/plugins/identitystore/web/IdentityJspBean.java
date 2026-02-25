@@ -207,7 +207,7 @@ public class IdentityJspBean extends ManageIdentitiesJspBean
 	    {
 		if ( datasource.equals( DATASOURCE_DB ) )
 		{
-		    final Identity identity = IdentityHome.findMasterIdentityByCustomerId( cuid );
+		    final Identity identity = IdentityHome.findMasterIdentityByCustomerId( cuid, true );
 		    if ( identity != null )
 		    {
 			final IdentityDto qualifiedIdentity = DtoConverter.convertIdentityToDto( identity );
@@ -227,7 +227,7 @@ public class IdentityJspBean extends ManageIdentitiesJspBean
 		{
 		    if ( datasource.equals( DATASOURCE_DB ) )
 		    {
-			final Identity identity = IdentityHome.findMasterIdentityByConnectionId( guid );
+			final Identity identity = IdentityHome.findMasterIdentityByConnectionId( guid, true );
 			if ( identity != null )
 			{
 			    final IdentityDto qualifiedIdentity = DtoConverter.convertIdentityToDto( identity );

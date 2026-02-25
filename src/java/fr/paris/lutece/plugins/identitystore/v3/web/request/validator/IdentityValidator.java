@@ -33,14 +33,14 @@
  */
 package fr.paris.lutece.plugins.identitystore.v3.web.request.validator;
 
-import fr.paris.lutece.plugins.identitystore.business.identity.Identity;
-import fr.paris.lutece.plugins.identitystore.business.identity.IdentityHome;
+import fr.paris.lutece.plugins.identitystore.business.contract.ServiceContract;
+import fr.paris.lutece.plugins.identitystore.cache.IdentityDtoCache;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.IdentityDto;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.crud.IdentityChangeResponse;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.search.IdentitySearchMessage;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
-import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.ResponseStatusFactory;
 import fr.paris.lutece.plugins.identitystore.web.exception.ResourceConsistencyException;
+import fr.paris.lutece.portal.service.spring.SpringContextService;
 
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
@@ -48,6 +48,7 @@ import java.util.Objects;
 
 public class IdentityValidator
 {
+    private final IdentityDtoCache _identityDtoCache = SpringContextService.getBean( "identitystore.identityDtoCache" );
 
     private static IdentityValidator instance;
 
@@ -97,11 +98,11 @@ public class IdentityValidator
      * @throws ResourceConsistencyException
      *             if the identity is already merged
      */
-    public void checkIdentityMergedStatusForUpdate( final IdentityDto existingIdentityToUpdate ) throws ResourceConsistencyException
+    public void checkIdentityMergedStatusForUpdate( final IdentityDto existingIdentityToUpdate, final ServiceContract serviceContract ) throws ResourceConsistencyException
     {
         if ( existingIdentityToUpdate.isMerged( ) )
         {
-            final Identity masterIdentity = IdentityHome.findMasterIdentityByCustomerId( existingIdentityToUpdate.getCustomerId( ) );
+            final IdentityDto masterIdentity = _identityDtoCache.getMasterIdentityByCustomerId( existingIdentityToUpdate.getCustomerId( ), serviceContract );
             final ResourceConsistencyException exception = new ResourceConsistencyException(
                     "Cannot update a merged Identity. Master identity customerId is provided in the response.",
                     Constants.PROPERTY_REST_ERROR_FORBIDDEN_UPDATE_ON_MERGED_IDENTITY, IdentityChangeResponse.class );
