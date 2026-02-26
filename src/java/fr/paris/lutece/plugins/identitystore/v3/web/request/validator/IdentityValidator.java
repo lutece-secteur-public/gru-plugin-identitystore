@@ -49,6 +49,7 @@ import java.util.Objects;
 public class IdentityValidator
 {
     private final IdentityDtoCache _identityDtoCache = SpringContextService.getBean( "identitystore.identityDtoCache" );
+    private final SimpleDateFormat fmt = new SimpleDateFormat( "yyyy-MM-dd HH:mm:ss" );
 
     private static IdentityValidator instance;
 
@@ -79,8 +80,7 @@ public class IdentityValidator
     public void checkIdentityLastUpdateDate( final IdentityDto existingIdentityToUpdate, final Timestamp requestLastUpdateDate )
             throws ResourceConsistencyException
     {
-        SimpleDateFormat fmt = new SimpleDateFormat( "yyyy-MM-dd" );
-        if ( !fmt.format( existingIdentityToUpdate.getLastUpdateDate( ) ).equals(fmt.format( requestLastUpdateDate ) ) )
+        if ( !Objects.equals( existingIdentityToUpdate.getLastUpdateDate( ), requestLastUpdateDate ) )
         {
             final ResourceConsistencyException exception = new ResourceConsistencyException(
                     "This identity has been updated recently, please load the latest data before updating.", Constants.PROPERTY_REST_ERROR_UPDATE_CONFLICT,
