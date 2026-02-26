@@ -77,7 +77,7 @@ public final class IdentityDAO implements IIdentityDAO
     private static final String SQL_QUERY_SELECT = "SELECT id_identity, connection_id, customer_id, is_deleted, is_merged, id_master_identity, date_create, last_update_date, date_merge, is_mon_paris_active, expiration_date  FROM identitystore_identity WHERE id_identity = ?";
     private static final String SQL_QUERY_INSERT = "INSERT INTO identitystore_identity (  connection_id, customer_id, date_create, last_update_date, is_mon_paris_active, expiration_date ) VALUES ( ?, ?, ?, ?, ?, ? ) ";
     private static final String SQL_QUERY_DELETE = "DELETE FROM identitystore_identity WHERE id_identity = ? ";
-    private static final String SQL_QUERY_UPDATE = "UPDATE identitystore_identity SET connection_id = ?, customer_id = ?, last_update_date = ?, is_mon_paris_active = ?, expiration_date = ? WHERE id_identity = ?";
+    private static final String SQL_QUERY_UPDATE = "UPDATE identitystore_identity SET connection_id = ?, customer_id = ?, last_update_date = ?, is_mon_paris_active = ?, expiration_date = ?, date_delete = ? WHERE id_identity = ?";
     private static final String SQL_QUERY_SELECTALL_FULL = "SELECT id_identity, connection_id, customer_id, is_deleted, is_merged, id_master_identity, date_create, last_update_date, date_merge, is_mon_paris_active, expiration_date FROM identitystore_identity";
     private static final String SQL_QUERY_SELECT_BY_CONNECTION_ID = "SELECT " + COLUMNS
             + " FROM identitystore_identity a WHERE lower(a.connection_id) = lower(?)";
@@ -329,7 +329,8 @@ public final class IdentityDAO implements IIdentityDAO
             daoUtil.setTimestamp( nIndex++, identity.getLastUpdateDate( ) );
             daoUtil.setBoolean( nIndex++, identity.isMonParisActive( ) );
             daoUtil.setTimestamp( nIndex++, identity.getExpirationDate( ) );
-                        
+            daoUtil.setTimestamp( nIndex++, identity.getDeleteDate( ) );
+
             daoUtil.setInt( nIndex, identity.getId( ) );
 
             daoUtil.executeUpdate( );

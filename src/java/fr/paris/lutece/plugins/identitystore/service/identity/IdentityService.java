@@ -728,6 +728,11 @@ public class IdentityService
         {
             metadata.put(Constants.METADATA_NEW_MON_PARIS_ACTIF, String.valueOf( requestIdentity.getMonParisActive( ) ) );
             metadata.put(Constants.METADATA_OLD_MON_PARIS_ACTIF, String.valueOf( identity.isMonParisActive( ) ) );
+            if( !identity.isMonParisActive( ) && requestIdentity.getMonParisActive( ) )
+            {
+                // If monParis flag switches from false to true, reset delete_date
+                identity.setDeleteDate( null );
+            }
             monParisUpdated = true;
             identity.setMonParisActive( requestIdentity.isMonParisActive( ) );
         }
