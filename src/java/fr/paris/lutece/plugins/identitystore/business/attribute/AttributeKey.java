@@ -62,6 +62,7 @@ public class AttributeKey implements Serializable
     private KeyType _keyType;
     private boolean _bCertifiable;
     private boolean _bPivot;
+    private boolean _bAlternativePivot;
 
     private int _nKeyWeight;
 
@@ -234,6 +235,27 @@ public class AttributeKey implements Serializable
     public void setPivot( boolean bPivot )
     {
         _bPivot = bPivot;
+    }
+
+    /**
+     * Returns the alternative Pivot
+     *
+     * @return The alternative Pivot
+     */
+    public boolean getAlternativePivot( )
+    {
+        return _bAlternativePivot;
+    }
+
+    /**
+     * Sets the alternative Pivot
+     *
+     * @param alternativePivot
+     *            The alternative Pivot
+     */
+    public void setAlternativePivot(boolean alternativePivot)
+    {
+        _bAlternativePivot = alternativePivot;
     }
 
     /**

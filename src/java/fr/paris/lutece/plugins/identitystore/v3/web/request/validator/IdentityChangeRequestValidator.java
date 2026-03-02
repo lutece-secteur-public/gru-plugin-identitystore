@@ -51,8 +51,6 @@ import java.util.stream.Collectors;
 
 public class IdentityChangeRequestValidator
 {
-    private final IdentityDtoCache _identityDtoCache = SpringContextService.getBean( "identitystore.identityDtoCache" );
-
     private static IdentityChangeRequestValidator instance;
 
     public static IdentityChangeRequestValidator instance( )

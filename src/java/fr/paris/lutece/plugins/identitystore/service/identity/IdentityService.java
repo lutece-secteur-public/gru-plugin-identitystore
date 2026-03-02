@@ -121,6 +121,7 @@ public class IdentityService
     private final IdentityStoreNotifyListenerService _identityStoreNotifyListenerService = IdentityStoreNotifyListenerService.instance( );
     private final IdentityAttributeService _identityAttributeService = IdentityAttributeService.instance( );
     private final InternalUserService _internalUserService = InternalUserService.getInstance( );
+    private final IdentityQualityService _identityQualityService = IdentityQualityService.instance( );
     private final ISearchIdentityService _elasticSearchIdentityService = SpringContextService.getBean( "identitystore.searchIdentityService.elasticsearch" );
     private final NotificationStoreService _notificationStoreService = SpringContextService.getBean( "notificationStore.notificationStoreService" );
 
@@ -162,6 +163,10 @@ public class IdentityService
         TransactionManager.beginTransaction( null );
         try
         {
+            final Map<String, String> attributes = request.getIdentity( )
+                    .getAttributes( ).stream( )
+                    .collect( Collectors.toMap( AttributeDto::getKey, AttributeDto::getValue ) );
+            identity.setUnicityHashCode( _identityQualityService.computeUnicityHashCode( attributes ) );
             identity.setMonParisActive( request.getIdentity( ).isMonParisActive( ) );
             if ( StringUtils.isNotEmpty( request.getIdentity( ).getConnectionId( ) ) )
             {

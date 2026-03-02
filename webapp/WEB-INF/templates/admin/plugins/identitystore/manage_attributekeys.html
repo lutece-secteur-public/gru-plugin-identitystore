@@ -26,6 +26,7 @@
             <th>#i18n{identitystore.manage_attributekeys.columnKeyType}</th>
             <th>#i18n{identitystore.manage_attributekeys.columnKeyWeight}</th>
             <th>#i18n{identitystore.manage_attributekeys.columnPivot}</th>
+            <th>#i18n{identitystore.manage_attributekeys.columnAlternativePivot}</th>
             <th>#i18n{identitystore.manage_attributekeys.columnCertifiable}</th>
             <th>#i18n{identitystore.manage_attributekeys.columnMandatoryForCreation}</th>
             <th>#i18n{identitystore.manage_attributekeys.columnCommonSearchKey}</th>
@@ -61,6 +62,13 @@
             </td>
             <td>
                 <#if attributekey.pivot = true>
+                    <i class="fas fa-check" aria-hidden="true"></i>
+                <#else>
+                    <i class="fas fa-times" aria-hidden="true"></i>
+                </#if>
+            </td>
+            <td>
+                <#if attributekey.alternativePivot = true>
                     <i class="fas fa-check" aria-hidden="true"></i>
                 <#else>
                     <i class="fas fa-times" aria-hidden="true"></i>

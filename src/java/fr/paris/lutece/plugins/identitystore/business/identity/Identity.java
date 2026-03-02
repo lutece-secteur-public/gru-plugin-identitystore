@@ -67,6 +67,8 @@ public class Identity implements Serializable
     private Timestamp _dateExpirationDate;
     private Timestamp _dateDeleteDate;
 
+    private String _unicityHashCode;
+
     /**
      * Returns the Id
      *
@@ -293,6 +295,14 @@ public class Identity implements Serializable
         this._dateDeleteDate = _dateDeleteDate;
     }
 
+    public String getUnicityHashCode() {
+        return _unicityHashCode;
+    }
+
+    public void setUnicityHashCode(String _unicityHashCode) {
+        this._unicityHashCode = _unicityHashCode;
+    }
+
     /**
      * get Identity values
      * @return the map of values
@@ -302,18 +312,18 @@ public class Identity implements Serializable
 	Map<String,String> map = new HashMap<> ( );
 	map.put( "cuid", _strCustomerId );
 	map.put( "guid", (_strConnectionId!=null ? _strConnectionId : "" ) );
-	
+
 	map.put( "creationDate", _dateCreationDate.toString ( ) );
 	map.put( "lastUpdateDate", _dateLastUpdateDate.toString ( ) );
 	map.put( "isMonParisActive", (_bIsMonParisActive?"1":"0") );
 	map.put( "expirationDate", _dateExpirationDate.toString ( ) );
 	map.put( "deleteRequestDate", (_dateDeleteDate!=null?_dateDeleteDate.toString( ):"") );
-	
+
 	for ( String key : _mapAttributes.keySet( ) )
 	{
 	    map.putAll( _mapAttributes.get( key ).toMap( ) );
 	}
-	
+
 	return map;
     }
 }
