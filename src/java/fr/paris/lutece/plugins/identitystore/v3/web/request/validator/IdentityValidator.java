@@ -49,7 +49,6 @@ import java.util.Objects;
 public class IdentityValidator
 {
     private final IdentityDtoCache _identityDtoCache = SpringContextService.getBean( "identitystore.identityDtoCache" );
-    private final SimpleDateFormat fmt = new SimpleDateFormat( "yyyy-MM-dd HH:mm:ss" );
 
     private static IdentityValidator instance;
 

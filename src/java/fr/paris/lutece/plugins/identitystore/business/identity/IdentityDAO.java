@@ -75,7 +75,7 @@ public final class IdentityDAO implements IIdentityDAO
     // Constants
     private static final String COLUMNS = "a.id_identity, a.connection_id, a.customer_id, a.is_deleted, a.is_merged, a.date_create, a.last_update_date, a.date_merge, a.is_mon_paris_active, a.expiration_date, a.id_master_identity, a.date_delete";
     private static final String SQL_QUERY_SELECT = "SELECT id_identity, connection_id, customer_id, is_deleted, is_merged, id_master_identity, date_create, last_update_date, date_merge, is_mon_paris_active, expiration_date  FROM identitystore_identity WHERE id_identity = ?";
-    private static final String SQL_QUERY_INSERT = "INSERT INTO identitystore_identity (  connection_id, customer_id, date_create, last_update_date, is_mon_paris_active, expiration_date ) VALUES ( ?, ?, ?, ?, ?, ? ) ";
+    private static final String SQL_QUERY_INSERT = "INSERT INTO identitystore_identity (  connection_id, customer_id, date_create, last_update_date, is_mon_paris_active, expiration_date, unicity_hash_code ) VALUES ( ?, ?, ?, ?, ?, ?, ? ) ";
     private static final String SQL_QUERY_DELETE = "DELETE FROM identitystore_identity WHERE id_identity = ? ";
     private static final String SQL_QUERY_UPDATE = "UPDATE identitystore_identity SET connection_id = ?, customer_id = ?, last_update_date = ?, is_mon_paris_active = ?, expiration_date = ?, date_delete = ? WHERE id_identity = ?";
     private static final String SQL_QUERY_SELECTALL_FULL = "SELECT id_identity, connection_id, customer_id, is_deleted, is_merged, id_master_identity, date_create, last_update_date, date_merge, is_mon_paris_active, expiration_date FROM identitystore_identity";
@@ -203,7 +203,8 @@ public final class IdentityDAO implements IIdentityDAO
             daoUtil.setTimestamp( nIndex++, identity.getCreationDate( ) );
             daoUtil.setTimestamp( nIndex++, identity.getLastUpdateDate( ) );
             daoUtil.setBoolean( nIndex++, identity.isMonParisActive( ) );
-            daoUtil.setTimestamp( nIndex, identity.getExpirationDate( ) );
+            daoUtil.setTimestamp( nIndex++, identity.getExpirationDate( ) );
+            daoUtil.setString( nIndex, identity.getUnicityHashCode( ) );
 
             daoUtil.executeUpdate( );
 

@@ -48,18 +48,18 @@ public final class AttributeKeyDAO implements IAttributeKeyDAO
 {
     // Constants
     private static final String SQL_QUERY_NEW_PK = "SELECT max( id_attribute ) FROM identitystore_ref_attribute";
-    private static final String SQL_QUERY_SELECT = "SELECT id_attribute, name, key_name, common_search_key, description, key_type, certifiable, pivot, key_weight, mandatory_for_creation, validation_regex, validation_error_message, validation_error_message_key, creation_date, last_update_date, author_name FROM identitystore_ref_attribute WHERE id_attribute = ?";
-    private static final String SQL_QUERY_INSERT = "INSERT INTO identitystore_ref_attribute ( id_attribute, name, key_name, common_search_key, description, key_type, certifiable, pivot, key_weight, validation_regex, validation_error_message, validation_error_message_key, creation_date, last_update_date, author_name ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? ) ";
+    private static final String SQL_QUERY_SELECT = "SELECT id_attribute, name, key_name, common_search_key, description, key_type, certifiable, pivot, alternative_pivot, key_weight, mandatory_for_creation, validation_regex, validation_error_message, validation_error_message_key, creation_date, last_update_date, author_name FROM identitystore_ref_attribute WHERE id_attribute = ?";
+    private static final String SQL_QUERY_INSERT = "INSERT INTO identitystore_ref_attribute ( id_attribute, name, key_name, common_search_key, description, key_type, certifiable, pivot, alternative_pivot, key_weight, validation_regex, validation_error_message, validation_error_message_key, creation_date, last_update_date, author_name ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? ) ";
     private static final String SQL_QUERY_INSERT_VALUE = "INSERT INTO identitystore_ref_attribute_values(id_attribute, value, label) VALUES (?,?,?)";
     private static final String SQL_QUERY_DELETE_VALUES = "DELETE FROM identitystore_ref_attribute_values WHERE id_attribute = ?";
     private static final String SQL_QUERY_DELETE = "DELETE FROM identitystore_ref_attribute WHERE id_attribute = ? ";
-    private static final String SQL_QUERY_UPDATE = "UPDATE identitystore_ref_attribute SET name = ?, key_name = ?, common_search_key = ?, description = ?, key_type = ?, certifiable = ?, pivot = ?, key_weight = ?, mandatory_for_creation = ?, validation_regex = ?, validation_error_message = ?, validation_error_message_key = ?, last_update_date = ?, author_name = ?  WHERE id_attribute = ?";
-    private static final String SQL_QUERY_SELECTALL = "SELECT id_attribute, name, key_name, common_search_key, description, key_type, certifiable, pivot, key_weight, mandatory_for_creation, validation_regex, validation_error_message, validation_error_message_key, creation_date, last_update_date, author_name FROM identitystore_ref_attribute";
+    private static final String SQL_QUERY_UPDATE = "UPDATE identitystore_ref_attribute SET name = ?, key_name = ?, common_search_key = ?, description = ?, key_type = ?, certifiable = ?, pivot = ?, alternative_pivot = ?, key_weight = ?, mandatory_for_creation = ?, validation_regex = ?, validation_error_message = ?, validation_error_message_key = ?, last_update_date = ?, author_name = ?  WHERE id_attribute = ?";
+    private static final String SQL_QUERY_SELECTALL = "SELECT id_attribute, name, key_name, common_search_key, description, key_type, certifiable, pivot, alternative_pivot, key_weight, mandatory_for_creation, validation_regex, validation_error_message, validation_error_message_key, creation_date, last_update_date, author_name FROM identitystore_ref_attribute";
     private static final String SQL_QUERY_SELECTALL_KEYS = "SELECT key_name FROM identitystore_ref_attribute";
-    private static final String SQL_QUERY_SELECT_BY_KEY = "SELECT id_attribute, name, key_name, common_search_key, description, key_type, certifiable, pivot, key_weight, mandatory_for_creation, validation_regex, validation_error_message, validation_error_message_key, creation_date, last_update_date, author_name FROM identitystore_ref_attribute WHERE key_name = ?";
+    private static final String SQL_QUERY_SELECT_BY_KEY = "SELECT id_attribute, name, key_name, common_search_key, description, key_type, certifiable, pivot, alternative_pivot, key_weight, mandatory_for_creation, validation_regex, validation_error_message, validation_error_message_key, creation_date, last_update_date, author_name FROM identitystore_ref_attribute WHERE key_name = ?";
     private static final String SQL_QUERY_SELECT_NB_ATTRIBUTE_ID_USED = "SELECT count(*) FROM identitystore_ref_attribute WHERE id_attribute = ? AND ( EXISTS( SELECT id_attribute FROM identitystore_service_contract_attribute_right WHERE id_attribute = ? ) OR EXISTS( SELECT id_attribute FROM identitystore_identity_attribute WHERE id_attribute = ? ) OR EXISTS( SELECT id_attribute FROM identitystore_identity_attribute_history  WHERE attribute_key IN  ( SELECT key_name FROM identitystore_ref_attribute WHERE id_attribute = ? ) ) )";
     private static final String SQL_QUERY_SELECT_LEVEL_MAX = "WITH attributes AS ( SELECT ia.key_name, ia.key_weight, max(cast(ircl.level AS NUMERIC)) as max_level FROM identitystore_ref_attribute ia JOIN identitystore_ref_certification_attribute_level iracl ON ia.id_attribute = iracl.id_attribute JOIN identitystore_ref_certification_level ircl ON iracl.id_ref_certification_level = ircl.id_ref_certification_level WHERE ia.key_weight != 0 GROUP BY ia.key_name, ia.key_weight ) SELECT SUM(attributes.max_level * attributes.key_weight) FROM attributes";
-    private static final String SQL_QUERY_SELECTALL_MANDATORY = "SELECT id_attribute, name, key_name, common_search_key, description, key_type, certifiable, pivot, key_weight, mandatory_for_creation, validation_regex, validation_error_message, validation_error_message_key, creation_date, last_update_date, author_name FROM identitystore_ref_attribute WHERE mandatory_for_creation = 1";
+    private static final String SQL_QUERY_SELECTALL_MANDATORY = "SELECT id_attribute, name, key_name, common_search_key, description, key_type, certifiable, pivot, alternative_pivot, key_weight, mandatory_for_creation, validation_regex, validation_error_message, validation_error_message_key, creation_date, last_update_date, author_name FROM identitystore_ref_attribute WHERE mandatory_for_creation = 1";
     private static final String SQL_QUERY_SELECTALL_ATTRIBUTE_VALUES = "SELECT id_attribute, value, label FROM identitystore_ref_attribute_values WHERE id_attribute = ?";
 
     /**
@@ -106,6 +106,7 @@ public final class AttributeKeyDAO implements IAttributeKeyDAO
             daoUtil.setInt( nIndex++, attributeKey.getKeyType( ).getId( ) );
             daoUtil.setBoolean( nIndex++, attributeKey.getCertifiable( ) );
             daoUtil.setBoolean( nIndex++, attributeKey.getPivot( ) );
+            daoUtil.setBoolean( nIndex++, attributeKey.getAlternativePivot( ) );
             daoUtil.setInt( nIndex++, attributeKey.getKeyWeight( ) );
             daoUtil.setString( nIndex++, attributeKey.getValidationRegex( ) );
             daoUtil.setString( nIndex++, attributeKey.getValidationErrorMessage( ) );
@@ -129,33 +130,12 @@ public final class AttributeKeyDAO implements IAttributeKeyDAO
             daoUtil.setInt( 1, nKey );
             daoUtil.executeQuery( );
 
-            AttributeKey attributeKey = null;
-
             if ( daoUtil.next( ) )
             {
-                attributeKey = new AttributeKey( );
-
-                int nIndex = 1;
-
-                attributeKey.setId( daoUtil.getInt( nIndex++ ) );
-                attributeKey.setName( daoUtil.getString( nIndex++ ) );
-                attributeKey.setKeyName( daoUtil.getString( nIndex++ ) );
-                attributeKey.setCommonSearchKeyName( daoUtil.getString( nIndex++ ) );
-                attributeKey.setDescription( daoUtil.getString( nIndex++ ) );
-                attributeKey.setKeyType( KeyType.valueOf( daoUtil.getInt( nIndex++ ) ) );
-                attributeKey.setCertifiable( daoUtil.getBoolean( nIndex++ ) );
-                attributeKey.setPivot( daoUtil.getBoolean( nIndex++ ) );
-                attributeKey.setKeyWeight( daoUtil.getInt( nIndex++ ) );
-                attributeKey.setMandatoryForCreation( daoUtil.getBoolean( nIndex++ ) );
-                attributeKey.setValidationRegex( daoUtil.getString( nIndex++ ) );
-                attributeKey.setValidationErrorMessage( daoUtil.getString( nIndex++ ) );
-                attributeKey.setValidationErrorMessageKey( daoUtil.getString( nIndex++ ) );
-                attributeKey.setCreationDate( daoUtil.getDate( nIndex++ ) );
-                attributeKey.setLastUpdateDate( daoUtil.getDate( nIndex++ ) );
-                attributeKey.setAuthorName( daoUtil.getString( nIndex ) );
+                return this.extractAttributeKey( daoUtil );
             }
 
-            return attributeKey;
+            return null;
         }
     }
 
@@ -189,6 +169,7 @@ public final class AttributeKeyDAO implements IAttributeKeyDAO
             daoUtil.setInt( nIndex++, attributeKey.getKeyType( ).getId( ) );
             daoUtil.setBoolean( nIndex++, attributeKey.getCertifiable( ) );
             daoUtil.setBoolean( nIndex++, attributeKey.getPivot( ) );
+            daoUtil.setBoolean( nIndex++, attributeKey.getAlternativePivot( ) );
             daoUtil.setInt( nIndex++, attributeKey.getKeyWeight( ) );
             daoUtil.setBoolean( nIndex++, attributeKey.isMandatoryForCreation( ) );
             daoUtil.setString( nIndex++, attributeKey.getValidationRegex( ) );
@@ -216,27 +197,7 @@ public final class AttributeKeyDAO implements IAttributeKeyDAO
             final List<AttributeKey> attributeKeyList = new ArrayList<>( );
             while ( daoUtil.next( ) )
             {
-                final AttributeKey attributeKey = new AttributeKey( );
-                int nIndex = 1;
-
-                attributeKey.setId( daoUtil.getInt( nIndex++ ) );
-                attributeKey.setName( daoUtil.getString( nIndex++ ) );
-                attributeKey.setKeyName( daoUtil.getString( nIndex++ ) );
-                attributeKey.setCommonSearchKeyName( daoUtil.getString( nIndex++ ) );
-                attributeKey.setDescription( daoUtil.getString( nIndex++ ) );
-                attributeKey.setKeyType( KeyType.valueOf( daoUtil.getInt( nIndex++ ) ) );
-                attributeKey.setCertifiable( daoUtil.getBoolean( nIndex++ ) );
-                attributeKey.setPivot( daoUtil.getBoolean( nIndex++ ) );
-                attributeKey.setKeyWeight( daoUtil.getInt( nIndex++ ) );
-                attributeKey.setMandatoryForCreation( daoUtil.getBoolean( nIndex++ ) );
-                attributeKey.setValidationRegex( daoUtil.getString( nIndex++ ) );
-                attributeKey.setValidationErrorMessage( daoUtil.getString( nIndex++ ) );
-                attributeKey.setValidationErrorMessageKey( daoUtil.getString( nIndex++ ) );
-                attributeKey.setCreationDate( daoUtil.getDate( nIndex++ ) );
-                attributeKey.setLastUpdateDate( daoUtil.getDate( nIndex++ ) );
-                attributeKey.setAuthorName( daoUtil.getString( nIndex ) );
-
-                attributeKeyList.add( attributeKey );
+                attributeKeyList.add( this.extractAttributeKey( daoUtil ) );
             }
 
             return attributeKeyList;
@@ -293,33 +254,12 @@ public final class AttributeKeyDAO implements IAttributeKeyDAO
             daoUtil.setString( 1, strKey );
             daoUtil.executeQuery( );
 
-            AttributeKey attributeKey = null;
-
             if ( daoUtil.next( ) )
             {
-                attributeKey = new AttributeKey( );
-
-                int nIndex = 1;
-
-                attributeKey.setId( daoUtil.getInt( nIndex++ ) );
-                attributeKey.setName( daoUtil.getString( nIndex++ ) );
-                attributeKey.setKeyName( daoUtil.getString( nIndex++ ) );
-                attributeKey.setCommonSearchKeyName( daoUtil.getString( nIndex++ ) );
-                attributeKey.setDescription( daoUtil.getString( nIndex++ ) );
-                attributeKey.setKeyType( KeyType.valueOf( daoUtil.getInt( nIndex++ ) ) );
-                attributeKey.setCertifiable( daoUtil.getBoolean( nIndex++ ) );
-                attributeKey.setPivot( daoUtil.getBoolean( nIndex++ ) );
-                attributeKey.setKeyWeight( daoUtil.getInt( nIndex++ ) );
-                attributeKey.setMandatoryForCreation( daoUtil.getBoolean( nIndex++ ) );
-                attributeKey.setValidationRegex( daoUtil.getString( nIndex++ ) );
-                attributeKey.setValidationErrorMessage( daoUtil.getString( nIndex++ ) );
-                attributeKey.setValidationErrorMessageKey( daoUtil.getString( nIndex++ ) );
-                attributeKey.setCreationDate( daoUtil.getDate( nIndex++ ) );
-                attributeKey.setLastUpdateDate( daoUtil.getDate( nIndex++ ) );
-                attributeKey.setAuthorName( daoUtil.getString( nIndex ) );
+                return this.extractAttributeKey( daoUtil );
             }
 
-            return attributeKey;
+            return null;
         }
     }
 
@@ -378,27 +318,7 @@ public final class AttributeKeyDAO implements IAttributeKeyDAO
             final List<AttributeKey> attributeKeyList = new ArrayList<>( );
             while ( daoUtil.next( ) )
             {
-                final AttributeKey attributeKey = new AttributeKey( );
-                int nIndex = 1;
-
-                attributeKey.setId( daoUtil.getInt( nIndex++ ) );
-                attributeKey.setName( daoUtil.getString( nIndex++ ) );
-                attributeKey.setKeyName( daoUtil.getString( nIndex++ ) );
-                attributeKey.setCommonSearchKeyName( daoUtil.getString( nIndex++ ) );
-                attributeKey.setDescription( daoUtil.getString( nIndex++ ) );
-                attributeKey.setKeyType( KeyType.valueOf( daoUtil.getInt( nIndex++ ) ) );
-                attributeKey.setCertifiable( daoUtil.getBoolean( nIndex++ ) );
-                attributeKey.setPivot( daoUtil.getBoolean( nIndex++ ) );
-                attributeKey.setKeyWeight( daoUtil.getInt( nIndex++ ) );
-                attributeKey.setMandatoryForCreation( daoUtil.getBoolean( nIndex++ ) );
-                attributeKey.setValidationRegex( daoUtil.getString( nIndex++ ) );
-                attributeKey.setValidationErrorMessage( daoUtil.getString( nIndex++ ) );
-                attributeKey.setValidationErrorMessageKey( daoUtil.getString( nIndex++ ) );
-                attributeKey.setCreationDate( daoUtil.getDate( nIndex++ ) );
-                attributeKey.setLastUpdateDate( daoUtil.getDate( nIndex++ ) );
-                attributeKey.setAuthorName( daoUtil.getString( nIndex ) );
-
-                attributeKeyList.add( attributeKey );
+                attributeKeyList.add( this.extractAttributeKey( daoUtil ) );
             }
 
             return attributeKeyList;
@@ -449,5 +369,32 @@ public final class AttributeKeyDAO implements IAttributeKeyDAO
             daoUtil.setInt( 1, nKey );
             daoUtil.executeUpdate( );
         }
+    }
+
+    private AttributeKey extractAttributeKey( final DAOUtil daoUtil )
+    {
+        final AttributeKey attributeKey = new AttributeKey( );
+
+        int nIndex = 1;
+
+        attributeKey.setId( daoUtil.getInt( nIndex++ ) );
+        attributeKey.setName( daoUtil.getString( nIndex++ ) );
+        attributeKey.setKeyName( daoUtil.getString( nIndex++ ) );
+        attributeKey.setCommonSearchKeyName( daoUtil.getString( nIndex++ ) );
+        attributeKey.setDescription( daoUtil.getString( nIndex++ ) );
+        attributeKey.setKeyType( KeyType.valueOf( daoUtil.getInt( nIndex++ ) ) );
+        attributeKey.setCertifiable( daoUtil.getBoolean( nIndex++ ) );
+        attributeKey.setPivot( daoUtil.getBoolean( nIndex++ ) );
+        attributeKey.setAlternativePivot( daoUtil.getBoolean( nIndex++ ) );
+        attributeKey.setKeyWeight( daoUtil.getInt( nIndex++ ) );
+        attributeKey.setMandatoryForCreation( daoUtil.getBoolean( nIndex++ ) );
+        attributeKey.setValidationRegex( daoUtil.getString( nIndex++ ) );
+        attributeKey.setValidationErrorMessage( daoUtil.getString( nIndex++ ) );
+        attributeKey.setValidationErrorMessageKey( daoUtil.getString( nIndex++ ) );
+        attributeKey.setCreationDate( daoUtil.getDate( nIndex++ ) );
+        attributeKey.setLastUpdateDate( daoUtil.getDate( nIndex++ ) );
+        attributeKey.setAuthorName( daoUtil.getString( nIndex ) );
+
+        return attributeKey;
     }
 }

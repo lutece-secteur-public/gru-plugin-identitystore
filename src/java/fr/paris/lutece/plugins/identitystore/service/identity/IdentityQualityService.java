@@ -53,6 +53,7 @@ import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.duplicate.IdentityDup
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.duplicate.IdentityDuplicateExclusion;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.duplicate.IdentityDuplicateSuspicion;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.search.SearchAttribute;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
 import fr.paris.lutece.plugins.identitystore.web.exception.ResourceNotFoundException;
 import fr.paris.lutece.portal.service.spring.SpringContextService;
 import fr.paris.lutece.portal.service.util.AppPropertiesService;
@@ -65,12 +66,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 public class IdentityQualityService
 {
     private static final QualityBaseCache _qualityBaseCache = SpringContextService.getBean( "identitystore.qualityBaseCache" );
+    private static final String _codeInseeFrance = AppPropertiesService.getProperty("identitystore.code.insee.france", "99100");
 
     private static IdentityQualityService _instance;
 
@@ -294,5 +297,45 @@ public class IdentityQualityService
             identity.getQuality( ).setScoring( levels.doubleValue( ) / base.doubleValue( ) );
         }
 
+    }
+
+    /**
+     * Compute an identity hashcode based on its pivot attributes values and customerId.
+     * <ul>
+     *     <li>Check if the identity is France born or not</i>
+     *     <li>Check if all corresponding pivot attributes are filles</li>
+     *     <li>If not, return a UUID so the identity will never match another</li>
+     *     <li>If all pivot attributes are filled, generated a hash composed of sorted keys, computed with values separated by ::</li>
+     * </ul>
+     * @param attributes the attribute values
+     * @return a hash code
+     */
+    public String computeUnicityHashCode( final Map<String, String> attributes )
+    {
+        final String birthplaceCode = attributes.get(Constants.PARAM_BIRTH_PLACE_CODE);
+        final boolean isCountryWithBirthPlaceCode = birthplaceCode != null && Objects.equals( birthplaceCode, _codeInseeFrance );
+
+        // get pivot referential attributes
+        final List<String> pivotKeys = IdentityAttributeService.instance( )
+                .getPivotAttributeKeys( isCountryWithBirthPlaceCode ).stream( )
+                .map( AttributeKey::getKeyName )
+                .collect( Collectors.toList( ) );
+
+        // extract identity pivot attributes and check consistency
+        final Map<String, String> pivotValues = attributes.entrySet( ).stream( )
+                .filter( e -> e.getValue( ) != null && pivotKeys.contains( e.getKey( ) ) )
+                .collect( Collectors.toMap( Map.Entry::getKey, Map.Entry::getValue ) );
+
+        if( pivotValues.size( ) != pivotKeys.size( ) )
+        {
+            // the identity does not have all pivot attributes,
+            // generate unique UUID in order to never match it
+            return UUID.randomUUID().toString();
+        }
+
+        return pivotValues.entrySet( ).stream( )
+                .sorted( ( Map.Entry.comparingByKey( ) ) )
+                .map(e -> e.getValue( ).toLowerCase( ) )
+                .collect(Collectors.joining("::"));
     }
 }
