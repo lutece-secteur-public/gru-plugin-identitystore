@@ -2,6 +2,9 @@
     <@rowBox>
     <@boxHeader i18nTitleKey="identitystore.view_notifications.identityNotificationsTitle"></@boxHeader>
     <@boxBody>
+    
+      <@messages infos=infos warnings=warnings errors=errors />
+      
         Infos are missing : <#if !infos_are_missing ><span style="color:green">No</span><#else><span style="color:red">Yes</span></#if><br>
         At least one service contract found : <#if at_least_one_service_contract_found ><span style="color:green">Yes</span><#else><span style="color:red">No</span></#if><br>
         <br>
