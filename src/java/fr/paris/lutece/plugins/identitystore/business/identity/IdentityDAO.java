@@ -36,7 +36,6 @@ package fr.paris.lutece.plugins.identitystore.business.identity;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.AuthorType;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.RequestAuthor;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.crud.UpdatedIdentityDto;
@@ -47,9 +46,7 @@ import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.search.SearchUpdatedA
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
 import fr.paris.lutece.portal.service.plugin.Plugin;
-import fr.paris.lutece.portal.service.util.AppPropertiesService;
 import fr.paris.lutece.util.sql.DAOUtil;
-
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
@@ -541,7 +538,7 @@ public final class IdentityDAO implements IIdentityDAO
     {
         final List<Identity> listIdentities = new ArrayList<>( );
         final Map<String, String> withClauses = new HashMap<>( );
-        List<String> lstValueParameter = new ArrayList<String>();
+        final List<String> lstValueParameter = new ArrayList<>();
 
         if ( searchAttributes == null || searchAttributes.isEmpty( ) )
         {
@@ -555,31 +552,32 @@ public final class IdentityDAO implements IIdentityDAO
                 continue;
             }
 
-            StringBuilder filterBuilder = new StringBuilder();
+            final StringBuilder filterBuilder = new StringBuilder( );
             if ( attribute.getKey( ).equals( Constants.PARAM_FIRST_NAME ) || attribute.getKey( ).equals( Constants.PARAM_FAMILY_NAME )
                     ||  ( attribute.getOutputKeys( ) != null && !attribute.getOutputKeys( ).isEmpty( ) && ( attribute.getOutputKeys( ).contains( Constants.PARAM_FIRST_NAME ) || attribute.getOutputKeys( ).contains( Constants.PARAM_FAMILY_NAME ) ) ) )
             {
-            	filterBuilder = new StringBuilder( SQL_QUERY_FILTER_NORMALIZED_ATTRIBUTE_FOR_API_SEARCH_PREPARED );
-            	addFilterParameter(lstValueParameter, attribute, filterBuilder, true);
+
+            	filterBuilder.append( SQL_QUERY_FILTER_NORMALIZED_ATTRIBUTE_FOR_API_SEARCH_PREPARED );
+            	this.addFilterParameter( lstValueParameter, attribute, filterBuilder, true );
             	filterBuilder.append( SQL_QUERY_FILTER_NORMALIZED_ATTRIBUTE_FOR_API_SEARCH_PREPARED_ATTRIBUTEVALUE );
             }
             else
             {
-            	filterBuilder = new StringBuilder( SQL_QUERY_FILTER_ATTRIBUTE_FOR_API_SEARCH_PREPARED );
-            	addFilterParameter(lstValueParameter, attribute, filterBuilder, false);
+            	filterBuilder.append( SQL_QUERY_FILTER_ATTRIBUTE_FOR_API_SEARCH_PREPARED );
+            	this.addFilterParameter( lstValueParameter, attribute, filterBuilder, false );
             	filterBuilder.append( SQL_QUERY_FILTER_ATTRIBUTE_FOR_API_SEARCH_PREPARED_ATTRIBUTEVALUE );
             }
 
-            StringBuilder sqlBuilder =  new StringBuilder();
-            if(attribute.getKey( ).equals(Constants.PARAM_COMMON_EMAIL)
+            final StringBuilder sqlBuilder =  new StringBuilder( );
+            if( attribute.getKey( ).equals( Constants.PARAM_COMMON_EMAIL )
                     || attribute.getKey( ).equals( Constants.PARAM_COMMON_LASTNAME )
-                    || attribute.getKey( ).equals(Constants.PARAM_COMMON_PHONE) )
+                    || attribute.getKey( ).equals( Constants.PARAM_COMMON_PHONE ) )
             {
-                sqlBuilder = new StringBuilder( SQL_QUERY_TMP_TABLE_FOR_API_SEARCH_PREPARED_WITH_DISTINCT );
+                sqlBuilder.append( SQL_QUERY_TMP_TABLE_FOR_API_SEARCH_PREPARED_WITH_DISTINCT );
             }
             else
             {
-                sqlBuilder = new StringBuilder( SQL_QUERY_TMP_TABLE_FOR_API_SEARCH_PREPARED_WITHOUT_DISTINCT );
+                sqlBuilder.append( SQL_QUERY_TMP_TABLE_FOR_API_SEARCH_PREPARED_WITHOUT_DISTINCT );
             }
             sqlBuilder.append( filterBuilder ).append( " ) " );
             withClauses.put(attribute.getKey(), sqlBuilder.toString() );
@@ -590,47 +588,42 @@ public final class IdentityDAO implements IIdentityDAO
             return listIdentities;
         }
 
-        final String strSQL = SQL_QUERY_WITH_CLAUSE_FOR_API_SEARCH.replace("${with_clause}", withClauses.entrySet( ).stream( ).map( entry -> entry.getKey() + " " + entry.getValue( ) ).collect( Collectors.joining(", ") ) )
+        final String strSQL = SQL_QUERY_WITH_CLAUSE_FOR_API_SEARCH.replace("${with_clause}", withClauses.entrySet( ).stream( ).map( entry -> entry.getKey( ) + " " + entry.getValue( ) ).collect( Collectors.joining(", ") ) )
                 + SQL_QUERY_SELECT_BY_ATTRIBUTES_FOR_API_SEARCH.replace( "${join_clause}", withClauses.keySet( ).stream( ).map( key -> SQL_QUERY_JOIN_CLAUSE_FOR_API_SEARCH.replace( "${tmp_table_name}", key ) ).collect(Collectors.joining( " " )) ).replace( "${limit}", String.valueOf( nMaxNbIdentityReturned ) );
         try ( final DAOUtil daoUtil = new DAOUtil( strSQL, plugin ) )
         {
         	int i = 1;
-            for ( String strValueParam : lstValueParameter )
+            for ( final String strValueParam : lstValueParameter )
             {
-            	String strValue =  StringEscapeUtils.unescapeHtml4( strValueParam );
-            	daoUtil.setString( i++, strValue);
+            	daoUtil.setString( i++, StringEscapeUtils.unescapeHtml4( strValueParam ) );
             }
         	
         	daoUtil.executeQuery( );
 
             while ( daoUtil.next( ) )
             {
-                Identity identity = getIdentityFromQuery( daoUtil );
-                listIdentities.add( identity );
+                listIdentities.add( this.getIdentityFromQuery( daoUtil ) );
             }
 
             return listIdentities;
         }
     }
-
-	private void addFilterParameter(List<String> lstValueParameter, final SearchAttribute attribute,
-			StringBuilder filterBuilder, boolean isNormalized) {
-		for ( String strKey : attribute.getOutputKeys( ) )
+    
+	private void addFilterParameter( final List<String> lstValueParameter, final SearchAttribute attribute,
+			final StringBuilder filterBuilder, final boolean normalize ) {
+		for ( final String strKey : attribute.getOutputKeys( ) )
 		{
 			filterBuilder.append( "?," );
 			lstValueParameter.add( strKey );
 		}
-		if ( isNormalized )
-			lstValueParameter.add( this.normalizeValue( attribute.getValue( ) ) );
-		else
-			lstValueParameter.add( StringUtils.lowerCase( attribute.getValue( ) ) );
+		lstValueParameter.add( normalize ? this.normalize( attribute.getValue( ) ) : attribute.getValue( ).toLowerCase( ) );
 		filterBuilder.deleteCharAt( filterBuilder.length( ) - 1 );
 		filterBuilder.append( ") " );
 	}
 
-    private String normalizeValue( final String value )
+    private String normalize( final String value )
     {
-        return StringUtils.stripAccents( value.toLowerCase( ).replace( "œ", "oe" ).replace( "æ", "ae" ) );
+        return value != null ? StringUtils.stripAccents( value.toLowerCase( ) ).replace("œ", "oe").replace("æ", "ae") : null;
     }
 
     /**

@@ -49,6 +49,7 @@ import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.IdentityDto;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.MergeDefinition;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.search.QualifiedIdentitySearchResult;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.search.SearchAttribute;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
 
 import java.util.ArrayList;
@@ -149,14 +150,14 @@ public class ElasticSearchIdentityService implements ISearchIdentityService
             identity.getExpiration().setDeleteDate(identityObject.getDeleteDate());
             identity.setDeleteDate( identityObject.getDeleteDate() );
         }
-        Identity identityDetails = IdentityHome.findByCustomerId( identity.getCustomerId( ) );
+        final Identity identityDetails = IdentityHome.findByCustomerId( identity.getCustomerId( ) );
         if( identityDetails != null && identityDetails.isMerged( ) ) {
             identity.setMerge( new MergeDefinition( ) );
             identity.getMerge().setMasterCustomerId( identityDetails.getMasterIdentityId().toString( ) );
             identity.getMerge().setMerged( true );
             identity.getMerge().setMergeDate( identityDetails.getMergeDate( ));
         }
-        List<Identity> mergedIdentities = IdentityHome.findMergedIdentities(identityDetails.getId());
+        final List<Identity> mergedIdentities = IdentityHome.findMergedIdentities(identityDetails.getId());
         if( mergedIdentities != null && !mergedIdentities.isEmpty() )
         {
             identity.setConsolidate(new ConsolidateDefinition());

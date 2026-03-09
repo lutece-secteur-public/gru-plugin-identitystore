@@ -62,6 +62,7 @@ import fr.paris.lutece.plugins.identitystore.web.exception.RequestFormatExceptio
 import fr.paris.lutece.plugins.identitystore.web.exception.ResourceConsistencyException;
 import fr.paris.lutece.plugins.identitystore.web.exception.ResourceNotFoundException;
 import fr.paris.lutece.portal.service.spring.SpringContextService;
+import fr.paris.lutece.portal.service.util.AppPropertiesService;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.ArrayList;
