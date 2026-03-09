@@ -394,7 +394,7 @@ public class IdentityJspBean extends ManageIdentitiesJspBean
 	 final List<AttributeChange> attributeChangeList = new ArrayList<>( );
 	 final List<IdentityChange> identityChangeList = new ArrayList<>( );
 
-	 if ( _identity != null && MapUtils.isNotEmpty( _identity.getAttributes( ) ) )
+	 if ( _identity != null )
 	 {
 	     try
 	     {
