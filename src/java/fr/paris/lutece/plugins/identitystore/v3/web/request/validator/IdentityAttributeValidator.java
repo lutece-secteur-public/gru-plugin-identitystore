@@ -238,8 +238,12 @@ public class IdentityAttributeValidator
     public void validatePivotAttributesIntegrity( final IdentityDto existingIdentityDto, final IdentityDto identity, boolean geocodesCheck )
             throws RequestFormatException
     {
+        // check if this is a regular identity
+        final boolean isRegular = identity.getAttributes().stream()
+                .anyMatch(a -> Constants.PARAM_BIRTH_COUNTRY_CODE.equals( a.getKey( ) ) && _codeInseeFrance.equals( a.getValue( ) ) );
+
         // get pivot attributes
-        final List<String> pivotKeys = IdentityAttributeService.instance( ).getPivotAttributeKeys( ).stream( ).map( AttributeKey::getKeyName )
+        final List<String> pivotKeys = IdentityAttributeService.instance( ).getPivotAttributeKeys( isRegular ).stream( ).map( AttributeKey::getKeyName )
                 .collect( Collectors.toList( ) );
 
         // get attributes to update, and add certification levels
@@ -247,7 +251,7 @@ public class IdentityAttributeValidator
                 .peek( a -> a.setCertificationLevel( AttributeCertificationDefinitionService.instance( ).getLevelAsInteger( a.getCertifier( ), a.getKey( ) ) ) )
                 .collect( Collectors.toMap( AttributeDto::getKey, Function.identity( ) ) );
 
-        // If the request does not contains at least one pivot attribute, we skip this validation rule
+        // If the request does not contain at least one pivot attribute, we skip this validation rule
         if ( pivotUpdatedAttrs.isEmpty( ) )
         {
             return;
