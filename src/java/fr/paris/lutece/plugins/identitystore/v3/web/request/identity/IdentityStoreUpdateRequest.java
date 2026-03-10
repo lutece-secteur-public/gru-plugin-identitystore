@@ -80,6 +80,8 @@ import java.util.stream.Collectors;
  */
 public class IdentityStoreUpdateRequest extends AbstractIdentityStoreAppCodeRequest
 {
+    private static final String PROPERTY_CHECK_LOGIN_UNIQUENESS = "identitystore.identity.check_login_uniqueness";
+
     private final IdentityDtoCache _identityDtoCache = SpringContextService.getBean( "identitystore.identityDtoCache" );
 
     private final boolean controlsOnly;
@@ -166,8 +168,11 @@ public class IdentityStoreUpdateRequest extends AbstractIdentityStoreAppCodeRequ
     protected void checkDuplicatesConsistency( ) throws DuplicatesConsistencyException
     {
         IdentityDuplicateValidator.instance( ).checkConnectionIdUniquenessForUpdate( _identityChangeRequest, existingIdentityToUpdate );
-        IdentityDuplicateValidator.instance( ).checkLoginUniquenessForUpdate( _identityChangeRequest, existingIdentityToUpdate );
         IdentityDuplicateValidator.instance( ).checkDuplicateExistenceForUpdate( _identityChangeRequest, existingIdentityToUpdate );
+        if ( AppPropertiesService.getPropertyBoolean( PROPERTY_CHECK_LOGIN_UNIQUENESS, false ) )
+        {
+            IdentityDuplicateValidator.instance( ).checkLoginUniquenessForCreate( _identityChangeRequest );
+        }
     }
 
     /**

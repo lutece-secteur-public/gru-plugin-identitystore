@@ -74,6 +74,8 @@ import java.util.List;
  */
 public class IdentityStoreCreateRequest extends AbstractIdentityStoreAppCodeRequest
 {
+    private static final String PROPERTY_CHECK_LOGIN_UNIQUENESS = "identitystore.identity.check_login_uniqueness";;
+
     private final boolean controlsOnly;
 
     private final IdentityChangeRequest _identityChangeRequest;
@@ -139,8 +141,11 @@ public class IdentityStoreCreateRequest extends AbstractIdentityStoreAppCodeRequ
     protected void checkDuplicatesConsistency( ) throws DuplicatesConsistencyException
     {
         IdentityDuplicateValidator.instance( ).checkConnectionIdUniquenessForCreate( _identityChangeRequest );
-        IdentityDuplicateValidator.instance( ).checkLoginUniquenessForCreate( _identityChangeRequest );
         IdentityDuplicateValidator.instance( ).checkDuplicateExistenceForCreation( _identityChangeRequest );
+        if ( AppPropertiesService.getPropertyBoolean( PROPERTY_CHECK_LOGIN_UNIQUENESS, false ) )
+        {
+            IdentityDuplicateValidator.instance( ).checkLoginUniquenessForCreate( _identityChangeRequest );
+        }
     }
 
     @Override
