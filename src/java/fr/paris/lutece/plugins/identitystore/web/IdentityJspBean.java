@@ -380,7 +380,7 @@ public class IdentityJspBean extends ManageIdentitiesJspBean
 			 model.put( MARK_MASTER_CUID, masterIdentity.getCustomerId( ) );
 			 try
 			 {
-				 final List<IdentityChange> historyBySearchParameters = IdentityHome.findHistoryBySearchParameters(masterIdentity.getCustomerId(), null, null,
+				 final List<IdentityChange> historyBySearchParameters = IdentityHome.findHistoryBySearchParameters( masterIdentity.getCustomerId( ), null, null,
 						 IdentityChangeType.CONSOLIDATED, null, null, null, null, null, null, 1);
 				 if( !historyBySearchParameters.isEmpty( ) )
 				 {
