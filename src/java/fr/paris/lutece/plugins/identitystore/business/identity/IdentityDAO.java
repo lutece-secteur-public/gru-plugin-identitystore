@@ -558,13 +558,13 @@ public final class IdentityDAO implements IIdentityDAO
                     ||  ( attribute.getOutputKeys( ) != null && !attribute.getOutputKeys( ).isEmpty( ) && ( attribute.getOutputKeys( ).contains( Constants.PARAM_FIRST_NAME ) || attribute.getOutputKeys( ).contains( Constants.PARAM_FAMILY_NAME ) ) ) )
             {
             	filterBuilder = new StringBuilder( SQL_QUERY_FILTER_NORMALIZED_ATTRIBUTE_FOR_API_SEARCH_PREPARED );
-            	addFilterParameter(lstValueParameter, attribute, filterBuilder);
+            	addFilterParameter(lstValueParameter, attribute, filterBuilder, true);
             	filterBuilder.append( SQL_QUERY_FILTER_NORMALIZED_ATTRIBUTE_FOR_API_SEARCH_PREPARED_ATTRIBUTEVALUE );
             }
             else
             {
             	filterBuilder = new StringBuilder( SQL_QUERY_FILTER_ATTRIBUTE_FOR_API_SEARCH_PREPARED );
-            	addFilterParameter(lstValueParameter, attribute, filterBuilder);
+            	addFilterParameter(lstValueParameter, attribute, filterBuilder, false);
             	filterBuilder.append( SQL_QUERY_FILTER_ATTRIBUTE_FOR_API_SEARCH_PREPARED_ATTRIBUTEVALUE );
             }
 
@@ -612,13 +612,16 @@ public final class IdentityDAO implements IIdentityDAO
     }
 
 	private void addFilterParameter(List<String> lstValueParameter, final SearchAttribute attribute,
-			StringBuilder filterBuilder) {
+			StringBuilder filterBuilder, boolean isNormalized) {
 		for ( String strKey : attribute.getOutputKeys( ) )
 		{
 			filterBuilder.append( "?," );
 			lstValueParameter.add( strKey );
 		}
-		lstValueParameter.add( attribute.getValue( ) );
+		if ( isNormalized )
+			lstValueParameter.add( this.normalizeValue( attribute.getValue( ) ) );
+		else
+			lstValueParameter.add( StringUtils.lowerCase( attribute.getValue( ) ) );
 		filterBuilder.deleteCharAt( filterBuilder.length( ) - 1 );
 		filterBuilder.append( ") " );
 	}
