@@ -302,8 +302,15 @@ public final class PurgeIdentityService
 	    ServiceContract sc = ServiceContractService.instance( ).getActiveServiceContractAtSpecificDate( clientCode, demandCreationDate );
 	    if ( sc == null )
 	    {
-		// otherwise, consider the active service contract
-		sc = ServiceContractService.instance( ).getActiveServiceContract( clientCode );
+		try 
+		{
+		    // otherwise, consider the active service contract
+		    sc = ServiceContractService.instance( ).getActiveServiceContract( clientCode );
+		} 
+		catch (ClientAuthorizationException e )
+		{
+		    // do nothing
+		}
 	    }
 
 	    if ( sc != null )

@@ -1,0 +1,6 @@
+# hsqldb
+mvn clean lutece:exploded -Dlutece-test-hsql -o && cp build.properties target/lutece/WEB-INF/sql/ && mvn antrun:run -Dlutece-test-hsqldb test  -Dtest=IdentityStoreUpdateRequestTest  -Dmaven.surefire.debug
+
+# h2
+mvn clean lutece:exploded -Dlutece-test-hsql -o && cp build.* target/lutece/WEB-INF/sql/ && cp h2*.jar target/lutece/WEB-INF/lib/ && mvn antrun:run -Dlutece-test-h2 test  -Dtest=IdentityStoreUpdateRequestTest  -Dmaven.surefire.debug
+
