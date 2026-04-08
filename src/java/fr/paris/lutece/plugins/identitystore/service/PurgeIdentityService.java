@@ -183,7 +183,8 @@ public final class PurgeIdentityService
 		else if ( isDryRun )
 		{
 		    // Dry run : test mode only (no deletion)
-		    msg.append( "(Dry run) should Detete Identity [" ).append( expiredIdentity.getCustomerId( ) ).append( "]" ).append( "\n" );
+		    msg.append( "(Dry run) should Detete Identity [" ).append( expiredIdentity.getCustomerId( ) ).append( "]" )
+		    	.append( " - Notified demands found : " ).append(  demandDisplayList.size( ) ).append( "\n" );
 		    
 		    if ( demandExpirationDateMAX.before( olderCguRetentionDate ) )
 		    {
@@ -197,7 +198,8 @@ public final class PurgeIdentityService
 		    // if the updated peremption date still passed, delete the identity (and children as merged identities,
 		    // suspicious, attributes and attributes history, etc ...) EXCEPT the identity history
 		    IdentityService.instance( ).delete( expiredIdentity.getCustomerId( ) );
-		    msg.append( "Detete Identity [" ).append( expiredIdentity.getCustomerId( ) ).append( "]" ).append( "\n" );
+		    msg.append( "Detete Identity [" ).append( expiredIdentity.getCustomerId( ) ).append( "]" )
+		    	.append( " - Notified demands found : " ).append(  demandDisplayList.size( ) ).append( "\n" );
 		    
 		    if ( demandExpirationDateMAX.before( olderCguRetentionDate ) )
 		    {
@@ -206,13 +208,16 @@ public final class PurgeIdentityService
 			 	.append( " )" );
 		    }
 		    
-		    // delete notifications
-		    _notificationStoreService.deleteNotificationByCuid( expiredIdentity.getCustomerId( ) );
-		    msg.append( "Notifications deleted for main identity [" ).append( expiredIdentity.getCustomerId( ) ).append( "]" ).append( "\n" );
-		    for ( final Identity mergedIdentity : mergedIdentities )
+		    if ( demandDisplayList.size( ) > 0 )
 		    {
-			_notificationStoreService.deleteNotificationByCuid( mergedIdentity.getCustomerId( ) );
-			msg.append( "Notifications deleted for merged identity [" ).append( mergedIdentity.getCustomerId( ) ).append( "]" ).append( "\n" );
+			// delete notifications
+			_notificationStoreService.deleteNotificationByCuid( expiredIdentity.getCustomerId( ) );
+			msg.append( "Notifications deleted for main identity [" ).append( expiredIdentity.getCustomerId( ) ).append( "]" ).append( "\n" );
+			for ( final Identity mergedIdentity : mergedIdentities )
+			{
+			    _notificationStoreService.deleteNotificationByCuid( mergedIdentity.getCustomerId( ) );
+			    msg.append( "Notifications deleted for merged identity [" ).append( mergedIdentity.getCustomerId( ) ).append( "]" ).append( "\n" );
+			}
 		    }
 		}
 	    }
