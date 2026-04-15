@@ -42,6 +42,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -66,6 +67,7 @@ import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.ResponseStatus
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.history.IdentityChangeType;
 import fr.paris.lutece.plugins.identitystore.web.exception.ClientAuthorizationException;
 import fr.paris.lutece.plugins.notificationstore.v1.web.service.NotificationStoreService;
+import fr.paris.lutece.portal.service.datastore.DatastoreService;
 import fr.paris.lutece.portal.service.security.AccessLogService;
 import fr.paris.lutece.portal.service.security.AccessLoggerConstants;
 import fr.paris.lutece.portal.service.spring.SpringContextService;
@@ -77,11 +79,27 @@ public final class PurgeIdentityService
     public static final String KEY_INFOS_ARE_MISSING = "isInfosAreMissing";
     public static final String KEY_AT_LEAST_ONE_CS_FOUND = "isAtLeastOneServiceContractFound";
 
-    private static PurgeIdentityService _instance;
+    public static final String DSKEY_IS_DRY_RUN = "identitystore.site_property.purgeIdentityDaemon.isDryRun";
+    public static final String DSKEY_BATCH_LIMIT = "identitystore.site_property.purgeIdentityDaemon.batchLimit";
 
     private final NotificationStoreService _notificationStoreService = SpringContextService.getBean( "notificationStore.notificationStoreService" );
     private final IdentityStoreNotifyListenerService _identityStoreNotifyListenerService = IdentityStoreNotifyListenerService.instance( );
 
+    private final int nMaxCguRetentionPeridodInMonths = AppPropertiesService.getPropertyInt( "daemon.purgeIdentityDaemon.maxCguRetentionPeridodInMonths", 120 ); 
+    private boolean isWithGuidOnly = AppPropertiesService.getPropertyBoolean ( "daemon.purgeIdentityDaemon.withGuidOnly", true);
+    private final List<String> excludedAppCodes = Arrays
+	            .asList( AppPropertiesService.getProperty( "daemon.purgeIdentityDaemon.excluded.app.codes", "" ).split( "," ) );
+    private final boolean isDryRun_default = AppPropertiesService.getPropertyBoolean( "daemon.purgeIdentityDaemon.dryRun", false ); 
+    private final int batchLimit_default = AppPropertiesService.getPropertyInt( "daemon.purgeIdentityDaemon.batch.limit", 1000 );
+	
+    private static PurgeIdentityService _instance;
+
+    
+    /**
+     * get instance 
+     * 
+     * @return the instance
+     */
     public static PurgeIdentityService getInstance( )
     {
 	if ( _instance == null )
@@ -96,15 +114,19 @@ public final class PurgeIdentityService
      *
      * @return log {@link StringBuilder}
      */
-    public String purge( final RequestAuthor daemonAuthor, final String daemonClientCode, final List<String> excludedAppCodes, final int batchLimit )
+    public String purge( final RequestAuthor daemonAuthor, final String daemonClientCode )
     {
 	final StringBuilder msg = new StringBuilder( );
-	final boolean isDryRun = AppPropertiesService.getPropertyBoolean ( "daemon.purgeIdentityDaemon.dryRun", false ); 
-	final int nMaxCguRetentionPeridodInMonths = AppPropertiesService.getPropertyInt( "daemon.purgeIdentityDaemon.maxCguRetentionPeridodInMonths", 120 ); 
-
+	
+	String strIsDryRun = DatastoreService.getDataValue( DSKEY_IS_DRY_RUN, String.valueOf( isDryRun_default ) );
+	boolean isDryRun = Boolean.valueOf( strIsDryRun );
+	
+	String strBatchLimit = DatastoreService.getDataValue( DSKEY_BATCH_LIMIT, String.valueOf( batchLimit_default ) );
+	Integer batchLimit = Integer.parseInt( strBatchLimit );
+	
 	// search identities with a passed peremption date, not merged to a primary identity, and not associated to a MonParis account
 	final List<Identity> expiredIdentities = IdentityHome.findExpiredNotMergedAndNotConnectedIdentities( 
-		batchLimit, AppPropertiesService.getPropertyBoolean ( "daemon.purgeIdentityDaemon.withGuidOnly", true) );
+		batchLimit, isWithGuidOnly );
 	final Timestamp now = Timestamp.from( Instant.now( ) );
 	final Timestamp olderCguRetentionDate = Timestamp.valueOf ( now.toLocalDateTime ( ).minusMonths ( nMaxCguRetentionPeridodInMonths ) );
 

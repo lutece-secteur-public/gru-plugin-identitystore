@@ -75,10 +75,7 @@ public class PurgeIdentityDaemon extends LoggingDaemon
 {
     private final String authorName = AppPropertiesService.getProperty( "daemon.purgeIdentityDaemon.author.name" );
     private final String clientCode = AppPropertiesService.getProperty( "daemon.purgeIdentityDaemon.client.code" );
-    private final List<String> excludedAppCodes = Arrays
-            .asList( AppPropertiesService.getProperty( "daemon.purgeIdentityDaemon.excluded.app.codes", "" ).split( "," ) );
-    private final int batchLimit = AppPropertiesService.getPropertyInt( "daemon.purgeIdentityDaemon.batch.limit", 1000 );
-
+    
     /**
      * {@inheritDoc}
      */
@@ -87,7 +84,7 @@ public class PurgeIdentityDaemon extends LoggingDaemon
     {
         final StopWatch stopWatch = new StopWatch( );
         stopWatch.start( );
-        this.info( PurgeIdentityService.getInstance( ).purge( buildAuthor( stopWatch.getTime( ) ), clientCode, excludedAppCodes, batchLimit ) );
+        this.info( PurgeIdentityService.getInstance( ).purge( buildAuthor( stopWatch.getTime( ) ), clientCode ) );
         stopWatch.stop( );
         final String execTime = "Execution time " + DurationFormatUtils.formatDurationWords( stopWatch.getTime( ), true, true );
         this.info( execTime );
