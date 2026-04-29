@@ -33,20 +33,6 @@
  */
 package fr.paris.lutece.plugins.identitystore.service.identity;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.Pair;
-
 import fr.paris.lutece.plugins.identitystore.business.application.ClientApplication;
 import fr.paris.lutece.plugins.identitystore.business.attribute.AttributeKey;
 import fr.paris.lutece.plugins.identitystore.business.contract.ServiceContract;
@@ -95,6 +81,19 @@ import fr.paris.lutece.portal.service.spring.SpringContextService;
 import fr.paris.lutece.portal.service.util.AppPropertiesService;
 import fr.paris.lutece.util.http.SecurityUtil;
 import fr.paris.lutece.util.sql.TransactionManager;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class IdentityService
 {
@@ -163,10 +162,7 @@ public class IdentityService
         TransactionManager.beginTransaction( null );
         try
         {
-            final Map<String, String> attributes = request.getIdentity( )
-                    .getAttributes( ).stream( )
-                    .collect( Collectors.toMap( AttributeDto::getKey, AttributeDto::getValue ) );
-            identity.setUnicityHashCode( _identityQualityService.computeUnicityHashCode( attributes ) );
+            identity.setUnicityHashCode( _identityQualityService.computeUnicityHashCode( request ) );
             identity.setMonParisActive( request.getIdentity( ).isMonParisActive( ) );
             if ( StringUtils.isNotEmpty( request.getIdentity( ).getConnectionId( ) ) )
             {
@@ -333,19 +329,19 @@ public class IdentityService
             final List<AttributeStatus> attrStatusList = new ArrayList<>( );
             final Map<String, String> primaryMetadata = new HashMap<>( );
             
-            Identity consolidatedIdentity = IdentityHome.findByCustomerId( primaryIdentity.getCustomerId( ) );
+            final Identity consolidatedIdentity = IdentityHome.findByCustomerId( primaryIdentity.getCustomerId( ) );
             primaryIdentity.setId( consolidatedIdentity.getId() );
 
-            Identity mergedIdentity = IdentityHome.findByCustomerId( secondaryIdentity.getCustomerId( ) );
+            final Identity mergedIdentity = IdentityHome.findByCustomerId( secondaryIdentity.getCustomerId( ) );
             secondaryIdentity.setId( mergedIdentity.getId() );
-            
+
             boolean identityUpdateRequested = false;
-            
+
             // update expiration date if necessary
             if ( consolidatedIdentity.getExpirationDate( ).before( mergedIdentity.getExpirationDate( ) ) )
             {
             	primaryIdentity.setExpirationDate( mergedIdentity.getExpirationDate( ) );
-            	identityUpdateRequested = true;
+                identityUpdateRequested = true;
             }
             
             if ( identityForConsolidate != null && CollectionUtils.isNotEmpty( identityForConsolidate.getAttributes( ) ) )
@@ -453,7 +449,7 @@ public class IdentityService
             IdentityHome.cancelMerge( secondaryIdentity );
             
             // ajout des attributs minimum
-            if ( !dtoWithNewAttributes.getAttributes ( ).isEmpty ( ) )
+            if ( dtoWithNewAttributes != null && !dtoWithNewAttributes.getAttributes ( ).isEmpty ( ) )
             {
         	attrStatusList.addAll( this.updateIdentity( secondaryIdentity, dtoWithNewAttributes, clientCode, metadata, false ) );
             }
@@ -677,7 +673,6 @@ public class IdentityService
      * @param requestIdentity
      * @param clientCode
      * @param metadata
-     * @param identityUpdateRequested
      * @return the list of attribute status
      * @throws IdentityStoreException
      */
@@ -694,7 +689,6 @@ public class IdentityService
      * @param requestIdentity
      * @param clientCode
      * @param metadata
-     * @param identityUpdateRequested
      * @return the list of attribute status
      * @throws IdentityStoreException
      */
@@ -742,8 +736,16 @@ public class IdentityService
             identity.setMonParisActive( requestIdentity.isMonParisActive( ) );
         }
 
-        if ( identityUpdateRequested || monParisUpdated || !Collections.disjoint( AttributeChangeStatus.getSuccessStatuses( ),
-                attrStatusList.stream( ).map( AttributeStatus::getStatus ).collect( Collectors.toList( ) ) ) )
+        /* Compute new unicity hashcode based on existing, successfully created or updated attributes */
+        final String previousHashCode = identity.getUnicityHashCode();
+        // WARNING: identity attributes list is modified through _identityAttributeService, it won't match if the service is modified in another way
+        identity.setUnicityHashCode( _identityQualityService.computeUnicityHashCode( identity ) );
+        final boolean unicityHascodeHasChanged = !StringUtils.equals( previousHashCode, identity.getUnicityHashCode( ) );
+
+        /* Check if the attribute list has changed */
+        final boolean attributeHasChanged = Collections.disjoint(AttributeChangeStatus.getSuccessStatuses(), attrStatusList.stream().map(AttributeStatus::getStatus).collect(Collectors.toList()));
+
+        if ( identityUpdateRequested  || monParisUpdated  || !attributeHasChanged || unicityHascodeHasChanged )
         {
             // If there was an update on the monParis flag or in the attributes, we update the identity
             IdentityHome.update( identity );

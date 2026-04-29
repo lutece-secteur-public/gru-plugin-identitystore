@@ -37,7 +37,7 @@ CREATE TABLE identitystore_identity
     id_master_identity int          NULL,
     is_mon_paris_active smallint DEFAULT 0 NOT NULL ,
     expiration_date timestamp(3) NOT NULL,
-    unicity_hash_code VARCHAR(255) NOT NULL UNIQUE DEFAULT gen_random_uuid(),
+    unicity_hash_code VARCHAR(36) NOT NULL UNIQUE DEFAULT gen_random_uuid(),
     PRIMARY KEY (id_identity)
 );
 

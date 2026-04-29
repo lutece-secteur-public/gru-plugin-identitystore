@@ -74,7 +74,7 @@ public final class IdentityDAO implements IIdentityDAO
     private static final String SQL_QUERY_SELECT = "SELECT id_identity, connection_id, customer_id, is_deleted, is_merged, id_master_identity, date_create, last_update_date, date_merge, is_mon_paris_active, expiration_date  FROM identitystore_identity WHERE id_identity = ?";
     private static final String SQL_QUERY_INSERT = "INSERT INTO identitystore_identity (  connection_id, customer_id, date_create, last_update_date, is_mon_paris_active, expiration_date, unicity_hash_code ) VALUES ( ?, ?, ?, ?, ?, ?, ? ) ";
     private static final String SQL_QUERY_DELETE = "DELETE FROM identitystore_identity WHERE id_identity = ? ";
-    private static final String SQL_QUERY_UPDATE = "UPDATE identitystore_identity SET connection_id = ?, customer_id = ?, last_update_date = ?, is_mon_paris_active = ?, expiration_date = ?, date_delete = ? WHERE id_identity = ?";
+    private static final String SQL_QUERY_UPDATE = "UPDATE identitystore_identity SET connection_id = ?, customer_id = ?, last_update_date = ?, is_mon_paris_active = ?, expiration_date = ?, date_delete = ?, unicity_hash_code = ? WHERE id_identity = ?";
     private static final String SQL_QUERY_SELECTALL_FULL = "SELECT id_identity, connection_id, customer_id, is_deleted, is_merged, id_master_identity, date_create, last_update_date, date_merge, is_mon_paris_active, expiration_date FROM identitystore_identity";
     private static final String SQL_QUERY_SELECT_BY_CONNECTION_ID = "SELECT " + COLUMNS
             + " FROM identitystore_identity a WHERE lower(a.connection_id) = lower(?)";
@@ -107,7 +107,7 @@ public final class IdentityDAO implements IIdentityDAO
     private static final String SQL_QUERY_FILTER_NORMALIZED_ATTRIBUTE_FOR_API_SEARCH_PREPARED_ATTRIBUTEVALUE = "AND TRANSLATE(REPLACE(REPLACE(LOWER(b.attribute_value), 'œ', 'oe'), 'æ', 'ae'), 'àâäéèêëîïôöùûüÿçñ', 'aaaeeeeiioouuuycn') = ? ";
     
     private static final String SQL_QUERY_SOFT_DELETE = "UPDATE identitystore_identity SET  date_delete = now( ), is_mon_paris_active = 0, expiration_date=now( ), last_update_date=now( )  WHERE customer_id = ?";
-    private static final String SQL_QUERY_MERGE = "UPDATE identitystore_identity SET is_merged = 1, date_merge = now(), last_update_date = now(), id_master_identity = ?, is_mon_paris_active = ? WHERE id_identity = ?";
+    private static final String SQL_QUERY_MERGE = "UPDATE identitystore_identity SET is_merged = 1, date_merge = now(), last_update_date = now(), id_master_identity = ?, is_mon_paris_active = ?, unicity_hash_code = gen_random_uuid() WHERE id_identity = ?";
     private static final String SQL_QUERY_CANCEL_MERGE = "UPDATE identitystore_identity SET is_merged = 0, date_merge = null, last_update_date = now(), id_master_identity = null WHERE id_identity = ?";
     private static final String SQL_QUERY_SELECT_BY_ATTRIBUTE_EXISTING = "SELECT a.customer_id FROM identitystore_identity a"
             + " JOIN identitystore_identity_attribute b ON a.id_identity = b.id_identity"
@@ -328,6 +328,7 @@ public final class IdentityDAO implements IIdentityDAO
             daoUtil.setBoolean( nIndex++, identity.isMonParisActive( ) );
             daoUtil.setTimestamp( nIndex++, identity.getExpirationDate( ) );
             daoUtil.setTimestamp( nIndex++, identity.getDeleteDate( ) );
+            daoUtil.setString( nIndex++, identity.getUnicityHashCode( ) );
 
             daoUtil.setInt( nIndex, identity.getId( ) );
 
