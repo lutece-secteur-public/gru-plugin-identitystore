@@ -45,15 +45,18 @@ import fr.paris.lutece.plugins.identitystore.business.identity.Identity;
 import fr.paris.lutece.plugins.identitystore.business.identity.IdentityHome;
 import fr.paris.lutece.plugins.identitystore.cache.QualityBaseCache;
 import fr.paris.lutece.plugins.identitystore.service.attribute.IdentityAttributeService;
+import fr.paris.lutece.plugins.identitystore.utils.UnicityHasher;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.AttributeDto;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.ConsolidateDefinition;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.IdentityDto;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.QualityDefinition;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.crud.IdentityChangeRequest;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.duplicate.IdentityDuplicateDefinition;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.duplicate.IdentityDuplicateExclusion;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.duplicate.IdentityDuplicateSuspicion;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.search.SearchAttribute;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
+import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
 import fr.paris.lutece.plugins.identitystore.web.exception.ResourceNotFoundException;
 import fr.paris.lutece.portal.service.spring.SpringContextService;
 import fr.paris.lutece.portal.service.util.AppPropertiesService;
@@ -299,20 +302,33 @@ public class IdentityQualityService
 
     }
 
+    public String computeUnicityHashCode( final IdentityChangeRequest request ) throws IdentityStoreException {
+        final Map<String, String> attributes = request.getIdentity( )
+                .getAttributes( ).stream( )
+                .collect( Collectors.toMap( AttributeDto::getKey, AttributeDto::getValue ) );
+        return this.computeUnicityHashCode( attributes );
+    }
+
+    public String computeUnicityHashCode( final Identity identity ) throws IdentityStoreException {
+        final Map<String, String> attributes = identity
+                .getAttributes( ).entrySet().stream( )
+                .collect( Collectors.toMap( Map.Entry::getKey, e -> e.getValue( ).getValue( ) ) );
+        return this.computeUnicityHashCode( attributes );
+    }
+
     /**
      * Compute an identity hashcode based on its pivot attributes values and customerId.
      * <ul>
      *     <li>Check if the identity is France born or not</i>
      *     <li>Check if all corresponding pivot attributes are filles</li>
      *     <li>If not, return a UUID so the identity will never match another</li>
-     *     <li>If all pivot attributes are filled, generated a hash composed of sorted keys, computed with values separated by ::</li>
+     *     <li>If all pivot attributes are filled, generated a hash with {@link UnicityHasher}</li>
      * </ul>
      * @param attributes the attribute values
      * @return a hash code
      */
-    public String computeUnicityHashCode( final Map<String, String> attributes )
-    {
-        final String birthplaceCode = attributes.get(Constants.PARAM_BIRTH_PLACE_CODE);
+    public String computeUnicityHashCode( final Map<String, String> attributes ) throws IdentityStoreException {
+        final String birthplaceCode = attributes.get( Constants.PARAM_BIRTH_PLACE_CODE );
         final boolean isCountryWithBirthPlaceCode = birthplaceCode != null && Objects.equals( birthplaceCode, _codeInseeFrance );
 
         // get pivot referential attributes
@@ -330,12 +346,9 @@ public class IdentityQualityService
         {
             // the identity does not have all pivot attributes,
             // generate unique UUID in order to never match it
-            return UUID.randomUUID().toString();
+            return UUID.randomUUID( ).toString( );
         }
 
-        return pivotValues.entrySet( ).stream( )
-                .sorted( ( Map.Entry.comparingByKey( ) ) )
-                .map(e -> e.getValue( ).toLowerCase( ) )
-                .collect(Collectors.joining("::"));
+        return UnicityHasher.computeHash( pivotValues );
     }
 }
