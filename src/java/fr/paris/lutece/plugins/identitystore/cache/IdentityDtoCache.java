@@ -47,20 +47,21 @@ import java.sql.Timestamp;
 import java.util.Objects;
 
 /**
- * cache sur les requêtes d'identité (par CUID ou GUID), qui cache :<br/>
+ * Cache sur les requêtes d'identité (par <code>${customerId}</code> ou <code>${connectionId}</code>), qui cache :
  * <ul>
- * <li>Les attributs autorisés en lecture défini dans le contrat de service</li>
+ * <li>Les attributs autorisés en lecture, définis dans le contrat de service</li>
  * <li>Le score de qualité</li>
  * <li>Le score de couverture</li>
  * <li>Les données de suspicions de doublons si l'identité est marquée comme suspecte</li>
  * <li>Les données d'exclusion si l'identité a été exclue d'une ou plusieurs suspicions de doublon avec d'autres identités</li>
  * </ul>
- * l'identité elle-même sera récupérée de la DB à chaque fois, afin de vérifier la date de dernière modification :<br/>
+ * <br>
+ * L'identité elle-même sera récupérée de la DB à chaque fois, afin de vérifier la date de dernière modification :<br/>
  * <ul>
  * <li>Si la date est la même dans l'objet caché et en DB, l'objet caché est retourné</li>
  * <li>Sinon, on supprime l'objet caché du cache, on récupère toutes les infos de la DB et on recache.</li>
  * </ul>
- * La clé de cache combine CUID + ID contrat de service
+ * La clé de cache est calculée comme suit: <code>${customerId}|${serviceContractId}|${timestamp}</code>
  */
 public class IdentityDtoCache extends AbstractCacheableService
 {
@@ -77,9 +78,15 @@ public class IdentityDtoCache extends AbstractCacheableService
         this.resetCache( );
     }
 
-    public void put( final IdentityDto identity, final int serviceContractId )
+    /**
+     * Add an identity to the cache with the following key: <code>${cuid}|${serviceContractId}|${timestamp}</code>
+     * @param identity the identity to store
+     * @param serviceContractId the service contract of the client
+     * @param lastUpdateDateFromDb the identity version timestamp
+     */
+    private void put( final IdentityDto identity, final int serviceContractId, final Timestamp lastUpdateDateFromDb )
     {
-        final String cacheKey = computeCacheKey( identity.getCustomerId( ), serviceContractId );
+        final String cacheKey = this.computeCacheKey( identity.getCustomerId( ), serviceContractId, lastUpdateDateFromDb );
         if ( this.getKeys( ).contains( cacheKey ) )
         {
             this.removeKey( cacheKey );
@@ -88,7 +95,11 @@ public class IdentityDtoCache extends AbstractCacheableService
         AppLogService.debug( "Identity added to cache: " + cacheKey );
     }
 
-    public void remove( final String cacheKey )
+    /**
+     * Delete the given cacheKey from the cache
+     * @param cacheKey the key to delete
+     */
+    private void remove( final String cacheKey )
     {
         if ( this.getKeys( ).contains( cacheKey ) )
         {
@@ -97,37 +108,67 @@ public class IdentityDtoCache extends AbstractCacheableService
         AppLogService.debug( "Identity removed from cache: " + cacheKey );
     }
 
-    public IdentityDto getByConnectionId( final String connectionId, final ServiceContract serviceContract )
+    /**
+     * Get the master identity from a given <code>connectionId</code>. The master identity is search recursively over the <code>masterIdentityId</code>.
+     * It means that id identity A is merged into identity B, if A is found with the given <code>connectionId</code>, it will return B.
+     * @param connectionId the connection ID to search for
+     * @param serviceContract the client service contract
+     * @return the master @{@link IdentityDto} found or <code>null</code> if no match
+     */
+    public IdentityDto getMasterIdentityByConnectionId( final String connectionId, final ServiceContract serviceContract )
     {
-        Identity identity = IdentityHome.findByConnectionId( connectionId );
-        if ( identity != null && identity.isMerged( ) && identity.getMasterIdentityId( ) != null )
-        {
-            identity = IdentityHome.findByPrimaryKey( identity.getMasterIdentityId( ) );
-        }
+        final Identity identity = IdentityHome.findMasterIdentityByConnectionId( connectionId, false );
         if ( identity == null || StringUtils.isBlank( identity.getCustomerId( ) ) || identity.getLastUpdateDate( ) == null )
         {
             return null;
         }
-        return get( identity.getCustomerId( ), identity.getLastUpdateDate( ), serviceContract );
+        return this.get( identity.getCustomerId( ), identity.getLastUpdateDate( ), serviceContract );
     }
 
-    public IdentityDto getByCustomerId( final String customerId, final ServiceContract serviceContract )
+    /**
+     * Get the master identity from a given <code>customerId</code>. The master identity is search recursively over the <code>masterIdentityId</code>.
+     * It means that id identity A is merged into identity B, if A is found with the given <code>customerId</code>, it will return B.
+     * @param customerId the customerId ID to search for
+     * @param serviceContract the client service contract
+     * @return the master @{@link IdentityDto} found or <code>null</code> if no match
+     */
+    public IdentityDto getMasterIdentityByCustomerId( final String customerId, final ServiceContract serviceContract )
     {
-        Identity identity = IdentityHome.findByCustomerIdNoAttributes( customerId );
-        if ( identity != null && identity.isMerged( ) && identity.getMasterIdentityId( ) != null )
-        {
-            identity = IdentityHome.findByPrimaryKey( identity.getMasterIdentityId( ) );
-        }
+        final Identity identity = IdentityHome.findMasterIdentityByCustomerId( customerId, false );
         if ( identity == null || StringUtils.isBlank( identity.getCustomerId( ) ) || identity.getLastUpdateDate( ) == null )
         {
             return null;
         }
-        return get( identity.getCustomerId( ), identity.getLastUpdateDate( ), serviceContract );
+        return this.get( identity.getCustomerId( ), identity.getLastUpdateDate( ), serviceContract );
     }
 
+    /**
+     * Get the identity from a given <code>customerId</code>, even if the identity is merged.
+     * @param customerId the customerId ID to search for
+     * @param serviceContract the client service contract
+     * @return the @{@link IdentityDto} found or <code>null</code> if no match
+     */
+    public IdentityDto getIdentityByCustomerId( final String customerId, final ServiceContract serviceContract )
+    {
+        final Identity identity = IdentityHome.findByCustomerId( customerId, false );
+        if ( identity == null || StringUtils.isBlank( identity.getCustomerId( ) ) || identity.getLastUpdateDate( ) == null )
+        {
+            return null;
+        }
+        return this.get( identity.getCustomerId( ), identity.getLastUpdateDate( ), serviceContract );
+    }
+
+    /**
+     * Get the identity from the cache based on the given <code>customerId</code>, <code>lastUpdateDateFromDb</code> and <code>serviceContract</code>.
+     * If the identity is in the cache, it is returned directly. If not, it is fetched from the database, stored in the cache, and then returned.
+     * @param customerId the customerId ID to search for
+     * @param lastUpdateDateFromDb the version timestamp of the identity to find
+     * @param serviceContract the client service contract
+     * @return the @{@link IdentityDto} found or <code>null</code> if no match
+     */
     private IdentityDto get( final String customerId, final Timestamp lastUpdateDateFromDb, final ServiceContract serviceContract )
     {
-        final String cacheKey = computeCacheKey( customerId, serviceContract.getId( ) );
+        final String cacheKey = this.computeCacheKey( customerId, serviceContract.getId( ), lastUpdateDateFromDb );
         final IdentityDto identityDtoFromCache = (IdentityDto) this.getFromCache( cacheKey );
         if ( identityDtoFromCache == null || !Objects.equals( identityDtoFromCache.getLastUpdateDate( ), lastUpdateDateFromDb ) )
         {
@@ -137,22 +178,34 @@ public class IdentityDtoCache extends AbstractCacheableService
             {
                 return null;
             }
-            this.put( enrichedIdentity, serviceContract.getId( ) );
+            this.put( enrichedIdentity, serviceContract.getId( ), lastUpdateDateFromDb );
             return enrichedIdentity;
         }
         return identityDtoFromCache;
     }
 
+    /**
+     * Get the master identity from the database and enrich it with quality information.
+     * @param customerId the customerId ID to search for
+     * @param serviceContract the client service contract
+     * @return the @{@link IdentityDto} found or <code>null</code> if no match
+     */
     public IdentityDto getFromDatabaseAndEnrich( final String customerId, final ServiceContract serviceContract )
     {
-        final Identity identity = IdentityHome.findMasterIdentityByCustomerId( customerId );
+        final Identity identity = IdentityHome.findMasterIdentityByCustomerId( customerId, true );
         if ( identity == null )
         {
             return null;
         }
-        return convertAndEnrich( identity, serviceContract );
+        return this.convertAndEnrich( identity, serviceContract );
     }
 
+    /**
+     * Compute quality information based on the <code>identity</code> and the <code>service contract</code>
+     * @param identity the identity to enrich
+     * @param serviceContract the client service contract
+     * @return the enriched @{@link IdentityDto}
+     */
     private IdentityDto convertAndEnrich( final Identity identity, final ServiceContract serviceContract )
     {
         final IdentityDto identityDto = DtoConverter.convertIdentityToDto( identity );
@@ -160,9 +213,16 @@ public class IdentityDtoCache extends AbstractCacheableService
         return identityDto;
     }
 
-    private String computeCacheKey( final String cuid, final int serviceContractId )
+    /**
+     * Compute the cache key as following: <code>${cuid}|${serviceContractId}|${timestamp}</code>
+     * @param customerId the customerId ID to search for
+     * @param serviceContractId the ID of the client service contract
+     * @param lastUpdateDate the identity version timestamp
+     * @return the computed key
+     */
+    private String computeCacheKey( final String customerId, final int serviceContractId, final Timestamp lastUpdateDate )
     {
-        return cuid + "|" + serviceContractId;
+        return String.format( "%s|%s|%d", customerId, serviceContractId, lastUpdateDate.getTime( ) );
     }
 
     @Override

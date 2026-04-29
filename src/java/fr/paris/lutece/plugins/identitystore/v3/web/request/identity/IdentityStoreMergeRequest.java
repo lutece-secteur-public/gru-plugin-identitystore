@@ -104,12 +104,12 @@ public class IdentityStoreMergeRequest extends AbstractIdentityStoreAppCodeReque
     @Override
     protected void fetchResources( ) throws ResourceNotFoundException, ClientAuthorizationException {
         serviceContract = ServiceContractService.instance( ).getActiveServiceContract( _strClientCode );
-        primaryIdentity = _identityDtoCache.getByCustomerId( _identityMergeRequest.getPrimaryCuid( ), serviceContract );
+        primaryIdentity = _identityDtoCache.getIdentityByCustomerId( _identityMergeRequest.getPrimaryCuid( ), serviceContract );
         if ( primaryIdentity == null )
         {
             throw new ResourceNotFoundException( "Could not find primary identity", Constants.PROPERTY_REST_ERROR_PRIMARY_IDENTITY_NOT_FOUND );
         }
-        secondaryIdentity = _identityDtoCache.getByCustomerId( _identityMergeRequest.getSecondaryCuid( ), serviceContract );
+        secondaryIdentity = _identityDtoCache.getIdentityByCustomerId( _identityMergeRequest.getSecondaryCuid( ), serviceContract );
         if ( secondaryIdentity == null )
         {
             throw new ResourceNotFoundException( "Could not find secondary identity", Constants.PROPERTY_REST_ERROR_SECONDARY_IDENTITY_NOT_FOUND );
@@ -148,8 +148,8 @@ public class IdentityStoreMergeRequest extends AbstractIdentityStoreAppCodeReque
         IdentityValidator.instance( ).checkIdentityLastUpdateDate( primaryIdentity, _identityMergeRequest.getPrimaryLastUpdateDate( ) );
         IdentityValidator.instance( ).checkIdentityLastUpdateDate( secondaryIdentity, _identityMergeRequest.getSecondaryLastUpdateDate( ) );
 
-        IdentityValidator.instance( ).checkIdentityMergedStatusForUpdate( primaryIdentity );
-        IdentityValidator.instance( ).checkIdentityMergedStatusForUpdate( secondaryIdentity );
+        IdentityValidator.instance( ).checkIdentityMergedStatusForUpdate( primaryIdentity, serviceContract );
+        IdentityValidator.instance( ).checkIdentityMergedStatusForUpdate( secondaryIdentity, serviceContract );
 
         IdentityValidator.instance( ).checkIdentityDeletedStatusForUpdate( primaryIdentity );
         IdentityValidator.instance( ).checkIdentityDeletedStatusForUpdate( secondaryIdentity );

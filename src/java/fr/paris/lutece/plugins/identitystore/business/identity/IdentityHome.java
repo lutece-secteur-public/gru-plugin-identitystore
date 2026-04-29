@@ -217,28 +217,9 @@ public final class IdentityHome
      *            The customer ID
      * @return The Identity
      */
-    public static Identity findByCustomerId( String strCustomerId )
+    public static Identity findByCustomerId( final String strCustomerId )
     {
-        Identity identity = _dao.selectByCustomerId( strCustomerId, _plugin );
-
-        if ( identity != null )
-        {
-            identity.setAttributes( IdentityAttributeHome.getAttributes( identity.getId( ) ) );
-        }
-
-        return identity;
-    }
-
-    /**
-     * Find by customer ID. Does not load the attributes.
-     *
-     * @param strCustomerId
-     *            The customer ID
-     * @return The Identity without attributes
-     */
-    public static Identity findByCustomerIdNoAttributes( String strCustomerId )
-    {
-        return _dao.selectByCustomerId( strCustomerId, _plugin );
+        return findByCustomerId( strCustomerId, true );
     }
 
     /**
@@ -246,13 +227,15 @@ public final class IdentityHome
      *
      * @param strCustomerId
      *            The customer ID
+     * @param loadAttributes
+     *          if true, return identity with its attributes
      * @return The Identity
      */
-    public static Identity findMasterIdentityByCustomerId( String strCustomerId )
+    public static Identity findByCustomerId( final String strCustomerId, final boolean loadAttributes )
     {
-        Identity identity = _dao.selectNotMergedByCustomerId( strCustomerId, _plugin );
+        final Identity identity = _dao.selectByCustomerId( strCustomerId, _plugin );
 
-        if ( identity != null )
+        if ( identity != null && loadAttributes )
         {
             identity.setAttributes( IdentityAttributeHome.getAttributes( identity.getId( ) ) );
         }
@@ -261,58 +244,58 @@ public final class IdentityHome
     }
 
     /**
-     * Get the master identity last update date coresponding to the given customer ID
-     * 
-     * @param customerId
-     *            the customer ID
-     * @return the last update date or null if the identity doesn't exist for the provided CUID
+     * Get the master identity from a given <code>customerId</code>. The master identity is search recursively over the <code>masterIdentityId</code>.
+     * It means that id identity A is merged into identity B, if A is found with the given <code>customerId</code>, it will return B.
+     *
+     * @param strCustomerId
+     *            The customer ID
+     * @param loadAttributes
+     *          if true, return identity with its attributes
+     * @return The Identity
      */
-    public static Timestamp getMasterIdentityLastUpdateDate( final String customerId )
+    public static Identity findMasterIdentityByCustomerId( final String strCustomerId, final boolean loadAttributes )
     {
-        final Identity identity = _dao.selectNotMergedByCustomerId( customerId, _plugin );
-        return identity != null ? identity.getLastUpdateDate( ) : null;
+        final Identity identity = _dao.selectNotMergedByCustomerId( strCustomerId, _plugin );
+
+        if ( identity != null && loadAttributes )
+        {
+            identity.setAttributes( IdentityAttributeHome.getAttributes( identity.getId( ) ) );
+        }
+
+        return identity;
     }
 
     /**
-     * Find by connection ID
+     * Get the master identity from a given <code>connectionId</code>. The master identity is search recursively over the <code>masterIdentityId</code>.
+     * It means that id identity A is merged into identity B, if A is found with the given <code>connectionId</code>, it will return B.
      *
      * @param strConnectionId
-     *            The customer ID
+     *            The connection ID
+     * @param loadAttributes
+     *          if true, return identity with its attributes
      * @return The Identity
      */
-    public static Identity findMasterIdentityByConnectionId( String strConnectionId )
+    public static Identity findMasterIdentityByConnectionId( final String strConnectionId, final boolean loadAttributes )
     {
-        Identity identity = _dao.selectNotMergedByConnectionId( strConnectionId, _plugin );
+        final Identity identity = _dao.selectNotMergedByConnectionId( strConnectionId, _plugin );
 
-        if ( identity != null )
+        if ( identity != null && loadAttributes )
         {
             identity.setAttributes( IdentityAttributeHome.getAttributes( identity.getId( ) ) );
         }
 
         return identity;
-    }
-
-    /**
-     * Get the master identity without attributes coresponding to the given connection ID
-     * 
-     * @param connectionId
-     *            the connection ID
-     * @return the identity or null if the identity doesn't exist for the provided connection ID
-     */
-    public static Identity getMasterIdentityNoAttributesByConnectionId( final String connectionId )
-    {
-        return _dao.selectNotMergedByConnectionId( connectionId, _plugin );
     }
 
     /**
      * Find all identities matching one of the values defined on each of the selected Attributes. One value must be found for all selected attributes. Always
      * performs an exact search.
      *
-     * @param mapAttributes
-     *            A map that associates the id of each attributes selected with the list of values
+     * @param searchAttributes
+     *            A map that associates the id of each attribute selected with the list of values
      * @return list of Identity
      */
-    public static List<Identity> findByAttributesValueForApiSearch(final List<SearchAttribute> searchAttributes, final int max )
+    public static List<Identity> findByAttributesValueForApiSearch( final List<SearchAttribute> searchAttributes, final int max )
     {
         int nMaxNbIdentityReturned = ( max > 0 ) ? max : PROPERTY_MAX_NB_IDENTITY_RETURNED;
         return _dao.selectByAttributesValueForApiSearch( searchAttributes, nMaxNbIdentityReturned, _plugin );
@@ -344,7 +327,7 @@ public final class IdentityHome
      * @param identityChange
      *            identity change event
      */
-    public static void addIdentityChangeHistory( IdentityChange identityChange ) throws IdentityStoreException
+    public static void addIdentityChangeHistory( final IdentityChange identityChange ) throws IdentityStoreException
     {
         if ( Objects.equals( identityChange.getChangeType( ), IdentityChangeType.READ ) )
         {

@@ -89,24 +89,7 @@ public class IdentityAttributeService
      */
     public List<AttributeKey> getAllAtributeKeys( )
     {
-        if(_attributeKeyCache.isCacheEnable())
-        {
-            List<AttributeKey> attributeKeys = _attributeKeyCache.getAll();
-            if( attributeKeys != null )
-            {
-                return attributeKeys;
-            }
-        }
-
-        List<AttributeKey> attributeKeys =  AttributeKeyHome.getAttributeKeysList(true);
-        if( attributeKeys != null && _attributeKeyCache.isCacheEnable() )
-        {
-            attributeKeys.forEach(
-                    attributeKey -> _attributeKeyCache.put( attributeKey.getKeyName(), attributeKey ));
-
-        }
-
-        return attributeKeys;
+        return _attributeKeyCache.getAll();
     }
 
     /**
@@ -120,22 +103,7 @@ public class IdentityAttributeService
      */
     public AttributeKey getAttributeKey( final String keyName ) throws ResourceNotFoundException
     {
-        if(_attributeKeyCache.isCacheEnable())
-        {
-            AttributeKey attribute = _attributeKeyCache.get( keyName );
-            if( attribute != null )
-            {
-                return attribute;
-            }
-        }
-
-        AttributeKey attribute =  AttributeKeyHome.findByKey( keyName, true);
-        if( attribute != null && _attributeKeyCache.isCacheEnable() )
-        {
-            _attributeKeyCache.put( attribute.getKeyName(), attribute );
-        }
-
-        return attribute;
+        return _attributeKeyCache.get( keyName );
     }
 
     /**
@@ -147,64 +115,43 @@ public class IdentityAttributeService
      */
     public AttributeKey getAttributeKeySafe( final String keyName )
     {
-        if(_attributeKeyCache.isCacheEnable())
+        try
         {
-            try
-            {
-                return _attributeKeyCache.get(keyName);
-            } catch (final Exception e)
-            {
-                return null;
-            }
+            return _attributeKeyCache.get( keyName );
         }
-        return AttributeKeyHome.findByKey( keyName, true);
+        catch ( final Exception e )
+        {
+            return null;
+        }
     }
 
     /**
-     * Get all {@link AttributeKey} that are flaged as PIVOT.
+     * Get all {@link AttributeKey} that are flagged as PIVOT.
      * 
      * @return {@link List<AttributeKey>}
      */
     public List<AttributeKey> getPivotAttributeKeys( )
     {
-        if(_attributeKeyCache.isCacheEnable())
-        {
-            List<AttributeKey> attributeKeys = _attributeKeyCache.getAll().stream( ).filter( AttributeKey::getPivot ).collect( Collectors.toList( ) );
-            if( attributeKeys != null )
-            {
-                return attributeKeys;
-            }
-        }
+        return this.getPivotAttributeKeys( true );
+    }
 
-        List<AttributeKey> attributeKeys =  AttributeKeyHome.getMandatoryForCreationAttributeKeyList();
-        if( attributeKeys != null && _attributeKeyCache.isCacheEnable() )
-        {
-            attributeKeys.forEach(
-                    attributeKey -> _attributeKeyCache.put( attributeKey.getKeyName(), attributeKey ));
-
-        }
-
-        return attributeKeys;
+    /**
+     * Get all {@link AttributeKey} that are flagged as PIVOT.
+     * @param isRegularIdentity if true, return the regular pivot attributes. If false, return the alternative pivot attributes.
+     * @return {@link List<AttributeKey>}
+     */
+    public List<AttributeKey> getPivotAttributeKeys( final boolean isRegularIdentity)
+    {
+        return isRegularIdentity ?
+                _attributeKeyCache.getAll().stream( ).filter( AttributeKey::getPivot ).collect( Collectors.toList( ) ) :
+                _attributeKeyCache.getAll().stream( ).filter( AttributeKey::getAlternativePivot).collect( Collectors.toList( ) ) ;
     }
 
     public List<AttributeKey> getCommonAttributeKeys( final String keyName )
     {
-        if(_attributeKeyCache.isCacheEnable())
-        {
-            if (_attributeKeyCache.getKeys().isEmpty())
-            {
-                _attributeKeyCache.refresh();
-            }
-            return _attributeKeyCache.getKeys().stream().map(this::getAttributeKeySafe).filter(Objects::nonNull)
-                    .filter(attributeKey -> attributeKey.getCommonSearchKeyName() != null && Objects.equals(attributeKey.getCommonSearchKeyName(), keyName))
-                    .collect(Collectors.toList());
-        }
-
-        List<String> attributeKeysnames =  AttributeKeyHome.getAttributeKeysNamesList();
-        return attributeKeysnames.stream().map(this::getAttributeKeySafe).filter(Objects::nonNull)
-                .filter(attributeKey -> attributeKey.getCommonSearchKeyName() != null && Objects.equals(attributeKey.getCommonSearchKeyName(), keyName))
-                .collect(Collectors.toList());
-
+        return _attributeKeyCache.getAll( ).stream( ).filter( Objects::nonNull )
+                .filter(attributeKey -> attributeKey.getCommonSearchKeyName( ) != null && Objects.equals( attributeKey.getCommonSearchKeyName( ), keyName ) )
+                .collect( Collectors.toList( ) );
     }
 
     public void createAttributeKey( final AttributeKey attributeKey ) throws IdentityStoreException

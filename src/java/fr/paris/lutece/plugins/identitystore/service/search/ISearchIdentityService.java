@@ -40,6 +40,7 @@ import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.search.SearchAttribut
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
 import fr.paris.lutece.plugins.identitystore.web.exception.ResourceNotFoundException;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringEscapeUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -148,6 +149,7 @@ public interface ISearchIdentityService
                     final List<String> commonAttributeKeyNames = commonAttributeKeys.stream( ).map( AttributeKey::getKeyName ).collect( Collectors.toList( ) );
                     dto.setOutputKeys( commonAttributeKeyNames );
                 }
+                dto.setValue( StringEscapeUtils.unescapeHtml4( dto.getValue( ) ) );
                 searchAttributes.add( dto );
             }
         }

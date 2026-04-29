@@ -44,6 +44,7 @@ import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.AttributeStatu
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.IdentityDto;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.crud.IdentityChangeRequest;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
+import fr.paris.lutece.portal.service.util.AppPropertiesService;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
@@ -53,12 +54,11 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 
 public class IdentityAttributeGeocodesAdjustmentService
 {
 
-    private static final String FRANCE_COUNTRY_CODE = "99100";
+    private static final String _codeInseeFrance = AppPropertiesService.getProperty("identitystore.code.insee.france", "99100");
 
     private static IdentityAttributeGeocodesAdjustmentService instance;
 
@@ -92,7 +92,7 @@ public class IdentityAttributeGeocodesAdjustmentService
                 : ( existingCountryCode != null ? existingCountryCode.getValue( ) : null );
 
         // If no birthcountry, assume that the city is french
-        if ( StringUtils.isBlank( countryCode ) || FRANCE_COUNTRY_CODE.equalsIgnoreCase( countryCode ) )
+        if ( StringUtils.isBlank( countryCode ) || _codeInseeFrance.equalsIgnoreCase( countryCode ) )
         {
             statuses.addAll( adjustFrenchCity( request ) );
         }

@@ -43,6 +43,7 @@ import fr.paris.lutece.portal.service.plugin.Plugin;
 import fr.paris.lutece.util.ReferenceList;
 import fr.paris.lutece.util.sql.DAOUtil;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.sql.Statement;
@@ -53,6 +54,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 /**
@@ -344,7 +346,16 @@ public final class SuspiciousIdentityDAO implements ISuspiciousIdentityDAO
         if ( CollectionUtils.isNotEmpty( attributes ) )
         {
             query.append( attributes.stream( )
-                    .map( attr -> "(r.key_name = '" + attr.getKey( ) + "' AND LOWER(a.attribute_value) = '" + attr.getValue( ).toLowerCase( ) + "')" )
+                    .map( attr -> {
+                        if( attr.getKey( ).equals( Constants.PARAM_FIRST_NAME ) || attr.getKey( ).equals( Constants.PARAM_FAMILY_NAME ) )
+                        {
+                            return "(r.key_name = '" + attr.getKey( ) + "' AND TRANSLATE(REPLACE(REPLACE(LOWER(a.attribute_value), 'œ', 'oe'), 'æ', 'ae'), 'àâäéèêëîïôöùûüÿçñ', 'aaaeeeeiioouuuycn') = ? )";
+                        }
+                        else
+                        {
+                            return "(r.key_name = '" + attr.getKey( ) + "' AND LOWER(a.attribute_value) = ? )";
+                        }
+                    } )
                     .collect( Collectors.joining( " OR ", "AND ( ", " ) " ) ) )
                     .append( SQL_GROUPBY_HAVING_SELECTALL_ATTRIBUTE_FILTER.replace( "${filter_count}", String.valueOf( attributes.size( ) ) ) );
         }
@@ -358,6 +369,17 @@ public final class SuspiciousIdentityDAO implements ISuspiciousIdentityDAO
 
         try ( final DAOUtil daoUtil = new DAOUtil( query.toString( ), plugin ) )
         {
+            final AtomicInteger i = new AtomicInteger( 1 );
+            attributes.forEach( attr -> {
+                if ( attr.getKey( ).equals( Constants.PARAM_FIRST_NAME ) || attr.getKey( ).equals( Constants.PARAM_FAMILY_NAME ) )
+                {
+                    daoUtil.setString( i.getAndIncrement( ), StringEscapeUtils.unescapeHtml4(  StringUtils.stripAccents( attr.getValue( ).toLowerCase( ) ).replace("œ", "oe").replace("æ", "ae") ) );
+                }
+                else
+                {
+                    daoUtil.setString( i.getAndIncrement( ), StringEscapeUtils.unescapeHtml4(  attr.getValue( ) ).toLowerCase( ) );
+                }
+            } );
             daoUtil.executeQuery( );
 
             while ( daoUtil.next( ) )

@@ -33,21 +33,14 @@
  */
 package fr.paris.lutece.plugins.identitystore.v3.web.request.identity;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.tuple.Pair;
-
 import fr.paris.lutece.plugins.identitystore.business.contract.ServiceContract;
 import fr.paris.lutece.plugins.identitystore.business.identity.Identity;
-import fr.paris.lutece.plugins.identitystore.business.identity.IdentityHome;
 import fr.paris.lutece.plugins.identitystore.cache.IdentityDtoCache;
-import fr.paris.lutece.plugins.identitystore.v3.web.request.AbstractIdentityStoreAppCodeRequest;
-import fr.paris.lutece.plugins.identitystore.v3.web.request.validator.IdentityAttributeValidator;
 import fr.paris.lutece.plugins.identitystore.service.attribute.IdentityAttributeFormatterService;
 import fr.paris.lutece.plugins.identitystore.service.contract.ServiceContractService;
 import fr.paris.lutece.plugins.identitystore.service.identity.IdentityService;
+import fr.paris.lutece.plugins.identitystore.v3.web.request.AbstractIdentityStoreAppCodeRequest;
+import fr.paris.lutece.plugins.identitystore.v3.web.request.validator.IdentityAttributeValidator;
 import fr.paris.lutece.plugins.identitystore.v3.web.request.validator.IdentityValidator;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.IdentityRequestValidator;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.AttributeChangeStatusType;
@@ -67,9 +60,14 @@ import fr.paris.lutece.plugins.identitystore.web.exception.RequestFormatExceptio
 import fr.paris.lutece.plugins.identitystore.web.exception.ResourceConsistencyException;
 import fr.paris.lutece.plugins.identitystore.web.exception.ResourceNotFoundException;
 import fr.paris.lutece.portal.service.spring.SpringContextService;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.tuple.Pair;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
- * This class represents a create request for IdentityStoreRestServive
+ * This class represents a creation request for IdentityStoreRestServive
  */
 public class IdentityStoreCancelMergeRequest extends AbstractIdentityStoreAppCodeRequest
 {
@@ -103,13 +101,13 @@ public class IdentityStoreCancelMergeRequest extends AbstractIdentityStoreAppCod
     @Override
     protected void fetchResources( ) throws ResourceNotFoundException, ClientAuthorizationException {
         serviceContract = ServiceContractService.instance( ).getActiveServiceContract( _strClientCode );
-        primaryIdentity = _identityDtoCache.getByCustomerId( _identityMergeRequest.getPrimaryCuid( ), serviceContract );
+        primaryIdentity = _identityDtoCache.getIdentityByCustomerId( _identityMergeRequest.getPrimaryCuid( ), serviceContract );
         if ( primaryIdentity == null )
         {
             throw new ResourceNotFoundException( "Could not find primary identity", Constants.PROPERTY_REST_ERROR_PRIMARY_IDENTITY_NOT_FOUND );
         }
         
-        secondaryIdentity = _identityDtoCache.getByCustomerId( _identityMergeRequest.getSecondaryCuid( ), serviceContract );
+        secondaryIdentity = _identityDtoCache.getIdentityByCustomerId( _identityMergeRequest.getSecondaryCuid( ), serviceContract );
         if ( secondaryIdentity == null )
         {
             throw new ResourceNotFoundException( "Could not find secondary identity", Constants.PROPERTY_REST_ERROR_SECONDARY_IDENTITY_NOT_FOUND );

@@ -46,7 +46,6 @@ import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.AttributeChang
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.AttributeDto;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.AttributeStatus;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.IdentityDto;
-import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.crud.IdentityChangeRequest;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
 import fr.paris.lutece.plugins.identitystore.web.exception.ClientAuthorizationException;
 import fr.paris.lutece.plugins.identitystore.web.exception.RequestContentFormattingException;
@@ -82,7 +81,7 @@ public class IdentityAttributeValidator
     private static final String PIVOT_CERTIF_LEVEL_THRESHOLD = "identitystore.identity.attribute.update.pivot.certif.level.threshold";
     private static final String IDENTITY_CONNECTED_ALLOWED_ATTRIBUTES_MODIFICATION = "identitystore.identity.connected.allowed.attributes.modification";
     private static final String PROPERTY_EMAIL_FORBIDDEN_DOMAINS = AppPropertiesService.getProperty("identitystore.identity.attribute.email.forbidden_domains");
-    private static final Object FR_CODE = "99100";
+    private static final String _codeInseeFrance = AppPropertiesService.getProperty("identitystore.code.insee.france", "99100");
 
     private final IdentityAttributeValidationCache _cache = SpringContextService.getBean( "identitystore.identityAttributeValidationCache" );
     private final int pivotCertificationLevelThreshold = AppPropertiesService
@@ -239,8 +238,12 @@ public class IdentityAttributeValidator
     public void validatePivotAttributesIntegrity( final IdentityDto existingIdentityDto, final IdentityDto identity, boolean geocodesCheck )
             throws RequestFormatException
     {
+        // check if this is a regular identity
+        final boolean isRegular = identity.getAttributes().stream()
+                .anyMatch(a -> Constants.PARAM_BIRTH_COUNTRY_CODE.equals( a.getKey( ) ) && _codeInseeFrance.equals( a.getValue( ) ) );
+
         // get pivot attributes
-        final List<String> pivotKeys = IdentityAttributeService.instance( ).getPivotAttributeKeys( ).stream( ).map( AttributeKey::getKeyName )
+        final List<String> pivotKeys = IdentityAttributeService.instance( ).getPivotAttributeKeys( isRegular ).stream( ).map( AttributeKey::getKeyName )
                 .collect( Collectors.toList( ) );
 
         // get attributes to update, and add certification levels
@@ -248,7 +251,7 @@ public class IdentityAttributeValidator
                 .peek( a -> a.setCertificationLevel( AttributeCertificationDefinitionService.instance( ).getLevelAsInteger( a.getCertifier( ), a.getKey( ) ) ) )
                 .collect( Collectors.toMap( AttributeDto::getKey, Function.identity( ) ) );
 
-        // If the request does not contains at least one pivot attribute, we skip this validation rule
+        // If the request does not contain at least one pivot attribute, we skip this validation rule
         if ( pivotUpdatedAttrs.isEmpty( ) )
         {
             return;
@@ -490,11 +493,11 @@ public class IdentityAttributeValidator
         
         // ... Foreign born identities case : if existing or requested identity is foreign born, do not consider birthplace_code as pivot
         AttributeDto existingBirthCountryCode = existingIdentityToUpdate.getAttributes( ).stream( ).filter( a -> a.getKey ( ).equals ( Constants.PARAM_BIRTH_COUNTRY_CODE ) ).findFirst ( ).orElse ( null); 
-        AttributeDto newBirthCountryCode = requestAttributes.stream( ).filter( a -> a.getKey ( ).equals ( Constants.PARAM_BIRTH_COUNTRY_CODE ) ).findFirst ( ).orElse ( null); 
-        if ( 	( newBirthCountryCode != null && !newBirthCountryCode.getValue ( ).equals ( FR_CODE ) ) // new country code is a foreign country	 
-        	|| ( newBirthCountryCode == null && existingBirthCountryCode != null && !existingBirthCountryCode.getValue ( ).equals ( FR_CODE ) ) ) // no new country code, old country code exists and is a  foreign country
+        AttributeDto newBirthCountryCode = requestAttributes.stream( ).filter( a -> Constants.PARAM_BIRTH_COUNTRY_CODE.equals (a.getKey ( )) ).findFirst ( ).orElse ( null);
+        if ( 	( newBirthCountryCode != null && !_codeInseeFrance.equals (newBirthCountryCode.getValue ( )) ) // new country code is a foreign country
+        	|| ( newBirthCountryCode == null && existingBirthCountryCode != null && !_codeInseeFrance.equals (existingBirthCountryCode.getValue ( )) ) ) // no new country code, old country code exists and is a  foreign country
         {
-            pivotAttributeKeys.removeIf( a -> a.equals ( Constants.PARAM_BIRTH_PLACE_CODE ) );
+            pivotAttributeKeys.removeIf(Constants.PARAM_BIRTH_PLACE_CODE::equals);
         }
         	  
 

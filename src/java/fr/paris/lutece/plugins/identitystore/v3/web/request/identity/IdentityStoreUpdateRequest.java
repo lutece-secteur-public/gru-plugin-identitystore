@@ -38,14 +38,13 @@ import fr.paris.lutece.plugins.identitystore.business.identity.Identity;
 import fr.paris.lutece.plugins.identitystore.cache.IdentityDtoCache;
 import fr.paris.lutece.plugins.identitystore.service.attribute.IdentityAttributeFormatterService;
 import fr.paris.lutece.plugins.identitystore.service.attribute.IdentityAttributeGeocodesAdjustmentService;
-import fr.paris.lutece.plugins.identitystore.v3.web.request.AbstractIdentityStoreAppCodeRequest;
-import fr.paris.lutece.plugins.identitystore.v3.web.request.validator.IdentityAttributeValidator;
 import fr.paris.lutece.plugins.identitystore.service.contract.ServiceContractService;
 import fr.paris.lutece.plugins.identitystore.service.identity.IdentityService;
+import fr.paris.lutece.plugins.identitystore.v3.web.request.AbstractIdentityStoreAppCodeRequest;
+import fr.paris.lutece.plugins.identitystore.v3.web.request.validator.IdentityAttributeValidator;
 import fr.paris.lutece.plugins.identitystore.v3.web.request.validator.IdentityDuplicateValidator;
 import fr.paris.lutece.plugins.identitystore.v3.web.request.validator.IdentityValidator;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.IdentityRequestValidator;
-import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.AttributeDto;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.AttributeChangeStatus;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.AttributeChangeStatusType;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.AttributeStatus;
@@ -58,19 +57,15 @@ import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.ResponseStatusFactor
 import fr.paris.lutece.plugins.identitystore.web.exception.ClientAuthorizationException;
 import fr.paris.lutece.plugins.identitystore.web.exception.DuplicatesConsistencyException;
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
-import fr.paris.lutece.portal.business.datastore.DataEntity;
-import fr.paris.lutece.portal.business.datastore.DataEntityHome;
 import fr.paris.lutece.plugins.identitystore.web.exception.RequestContentFormattingException;
 import fr.paris.lutece.plugins.identitystore.web.exception.RequestFormatException;
 import fr.paris.lutece.plugins.identitystore.web.exception.ResourceConsistencyException;
 import fr.paris.lutece.plugins.identitystore.web.exception.ResourceNotFoundException;
 import fr.paris.lutece.portal.service.spring.SpringContextService;
 import fr.paris.lutece.portal.service.util.AppPropertiesService;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -118,7 +113,7 @@ public class IdentityStoreUpdateRequest extends AbstractIdentityStoreAppCodeRequ
     protected void fetchResources( ) throws ResourceNotFoundException, ClientAuthorizationException {
         if (_strCustomerId != null) {
             serviceContract = ServiceContractService.instance( ).getActiveServiceContract( _strClientCode );
-            existingIdentityToUpdate = _identityDtoCache.getByCustomerId( _strCustomerId, serviceContract );
+            existingIdentityToUpdate = _identityDtoCache.getIdentityByCustomerId( _strCustomerId, serviceContract );
             if ( existingIdentityToUpdate == null )
             {
                 throw new ResourceNotFoundException( "No matching identity could be found", Constants.PROPERTY_REST_ERROR_NO_MATCHING_IDENTITY );
@@ -139,7 +134,7 @@ public class IdentityStoreUpdateRequest extends AbstractIdentityStoreAppCodeRequ
     protected void validateClientAuthorization( ) throws ClientAuthorizationException
     {
         ServiceContractService.instance( ).validateUpdateAuthorization( _identityChangeRequest, existingIdentityToUpdate, serviceContract );
-        // If identity is connected and service contract doesn't allow unrestricted update, do a bunch of additionnal checks
+        // If the identity is connected and the service contract doesn't allow unrestricted update, do a bunch of additional checks
         if ( existingIdentityToUpdate.getMonParisActive( ) && !serviceContract.getAuthorizedAccountUpdate( ) )
         {
             IdentityAttributeValidator.instance( ).checkConnectedIdentityUpdate( _identityChangeRequest.getIdentity( ).getAttributes( ),
@@ -151,7 +146,7 @@ public class IdentityStoreUpdateRequest extends AbstractIdentityStoreAppCodeRequ
     protected void validateResourcesConsistency( ) throws ResourceConsistencyException
     {
         IdentityValidator.instance( ).checkIdentityLastUpdateDate( existingIdentityToUpdate, _identityChangeRequest.getIdentity( ).getLastUpdateDate( ) );
-        IdentityValidator.instance( ).checkIdentityMergedStatusForUpdate( existingIdentityToUpdate );
+        IdentityValidator.instance( ).checkIdentityMergedStatusForUpdate( existingIdentityToUpdate, serviceContract );
         IdentityValidator.instance( ).checkIdentityDeletedStatusForUpdate( existingIdentityToUpdate );
     }
 

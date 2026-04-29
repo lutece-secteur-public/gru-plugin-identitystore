@@ -60,6 +60,7 @@ import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.BatchDto;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.IdentityDto;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.history.AttributeChange;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.history.IdentityChange;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.history.IdentityChangeType;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.importing.BatchImportRequest;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.search.SearchAttribute;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
@@ -145,6 +146,8 @@ public class IdentityJspBean extends ManageIdentitiesJspBean
     private static final String MARK_GENERIC_STATUS = "generic_status_list";
     private static final String MARK_INFOS_ARE_MISSING = "infos_are_missing";
     private static final String MARK_AT_LEAST_ONE_SC_FOUND = "at_least_one_service_contract_found";
+    private static final String MARK_MASTER_CUID = "master_cuid";
+    private static final String MARK_MASTER_CUID_MODIFICATION_DATE = "master_cuid_consolidation_date";
 
     // Views
     private static final String VIEW_MANAGE_IDENTITIES = "manageIdentitys";
@@ -207,7 +210,7 @@ public class IdentityJspBean extends ManageIdentitiesJspBean
 	    {
 		if ( datasource.equals( DATASOURCE_DB ) )
 		{
-		    final Identity identity = IdentityHome.findMasterIdentityByCustomerId( cuid );
+		    final Identity identity = IdentityHome.findMasterIdentityByCustomerId( cuid, true );
 		    if ( identity != null )
 		    {
 			final IdentityDto qualifiedIdentity = DtoConverter.convertIdentityToDto( identity );
@@ -227,7 +230,7 @@ public class IdentityJspBean extends ManageIdentitiesJspBean
 		{
 		    if ( datasource.equals( DATASOURCE_DB ) )
 		    {
-			final Identity identity = IdentityHome.findMasterIdentityByConnectionId( guid );
+			final Identity identity = IdentityHome.findMasterIdentityByConnectionId( guid, true );
 			if ( identity != null )
 			{
 			    final IdentityDto qualifiedIdentity = DtoConverter.convertIdentityToDto( identity );
@@ -352,8 +355,7 @@ public class IdentityJspBean extends ManageIdentitiesJspBean
 
 	 _identity = IdentityHome.findByCustomerId( nId );
 
-	 List<Identity> mergedIdentities = IdentityHome.findMergedIdentities(_identity.getId());
-	 _identity.setMerged(mergedIdentities != null && !mergedIdentities.isEmpty());
+	 final List<Identity> mergedIdentities = IdentityHome.findMergedIdentities(_identity.getId());
 
 	 final String filteredCustomerId = SecurityUtil.logForgingProtect( _identity.getCustomerId( ) );
 	 AccessLogService.getInstance( ).info( AccessLoggerConstants.EVENT_TYPE_READ, DISPLAY_IDENTITY_EVENT_CODE, getUser( ), filteredCustomerId,
@@ -369,6 +371,27 @@ public class IdentityJspBean extends ManageIdentitiesJspBean
 	 model.put( MARK_HAS_ATTRIBUTS_HISTO_ROLE,
 		 IdentityManagementResourceIdService.isAuthorized( IdentityManagementResourceIdService.PERMISSION_ATTRIBUTS_HISTO, getUser( ) ) );
 	 model.put( QUERY_PARAM_CUID_LINK, RESOURCE_SEARCH_LINK );
+
+	 if( _identity.isMerged( ) )
+	 {
+		 final Identity masterIdentity = IdentityHome.findByPrimaryKey( _identity.getMasterIdentityId( ) );
+		 if( masterIdentity != null )
+		 {
+			 model.put( MARK_MASTER_CUID, masterIdentity.getCustomerId( ) );
+			 try
+			 {
+				 final List<IdentityChange> historyBySearchParameters = IdentityHome.findHistoryBySearchParameters( masterIdentity.getCustomerId( ), null, null,
+						 IdentityChangeType.CONSOLIDATED, null, null, null, null, null, null, 1);
+				 if( !historyBySearchParameters.isEmpty( ) )
+				 {
+					 final IdentityChange identityChange = historyBySearchParameters.get( 0 );
+					 model.put( MARK_MASTER_CUID_MODIFICATION_DATE, identityChange.getModificationDate( ) );
+				 }
+			 } catch ( final Exception e )  {
+				 this.addError( "Could not fetch consolidation history" );
+			 }
+		 }
+	 }
 
 	 return getPage( PROPERTY_PAGE_TITLE_VIEW_IDENTITY, TEMPLATE_VIEW_IDENTITY, model );
      }
@@ -394,7 +417,7 @@ public class IdentityJspBean extends ManageIdentitiesJspBean
 	 final List<AttributeChange> attributeChangeList = new ArrayList<>( );
 	 final List<IdentityChange> identityChangeList = new ArrayList<>( );
 
-	 if ( _identity != null && MapUtils.isNotEmpty( _identity.getAttributes( ) ) )
+	 if ( _identity != null )
 	 {
 	     try
 	     {
