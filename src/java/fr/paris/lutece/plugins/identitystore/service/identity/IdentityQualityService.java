@@ -329,9 +329,10 @@ public class IdentityQualityService
      */
     public String computeUnicityHashCode( final Map<String, String> attributes ) throws IdentityStoreException {
         final String birthplaceCode = attributes.get( Constants.PARAM_BIRTH_PLACE_CODE );
-        final boolean isCountryWithBirthPlaceCode = birthplaceCode != null && Objects.equals( birthplaceCode, _codeInseeFrance );
+        final String birthCountryCode = attributes.get( Constants.PARAM_BIRTH_COUNTRY_CODE );
 
-        // get pivot referential attributes
+        // If birthplace code exists and birthCountryCode is France get pivot attribute, if not, get alternate pivot
+        final boolean isCountryWithBirthPlaceCode = birthplaceCode != null && Objects.equals( birthCountryCode, _codeInseeFrance );
         final List<String> pivotKeys = IdentityAttributeService.instance( )
                 .getPivotAttributeKeys( isCountryWithBirthPlaceCode ).stream( )
                 .map( AttributeKey::getKeyName )
@@ -342,7 +343,7 @@ public class IdentityQualityService
                 .filter( e -> e.getValue( ) != null && pivotKeys.contains( e.getKey( ) ) )
                 .collect( Collectors.toMap( Map.Entry::getKey, Map.Entry::getValue ) );
 
-        if( pivotValues.size( ) != pivotKeys.size( ) )
+        if( pivotValues.size( ) != pivotKeys.size( ) || pivotKeys.isEmpty( ) )
         {
             // the identity does not have all pivot attributes,
             // generate unique UUID in order to never match it
