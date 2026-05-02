@@ -84,6 +84,9 @@
         <constructor-arg ref="identitystore.duplicateService.elasticsearch" name="_duplicateServiceElasticSearch"/>
     </bean>
 
+    <!-- Unicity Hascode Batches -->
+    <bean id="identitystore.unicityHashCodeBatchTask" class="fr.paris.lutece.plugins.identitystore.service.identity.batch.UnicityHashCodeBatchTask" />
+
     <!-- Schedule full E/S identities reindexing -->
     <bean id="identitystore.fullIndexer" class="fr.paris.lutece.plugins.identitystore.service.indexer.elastic.index.task.FullIndexTask" />
     <task:scheduler id="identitystore.fullIndexerScheduler" pool-size="10" />
@@ -110,6 +113,7 @@
     <bean id="identitystore.historyRest" class="fr.paris.lutece.plugins.identitystore.v3.web.rs.HistoryRestService" />
     <bean id="identitystore.indicatorsRest" class="fr.paris.lutece.plugins.identitystore.v3.web.rs.IndicatorsRestService" />
     <bean id="identitystore.indexingRest" class="fr.paris.lutece.plugins.identitystore.v3.web.rs.IndexingRestService"/>
+    <bean id="identitystore.unicityHashCodeCatchRest" class="fr.paris.lutece.plugins.identitystore.v3.web.rs.UnicityHashBatchStatusRest"/>
 
 	<!--  site properties group  -->
     <bean id="identitystore.sitePropertiesGroup" class="fr.paris.lutece.portal.service.site.properties.SitePropertiesGroup" >

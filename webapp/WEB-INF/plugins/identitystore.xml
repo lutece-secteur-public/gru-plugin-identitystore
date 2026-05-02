@@ -60,6 +60,15 @@
             <feature-url>jsp/admin/plugins/identitystore/ManageIdentitySearchRules.jsp</feature-url>
             <feature-icon-url/>
         </admin-feature>
+        <admin-feature>
+            <feature-id>IDENTITYSTORE_UNICITY_HASH_BATCH</feature-id>
+            <feature-title>identitystore.adminFeature.ManageUnicityHashCode.name</feature-title>
+            <feature-description>identitystore.adminFeature.ManageUnicityHashCode.description</feature-description>
+            <feature-level>0</feature-level>
+            <feature-url>jsp/admin/plugins/identitystore/ManageUnicityHashBatch.jsp</feature-url>
+            <feature-icon-url/>
+            <feature-documentation-url/>
+        </admin-feature>
     </admin-features>
     
     <!-- RBAC Resources -->
