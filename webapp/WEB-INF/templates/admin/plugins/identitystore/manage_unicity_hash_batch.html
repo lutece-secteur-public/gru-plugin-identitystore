@@ -1,0 +1,169 @@
+<@rowBox>
+<@boxHeader i18nTitleKey="identitystore.unicityHashBatch.pageTitle">
+<@headerButtons>
+<form id="batch-form" class="form-inline pull-right" method="post" name="start_batch" action="jsp/admin/plugins/identitystore/ManageUnicityHashBatch.jsp">
+    <@input type="hidden" value="${token}" name="token" />
+    <@actionButtons button1Name="action_startBatch" icon1="icon-plus icon-white" i18nValue1Key="identitystore.unicityHashBatch.button.run" />
+</form>
+</@headerButtons>
+</@boxHeader>
+<@boxBody>
+<@messages infos=infos />
+<div class="my-3">
+    <div class="alert alert-warning">
+        <i class="fa fa-exclamation-triangle"></i>
+        #i18n{identitystore.unicityHashBatch.warning}
+    </div>
+</div>
+<div class="my-3">
+    <div class="row text-center" style="margin-top: 10px; margin-bottom: 15px;">
+        <div class="col-md-2">
+            <strong id="stat-processed">0</strong> / <span id="stat-total">0</span>
+            <br/><small class="text-muted">#i18n{identitystore.unicityHashBatch.processed.identities}</small>
+        </div>
+        <div class="col-md-2">
+            <strong id="stat-duplicates" class="text-info">0</strong>
+            <br/><small class="text-muted">#i18n{identitystore.unicityHashBatch.duplicate.identities}</small>
+        </div>
+        <div class="col-md-2">
+            <strong id="stat-skipped" class="text-warning">0</strong>
+            <br/><small class="text-muted">#i18n{identitystore.unicityHashBatch.ignored.identities}</small>
+        </div>
+        <div class="col-md-2">
+            <strong id="stat-errors" class="text-danger">0</strong>
+            <br/><small class="text-muted">#i18n{identitystore.unicityHashBatch.error.identities}</small>
+        </div>
+        <div class="col-md-2">
+            <strong id="stat-elapsed">-</strong>
+            <br/><small class="text-muted">#i18n{identitystore.unicityHashBatch.elapsed.time}</small>
+        </div>
+        <div class="col-md-2">
+            <strong id="stat-rate">-</strong>
+            <br/><small class="text-muted">#i18n{identitystore.unicityHashBatch.speed}</small>
+        </div>
+    </div>
+</div>
+<div class="my-3">
+    <div class="progress" id="index-progress-container" >
+        <div id="index-progressbar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar"
+             aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+        </div>
+    </div>
+</div>
+<div class="my-3">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+        <strong><i class="fa fa-terminal"></i> Console</strong>
+        <button class="btn btn-default btn-sm" id="btn-download" onclick="downloadLogs()">
+            <i class="fa fa-download"></i> #i18n{identitystore.unicityHashBatch.download.logs.button}
+        </button>
+    </div>
+    <pre id="logs-console">${batch_last_logs!''}</pre>
+</div>
+</@boxBody>
+</@rowBox>
+<script>
+    let autoScroll = true;
+
+    // Detect if user scrolled up manually
+    document.getElementById("logs-console").addEventListener("scroll", function() {
+        const el = this;
+        autoScroll = (el.scrollHeight - el.scrollTop - el.clientHeight) < 50;
+    });
+
+    // Independent auto-scroll loop
+    setInterval(function() {
+        if(autoScroll) {
+            const el = document.getElementById("logs-console");
+            el.scrollTop = el.scrollHeight;
+        }
+    }, 200);
+
+    // Status polling
+    setInterval(function() {
+        check();
+    }, 500);
+
+    async function check() {
+        fetch("internal/api/identitystore/v3/unicity/status")
+            .then(response => response.json())
+            .then(function(status) {
+                if (status != null && status.total != null) {
+                    updateProgress(status);
+                    updateStats(status);
+                    displayLogs(status);
+                }
+            })
+            .catch(err => console.log(err));
+    }
+
+    function updateProgress(status) {
+        if (status !== null) {
+            const buttonRun = document.getElementsByName("action_startBatch")[0];
+            buttonRun.disabled = status.running;
+            const progressBar = document.getElementById("index-progressbar");
+            progressBar.setAttribute("aria-valuenow", status.progress);
+            progressBar.style.width = status.progress + "%";
+            progressBar.innerHTML = status.progress.toFixed(1) + "%" + " ( Traitement de " + status.processed + "/" + status.total + " identit\u00e9s)";
+        }
+    }
+
+    function updateStats(status) {
+        document.getElementById("stat-processed").textContent = status.processed;
+        document.getElementById("stat-total").textContent = status.total;
+        document.getElementById("stat-duplicates").textContent = status.duplicates;
+        document.getElementById("stat-skipped").textContent = status.skipped;
+        document.getElementById("stat-errors").textContent = status.errors;
+
+        const elapsed = status.elapsed || 0;
+        const h = Math.floor(elapsed / 3600);
+        const m = Math.floor((elapsed % 3600) / 60);
+        const s = elapsed % 60;
+        let elapsedStr = "";
+        if (h > 0) elapsedStr += h + "h ";
+        if (m > 0 || h > 0) elapsedStr += m + "min ";
+        elapsedStr += s + "s";
+        document.getElementById("stat-elapsed").textContent = elapsedStr;
+
+        if (elapsed > 0 && status.processed > 0) {
+            const rate = Math.round(status.processed / elapsed);
+            document.getElementById("stat-rate").textContent = rate + "/s";
+        }
+    }
+
+    function displayLogs(status) {
+        const logsConsole = document.getElementById("logs-console");
+        if (logsConsole.textContent !== status.logs) {
+            logsConsole.textContent = status.logs;
+        }
+    }
+
+    function downloadLogs() {
+        const content = document.getElementById("logs-console").textContent;
+        if (!content || content.trim().length === 0) {
+            return;
+        }
+        const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        const now = new Date();
+        const timestamp = now.getFullYear()
+            + ("0" + (now.getMonth() + 1)).slice(-2)
+            + ("0" + now.getDate()).slice(-2)
+            + "_"
+            + ("0" + now.getHours()).slice(-2)
+            + ("0" + now.getMinutes()).slice(-2)
+            + ("0" + now.getSeconds()).slice(-2);
+        a.download = "unicity_hash_batch_" + timestamp + ".log";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+</script>
+<style>
+    pre {
+        height: 450px;
+        overflow: scroll;
+    }
+</style>
