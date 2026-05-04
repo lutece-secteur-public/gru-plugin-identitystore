@@ -130,15 +130,28 @@
         }
     }
 
+    function escapeHtml(text) {
+        const div = document.createElement("div");
+        div.appendChild(document.createTextNode(text));
+        return div.innerHTML;
+    }
+
+    function linkifyCuid(html) {
+        return html.replace(/cuid=([a-f0-9\-]{36})/g, function(match, cuid) {
+            return 'cuid=<a href="jsp/admin/plugins/identitystore/ManageIdentities.jsp?view=viewIdentity&id=' + cuid + '" target="_blank">' + cuid + '</a>';
+        });
+    }
+
     function displayLogs(status) {
         const logsConsole = document.getElementById("logs-console");
-        if (logsConsole.textContent !== status.logs) {
-            logsConsole.textContent = status.logs;
+        if (logsConsole.getAttribute("data-raw") !== status.logs) {
+            logsConsole.setAttribute("data-raw", status.logs);
+            logsConsole.innerHTML = linkifyCuid(escapeHtml(status.logs));
         }
     }
 
     function downloadLogs() {
-        const content = document.getElementById("logs-console").textContent;
+        const content = document.getElementById("logs-console").getAttribute("data-raw") || document.getElementById("logs-console").textContent;
         if (!content || content.trim().length === 0) {
             return;
         }

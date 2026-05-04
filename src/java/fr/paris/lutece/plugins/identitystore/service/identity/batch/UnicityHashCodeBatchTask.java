@@ -68,16 +68,17 @@ public class UnicityHashCodeBatchTask
 {
     // SQL
     private static final String SQL_COUNT_IDENTITIES = "SELECT COUNT(*) FROM identitystore_identity WHERE is_deleted = 0 AND is_merged = 0";
-    private static final String SQL_SELECT_IDENTITIES_FIRST_PAGE = "SELECT id_identity FROM identitystore_identity WHERE is_deleted = 0 AND is_merged = 0 ORDER BY id_identity ASC LIMIT ?";
-    private static final String SQL_SELECT_IDENTITIES_NEXT_PAGE = "SELECT id_identity FROM identitystore_identity WHERE is_deleted = 0 AND is_merged = 0 AND id_identity > ? ORDER BY id_identity ASC LIMIT ?";
+    private static final String SQL_SELECT_IDENTITIES_FIRST_PAGE = "SELECT id_identity, customer_id FROM identitystore_identity WHERE is_deleted = 0 AND is_merged = 0 ORDER BY id_identity ASC LIMIT ?";
+    private static final String SQL_SELECT_IDENTITIES_NEXT_PAGE = "SELECT id_identity, customer_id FROM identitystore_identity WHERE is_deleted = 0 AND is_merged = 0 AND id_identity > ? ORDER BY id_identity ASC LIMIT ?";
     private static final String SQL_SELECT_ATTRIBUTES_FOR_IDENTITY = "SELECT c.key_name, b.attribute_value FROM identitystore_identity_attribute b JOIN identitystore_ref_attribute c ON b.id_attribute = c.id_attribute WHERE b.id_identity = ?";
     private static final String SQL_SELECT_ATTRIBUTES_BULK_PREFIX = "SELECT b.id_identity, c.key_name, b.attribute_value FROM identitystore_identity_attribute b JOIN identitystore_ref_attribute c ON b.id_attribute = c.id_attribute WHERE b.id_identity IN (";
     private static final String SQL_SELECT_ATTRIBUTES_BULK_SUFFIX = ") ORDER BY b.id_identity";
     private static final String SQL_UPDATE_UNICITY_HASH = "UPDATE identitystore_identity SET unicity_hash_code = ? WHERE id_identity = ?";
-    private static final String SQL_SELECT_ORIGINAL_BY_HASH = "SELECT id_identity FROM identitystore_identity WHERE unicity_hash_code = ?";
+    private static final String SQL_SELECT_ORIGINAL_BY_HASH = "SELECT id_identity, customer_id FROM identitystore_identity WHERE unicity_hash_code = ?";
 
     private static final int BATCH_PAGE_SIZE = 5000;
 
+    private static final String CODE_INSEE_FRANCE = AppPropertiesService.getProperty( "identitystore.code.insee.france", "99100" );
     private final Plugin plugin = PluginService.getPlugin( "identitystore" );
     private final SimpleDateFormat sdf = new SimpleDateFormat( "dd/MM/yyyy HH:mm:ss" );
     private UnicityHashCodeBatchStatus _status;
@@ -106,11 +107,11 @@ public class UnicityHashCodeBatchTask
 
         try
         {
-            executeBatch( );
+            this.executeBatch( );
         }
         catch( final Exception e )
         {
-            error( "Fatal error during batch execution: " + e.getMessage( ) );
+            this.error( "Fatal error during batch execution: " + e.getMessage( ) );
         }
         finally
         {
@@ -144,6 +145,7 @@ public class UnicityHashCodeBatchTask
         {
             // Step 2: read a page of identity IDs using keyset pagination
             final List<Integer> identityIds = new ArrayList<>( BATCH_PAGE_SIZE );
+            final Map<Integer, String> customerIdMap = new HashMap<>( BATCH_PAGE_SIZE );
             final boolean isFirstPage = ( lastId == 0 );
             final String sql = isFirstPage ? SQL_SELECT_IDENTITIES_FIRST_PAGE : SQL_SELECT_IDENTITIES_NEXT_PAGE;
 
@@ -162,7 +164,10 @@ public class UnicityHashCodeBatchTask
 
                 while ( daoSelect.next( ) )
                 {
-                    identityIds.add( daoSelect.getInt( 1 ) );
+                    final int id = daoSelect.getInt( 1 );
+                    final String cuid = daoSelect.getString( 2 );
+                    identityIds.add( id );
+                    customerIdMap.put( id, cuid );
                 }
             }
 
@@ -174,7 +179,7 @@ public class UnicityHashCodeBatchTask
             lastId = identityIds.get( identityIds.size( ) - 1 );
 
             // Step 3: bulk-load all attributes for this page in a single query
-            final Map<Integer, Map<String, String>> allAttributes = loadAttributeMapBulk( identityIds, plugin );
+            final Map<Integer, Map<String, String>> allAttributes = this.loadAttributeMapBulk( identityIds, plugin );
 
             // Step 4: compute all hashes first
             final Map<Integer, String> hashByIdentity = new LinkedHashMap<>( );
@@ -186,7 +191,7 @@ public class UnicityHashCodeBatchTask
 
                     if ( attributes.isEmpty( ) )
                     {
-                        info( "Identity " + identityId + " has no attributes, skipping" );
+                        this.info( "Identity id=" + identityId + " cuid=" + customerIdMap.get( identityId ) + " has no attributes, skipping" );
                         _status.incrementSkipped( );
                         _status.incrementProcessed( );
                         continue;
@@ -199,20 +204,20 @@ public class UnicityHashCodeBatchTask
                 {
                     _status.incrementErrors( );
                     _status.incrementProcessed( );
-                    error( "Identity " + identityId + ": " + e.getMessage( ) );
+                    this.error( "Identity id=" + identityId + " cuid=" + customerIdMap.get( identityId ) + ": " + e.getMessage( ) );
                 }
                 catch( final Exception e )
                 {
                     _status.incrementErrors( );
                     _status.incrementProcessed( );
-                    error( "Unexpected error on identity " + identityId + ": " + e.getMessage( ) );
+                    this.error( "Unexpected error on identity id=" + identityId + " cuid=" + customerIdMap.get( identityId ) + ": " + e.getMessage( ) );
                 }
             }
 
             // Step 5: bulk update — try all at once, fall back to individual on failure
             if ( !hashByIdentity.isEmpty( ) )
             {
-                final List<Integer> failedIds = tryBulkUpdateHash( hashByIdentity, plugin );
+                final List<Integer> failedIds = this.tryBulkUpdateHash( hashByIdentity, plugin );
 
                 // Count successful updates
                 final int successCount = hashByIdentity.size( ) - failedIds.size( );
@@ -225,28 +230,30 @@ public class UnicityHashCodeBatchTask
                 for ( final int identityId : failedIds )
                 {
                     final String hash = hashByIdentity.get( identityId );
-                    final Map<String, String> attributes = allAttributes.getOrDefault( identityId, java.util.Collections.emptyMap( ) );
+                    final Map<String, String> attributes = allAttributes.getOrDefault( identityId, Collections.emptyMap( ) );
 
                     final UpdateResult result = tryUpdateHash( identityId, hash, plugin );
                     if ( result == UpdateResult.DUPLICATE )
                     {
                         final String fallbackUuid = UUID.randomUUID( ).toString( );
+                        final String cuid = customerIdMap.get( identityId );
 
                         DuplicateGroup group = duplicateGroups.get( hash );
                         if ( group == null )
                         {
                             group = new DuplicateGroup( );
-                            final int originalId = this.findOriginalIdentityByHash( hash, plugin );
-                            if ( originalId > 0 )
+                            final String[] originalInfo = findOriginalIdentityByHash( hash, plugin );
+                            if ( originalInfo != null )
                             {
-                                group.originalId = originalId;
-                                group.originalAttributes = this.loadAttributeMap( originalId, plugin );
+                                group.originalId = Integer.parseInt( originalInfo[0] );
+                                group.originalCustomerId = originalInfo[1];
+                                group.originalAttributes = this.loadAttributeMap( group.originalId, plugin );
                             }
                             duplicateGroups.put( hash, group );
                         }
-                        group.duplicates.add( new DuplicateEntry( identityId, attributes, fallbackUuid ) );
+                        group.duplicates.add( new DuplicateEntry( identityId, cuid, attributes, fallbackUuid ) );
 
-                        this.info( "DUPLICATE: identity id=" + identityId + " hash=[" + hash + "] -> UUID [" + fallbackUuid + "]" );
+                        this.info( "DUPLICATE: id=" + identityId + " cuid=" + cuid + " hash=[" + hash + "] -> UUID [" + fallbackUuid + "]" );
 
                         final UpdateResult fallbackResult = tryUpdateHash( identityId, fallbackUuid, plugin );
                         if ( fallbackResult != UpdateResult.SUCCESS )
@@ -279,7 +286,7 @@ public class UnicityHashCodeBatchTask
         final long seconds = durationSec % 60;
         final String duration = ( hours > 0 ? hours + "h " : "" ) + ( minutes > 0 ? minutes + "min " : "" ) + seconds + "s";
 
-        this.info( "Batch completed at " + sdf.format( new java.util.Date( endTime ) ) );
+        this.info( "Batch completed at " + sdf.format( new Date( endTime ) ) );
         this.info( "Duration: " + duration + " (" + durationMs + "ms)" );
         this.info( "Result: " + _status.getProcessed( ) + "/" + _status.getTotal( ) + " processed, "
                 + _status.getDuplicates( ) + " duplicates, " + _status.getErrors( ) + " errors, " + _status.getSkipped( ) + " skipped" );
@@ -315,7 +322,7 @@ public class UnicityHashCodeBatchTask
 
             if ( group.originalId > 0 )
             {
-                this.info( "│  ★ ORIGINAL  id=" + group.originalId + "  " + formatAttributes( group.originalAttributes ) );
+                this.info( "│  ★ ORIGINAL  id=" + group.originalId + " cuid=" + group.originalCustomerId + "  " + formatAttributes( group.originalAttributes ) );
             }
             else
             {
@@ -324,7 +331,7 @@ public class UnicityHashCodeBatchTask
 
             for ( final DuplicateEntry dup : group.duplicates )
             {
-                this.info( "│    DUPLICATE id=" + dup.identityId + "  " + formatAttributes( dup.attributes ) + "  → UUID [" + dup.assignedUuid + "]" );
+                this.info( "│    DUPLICATE id=" + dup.identityId + " cuid=" + dup.customerId + "  " + formatAttributes( dup.attributes ) + "  → UUID [" + dup.assignedUuid + "]" );
             }
 
             this.info( "└──────────────────────────────────────────────────────────────" );
@@ -342,6 +349,7 @@ public class UnicityHashCodeBatchTask
     private static class DuplicateGroup
     {
         int originalId = -1;
+        String originalCustomerId;
         Map<String, String> originalAttributes;
         final List<DuplicateEntry> duplicates = new ArrayList<>( );
     }
@@ -352,12 +360,14 @@ public class UnicityHashCodeBatchTask
     private static class DuplicateEntry
     {
         final int identityId;
+        final String customerId;
         final Map<String, String> attributes;
         final String assignedUuid;
 
-        DuplicateEntry( final int identityId, final Map<String, String> attributes, final String assignedUuid )
+        DuplicateEntry( final int identityId, final String customerId, final Map<String, String> attributes, final String assignedUuid )
         {
             this.identityId = identityId;
+            this.customerId = customerId;
             this.attributes = attributes;
             this.assignedUuid = assignedUuid;
         }
@@ -396,7 +406,7 @@ public class UnicityHashCodeBatchTask
         try ( final DAOUtil daoUpdate = new DAOUtil( sql.toString( ), plugin ) )
         {
             daoUpdate.executeUpdate( );
-            return java.util.Collections.emptyList( );
+            return Collections.emptyList( );
         }
         catch( final Exception e )
         {
@@ -519,9 +529,9 @@ public class UnicityHashCodeBatchTask
      *
      * @param hash   the unicity hash to search for
      * @param plugin the plugin
-     * @return the id_identity of the original, or -1 if not found
+     * @return String array [id_identity, customer_id], or null if not found
      */
-    private int findOriginalIdentityByHash( final String hash, final Plugin plugin )
+    private String[] findOriginalIdentityByHash( final String hash, final Plugin plugin )
     {
         try ( final DAOUtil daoUtil = new DAOUtil( SQL_SELECT_ORIGINAL_BY_HASH, plugin ) )
         {
@@ -530,13 +540,11 @@ public class UnicityHashCodeBatchTask
 
             if ( daoUtil.next( ) )
             {
-                return daoUtil.getInt( 1 );
+                return new String[] { String.valueOf( daoUtil.getInt( 1 ) ), daoUtil.getString( 2 ) };
             }
         }
-        return -1;
+        return null;
     }
-
-    private static final String CODE_INSEE_FRANCE = AppPropertiesService.getProperty( "identitystore.code.insee.france", "99100" );
 
     /**
      * Formats an attribute map as a readable string for log display.
