@@ -10,36 +10,75 @@
     </@headerButtons>
     </@boxHeader>
     <@boxBody>
-<h1> <i class="fa fa-user"> </i> ${identity.firstName} ${identity.familyName} <#if identity_is_suspicious = true><span class="badge bg-primary">Doublon potentiel</span></#if></h1>
+    <h1> <i class="fa fa-user"> </i> ${identity.firstName} ${identity.familyName} <#if identity_is_suspicious = true><span class="badge bg-primary">Doublon potentiel</span></#if></h1>
 
-<ul>
-    <li>#i18n{identitystore.view_identity.label.cuid} : ${identity.customerId!}</li>
-    <li>
-        <#if !identity.monParisActive >
-            <i></#if>#i18n{identitystore.view_identity.label.guid} : ${identity.connectionId!} <#if !identity.monParisActive></i>
-            <i  class="fas fa-times" aria-hidden="true"></i>
-        </#if>
-    </li>
-    <li>#i18n{identitystore.view_identity.label.creation.date} : ${identity.creationDate?string["dd/MM/yyyy HH:mm"]!}</li>
-    <li>#i18n{identitystore.view_identity.label.last.modification.date} : ${identity.lastUpdateDate?string["dd/MM/yyyy HH:mm"]!}</li>
-    <li>#i18n{identitystore.view_identity.label.expiration.date} : ${identity.expirationDate?string["dd/MM/yyyy"]!}</li>
-    <li>#i18n{identitystore.view_identity.label.deletion.date} : <#if identity.deleteDate?? >${identity.deleteDate?string["dd/MM/yyyy HH:mm"]!}</#if></li>
-    <#if identity.merged == false && merged_identities?has_content>
-        <li>#i18n{identitystore.view_identity.label.consolidated} : <i class="fas fa-check" aria-hidden="true"></i></li>
-    <#else>
-        <li>#i18n{identitystore.view_identity.label.consolidated} : <i class="fas fa-times" aria-hidden="true"></i></li>
-    </#if>
-    <#if identity.merged == true>
-        <li>#i18n{identitystore.view_identity.label.merged} : <i class="fas fa-check" aria-hidden="true"></i></li>
-    <#else>
-        <li>#i18n{identitystore.view_identity.label.merged} : <i class="fas fa-times" aria-hidden="true"></i></li>
-    </#if>
-    <#if identity.monParisActive == true>
-        <li>#i18n{identitystore.view_identity.label.mon.paris} : <i class="fas fa-check" aria-hidden="true"></i></li>
-    <#else>
-        <li>#i18n{identitystore.view_identity.label.mon.paris} : <i class="fas fa-times" aria-hidden="true"></i></li>
-    </#if>
-</ul>
+    <div class="my-3">
+        <div class="row" style="margin-top: 10px; margin-bottom: 15px;">
+            <div class="col-md-6">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">#i18n{identitystore.view_identity.label.cuid}</dt>
+                    <dd class="col-sm-8">${identity.customerId!}</dd>
+
+                    <dt class="col-sm-4">#i18n{identitystore.view_identity.label.guid}</dt>
+                    <dd class="col-sm-8">
+                        <#if identity.monParisActive>
+                            ${identity.connectionId!}
+                        <#else>
+                            <span class="text-muted font-italic">${identity.connectionId!}</span>
+                            <i class="fas fa-times text-danger ml-1" aria-hidden="true"></i>
+                        </#if>
+                    </dd>
+
+                    <dt class="col-sm-4">#i18n{identitystore.view_identity.label.unicity.hashcode}</dt>
+                    <dd class="col-sm-8">${identity.unicityHashCode!}</dd>
+
+                    <dt class="col-sm-4">#i18n{identitystore.view_identity.label.creation.date}</dt>
+                    <dd class="col-sm-8">${identity.creationDate?string["dd/MM/yyyy HH:mm"]!}</dd>
+
+                    <dt class="col-sm-4">#i18n{identitystore.view_identity.label.last.modification.date}</dt>
+                    <dd class="col-sm-8">${identity.lastUpdateDate?string["dd/MM/yyyy HH:mm"]!}</dd>
+                </dl>
+            </div>
+            <div class="col-md-6">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">#i18n{identitystore.view_identity.label.expiration.date}</dt>
+                    <dd class="col-sm-8">${identity.expirationDate?string["dd/MM/yyyy"]!}</dd>
+
+                    <dt class="col-sm-4">#i18n{identitystore.view_identity.label.deletion.date}</dt>
+                    <dd class="col-sm-8">
+                        <#if identity.deleteDate??>${identity.deleteDate?string["dd/MM/yyyy HH:mm"]!}<#else>&mdash;</#if>
+                    </dd>
+
+                    <dt class="col-sm-4">#i18n{identitystore.view_identity.label.consolidated}</dt>
+                    <dd class="col-sm-8">
+                        <#if !identity.merged && merged_identities?has_content>
+                            <i class="fas fa-check text-success" aria-hidden="true"></i>
+                        <#else>
+                            <i class="fas fa-times text-danger" aria-hidden="true"></i>
+                        </#if>
+                    </dd>
+
+                    <dt class="col-sm-4">#i18n{identitystore.view_identity.label.merged}</dt>
+                    <dd class="col-sm-8">
+                        <#if identity.merged>
+                            <i class="fas fa-check text-success" aria-hidden="true"></i>
+                        <#else>
+                            <i class="fas fa-times text-danger" aria-hidden="true"></i>
+                        </#if>
+                    </dd>
+
+                    <dt class="col-sm-4">#i18n{identitystore.view_identity.label.mon.paris}</dt>
+                    <dd class="col-sm-8">
+                        <#if identity.monParisActive>
+                            <i class="fas fa-check text-success" aria-hidden="true"></i>
+                        <#else>
+                            <i class="fas fa-times text-danger" aria-hidden="true"></i>
+                        </#if>
+                    </dd>
+                </dl>
+            </div>
+        </div>
+    </div>
 
     <#if attributes?has_content>
         <table class="table table-condensed table-striped">
