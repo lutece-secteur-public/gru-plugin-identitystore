@@ -84,7 +84,7 @@ public class PurgeIdentityDaemon extends LoggingDaemon
     {
         final StopWatch stopWatch = new StopWatch( );
         stopWatch.start( );
-        this.info( PurgeIdentityService.getInstance( ).purge( buildAuthor( stopWatch.getTime( ) ), clientCode ) );
+        this.info( PurgeIdentityService.getInstance( ).purge( buildAuthor( System.currentTimeMillis( ) ), clientCode ) );
         stopWatch.stop( );
         final String execTime = "Execution time " + DurationFormatUtils.formatDurationWords( stopWatch.getTime( ), true, true );
         this.info( execTime );
