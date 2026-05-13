@@ -70,7 +70,7 @@ import java.util.stream.Collectors;
 public final class IdentityDAO implements IIdentityDAO
 {
     // Constants
-    private static final String COLUMNS = "a.id_identity, a.connection_id, a.customer_id, a.is_deleted, a.is_merged, a.date_create, a.last_update_date, a.date_merge, a.is_mon_paris_active, a.expiration_date, a.id_master_identity, a.date_delete";
+    private static final String COLUMNS = "a.id_identity, a.connection_id, a.customer_id, a.is_deleted, a.is_merged, a.date_create, a.last_update_date, a.date_merge, a.is_mon_paris_active, a.expiration_date, a.id_master_identity, a.date_delete, a.unicity_hash_code";
     private static final String SQL_QUERY_SELECT = "SELECT id_identity, connection_id, customer_id, is_deleted, is_merged, id_master_identity, date_create, last_update_date, date_merge, is_mon_paris_active, expiration_date  FROM identitystore_identity WHERE id_identity = ?";
     private static final String SQL_QUERY_INSERT = "INSERT INTO identitystore_identity (  connection_id, customer_id, date_create, last_update_date, is_mon_paris_active, expiration_date, unicity_hash_code ) VALUES ( ?, ?, ?, ?, ?, ?, ? ) ";
     private static final String SQL_QUERY_DELETE = "DELETE FROM identitystore_identity WHERE id_identity = ? ";
@@ -80,16 +80,16 @@ public final class IdentityDAO implements IIdentityDAO
             + " FROM identitystore_identity a WHERE lower(a.connection_id) = lower(?)";
     private static final String SQL_QUERY_SELECT_BY_CUSTOMER_ID = "SELECT " + COLUMNS + " FROM identitystore_identity a WHERE a.customer_id = ?";
     private static final String SQL_QUERY_SELECT_NOT_MERGED_BY_CUSTOMER_ID = "WITH RECURSIVE identity_tree AS ("
-            + "    SELECT id_identity, connection_id, customer_id, is_deleted, is_merged, id_master_identity, date_create, last_update_date, date_merge, is_mon_paris_active, expiration_date, date_delete, ARRAY[id_identity] path"
+            + "    SELECT id_identity, connection_id, customer_id, is_deleted, is_merged, id_master_identity, date_create, last_update_date, date_merge, is_mon_paris_active, expiration_date, date_delete,  unicity_hash_code, ARRAY[id_identity] path"
             + "    FROM identitystore_identity" + "    WHERE customer_id = ?" + "    UNION ALL"
-            + "    SELECT id.id_identity, id.connection_id, id.customer_id, id.is_deleted, id.is_merged, id.id_master_identity, id.date_create, id.last_update_date, id.date_merge, id.is_mon_paris_active, id.expiration_date, id.date_delete, path || id.id_identity"
+            + "    SELECT id.id_identity, id.connection_id, id.customer_id, id.is_deleted, id.is_merged, id.id_master_identity, id.date_create, id.last_update_date, id.date_merge, id.is_mon_paris_active, id.expiration_date, id.date_delete, id.unicity_hash_code, path || id.id_identity"
             + "    FROM identitystore_identity id" + "        INNER JOIN identity_tree mtree ON mtree.id_master_identity = id.id_identity and id.id_identity <> ALL(mtree.path) )" 
             + "       select " + COLUMNS + " from identity_tree a where a.is_merged = 0";
 
     private static final String SQL_QUERY_SELECT_NOT_MERGED_BY_CONNECTION_ID = "WITH RECURSIVE identity_tree AS ("
-            + "    SELECT id_identity, connection_id, customer_id, is_deleted, is_merged, id_master_identity, date_create, last_update_date, date_merge, is_mon_paris_active, expiration_date, date_delete, ARRAY[id_identity] path"
+            + "    SELECT id_identity, connection_id, customer_id, is_deleted, is_merged, id_master_identity, date_create, last_update_date, date_merge, is_mon_paris_active, expiration_date, date_delete, unicity_hash_code, ARRAY[id_identity] path"
             + "    FROM identitystore_identity" + "    WHERE lower(connection_id) = lower(?)" + "    UNION ALL"
-            + "    SELECT id.id_identity, id.connection_id, id.customer_id, id.is_deleted, id.is_merged, id.id_master_identity, id.date_create, id.last_update_date, id.date_merge, id.is_mon_paris_active, id.expiration_date, id.date_delete, path || id.id_identity"
+            + "    SELECT id.id_identity, id.connection_id, id.customer_id, id.is_deleted, id.is_merged, id.id_master_identity, id.date_create, id.last_update_date, id.date_merge, id.is_mon_paris_active, id.expiration_date, id.date_delete, id.unicity_hash_code, path || id.id_identity"
             + "    FROM identitystore_identity id" + "        INNER JOIN identity_tree mtree ON mtree.id_master_identity = id.id_identity and id.id_identity <> ALL(mtree.path) )" 
             + "       select " + COLUMNS + " from identity_tree a where a.is_merged = 0";
 
@@ -130,8 +130,12 @@ public final class IdentityDAO implements IIdentityDAO
 
     private static final String SQL_QUERY_SELECT_UPDATED_IDENTITIES = "SELECT DISTINCT i.customer_id, i.last_update_date FROM identitystore_identity i JOIN identitystore_identity_history ih ON i.customer_id = ih.customer_id JOIN identitystore_identity_attribute_history iah ON i.id_identity = iah.id_identity WHERE 1=1";
     private static final String SQL_QUERY_SELECT_UPDATED_IDENTITIES_FROM_IDS = "SELECT i.customer_id, i.last_update_date FROM identitystore_identity i WHERE id_identity IN (${identity_id_list}) ORDER BY i.last_update_date DESC";
-    private static final String SQL_QUERY_SELECT_UPDATED_IDENTITY_IDS = "SELECT DISTINCT i.id_identity, i.last_update_date FROM identitystore_identity i JOIN identitystore_identity_history ih ON i.customer_id = ih.customer_id JOIN identitystore_identity_attribute_history iah ON i.id_identity = iah.id_identity WHERE 1=1";
+    private static final String SQL_QUERY_SELECT_UPDATED_IDENTITY_IDS = "SELECT i.id_identity, i.last_update_date FROM identitystore_identity i WHERE 1=1";
+    private static final String SQL_QUERY_EXISTS_IDENTITY_HISTORY_START = " AND EXISTS (SELECT 1 FROM identitystore_identity_history ih WHERE ih.customer_id = i.customer_id";
+    private static final String SQL_QUERY_EXISTS_ATTRIBUTE_HISTORY_START = " AND EXISTS (SELECT 1 FROM identitystore_identity_attribute_history iah WHERE iah.id_identity = i.id_identity";
+    private static final String SQL_QUERY_EXISTS_END = ")";
     private static final String SQL_QUERY_FILTER_LAST_UPDATE = "i.last_update_date > (NOW() - INTERVAL '${days}' DAY)";
+
     private static final String SQL_QUERY_FILTER_IDENTITY_MODIFICATION_DATE = "ih.modification_date > (NOW() - INTERVAL '${days}' DAY)";
     private static final String SQL_QUERY_FILTER_ATTRIBUTE_MODIFICATION_DATE = "iah.modification_date > (NOW() - INTERVAL '${days}' DAY)";
     private static final String SQL_QUERY_FILTER_IDENTITY_CHANGE_TYPE = "ih.change_type IN (${identity_change_type_list})";
@@ -485,7 +489,8 @@ public final class IdentityDAO implements IIdentityDAO
         identity.setMonParisActive( daoUtil.getBoolean( nIndex++ ) );
         identity.setExpirationDate( daoUtil.getTimestamp( nIndex++ ) );
         identity.setMasterIdentityId( daoUtil.getObject( nIndex++, Integer.class ) );
-        identity.setDeleteDate( daoUtil.getTimestamp( nIndex ) );
+        identity.setDeleteDate( daoUtil.getTimestamp( nIndex++ ) );
+        identity.setUnicityHashCode( daoUtil.getString( nIndex ) );
 
         return identity;
     }
@@ -761,13 +766,11 @@ public final class IdentityDAO implements IIdentityDAO
      */
     @Override
     public List<Integer> selectUpdatedIds( final Integer days, final List<IdentityChangeType> identityChangeTypes,
-            final List<SearchUpdatedAttribute> updatedAttributes, final Integer max, final Plugin plugin )
+                                           final List<SearchUpdatedAttribute> updatedAttributes, final Integer max, final Plugin plugin )
     {
         final List<Integer> ids = new ArrayList<>( );
         final StringBuilder sqlBuilder = new StringBuilder( SQL_QUERY_SELECT_UPDATED_IDENTITY_IDS );
-
         addUpdatedIdentitiesFilters( days, identityChangeTypes, updatedAttributes, max, sqlBuilder );
-
         try ( final DAOUtil daoUtil = new DAOUtil( sqlBuilder.toString( ), plugin ) )
         {
             daoUtil.executeQuery( );
@@ -783,29 +786,32 @@ public final class IdentityDAO implements IIdentityDAO
      * Adds filters for the search updated identities request.
      */
     private void addUpdatedIdentitiesFilters( final Integer days, final List<IdentityChangeType> identityChangeTypes,
-            final List<SearchUpdatedAttribute> updatedAttributes, final Integer max, final StringBuilder sqlBuilder )
+                                              final List<SearchUpdatedAttribute> updatedAttributes, final Integer max, final StringBuilder sqlBuilder )
     {
         if ( days != null )
         {
-            // AND i.last_update_date > (NOW() - INTERVAL '100' DAY)
             sqlBuilder.append( " AND " ).append( SQL_QUERY_FILTER_LAST_UPDATE.replace( "${days}", days.toString( ) ) );
         }
+
+        // EXISTS sur identitystore_identity_history
         if ( !identityChangeTypes.isEmpty( ) )
         {
+            sqlBuilder.append( SQL_QUERY_EXISTS_IDENTITY_HISTORY_START );
             if ( days != null )
             {
-                // AND ih.modification_date > (NOW() - INTERVAL '100' DAY)
                 sqlBuilder.append( " AND " ).append( SQL_QUERY_FILTER_IDENTITY_MODIFICATION_DATE.replace( "${days}", days.toString( ) ) );
             }
-            // AND ih.change_type in (0, 1)
             sqlBuilder.append( " AND " ).append( SQL_QUERY_FILTER_IDENTITY_CHANGE_TYPE.replace( "${identity_change_type_list}",
                     identityChangeTypes.stream( ).map( changeType -> String.valueOf( changeType.getValue( ) ) ).collect( Collectors.joining( ", " ) ) ) );
+            sqlBuilder.append( SQL_QUERY_EXISTS_END );
         }
+
+        // EXISTS sur identitystore_identity_attribute_history
         if ( !updatedAttributes.isEmpty( ) )
         {
+            sqlBuilder.append( SQL_QUERY_EXISTS_ATTRIBUTE_HISTORY_START );
             if ( days != null )
             {
-                // AND iah.modification_date > (NOW() - INTERVAL '100' DAY)
                 sqlBuilder.append( " AND " ).append( SQL_QUERY_FILTER_ATTRIBUTE_MODIFICATION_DATE.replace( "${days}", days.toString( ) ) );
             }
             final List<String> fullAttributesFilters = new ArrayList<>( );
@@ -828,10 +834,11 @@ public final class IdentityDAO implements IIdentityDAO
             }
             if ( !fullAttributesFilters.isEmpty( ) )
             {
-                // AND ( ( iah.change_type IN (0,1) AND iah.attribute_key = 'birthplace' ) OR ( iah.change_type IN (2) AND iah.attribute_key = 'mail' ) )
                 sqlBuilder.append( " AND " ).append( fullAttributesFilters.stream( ).collect( Collectors.joining( " OR ", "(", ")" ) ) );
             }
+            sqlBuilder.append( SQL_QUERY_EXISTS_END );
         }
+
         sqlBuilder.append( " ORDER BY i.last_update_date DESC " );
         if ( max != null && max > 0 )
         {

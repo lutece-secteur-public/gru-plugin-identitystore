@@ -10,7 +10,7 @@
     </@headerButtons>
     </@boxHeader>
     <@boxBody>
-<h1> <i class="fa fa-user"> </i> ${identity.firstName} ${identity.familyName} <#if identity_is_suspicious = true><span class="badge bg-primary">Doublon potentiel</span></#if></h1>
+    <h1> <i class="fa fa-user"> </i> ${identity.firstName} ${identity.familyName} <#if identity_is_suspicious = true><span class="badge bg-primary">Doublon potentiel</span></#if></h1>
 
 <ul>
     <li>#i18n{identitystore.view_identity.label.cuid} : ${identity.customerId!}</li>
