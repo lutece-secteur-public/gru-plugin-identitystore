@@ -33,20 +33,20 @@
                     <dd class="col-sm-8">${identity.unicityHashCode!}</dd>
 
                     <dt class="col-sm-4">#i18n{identitystore.view_identity.label.creation.date}</dt>
-                    <dd class="col-sm-8">${identity.creationDate?string["dd/MM/yyyy HH:mm"]!}</dd>
+                    <dd class="col-sm-8">${identity.creationDate?string["dd/MM/yyyy HH:mm:ss.SSS"]!}</dd>
 
                     <dt class="col-sm-4">#i18n{identitystore.view_identity.label.last.modification.date}</dt>
-                    <dd class="col-sm-8">${identity.lastUpdateDate?string["dd/MM/yyyy HH:mm"]!}</dd>
+                    <dd class="col-sm-8">${identity.lastUpdateDate?string["dd/MM/yyyy HH:mm:ss.SSS"]!}</dd>
                 </dl>
             </div>
             <div class="col-md-6">
                 <dl class="row mb-0">
                     <dt class="col-sm-4">#i18n{identitystore.view_identity.label.expiration.date}</dt>
-                    <dd class="col-sm-8">${identity.expirationDate?string["dd/MM/yyyy"]!}</dd>
+                    <dd class="col-sm-8">${identity.expirationDate?string["dd/MM/yyyy HH:mm:ss.SSS"]!}</dd>
 
                     <dt class="col-sm-4">#i18n{identitystore.view_identity.label.deletion.date}</dt>
                     <dd class="col-sm-8">
-                        <#if identity.deleteDate??>${identity.deleteDate?string["dd/MM/yyyy HH:mm"]!}<#else>&mdash;</#if>
+                        <#if identity.deleteDate??>${identity.deleteDate?string["dd/MM/yyyy HH:mm:ss.SSS"]!}<#else>&mdash;</#if>
                     </dd>
 
                     <dt class="col-sm-4">#i18n{identitystore.view_identity.label.consolidated}</dt>
@@ -108,7 +108,7 @@
                 <#else>
                     <td><strong> ${attribute.value!''} </strong></td>
                 </#if>
-                <td><strong> ${attribute.lastUpdateDate!} </strong></td>
+                <td><strong> ${attribute.lastUpdateDate?string["dd/MM/yyyy HH:mm:ss.SSS"]!} </strong></td>
                 <td>
                     <#if attribute.certificate ??>
                         <span class="badge bg-primary">${attribute.certificate.certifierCode}</span>
@@ -116,7 +116,7 @@
                 </td>
                 <td>
                     <#if attribute.certificate ??>
-                        ${attribute.certificate.certificateDate}
+                        ${attribute.certificate.certificateDate?string["dd/MM/yyyy HH:mm:ss.SSS"]!}
                     </#if>
                 </td>
                 <td> ${attribute.lastUpdateClientCode!''} </td>
@@ -142,7 +142,7 @@
                         ${master_cuid!''}
                     </a>
                 </td>
-                <td><span>${master_cuid_consolidation_date?string["dd/MM/yyyy HH:mm"]!}</span></td>
+                <td><span>${master_cuid_consolidation_date?string["dd/MM/yyyy HH:mm:ss.SSS"]!}</span></td>
             </tr>
             </tbody>
         </table>
@@ -165,7 +165,7 @@
                                 ${identity.customerId!''}
                             </a>
                         </td>
-                        <td><span>${identity.mergeDate?string["dd/MM/yyyy HH:mm"]!}</span></td>
+                        <td><span>${identity.mergeDate?string["dd/MM/yyyy HH:mm:ss.SSS"]!}</span></td>
                     </tr>
                 </#list>
             </tbody>
