@@ -1,6 +1,9 @@
 ALTER TABLE identitystore_ref_attribute
     ADD COLUMN alternative_pivot SMALLINT DEFAULT 0;
 
+-- init script
+update  identitystore_ref_attribute set alternative_pivot=1 where key_name in ( 'birthcountry_code', 'gender', 'family_name', 'birthdate', 'first_name', 'birthplace' );
+
 -- ALTER TABLE identitystore_identity  ADD COLUMN unicity_hash_code VARCHAR(36) NOT NULL UNIQUE DEFAULT gen_random_uuid();
 
 -- version gros volumes, pour mises à jour sans interruption : 
