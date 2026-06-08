@@ -343,6 +343,19 @@ public class IdentityQualityService
                 .filter( e -> e.getValue( ) != null && pivotKeys.contains( e.getKey( ) ) )
                 .collect( Collectors.toMap( Map.Entry::getKey, Map.Entry::getValue ) );
 
+        // TODO: Patch temporaire - traiter les tickets globaux sur la philosophie des attributs pivots
+        // On ajoute localement le libellé de commune aux attributs pivots dans le cas d'une identité née hors France
+        if( !pivotKeys.isEmpty( ) && !isCountryWithBirthPlaceCode )
+        {
+            pivotKeys.add( Constants.PARAM_BIRTH_PLACE ); // ajout de la clef dans les attributs pivots
+            final String birthPlace = attributes.get( Constants.PARAM_BIRTH_PLACE );
+            if(  birthPlace != null )
+            {
+                // ajout de la valeur uniquement si non-nulle (si nulle un UUID sera généré au lieu d'un hash)
+                pivotValues.put( Constants.PARAM_BIRTH_PLACE, birthPlace );
+            }
+        }
+
         if( pivotValues.size( ) != pivotKeys.size( ) || pivotKeys.isEmpty( ) )
         {
             // the identity does not have all pivot attributes,
