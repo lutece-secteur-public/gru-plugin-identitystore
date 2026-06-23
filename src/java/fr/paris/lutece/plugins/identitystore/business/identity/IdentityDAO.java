@@ -299,6 +299,7 @@ public final class IdentityDAO implements IIdentityDAO
         }
         try ( final DAOUtil daoUtil = new DAOUtil( SQL_QUERY_REFRESH_LAST_UPDATE_DATE, plugin ) )
         {
+            // update master identity last update date
             daoUtil.setInt( 1, identity.getMasterIdentityId( ) );
             daoUtil.executeUpdate( );
         }
