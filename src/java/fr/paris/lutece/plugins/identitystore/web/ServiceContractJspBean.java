@@ -576,6 +576,7 @@ public class ServiceContractJspBean extends ManageServiceContractJspBean<Integer
                 headers.add( I18nService.getLocalizedString( "identitystore.modify_servicecontract.labelName", getLocale( ) ) );
                 headers.add( I18nService.getLocalizedString( "identitystore.manage_servicecontracts.columnClientCode", getLocale( ) ) );
                 headers.add( I18nService.getLocalizedString( "identitystore.modify_servicecontract.labelMoaEntityName", getLocale( ) ) );
+                headers.add( I18nService.getLocalizedString( "identitystore.modify_servicecontract.labelMoaContactName", getLocale( ) ) );
                 headers.add( I18nService.getLocalizedString( "identitystore.modify_servicecontract.labelMoeEntityName", getLocale( ) ) );
                 headers.add( I18nService.getLocalizedString( "identitystore.modify_servicecontract.labelMoeResponsibleName", getLocale( ) ) );
                 headers.add( I18nService.getLocalizedString( "identitystore.modify_servicecontract.labelStartingDate", getLocale( ) ) );
