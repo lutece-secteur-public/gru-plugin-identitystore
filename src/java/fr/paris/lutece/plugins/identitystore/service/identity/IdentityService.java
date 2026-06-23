@@ -92,6 +92,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -344,6 +345,10 @@ public class IdentityService
                 identityUpdateRequested = true;
             }
             
+            // merge (merge first to reset unicity-hash-code and avoid unicity constraint violation) 
+            IdentityHome.merge( secondaryIdentity );
+            
+            // update attributes
             if ( identityForConsolidate != null && CollectionUtils.isNotEmpty( identityForConsolidate.getAttributes( ) ) )
             {
         	// search and keep the original certifier client (and certification date) in merge request
@@ -366,9 +371,6 @@ public class IdentityService
             {
             	secondaryIdentity.setMonParisActive( false ); 
             }
-            
-            // merge
-            IdentityHome.merge( secondaryIdentity );
             
             // ré-affecter les notifications sur l'identité consolidée
             _notificationStoreService.reassignNotifications( secondaryIdentity.getCustomerId(), primaryIdentity.getCustomerId() );
