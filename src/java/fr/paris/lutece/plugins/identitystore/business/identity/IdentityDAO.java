@@ -108,6 +108,7 @@ public final class IdentityDAO implements IIdentityDAO
     
     private static final String SQL_QUERY_SOFT_DELETE = "UPDATE identitystore_identity SET  date_delete = now( ), is_mon_paris_active = 0, expiration_date=now( ), last_update_date=now( )  WHERE customer_id = ?";
     private static final String SQL_QUERY_MERGE = "UPDATE identitystore_identity SET is_merged = 1, date_merge = now(), last_update_date = now(), id_master_identity = ?, is_mon_paris_active = ?, unicity_hash_code = gen_random_uuid() WHERE id_identity = ?";
+    private static final String SQL_QUERY_RESET_UNICITY_HASH_CODE = "UPDATE identitystore_identity SET unicity_hash_code = gen_random_uuid() WHERE customer_id = ?"; 
     private static final String SQL_QUERY_CANCEL_MERGE = "UPDATE identitystore_identity SET is_merged = 0, date_merge = null, last_update_date = now(), id_master_identity = null WHERE id_identity = ?";
     private static final String SQL_QUERY_SELECT_BY_ATTRIBUTE_EXISTING = "SELECT a.customer_id FROM identitystore_identity a"
             + " JOIN identitystore_identity_attribute b ON a.id_identity = b.id_identity"
@@ -336,6 +337,20 @@ public final class IdentityDAO implements IIdentityDAO
             daoUtil.setString( nIndex++, identity.getUnicityHashCode( ) );
 
             daoUtil.setInt( nIndex, identity.getId( ) );
+
+            daoUtil.executeUpdate( );
+        }
+    }
+    
+    /**
+     * {@inheritDoc }
+     */
+    @Override
+    public void resetUnicityHashCode( Identity identity, Plugin plugin )
+    {
+        try ( final DAOUtil daoUtil = new DAOUtil( SQL_QUERY_RESET_UNICITY_HASH_CODE, plugin ) )
+        {
+            daoUtil.setString( 1, identity.getCustomerId( ) );
 
             daoUtil.executeUpdate( );
         }

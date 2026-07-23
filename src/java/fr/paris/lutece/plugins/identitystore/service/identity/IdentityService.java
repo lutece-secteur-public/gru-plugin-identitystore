@@ -324,7 +324,22 @@ public class IdentityService
     		final String clientCode, boolean isResetFlagMonParisActive, 
             final List<AttributeStatus> formatStatuses ) throws IdentityStoreException
     {
-        TransactionManager.beginTransaction( null );
+	TransactionManager.beginTransaction( null );
+        try
+        {
+            // reset first the unicityHashCode to avoid constaints conflicts  in next transaction
+            IdentityHome.resetUnicityHashCode( secondaryIdentity );
+            
+            // commit
+            TransactionManager.commitTransaction( null );
+        }
+        catch( Exception e )
+        { 
+            TransactionManager.rollBack( null );
+            throw new IdentityStoreException( e.getMessage( ), e, Constants.PROPERTY_REST_ERROR_DURING_TREATMENT );
+        }
+	
+	TransactionManager.beginTransaction( null );
         try
         {
             final List<AttributeStatus> attrStatusList = new ArrayList<>( );

@@ -46,7 +46,6 @@ import fr.paris.lutece.portal.service.spring.SpringContextService;
 import fr.paris.lutece.portal.service.util.AppPropertiesService;
 import org.apache.commons.lang3.tuple.Pair;
 
-import java.sql.Timestamp;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -94,6 +93,20 @@ public final class IdentityHome
     public static Identity update( Identity identity )
     {
         _dao.store( identity, _plugin );
+
+        return identity;
+    }
+    
+    /**
+     * Reset unicityHashCode to random value
+     *
+     * @param identity
+     *            The instance of the Identity which contains the data to store
+     * @return The instance of the identity which has been updated
+     */
+    public static Identity resetUnicityHashCode( Identity identity )
+    {
+        _dao.resetUnicityHashCode( identity, _plugin );
 
         return identity;
     }

@@ -382,4 +382,9 @@ public interface IIdentityDAO
     List<IndicatorsActionsType> getActionsTypesDuringInterval(int interval, final Plugin plugin );
 
     List<String> getHistoryStatusList( final Plugin plugin );
+
+    /**
+     * reset UnicityHashCode when necessary
+     */
+    void resetUnicityHashCode( Identity identity, Plugin plugin );
 }
