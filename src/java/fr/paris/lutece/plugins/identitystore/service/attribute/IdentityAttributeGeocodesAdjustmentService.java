@@ -157,6 +157,9 @@ public class IdentityAttributeGeocodesAdjustmentService
             {
                 // Country doesn't exist in Geocodes for provided code : discard attribute and notify with an AttributeStatus
                 request.getIdentity( ).getAttributes( ).remove( sentCountryCode );
+                if ( sentCountryLabel != null ) {
+                    request.getIdentity( ).getAttributes( ).remove( sentCountryLabel );
+                }
 
                 final AttributeStatus attributeStatus = new AttributeStatus( );
                 attributeStatus.setKey( sentCountryCode.getKey( ) );
@@ -340,6 +343,9 @@ public class IdentityAttributeGeocodesAdjustmentService
             {
                 // city doesn't exist in Geocodes for provided code
                 request.getIdentity().getAttributes().remove(sentCityCode);
+                if ( sentCityLabel != null ) {
+                    request.getIdentity( ).getAttributes( ).remove( sentCityLabel );
+                }
 
                 final AttributeStatus attributeStatus = new AttributeStatus();
                 attributeStatus.setKey(sentCityCode.getKey());

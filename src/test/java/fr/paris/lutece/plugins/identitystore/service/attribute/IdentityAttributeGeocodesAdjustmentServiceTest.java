@@ -12,10 +12,11 @@ import java.util.List;
 
 public class IdentityAttributeGeocodesAdjustmentServiceTest extends LuteceTestCase
 {
-    protected static final String BIRTHPLACE_CODE_MULTIPLE = "01053";
-    protected static final String BIRTHPLACE_CODE_UNIQUE = "75201";
-    protected static final String BIRTHPLACE_NAME_UNIQUE = "PARIS 1ER ARROND";
+    protected static final String BIRTHPLACE_CODE_MULTIPLE = "1004";
+    protected static final String BIRTHPLACE_CODE_UNIQUE = "34172";
+    protected static final String BIRTHPLACE_NAME_UNIQUE = "MONTPELLIER";
     protected static final String BIRTHPLACE_NAME_GERMAN = "BERLIN";
+    protected static final String BIRTHPLACE_NAME_ERROR = "MONTPELLIERRRRR";
     protected static final String COUNTRY_CODE_FRANCE = "99100";
     protected static final String COUNTRY_CODE_GERMANY = "99109";
     protected static final String COUNTRY_NAME_FRANCE = "FRANCE";
@@ -158,20 +159,126 @@ public class IdentityAttributeGeocodesAdjustmentServiceTest extends LuteceTestCa
     }
 
     public void testCityCodeOnlyNoCountry() {
-    // Initialize objects
-    List<AttributeDto> attributeDtoList = new ArrayList<AttributeDto>( );
-    attributeDtoList.add( this.createAttribute(KEY_BIRTHPLACE_CODE, BIRTHPLACE_CODE_UNIQUE) );
+        // Initialize objects
+        List<AttributeDto> attributeDtoList = new ArrayList<AttributeDto>( );
+        attributeDtoList.add( this.createAttribute(KEY_BIRTHPLACE_CODE, BIRTHPLACE_CODE_UNIQUE) );
 
-    IdentityChangeRequest request = this.createRequest(attributeDtoList);
-    IdentityDto existingIdentity = this.createExistingIdentityBase();
+        IdentityChangeRequest request = this.createRequest(attributeDtoList);
+        IdentityDto existingIdentity = this.createExistingIdentityBase();
 
-    // Create test
-    List<AttributeStatus> attributeStatusList = IdentityAttributeGeocodesAdjustmentService.instance().adjustGeocodesAttributes(request, existingIdentity);
-    System.out.println( " -=-=-=-=-=-=-=-= retour testCityCodeOnlyNoCountry : " + attributeStatusList.toString());
+        // Create test
+        List<AttributeStatus> attributeStatusList = IdentityAttributeGeocodesAdjustmentService.instance().adjustGeocodesAttributes(request, existingIdentity);
+        System.out.println( " -=-=-=-=-=-=-=-= retour testCityCodeOnlyNoCountry : " + attributeStatusList.toString());
 
-    // Assert
-    assertTrue(attributeStatusList.isEmpty());
-}
+        // Assert
+        assertTrue(attributeStatusList.isEmpty());
+    }
+
+    public void testCityNameOnlyNoCode() {
+        // Initialize objects
+        List<AttributeDto> attributeDtoList = new ArrayList<>( );
+        attributeDtoList.add( this.createAttribute( KEY_BIRTHPLACE, BIRTHPLACE_NAME_UNIQUE ) );
+
+        IdentityChangeRequest request = this.createRequest(attributeDtoList);
+        IdentityDto existingIdentity = this.createExistingIdentityBase();
+
+        // Create test
+        List<AttributeStatus> attributeStatusList = IdentityAttributeGeocodesAdjustmentService.instance().adjustGeocodesAttributes(request, existingIdentity);
+        System.out.println( " -=-=-=-=-=-=-=-= retour testCityNameOnlyNoCode : " + attributeStatusList.toString());
+
+        // Assert
+        assertTrue(attributeStatusList.isEmpty());
+        assertEquals(2, request.getIdentity().getAttributes().size());
+        assertTrue(request.getIdentity().getAttributes().stream().anyMatch(a -> a.getKey().equals(KEY_BIRTHPLACE_CODE)));
+    }
+
+    public void testCountryNameOnlyNoCode() {
+        // Initialize objects
+        List<AttributeDto> attributeDtoList = new ArrayList<>( );
+        attributeDtoList.add( this.createAttribute( KEY_BIRTHCOUNTRY, COUNTRY_NAME_FRANCE ) );
+
+        IdentityChangeRequest request = this.createRequest(attributeDtoList);
+        IdentityDto existingIdentity = this.createExistingIdentityBase();
+
+        // Create test
+        List<AttributeStatus> attributeStatusList = IdentityAttributeGeocodesAdjustmentService.instance().adjustGeocodesAttributes(request, existingIdentity);
+        System.out.println( " -=-=-=-=-=-=-=-= retour testCountryNameOnlyNoCode : " + attributeStatusList.toString());
+
+        // Assert
+        assertTrue(attributeStatusList.isEmpty());
+        assertEquals(2, request.getIdentity().getAttributes().size());
+        assertTrue(request.getIdentity().getAttributes().stream().anyMatch(a -> a.getKey().equals(KEY_BIRTHCOUNTRY_CODE)));
+    }
+
+    public void testCountryWrongNameOnly() {
+        // Initialize objects
+        List<AttributeDto> attributeDtoList = new ArrayList<>( );
+        attributeDtoList.add( this.createAttribute( KEY_BIRTHCOUNTRY, COUNTRY_NAME_FRANCE_ERROR ) );
+
+        IdentityChangeRequest request = this.createRequest(attributeDtoList);
+        IdentityDto existingIdentity = this.createExistingIdentityBase();
+
+        // Create test
+        List<AttributeStatus> attributeStatusList = IdentityAttributeGeocodesAdjustmentService.instance().adjustGeocodesAttributes(request, existingIdentity);
+        System.out.println( " -=-=-=-=-=-=-=-= retour testCountryWrongNameOnly : " + attributeStatusList.toString());
+
+        // Assert
+        assertFalse(attributeStatusList.isEmpty());
+        assertTrue(request.getIdentity().getAttributes().isEmpty());
+    }
+
+    public void testCountryWrongCodeAndName() {
+        // Initialize objects
+        List<AttributeDto> attributeDtoList = new ArrayList<>( );
+        attributeDtoList.add( this.createAttribute( KEY_BIRTHCOUNTRY_CODE, "ERROR" ) );
+        attributeDtoList.add( this.createAttribute( KEY_BIRTHCOUNTRY, COUNTRY_NAME_FRANCE_ERROR ) );
+
+        IdentityChangeRequest request = this.createRequest(attributeDtoList);
+        IdentityDto existingIdentity = this.createExistingIdentityBase();
+
+        // Create test
+        List<AttributeStatus> attributeStatusList = IdentityAttributeGeocodesAdjustmentService.instance().adjustGeocodesAttributes(request, existingIdentity);
+        System.out.println( " -=-=-=-=-=-=-=-= retour testCountryWrongNameOnly : " + attributeStatusList.toString());
+
+        // Assert
+        assertFalse(attributeStatusList.isEmpty());
+        assertTrue(request.getIdentity().getAttributes().isEmpty());
+    }
+
+    public void testCityWrongNameOnly() {
+        // Initialize objects
+        List<AttributeDto> attributeDtoList = new ArrayList<>( );
+        attributeDtoList.add( this.createAttribute( KEY_BIRTHPLACE, BIRTHPLACE_NAME_ERROR ) );
+
+        IdentityChangeRequest request = this.createRequest(attributeDtoList);
+        IdentityDto existingIdentity = this.createExistingIdentityBase();
+
+        // Create test
+        List<AttributeStatus> attributeStatusList = IdentityAttributeGeocodesAdjustmentService.instance().adjustGeocodesAttributes(request, existingIdentity);
+        System.out.println( " -=-=-=-=-=-=-=-= retour testCityWrongNameOnly : " + attributeStatusList.toString());
+
+        // Assert
+        assertFalse(attributeStatusList.isEmpty());
+        assertTrue(request.getIdentity().getAttributes().isEmpty());
+    }
+
+    public void testCityWrongCodeAndName() {
+        // Initialize objects
+        List<AttributeDto> attributeDtoList = new ArrayList<>( );
+        attributeDtoList.add( this.createAttribute( KEY_BIRTHPLACE_CODE, "ERROR" ) );
+        attributeDtoList.add( this.createAttribute( KEY_BIRTHPLACE, BIRTHPLACE_NAME_ERROR ) );
+
+        IdentityChangeRequest request = this.createRequest(attributeDtoList);
+        IdentityDto existingIdentity = this.createExistingIdentityBase();
+
+        // Create test
+        List<AttributeStatus> attributeStatusList = IdentityAttributeGeocodesAdjustmentService.instance().adjustGeocodesAttributes(request, existingIdentity);
+        System.out.println( " -=-=-=-=-=-=-=-= retour testCityWrongNameOnly : " + attributeStatusList.toString());
+
+        // Assert
+        assertFalse(attributeStatusList.isEmpty());
+        assertTrue(request.getIdentity().getAttributes().isEmpty());
+    }
 
     public void testFranceToOtherCountry() {
         // Initialize objects
