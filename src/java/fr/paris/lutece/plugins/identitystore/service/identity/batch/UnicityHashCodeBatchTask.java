@@ -197,7 +197,7 @@ public class UnicityHashCodeBatchTask
                         continue;
                     }
 
-                    final String hash = IdentityQualityService.instance( ).computeUnicityHashCode( attributes );
+                    final String hash = IdentityQualityService.instance( ).computeUnicityHashCode( attributes, List.of( ) );
                     hashByIdentity.put( identityId, hash );
                 }
                 catch( final IdentityStoreException e )
