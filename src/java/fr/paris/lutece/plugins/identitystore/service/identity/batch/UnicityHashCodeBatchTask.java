@@ -33,6 +33,7 @@
  */
 package fr.paris.lutece.plugins.identitystore.service.identity.batch;
 
+import fr.paris.lutece.plugins.identitystore.business.duplicates.suspicions.SuspiciousIdentityHome;
 import fr.paris.lutece.plugins.identitystore.service.identity.IdentityQualityService;
 import fr.paris.lutece.plugins.identitystore.service.attribute.IdentityAttributeService;
 import fr.paris.lutece.plugins.identitystore.business.attribute.AttributeKey;
@@ -197,7 +198,8 @@ public class UnicityHashCodeBatchTask
                         continue;
                     }
 
-                    final String hash = IdentityQualityService.instance( ).computeUnicityHashCode( attributes, List.of( ) );
+                    final List<String> excludedHashCodeList = SuspiciousIdentityHome.getExcludedIdentitiesUnicityHashCodeList(customerIdMap.get(identityId));
+                    final String hash = IdentityQualityService.instance().computeUnicityHashCode(attributes, excludedHashCodeList);
                     hashByIdentity.put( identityId, hash );
                 }
                 catch( final IdentityStoreException e )

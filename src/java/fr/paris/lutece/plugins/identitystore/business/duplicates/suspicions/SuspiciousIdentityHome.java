@@ -37,7 +37,6 @@ import fr.paris.lutece.plugins.identitystore.business.identity.Identity;
 import fr.paris.lutece.plugins.identitystore.business.identity.IdentityHome;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.search.SearchAttribute;
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
-import fr.paris.lutece.plugins.identitystore.web.exception.ResourceNotFoundException;
 import fr.paris.lutece.portal.service.plugin.Plugin;
 import fr.paris.lutece.portal.service.plugin.PluginService;
 import fr.paris.lutece.portal.service.spring.SpringContextService;
@@ -47,6 +46,7 @@ import org.apache.commons.collections.CollectionUtils;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * This class provides instances management methods (create, find, ...) for SuspiciousIdentity objects
@@ -229,6 +229,26 @@ public final class SuspiciousIdentityHome
     public static List<ExcludedIdentities> getExcludedIdentitiesList( final String customerId )
     {
         return _dao.selectExcludedIdentitiesList( customerId, _plugin );
+    }
+
+    /**
+     * Load the unicity hashcodes of all the identities that are excluded with the provided CUID, and returns them as a list
+     */
+    public static List<String> getExcludedIdentitiesUnicityHashCodeList( final String customerId )
+    {
+        if ( customerId == null || customerId.isBlank( ) )
+        {
+            return List.of();
+        }
+        return getExcludedIdentitiesList( customerId )
+                .stream( )
+                .map( e -> customerId.equals( e.getFirstCustomerId( ) ) ? e.getSecondCustomerId( ) : e.getFirstCustomerId( ) )
+                .distinct( )
+                .map( IdentityHome::findByCustomerId )
+                .filter( Objects::nonNull )
+                .map( Identity::getUnicityHashCode )
+                .filter( Objects::nonNull )
+                .collect(Collectors.toList());
     }
 
     public static void removeExcludedIdentities( final String firstCuid, final String secondCuid )

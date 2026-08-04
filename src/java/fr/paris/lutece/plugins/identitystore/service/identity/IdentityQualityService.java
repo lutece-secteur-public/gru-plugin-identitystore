@@ -306,7 +306,9 @@ public class IdentityQualityService
         final Map<String, String> attributes = request.getIdentity( )
                 .getAttributes( ).stream( )
                 .collect( Collectors.toMap( AttributeDto::getKey, AttributeDto::getValue ) );
-        return this.computeUnicityHashCode( attributes, List.of( ) );
+
+        return this.computeUnicityHashCode( attributes,
+                                            SuspiciousIdentityHome.getExcludedIdentitiesUnicityHashCodeList( request.getIdentity( ).getCustomerId( ) ) );
     }
 
     public String computeUnicityHashCode( final Identity identity ) throws IdentityStoreException {
@@ -314,19 +316,8 @@ public class IdentityQualityService
                 .getAttributes( ).entrySet().stream( )
                 .collect( Collectors.toMap( Map.Entry::getKey, e -> e.getValue( ).getValue( ) ) );
 
-        // Collect unicity hashcodes of excluded identities
-        final List<String> excludedUnicityHashCodeList =
-            SuspiciousIdentityHome.getExcludedIdentitiesList( identity.getCustomerId( ) )
-                .stream( )
-                .map( e -> identity.getCustomerId( ).equals( e.getFirstCustomerId( ) ) ? e.getSecondCustomerId( ) : e.getFirstCustomerId( ) )
-                .distinct( )
-                .map( IdentityHome::findByCustomerId )
-                .filter( Objects::nonNull )
-                .map( Identity::getUnicityHashCode )
-                .filter( Objects::nonNull )
-                .collect( Collectors.toList( ) );
-
-        return this.computeUnicityHashCode( attributes, excludedUnicityHashCodeList );
+        return this.computeUnicityHashCode( attributes,
+                                            SuspiciousIdentityHome.getExcludedIdentitiesUnicityHashCodeList( identity.getCustomerId( ) ) );
     }
 
     /**
