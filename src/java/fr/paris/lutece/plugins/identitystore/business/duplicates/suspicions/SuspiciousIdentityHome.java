@@ -244,7 +244,7 @@ public final class SuspiciousIdentityHome
                 .stream( )
                 .map( e -> customerId.equals( e.getFirstCustomerId( ) ) ? e.getSecondCustomerId( ) : e.getFirstCustomerId( ) )
                 .distinct( )
-                .map( IdentityHome::findByCustomerId )
+                .map( cuid -> IdentityHome.findByCustomerId( cuid, false ) )
                 .filter( Objects::nonNull )
                 .map( Identity::getUnicityHashCode )
                 .filter( Objects::nonNull )
