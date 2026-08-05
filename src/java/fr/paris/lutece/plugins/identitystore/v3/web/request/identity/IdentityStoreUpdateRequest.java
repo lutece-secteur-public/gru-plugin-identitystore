@@ -44,7 +44,6 @@ import fr.paris.lutece.plugins.identitystore.v3.web.request.AbstractIdentityStor
 import fr.paris.lutece.plugins.identitystore.v3.web.request.validator.IdentityAttributeValidator;
 import fr.paris.lutece.plugins.identitystore.v3.web.request.validator.IdentityDuplicateValidator;
 import fr.paris.lutece.plugins.identitystore.v3.web.request.validator.IdentityValidator;
-import fr.paris.lutece.plugins.identitystore.v3.web.rs.DtoConverter;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.IdentityRequestValidator;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.AttributeChangeStatus;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.AttributeChangeStatusType;
@@ -187,34 +186,17 @@ public class IdentityStoreUpdateRequest extends AbstractIdentityStoreAppCodeRequ
             return response;
         }
 
-        final Pair<Identity, List<AttributeStatus>> result;
-        ResponseStatus responseStatus = null;
-        if ( _identityChangeRequest.getIdentity( ).getAttributes( ).isEmpty( ) &&
-             ( _identityChangeRequest.getIdentity( ).getConnectionId( ) == null ||
-               _identityChangeRequest.getIdentity( ).getConnectionId( ).equals( existingIdentityToUpdate.getConnectionId( ) ) ) &&
-             ( _identityChangeRequest.getIdentity( ).getMonParisActive( ) == null ||
-               _identityChangeRequest.getIdentity().getMonParisActive().equals( existingIdentityToUpdate.getMonParisActive( ) ) ) )
-        {
-            // if there is no changes to perform after the request validations, skip the update and send back a 400 BAD REQUEST
-            result = Pair.of( DtoConverter.convertDtoToIdentity( existingIdentityToUpdate ), List.of( ) );
-            responseStatus = ResponseStatusFactory.badRequest( );
-        }
-        else
-        {
-            // perform update
-            result = IdentityService.instance( ).update( _strCustomerId, _identityChangeRequest, _author, serviceContract, formatStatuses );
-        }
+        // perform update
+        final Pair<Identity, List<AttributeStatus>> result = IdentityService.instance( ).update( _strCustomerId, _identityChangeRequest, _author,
+                serviceContract, formatStatuses );
 
         final Identity updatedIdentity = result.getKey( );
-        final List<AttributeStatus> attrStatusList = new ArrayList<>( result.getValue( ) );
+        final List<AttributeStatus> attrStatusList = result.getValue( );
         attrStatusList.addAll( formatStatuses );
 
         final boolean allAttributesCreatedOrUpdated = attrStatusList.stream( ).map( AttributeStatus::getStatus )
                 .allMatch( status -> status.getType( ) == AttributeChangeStatusType.SUCCESS );
-
-        if ( responseStatus == null ) {
-            responseStatus = allAttributesCreatedOrUpdated ? ResponseStatusFactory.success( ) : ResponseStatusFactory.incompleteSuccess( );
-        }
+        final ResponseStatus status = allAttributesCreatedOrUpdated ? ResponseStatusFactory.success( ) : ResponseStatusFactory.incompleteSuccess( );
 
         final String msgKey;
         if ( Collections.disjoint( AttributeChangeStatus.getSuccessStatuses( ),
@@ -228,7 +210,7 @@ public class IdentityStoreUpdateRequest extends AbstractIdentityStoreAppCodeRequ
             msgKey = Constants.PROPERTY_REST_INFO_SUCCESSFUL_OPERATION;
         }
 
-        response.setStatus( responseStatus.setAttributeStatuses( attrStatusList ).setMessageKey( msgKey ) );
+        response.setStatus( status.setAttributeStatuses( attrStatusList ).setMessageKey( msgKey ) );
         response.setCustomerId( updatedIdentity.getCustomerId( ) );
         response.setConnectionId( updatedIdentity.getConnectionId( ) );
         response.setCreationDate( updatedIdentity.getCreationDate( ) );

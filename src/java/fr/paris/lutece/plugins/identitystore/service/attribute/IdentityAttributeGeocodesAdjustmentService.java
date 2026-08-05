@@ -158,6 +158,7 @@ public class IdentityAttributeGeocodesAdjustmentService
                 // Country doesn't exist in Geocodes for provided code : discard attribute and notify with an AttributeStatus
                 request.getIdentity( ).getAttributes( ).remove( sentCountryCode );
                 if ( sentCountryLabel != null ) {
+                    // When the code is incorrect, we discard the label as well
                     request.getIdentity( ).getAttributes( ).remove( sentCountryLabel );
                 }
 
@@ -297,6 +298,10 @@ public class IdentityAttributeGeocodesAdjustmentService
                     {
                         // city doesn't exist in Geocodes for provided code, and code is not FC certified : discard attribute and notify with an AttributeStatus
                         request.getIdentity().getAttributes().remove(sentCityCode);
+                        if ( sentCityLabel != null ) {
+                            // When the code is incorrect, we discard the label as well
+                            request.getIdentity( ).getAttributes( ).remove( sentCityLabel );
+                        }
 
                         final AttributeStatus attributeStatus = new AttributeStatus();
                         attributeStatus.setKey(sentCityCode.getKey());
@@ -330,6 +335,10 @@ public class IdentityAttributeGeocodesAdjustmentService
                 {
                     // The provided city code is linked to multiples cities
                     request.getIdentity().getAttributes().remove(sentCityCode);
+                    if ( sentCityLabel != null ) {
+                        // When the code is incorrect, we discard the label as well
+                        request.getIdentity( ).getAttributes( ).remove( sentCityLabel );
+                    }
 
                     final AttributeStatus attributeStatus = new AttributeStatus();
                     attributeStatus.setKey(sentCityCode.getKey());
@@ -344,6 +353,7 @@ public class IdentityAttributeGeocodesAdjustmentService
                 // city doesn't exist in Geocodes for provided code
                 request.getIdentity().getAttributes().remove(sentCityCode);
                 if ( sentCityLabel != null ) {
+                    // When the code is incorrect, we discard the label as well
                     request.getIdentity( ).getAttributes( ).remove( sentCityLabel );
                 }
 
