@@ -306,14 +306,18 @@ public class IdentityQualityService
         final Map<String, String> attributes = request.getIdentity( )
                 .getAttributes( ).stream( )
                 .collect( Collectors.toMap( AttributeDto::getKey, AttributeDto::getValue ) );
-        return this.computeUnicityHashCode( attributes );
+
+        return this.computeUnicityHashCode( attributes,
+                                            SuspiciousIdentityHome.getExcludedIdentitiesUnicityHashCodeList( request.getIdentity( ).getCustomerId( ) ) );
     }
 
     public String computeUnicityHashCode( final Identity identity ) throws IdentityStoreException {
         final Map<String, String> attributes = identity
                 .getAttributes( ).entrySet().stream( )
                 .collect( Collectors.toMap( Map.Entry::getKey, e -> e.getValue( ).getValue( ) ) );
-        return this.computeUnicityHashCode( attributes );
+
+        return this.computeUnicityHashCode( attributes,
+                                            SuspiciousIdentityHome.getExcludedIdentitiesUnicityHashCodeList( identity.getCustomerId( ) ) );
     }
 
     /**
@@ -325,9 +329,10 @@ public class IdentityQualityService
      *     <li>If all pivot attributes are filled, generated a hash with {@link UnicityHasher}</li>
      * </ul>
      * @param attributes the attribute values
+     * @param excludedUnicityHashCodeList list of unicity hashcodes to avoid (if computed hash matches one, returns a random UUID)
      * @return a hash code
      */
-    public String computeUnicityHashCode( final Map<String, String> attributes ) throws IdentityStoreException {
+    public String computeUnicityHashCode( final Map<String, String> attributes, final List<String> excludedUnicityHashCodeList ) throws IdentityStoreException {
         final String birthplaceCode = attributes.get( Constants.PARAM_BIRTH_PLACE_CODE );
         final String birthCountryCode = attributes.get( Constants.PARAM_BIRTH_COUNTRY_CODE );
 
@@ -363,6 +368,14 @@ public class IdentityQualityService
             return UUID.randomUUID( ).toString( );
         }
 
-        return UnicityHasher.computeHash( pivotValues );
+        final String hash = UnicityHasher.computeHash( pivotValues );
+
+        // If the computed hashcode matches an excluded identity's hashcode, return a random UUID instead
+        if ( excludedUnicityHashCodeList.contains( hash ) )
+        {
+            return UUID.randomUUID( ).toString( );
+        }
+
+        return hash;
     }
 }
