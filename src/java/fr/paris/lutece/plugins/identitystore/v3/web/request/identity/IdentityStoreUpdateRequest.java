@@ -33,11 +33,13 @@
  */
 package fr.paris.lutece.plugins.identitystore.v3.web.request.identity;
 
+import fr.paris.lutece.plugins.identitystore.business.contract.AttributeRight;
 import fr.paris.lutece.plugins.identitystore.business.contract.ServiceContract;
 import fr.paris.lutece.plugins.identitystore.business.identity.Identity;
 import fr.paris.lutece.plugins.identitystore.cache.IdentityDtoCache;
 import fr.paris.lutece.plugins.identitystore.service.attribute.IdentityAttributeFormatterService;
 import fr.paris.lutece.plugins.identitystore.service.attribute.IdentityAttributeGeocodesAdjustmentService;
+import fr.paris.lutece.plugins.identitystore.service.contract.AttributeCertificationDefinitionService;
 import fr.paris.lutece.plugins.identitystore.service.contract.ServiceContractService;
 import fr.paris.lutece.plugins.identitystore.service.identity.IdentityService;
 import fr.paris.lutece.plugins.identitystore.v3.web.request.AbstractIdentityStoreAppCodeRequest;
@@ -47,6 +49,7 @@ import fr.paris.lutece.plugins.identitystore.v3.web.request.validator.IdentityVa
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.IdentityRequestValidator;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.AttributeChangeStatus;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.AttributeChangeStatusType;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.AttributeDto;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.AttributeStatus;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.IdentityDto;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.ResponseStatus;
@@ -63,12 +66,19 @@ import fr.paris.lutece.plugins.identitystore.web.exception.ResourceConsistencyEx
 import fr.paris.lutece.plugins.identitystore.web.exception.ResourceNotFoundException;
 import fr.paris.lutece.portal.service.spring.SpringContextService;
 import fr.paris.lutece.portal.service.util.AppPropertiesService;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * This class represents an update request for IdentityStoreRestServive
@@ -76,13 +86,16 @@ import java.util.stream.Collectors;
 public class IdentityStoreUpdateRequest extends AbstractIdentityStoreAppCodeRequest
 {
     private static final String PROPERTY_CHECK_LOGIN_UNIQUENESS = "identitystore.identity.check_login_uniqueness";
+    private static final String KEEP_CERTIFICATION_DATE_WHEN_NO_CHANGE = "identitystore.identity.update.keep.certification.date.when.no.changes";
 
     private final IdentityDtoCache _identityDtoCache = SpringContextService.getBean( "identitystore.identityDtoCache" );
+    private final AttributeCertificationDefinitionService _attributeCertificationDefinitionService = AttributeCertificationDefinitionService.instance();
 
     private final boolean controlsOnly;
     private final IdentityChangeRequest _identityChangeRequest;
     private final String _strCustomerId;
     private final List<AttributeStatus> formatStatuses;
+    private final List<AttributeStatus> noUpdateStatuses;
 
     private ServiceContract serviceContract;
     private IdentityDto existingIdentityToUpdate;
@@ -107,6 +120,7 @@ public class IdentityStoreUpdateRequest extends AbstractIdentityStoreAppCodeRequ
         this._strCustomerId = _strCustomerId;
         this.controlsOnly = controlsOnly;
         this.formatStatuses = new ArrayList<>( );
+        this.noUpdateStatuses = new ArrayList<>( );
     }
 
     @Override
@@ -171,6 +185,138 @@ public class IdentityStoreUpdateRequest extends AbstractIdentityStoreAppCodeRequ
     }
 
     /**
+     * Method that compares the request identity and the existing identity to update, to see if there are any changes to apply.
+     * If there is nothing to update, this method will also compute the AttributeStatus for the attributes that won't be created/updated.
+     * This should only be called in the <code>doSpecificRequest</code> method.
+     * @return <code>true</code> if there is no changes to apply, <code>false</code> otherwise.
+     */
+    private boolean nothingToUpdate( )
+    {
+        final IdentityDto requestIdentity = _identityChangeRequest.getIdentity( );
+
+        // Connection ID is different, and the request one is not empty : update
+        if ( !Strings.CI.equals( existingIdentityToUpdate.getConnectionId( ), requestIdentity.getConnectionId( ) )
+             && StringUtils.isNotEmpty( requestIdentity.getConnectionId( ) ) )
+        {
+            return false;
+        }
+
+        // MonParis flag is different, and the request one is not empty : update
+        if ( requestIdentity.getMonParisActive( ) != null && requestIdentity.getMonParisActive( ) != existingIdentityToUpdate.isMonParisActive( ) )
+        {
+            return false;
+        }
+
+        // Attributes
+        /* Separate attributes to create and to update */
+        final Map<Boolean, List<AttributeDto>> sortedAttributes = requestIdentity.getAttributes().stream().collect(Collectors.partitioningBy(
+                attr -> existingIdentityToUpdate.getAttributes().stream().anyMatch(existingAttr -> existingAttr.getKey().equals(attr.getKey()))));
+        final List<AttributeDto> existingWritableAttributes = CollectionUtils.isNotEmpty( sortedAttributes.get( true ) ) ? sortedAttributes.get( true ) : List.of( );
+        final List<AttributeDto> newWritableAttributes = CollectionUtils.isNotEmpty( sortedAttributes.get( false ) ) ? sortedAttributes.get( false ) : List.of( );
+
+        // Attributes to CREATE
+        for ( final AttributeDto attributeToCreate : newWritableAttributes )
+        {
+            // If there is at least one attribute to create with non-empty value -> update
+            if ( StringUtils.isNotBlank( attributeToCreate.getValue( ) ) )
+            {
+                return false;
+            }
+            else
+            {
+                noUpdateStatuses.add( buildAttributeStatus( attributeToCreate.getKey( ), AttributeChangeStatus.NOT_CREATED,
+                                                            Constants.PROPERTY_ATTRIBUTE_STATUS_NOT_CREATED ) );
+            }
+        }
+
+        // Attributes to UPDATE
+        for ( final AttributeDto attributeToUpdate : existingWritableAttributes )
+        {
+            final AttributeDto existingAttribute =
+                    existingIdentityToUpdate.getAttributes( ).stream( ).filter( a -> a.getKey( ).equals( attributeToUpdate.getKey( ) ) ).findFirst( ).orElse( null );
+            // Existing attribute shouldn't be null, but we check it anyway
+            if ( existingAttribute != null )
+            {
+                int attributeToUpdateLevelInt =
+                        _attributeCertificationDefinitionService.getLevelAsInteger( attributeToUpdate.getCertifier( ), attributeToUpdate.getKey( ) );
+                int existingAttributeLevelInt =
+                        _attributeCertificationDefinitionService.getLevelAsInteger( existingAttribute.getCertifier( ), existingAttribute.getKey( ) );
+
+                // if the attribute already exists with the same value and the same certification level
+                if ( attributeToUpdateLevelInt == existingAttributeLevelInt && Objects.equals( attributeToUpdate.getValue( ), existingAttribute.getValue( ) ) )
+                {
+                    final boolean keepCertificationDateWhenNoChange = AppPropertiesService.getPropertyBoolean( KEEP_CERTIFICATION_DATE_WHEN_NO_CHANGE, true );
+                    // If the property to keep the certification date when no change is set to true, or if the new certification date is equal or before the
+                    // existing one : no update
+                    if ( keepCertificationDateWhenNoChange ||
+                         attributeToUpdate.getCertificationDate( ).equals( existingAttribute.getCertificationDate( ) ) ||
+                         attributeToUpdate.getCertificationDate( ).before( existingAttribute.getCertificationDate( ) ) )
+                    {
+                        noUpdateStatuses.add( buildAttributeStatus( attributeToUpdate.getKey( ), AttributeChangeStatus.NOT_UPDATED,
+                                                                    Constants.PROPERTY_ATTRIBUTE_STATUS_NOT_UPDATED ) );
+                    }
+                    // Otherwise : update
+                    else
+                    {
+                        return false;
+                    }
+                }
+                // request certification level is greater or equal to the existing one
+                else if ( attributeToUpdateLevelInt >= existingAttributeLevelInt )
+                {
+                    // request value is empty = attribute delete requested
+                    if ( StringUtils.isBlank( attributeToUpdate.getValue( ) ) )
+                    {
+                        final Optional<AttributeRight> right = serviceContract.getAttributeRights().stream()
+                                .filter( ar -> ar.getAttributeKey( ).getKeyName( ).equals( attributeToUpdate.getKey( ) ) ).findAny( );
+                        // attribute is not mandatory : deletion
+                        if ( right.isEmpty( ) || !right.get( ).isMandatory( ) )
+                        {
+                            return false;
+                        }
+                        // attribute is mandatory : no deletion
+                        else
+                        {
+                            noUpdateStatuses.add( buildAttributeStatus( attributeToUpdate.getKey( ), AttributeChangeStatus.NOT_REMOVED,
+                                                                        Constants.PROPERTY_ATTRIBUTE_STATUS_NOT_REMOVED ) );
+                        }
+                    }
+                    // request value not empty : update
+                    else
+                    {
+                        return false;
+                    }
+                }
+                // request certification level is lesser than the existing one : no update
+                else
+                {
+                    noUpdateStatuses.add( buildAttributeStatus( attributeToUpdate.getKey( ), AttributeChangeStatus.INSUFFICIENT_CERTIFICATION_LEVEL,
+                                                                Constants.PROPERTY_ATTRIBUTE_STATUS_INSUFFICIENT_CERTIFICATION_LEVEL ) );
+                }
+            }
+        }
+
+        // If this is reached, it means there is nothing to update
+        return true;
+    }
+
+    /**
+     * Create a returns a new instance of {@link AttributeStatus}.
+     * @param attrKey - the attribute key
+     * @param status - the status
+     * @param messageKey - the message key
+     * @return {@link AttributeStatus}
+     */
+    private AttributeStatus buildAttributeStatus( final String attrKey, final AttributeChangeStatus status, final String messageKey )
+    {
+        final AttributeStatus attributeStatus = new AttributeStatus( );
+        attributeStatus.setKey( attrKey );
+        attributeStatus.setStatus( status );
+        attributeStatus.setMessageKey( messageKey );
+        return attributeStatus;
+    }
+
+    /**
      * update the identity
      *
      * @throws IdentityStoreException
@@ -183,6 +329,13 @@ public class IdentityStoreUpdateRequest extends AbstractIdentityStoreAppCodeRequ
         if (controlsOnly) {
             // if we are here, it means that all the controls were successful.
             response.setStatus( ResponseStatusFactory.success( ).setAttributeStatuses( formatStatuses ).setMessageKey( Constants.PROPERTY_REST_INFO_SUCCESSFUL_OPERATION ) );
+            return response;
+        }
+        if ( nothingToUpdate( ) )
+        {
+            // If the request doesn't contain any changes to apply to the existing identity, return a specific success response
+            final List<AttributeStatus> attrStatuses = Stream.concat( formatStatuses.stream( ), noUpdateStatuses.stream( ) ).collect( Collectors.toList( ) );
+            response.setStatus( ResponseStatusFactory.incompleteSuccess().setAttributeStatuses( attrStatuses ).setMessageKey( Constants.PROPERTY_REST_INFO_NOTHING_TO_UPDATE ) );
             return response;
         }
 
