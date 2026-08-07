@@ -129,8 +129,8 @@
                 </td>
                 <td>
                     <#list identity.attributes?filter(a -> a.key == "birthdate") as attr>${attr.value!''} </#list>
-                    <br><#list identity.attributes?filter(a -> a.key == "birthplace") as attr>${attr.value!''} </#list>
-                    <strong><#list identity.attributes?filter(a -> a.key == "birthcountry") as attr>${attr.value!''} </#list></strong>
+                    <br><#list identity.attributes?filter(a -> a.key == "birthplace") as attr>${attr.value!''} [<#list identity.attributes?filter(a -> a.key == "birthplace_code") as attrCode>${attrCode.value!''}</#list>]</#list>
+                    <strong><#list identity.attributes?filter(a -> a.key == "birthcountry") as attr>${attr.value!''} [<#list identity.attributes?filter(a -> a.key == "birthcountry_code") as attrCode>${attrCode.value!''}</#list>]</#list></strong>
                 </td>
                 <td>
                     <#list identity.attributes?filter(a -> a.key == "email") as attr>${attr.value!''} </#list>
