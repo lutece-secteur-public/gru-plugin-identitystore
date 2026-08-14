@@ -114,6 +114,7 @@ public class IdentityJspBean extends ManageIdentitiesJspBean
     // Templates
     private static final String TEMPLATE_SEARCH_IDENTITIES = "/admin/plugins/identitystore/search_identities.html";
     private static final String TEMPLATE_VIEW_IDENTITY = "/admin/plugins/identitystore/view_identity.html";
+    private static final String TEMPLATE_VIEW_IDENTITY_DELETED = "/admin/plugins/identitystore/view_identity_deleted.html";
     private static final String TEMPLATE_VIEW_IDENTITY_HISTORY = "/admin/plugins/identitystore/view_identity_change_history.html";
     private static final String TEMPLATE_VIEW_IDENTITY_NOTIFICATIONS = "/admin/plugins/identitystore/view_identity_notifications.html";
 
@@ -148,6 +149,7 @@ public class IdentityJspBean extends ManageIdentitiesJspBean
     private static final String MARK_AT_LEAST_ONE_SC_FOUND = "at_least_one_service_contract_found";
     private static final String MARK_MASTER_CUID = "master_cuid";
     private static final String MARK_MASTER_CUID_MODIFICATION_DATE = "master_cuid_consolidation_date";
+    private static final String MARK_DELETE_HISTORY = "delete_history";
 
     // Views
     private static final String VIEW_MANAGE_IDENTITIES = "manageIdentitys";
@@ -351,9 +353,39 @@ public class IdentityJspBean extends ManageIdentitiesJspBean
      @View( VIEW_IDENTITY )
     public String getViewIdentity( HttpServletRequest request )
      {
-	 final String nId = request.getParameter( PARAMETER_ID_IDENTITY );
+	 final String cuid = request.getParameter( PARAMETER_ID_IDENTITY );
 
-	 _identity = IdentityHome.findByCustomerId( nId );
+	 _identity = IdentityHome.findByCustomerId( cuid );
+     if ( _identity == null )
+     {
+         // If the identity is not found via it's customer ID, it may be deleted
+         final IdentityChange deleteHistory;
+         try
+         {
+             deleteHistory = IdentityHome.findHistoryBySearchParameters( cuid, null, null, IdentityChangeType.DELETE, null, null, null, null, null, null, 1 )
+                                         .stream( )
+                                         .findFirst( )
+                                         .orElse( null );
+         }
+         catch ( final IdentityStoreException e )
+         {
+             addError( e.getMessage( ) );
+             return redirectView( request, VIEW_MANAGE_IDENTITIES );
+         }
+         if ( deleteHistory == null )
+         {
+             // If the identity is not deleted, error, redirect to the default view
+             addError( "No existing identity for this customer ID" );
+             return redirectView( request, VIEW_MANAGE_IDENTITIES );
+         }
+         final String filteredCustomerId = SecurityUtil.logForgingProtect( cuid );
+         AccessLogService.getInstance( ).info( AccessLoggerConstants.EVENT_TYPE_READ, DISPLAY_IDENTITY_EVENT_CODE, getUser( ), filteredCustomerId,
+                                               IdentityService.SPECIFIC_ORIGIN );
+
+         final Map<String, Object> model = getModel( );
+         model.put( MARK_DELETE_HISTORY, deleteHistory );
+         return getPage(PROPERTY_PAGE_TITLE_VIEW_IDENTITY, TEMPLATE_VIEW_IDENTITY_DELETED, model);
+     }
 
 	 final List<Identity> mergedIdentities = IdentityHome.findMergedIdentities(_identity.getId());
 
@@ -406,36 +438,35 @@ public class IdentityJspBean extends ManageIdentitiesJspBean
      @View( value = VIEW_IDENTITY_HISTORY )
      public String getIdentityHistoryView( HttpServletRequest request )
      {
-	 final String CUID = request.getParameter( PARAMETER_ID_IDENTITY );
+	 final String cuid = request.getParameter( PARAMETER_ID_IDENTITY );
 
-	 if ( CUID != null && ( _identity == null || !_identity.getCustomerId( ).equals( CUID ) ) )
+	 if ( cuid != null && ( _identity == null || !_identity.getCustomerId( ).equals( cuid ) ) )
 	 {
-	     _identity = IdentityHome.findByCustomerId( CUID );
+	     _identity = IdentityHome.findByCustomerId( cuid );
 	 }
 
 	 // here we use a LinkedHashMap to have same attributs order as in viewIdentity
 	 final List<AttributeChange> attributeChangeList = new ArrayList<>( );
 	 final List<IdentityChange> identityChangeList = new ArrayList<>( );
 
-	 if ( _identity != null )
+	 try
 	 {
-	     try
-	     {
-		 attributeChangeList.addAll( IdentityAttributeHome.getAttributeChangeHistory( _identity.getId( ) ) );
-		 identityChangeList.addAll( IdentityHome.findHistoryByCustomerId( _identity.getCustomerId( ) ) );
-	     }
-	     catch( IdentityStoreException e )
-	     {
+		 // If the identity is still null, we are most likely on a deleted identity. Fetch only the identity history
+		 if ( _identity != null )
+		 {
+			 attributeChangeList.addAll( IdentityAttributeHome.getAttributeChangeHistory( _identity.getId( ) ) );
+		 }
+		 identityChangeList.addAll( IdentityHome.findHistoryByCustomerId( cuid ) );
+	 }
+	 catch( final IdentityStoreException e )
+	 {
 		 addError( e.getMessage( ) );
 		 return getViewIdentity( request );
-	     }
 	 }
-	 if ( _identity != null )
-	 {
-	     final String filteredCustomerId = SecurityUtil.logForgingProtect( _identity.getCustomerId( ) );
-	     AccessLogService.getInstance( ).info( AccessLoggerConstants.EVENT_TYPE_READ, DISPLAY_IDENTITY_HISTORY_EVENT_CODE, getUser( ), filteredCustomerId,
-		     IdentityService.SPECIFIC_ORIGIN );
-	 }
+
+	 final String filteredCustomerId = SecurityUtil.logForgingProtect( cuid );
+	 AccessLogService.getInstance( ).info( AccessLoggerConstants.EVENT_TYPE_READ, DISPLAY_IDENTITY_HISTORY_EVENT_CODE, getUser( ), filteredCustomerId,
+		 IdentityService.SPECIFIC_ORIGIN );
 
 	 final Map<String, Object> model = getModel( );
 	 model.put( MARK_IDENTITY_CHANGE_LIST, identityChangeList );
