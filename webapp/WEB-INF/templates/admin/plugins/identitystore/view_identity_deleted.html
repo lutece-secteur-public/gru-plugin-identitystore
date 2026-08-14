@@ -1,0 +1,128 @@
+<@rowBox>
+<@boxHeader i18nTitleKey="">
+    <@headerButtons>
+        <form class="form-inline pull-right" method="post" name="manage_identities" action="jsp/admin/plugins/identitystore/ManageIdentities.jsp">
+            <@input name="id" type="hidden" value=delete_history.customerId! />
+            <!-- Add pull-right to class1 -->
+            <@actionButtons button1Name="view_viewIdentityHistory" icon1="fa fa-eye" i18nValue1Key="identitystore.manage_identities.buttonViewHistory" />
+        </form>
+    </@headerButtons>
+</@boxHeader>
+<@boxBody>
+<h1><span class="badge bg-danger"> DELETE </span></h1>
+<#if delete_history.metadata['first_name.value']?has_content && delete_history.metadata['family_name.value']?has_content>
+    <h1> <i class="fa fa-user"> </i> ${delete_history.metadata['first_name.value']} ${delete_history.metadata['family_name.value']} </h1>
+</#if>
+<div class="my-3">
+    <div class="row" style="margin-top: 10px; margin-bottom: 15px;">
+        <div class="col-md-6">
+            <dl class="row mb-0">
+                <dt class="col-sm-4">#i18n{identitystore.view_identity.label.cuid}</dt>
+                <dd class="col-sm-8">${delete_history.customerId}</dd>
+
+                <dt class="col-sm-4">#i18n{identitystore.view_identity.label.guid}</dt>
+                <dd class="col-sm-8">
+                    <#if delete_history.metadata['isMonParisActive']?? && delete_history.metadata['isMonParisActive'] == '1'>
+                        ${delete_history.metadata['guid']!}
+                    <#else>
+                        <span class="text-muted font-italic">${delete_history.metadata['guid']!}</span>
+                        <i class="fas fa-times text-danger ml-1" aria-hidden="true"></i>
+                    </#if>
+                </dd>
+
+                <dt class="col-sm-4">#i18n{identitystore.view_identity.label.creation.date}</dt>
+                <dd class="col-sm-8">
+                    <#if delete_history.metadata['creationDate']?has_content>
+                        ${delete_history.metadata['creationDate']}
+                    <#else>
+                        <i class="fas fa-times text-danger" aria-hidden="true"></i>
+                    </#if>
+                </dd>
+
+                <dt class="col-sm-4">#i18n{identitystore.view_identity.label.last.modification.date}</dt>
+                <dd class="col-sm-8">
+                    <#if delete_history.metadata['lastUpdateDate']?has_content>
+                        ${delete_history.metadata['lastUpdateDate']}
+                    <#else>
+                        <i class="fas fa-times text-danger" aria-hidden="true"></i>
+                    </#if>
+                </dd>
+            </dl>
+        </div>
+        <div class="col-md-6">
+            <dl class="row mb-0">
+                <dt class="col-sm-4">#i18n{identitystore.view_identity.label.expiration.date}</dt>
+                <dd class="col-sm-8">
+                    <#if delete_history.metadata['expirationDate']?has_content>
+                        ${delete_history.metadata['expirationDate']}
+                    <#else>
+                        <i class="fas fa-times text-danger" aria-hidden="true"></i>
+                    </#if>
+                </dd>
+
+                <dt class="col-sm-4">#i18n{identitystore.view_identity.label.deletion.date}</dt>
+                <dd class="col-sm-8">
+                    <#if delete_history.metadata['deleteRequestDate']?has_content>
+                        ${delete_history.metadata['deleteRequestDate']}
+                    <#else>
+                        <i class="fas fa-times text-danger" aria-hidden="true"></i>
+                    </#if>
+                </dd>
+
+                <dt class="col-sm-4">#i18n{identitystore.view_identity.label.mon.paris}</dt>
+                <dd class="col-sm-8">
+                    <#if delete_history.metadata['isMonParisActive']?? && delete_history.metadata['isMonParisActive'] == '1'>
+                        <i class="fas fa-check text-success" aria-hidden="true"></i>
+                    <#else>
+                        <i class="fas fa-times text-danger" aria-hidden="true"></i>
+                    </#if>
+                </dd>
+            </dl>
+        </div>
+    </div>
+</div>
+
+<#assign attributeKeys = delete_history.metadata?keys?filter(key -> key?ends_with('.value'))?map(key -> key?split('.')?first)>
+<#if attributeKeys?has_content>
+<table class="table table-condensed table-striped">
+    <thead>
+        <tr>
+            <th>#i18n{identitystore.view_identity.label.key}</th>
+            <th>#i18n{identitystore.view_identity.label.value}</th>
+            <th>#i18n{identitystore.view_identity.label.date_lastupdate}</th>
+            <th>#i18n{identitystore.view_identity.label.certif}</th>
+            <th>#i18n{identitystore.view_identity.label.certif_lastupdate}</th>
+            <th>#i18n{identitystore.view_identity.label.client_code}</th>
+        </tr>
+    </thead>
+    <tbody>
+        <#list attributeKeys as attributeKey>
+            <#assign attributeValue = delete_history.metadata[attributeKey + '.value']>
+            <#assign attributeCertCode = delete_history.metadata[attributeKey + '.certCode']!''>
+            <#assign attributeCertDate = delete_history.metadata[attributeKey + '.certDate']!''>
+            <#assign attributeLastUpdate = delete_history.metadata[attributeKey + '.lastUpdate']!''>
+            <#assign attributeClientCode = delete_history.metadata[attributeKey + '.clientCode']!''>
+            <tr>
+                <td> ${attributeKey} </td>
+                <#if attributeKey == "gender">
+                    <#switch attributeValue>
+                        <#case "0"><td><strong>#i18n{identitystore.view_identity.gender.undefined}</strong></td><#break>
+                        <#case "1"><td><strong>#i18n{identitystore.view_identity.gender.mme}</strong></td><#break>
+                        <#case "2"><td><strong>#i18n{identitystore.view_identity.gender.mr}</strong></td><#break>
+                        <#default><td><strong>${attributeValue!''}</strong></td>
+                    </#switch>
+                <#else>
+                    <td><strong> ${attributeValue!''} </strong></td>
+                </#if>
+                <td><strong> ${attributeLastUpdate!''} </strong></td>
+                <td><span class="badge bg-primary">${attributeCertCode!''}</span></td>
+                <td> ${attributeCertDate!''} </td>
+                <td> ${attributeClientCode!''} </td>
+            </tr>
+        </#list>
+    </tbody>
+</table>
+</#if>
+
+</@boxBody>
+</@rowBox>
