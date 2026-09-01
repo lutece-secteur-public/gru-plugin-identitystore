@@ -44,6 +44,7 @@ import fr.paris.lutece.plugins.identitystore.business.contract.AttributeRight;
 import fr.paris.lutece.plugins.identitystore.business.contract.ServiceContract;
 import fr.paris.lutece.plugins.identitystore.business.duplicates.suspicions.SuspiciousIdentityHome;
 import fr.paris.lutece.plugins.identitystore.business.identity.Identity;
+import fr.paris.lutece.plugins.identitystore.business.identity.IdentityAccount;
 import fr.paris.lutece.plugins.identitystore.business.identity.IdentityAttribute;
 import fr.paris.lutece.plugins.identitystore.business.identity.IdentityHome;
 import fr.paris.lutece.plugins.identitystore.business.referentiel.RefAttributeCertificationLevel;
@@ -58,6 +59,7 @@ import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.AttributeKeyDt
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.AttributeType;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.AttributeValueDto;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.ExpirationDefinition;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.IdentityAccountDto;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.IdentityDto;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.MergeDefinition;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.contract.AttributeDefinitionDto;
@@ -69,7 +71,6 @@ import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.referentiel.Attribute
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.referentiel.AttributeCertificationProcessusDto;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.referentiel.LevelDto;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
-import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
 import fr.paris.lutece.plugins.identitystore.web.exception.ResourceNotFoundException;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
@@ -142,6 +143,12 @@ public final class DtoConverter
             {
                 identityDto.getAttributes( ).add( convertAttributeToDto( attribute ) );
             }
+        }
+
+        if ( StringUtils.isNotBlank( identityDto.getConnectionId( ) ) )
+        {
+            final List<IdentityAccount> accountHistory = IdentityHome.selectIdentityFullAccountHistory( identity.getId( ) );
+            identityDto.getAccountHistory( ).addAll( accountHistory.stream( ).map( DtoConverter::convertIdentityAccountToDto ).collect( Collectors.toList( ) ) );
         }
 
         return identityDto;
@@ -502,5 +509,14 @@ public final class DtoConverter
         valueDto.setValue( attributeValue.getValue( ) );
         valueDto.setLabel( attributeValue.getLabel( ) );
         return valueDto;
+    }
+
+    public static IdentityAccountDto convertIdentityAccountToDto(final IdentityAccount accountHistory)
+    {
+        final IdentityAccountDto dto = new IdentityAccountDto( );
+        dto.setConnectionId( accountHistory.getConnectionId( ) );
+        dto.setCreationDate( accountHistory.getCreationDate( ) );
+        dto.setCurrent( accountHistory.isCurrent( ) );
+        return dto;
     }
 }
