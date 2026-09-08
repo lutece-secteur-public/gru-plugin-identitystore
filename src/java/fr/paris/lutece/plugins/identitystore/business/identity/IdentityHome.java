@@ -44,6 +44,7 @@ import fr.paris.lutece.portal.service.plugin.Plugin;
 import fr.paris.lutece.portal.service.plugin.PluginService;
 import fr.paris.lutece.portal.service.spring.SpringContextService;
 import fr.paris.lutece.portal.service.util.AppPropertiesService;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.Date;
@@ -79,7 +80,10 @@ public final class IdentityHome
     public static Identity create( final Identity identity, final int dataRetentionPeriodInMonth )
     {
         _dao.insert( identity, dataRetentionPeriodInMonth, _plugin );
-
+        if ( StringUtils.isNotBlank( identity.getConnectionId( ) ) )
+        {
+            _dao.insertIdentityAccount(identity.getConnectionId(), identity.getId(), _plugin);
+        }
         return identity;
     }
 
@@ -139,6 +143,7 @@ public final class IdentityHome
     public static void hardRemove( int nIdentityId )
     {
         IdentityAttributeHome.removeAllAttributes( nIdentityId );
+        _dao.deleteIdentityAccounts( nIdentityId, _plugin );
         _dao.hardDelete( nIdentityId, _plugin );
     }
 
@@ -524,5 +529,34 @@ public final class IdentityHome
     public static List<String> getHistoryStatusList( )
     {
         return _dao.getHistoryStatusList( _plugin );
+    }
+
+    /**
+     * Get the identity full account history
+     * @param identityId the identity ID
+     */
+    public static List<IdentityAccount> selectIdentityFullAccountHistory( final int identityId )
+    {
+        return _dao.selectIdentityFullAccountHistory( identityId, _plugin );
+    }
+
+    /**
+     * Insert a new record in the identitystore_identity_account table with current = true.
+     * Updates any existing account for this identityId to current = false beforehand.
+     * @param connectionId - the connectionId
+     * @param identityId - the identityId
+     */
+    public static void insertIdentityAccount( final String connectionId, final int identityId )
+    {
+        _dao.insertIdentityAccount( connectionId, identityId, _plugin );
+    }
+
+    /**
+     * update all identitystore_identity_account records associated with the identityId and set them with current = false
+     * @param identityId the identity ID
+     */
+    public static void updateIdentityAccountSetNoCurrent( final int identityId )
+    {
+        _dao.updateIdentityAccountSetNoCurrent( identityId, _plugin );
     }
 }

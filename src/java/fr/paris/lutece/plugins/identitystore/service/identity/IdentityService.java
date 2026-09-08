@@ -92,7 +92,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -255,7 +254,7 @@ public class IdentityService
                 metadata.put(Constants.METADATA_NEW_GUID, request.getIdentity( ).getConnectionId( ) );
                 metadata.put(Constants.METADATA_OLD_GUID, identity.getConnectionId( ) );
                 identity.setConnectionId( request.getIdentity( ).getConnectionId( ) );
-                IdentityHome.update( identity );
+                IdentityHome.insertIdentityAccount( identity.getConnectionId( ), identity.getId( ) );
             }
 
             // => process update :
@@ -747,6 +746,12 @@ public class IdentityService
             {
                 // If monParis flag switches from false to true, reset delete_date
                 identity.setDeleteDate( null );
+            }
+            if ( identity.isMonParisActive( ) && !requestIdentity.getMonParisActive( ) )
+            {
+                // If monParis flag switches from true to false, set no current account
+                identity.setConnectionId( null );
+                IdentityHome.updateIdentityAccountSetNoCurrent( identity.getId( ) );
             }
             monParisUpdated = true;
             identity.setMonParisActive( requestIdentity.isMonParisActive( ) );

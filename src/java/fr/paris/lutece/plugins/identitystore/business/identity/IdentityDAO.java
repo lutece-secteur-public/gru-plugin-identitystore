@@ -70,31 +70,49 @@ import java.util.stream.Collectors;
 public final class IdentityDAO implements IIdentityDAO
 {
     // Constants
-    private static final String COLUMNS = "a.id_identity, a.connection_id, a.customer_id, a.is_deleted, a.is_merged, a.date_create, a.last_update_date, a.date_merge, a.is_mon_paris_active, a.expiration_date, a.id_master_identity, a.date_delete, a.unicity_hash_code";
-    private static final String SQL_QUERY_SELECT = "SELECT id_identity, connection_id, customer_id, is_deleted, is_merged, id_master_identity, date_create, last_update_date, date_merge, is_mon_paris_active, expiration_date  FROM identitystore_identity WHERE id_identity = ?";
-    private static final String SQL_QUERY_INSERT = "INSERT INTO identitystore_identity (  connection_id, customer_id, date_create, last_update_date, is_mon_paris_active, expiration_date, unicity_hash_code ) VALUES ( ?, ?, ?, ?, ?, ?, ? ) ";
+    private static final String COLUMNS = "a.id_identity, ia.connection_id, a.customer_id, a.is_deleted, a.is_merged, a.date_create, a.last_update_date, a.date_merge, a.is_mon_paris_active, a.expiration_date, a.id_master_identity, a.date_delete, a.unicity_hash_code";
+
+    private static final String SQL_QUERY_SELECT_ALL_IDENTITY_ACCOUNT_HISTORY = "SELECT connection_id, id_identity, current, creation_date FROM identitystore_identity_account WHERE id_identity = ? ORDER BY creation_date DESC ";
+    private static final String SQL_QUERY_UPDATE_ACCOUNT_NO_CURRENT = "UPDATE identitystore_identity_account SET current = 0 WHERE id_identity = ? AND current = 1 ";
+    private static final String SQL_QUERY_INSERT_ACCOUNT = "INSERT INTO identitystore_identity_account ( connection_id, id_identity, current, creation_date ) VALUES ( ?, ?, ?, ? ) ";
+    private static final String SQL_QUERY_DELETE_ACCOUNT = "DELETE FROM identitystore_identity_account WHERE id_identity = ? ";
+    private static final String SQL_LEFT_JOIN_CURRENT_IDENTITY_ACCOUNT = " LEFT JOIN identitystore_identity_account ia ON ia.id_identity = a.id_identity AND ia.current = 1 ";
+
+    private static final String SQL_QUERY_SELECT = "SELECT a.id_identity, ia.connection_id, a.customer_id, a.is_deleted, a.is_merged, a.id_master_identity, a.date_create, a.last_update_date, a.date_merge, a.is_mon_paris_active, a.expiration_date " +
+                                                   "FROM identitystore_identity a " + SQL_LEFT_JOIN_CURRENT_IDENTITY_ACCOUNT + " WHERE i.id_identity = ? ";
+    private static final String SQL_QUERY_INSERT = "INSERT INTO identitystore_identity (  customer_id, date_create, last_update_date, is_mon_paris_active, expiration_date, unicity_hash_code ) VALUES ( ?, ?, ?, ?, ?, ? ) ";
+
     private static final String SQL_QUERY_DELETE = "DELETE FROM identitystore_identity WHERE id_identity = ? ";
-    private static final String SQL_QUERY_UPDATE = "UPDATE identitystore_identity SET connection_id = ?, customer_id = ?, last_update_date = ?, is_mon_paris_active = ?, expiration_date = ?, date_delete = ?, unicity_hash_code = ? WHERE id_identity = ?";
-    private static final String SQL_QUERY_SELECTALL_FULL = "SELECT id_identity, connection_id, customer_id, is_deleted, is_merged, id_master_identity, date_create, last_update_date, date_merge, is_mon_paris_active, expiration_date FROM identitystore_identity";
-    private static final String SQL_QUERY_SELECT_BY_CONNECTION_ID = "SELECT " + COLUMNS
-            + " FROM identitystore_identity a WHERE lower(a.connection_id) = lower(?)";
-    private static final String SQL_QUERY_SELECT_BY_CUSTOMER_ID = "SELECT " + COLUMNS + " FROM identitystore_identity a WHERE a.customer_id = ?";
+    private static final String SQL_QUERY_UPDATE = "UPDATE identitystore_identity SET customer_id = ?, last_update_date = ?, is_mon_paris_active = ?, expiration_date = ?, date_delete = ?, unicity_hash_code = ? WHERE id_identity = ?";
+    private static final String SQL_QUERY_SELECTALL_FULL = "SELECT a.id_identity, ia.connection_id, a.customer_id, a.is_deleted, a.is_merged, a.id_master_identity, a.date_create, a.last_update_date, a.date_merge, a.is_mon_paris_active, a.expiration_date " +
+                                                           "FROM identitystore_identity a " + SQL_LEFT_JOIN_CURRENT_IDENTITY_ACCOUNT;
+    private static final String SQL_QUERY_SELECT_BY_CONNECTION_ID = "SELECT " + COLUMNS +
+                                                                    " FROM identitystore_identity a " + SQL_LEFT_JOIN_CURRENT_IDENTITY_ACCOUNT +
+                                                                    " WHERE EXISTS (SELECT i.id_identity " +
+                                                                    "               FROM identitystore_identity i " +
+                                                                    "               LEFT JOIN identitystore_identity_account acc ON acc.id_identity = i.id_identity " +
+                                                                    "               WHERE lower(acc.connection_id) = lower(?) AND a.id_identity = i.id_identity )";
+    private static final String SQL_QUERY_SELECT_BY_CUSTOMER_ID = "SELECT " + COLUMNS + " FROM identitystore_identity a " + SQL_LEFT_JOIN_CURRENT_IDENTITY_ACCOUNT + " WHERE a.customer_id = ?";
     private static final String SQL_QUERY_SELECT_NOT_MERGED_BY_CUSTOMER_ID = "WITH RECURSIVE identity_tree AS ("
-            + "    SELECT id_identity, connection_id, customer_id, is_deleted, is_merged, id_master_identity, date_create, last_update_date, date_merge, is_mon_paris_active, expiration_date, date_delete,  unicity_hash_code, ARRAY[id_identity] path"
+            + "    SELECT id_identity, customer_id, is_deleted, is_merged, id_master_identity, date_create, last_update_date, date_merge, is_mon_paris_active, expiration_date, date_delete,  unicity_hash_code, ARRAY[id_identity] path"
             + "    FROM identitystore_identity" + "    WHERE customer_id = ?" + "    UNION ALL"
-            + "    SELECT id.id_identity, id.connection_id, id.customer_id, id.is_deleted, id.is_merged, id.id_master_identity, id.date_create, id.last_update_date, id.date_merge, id.is_mon_paris_active, id.expiration_date, id.date_delete, id.unicity_hash_code, path || id.id_identity"
+            + "    SELECT id.id_identity, id.customer_id, id.is_deleted, id.is_merged, id.id_master_identity, id.date_create, id.last_update_date, id.date_merge, id.is_mon_paris_active, id.expiration_date, id.date_delete, id.unicity_hash_code, path || id.id_identity"
             + "    FROM identitystore_identity id" + "        INNER JOIN identity_tree mtree ON mtree.id_master_identity = id.id_identity and id.id_identity <> ALL(mtree.path) )" 
-            + "       select " + COLUMNS + " from identity_tree a where a.is_merged = 0";
+            + "       select " + COLUMNS + " from identity_tree a " + SQL_LEFT_JOIN_CURRENT_IDENTITY_ACCOUNT + " where a.is_merged = 0";
 
     private static final String SQL_QUERY_SELECT_NOT_MERGED_BY_CONNECTION_ID = "WITH RECURSIVE identity_tree AS ("
-            + "    SELECT id_identity, connection_id, customer_id, is_deleted, is_merged, id_master_identity, date_create, last_update_date, date_merge, is_mon_paris_active, expiration_date, date_delete, unicity_hash_code, ARRAY[id_identity] path"
-            + "    FROM identitystore_identity" + "    WHERE lower(connection_id) = lower(?)" + "    UNION ALL"
-            + "    SELECT id.id_identity, id.connection_id, id.customer_id, id.is_deleted, id.is_merged, id.id_master_identity, id.date_create, id.last_update_date, id.date_merge, id.is_mon_paris_active, id.expiration_date, id.date_delete, id.unicity_hash_code, path || id.id_identity"
+            + "    SELECT a.id_identity, a.customer_id, a.is_deleted, a.is_merged, a.id_master_identity, a.date_create, a.last_update_date, a.date_merge, a.is_mon_paris_active, a.expiration_date, a.date_delete,  a.unicity_hash_code, ARRAY[a.id_identity] path"
+            + "    FROM identitystore_identity a " + SQL_LEFT_JOIN_CURRENT_IDENTITY_ACCOUNT + " WHERE EXISTS (SELECT i.id_identity "
+            +                                                                   "               FROM identitystore_identity i "
+            +                                                                   "               LEFT JOIN identitystore_identity_account acc ON acc.id_identity = i.id_identity "
+            +                                                                   "               WHERE lower(acc.connection_id) = lower(?) AND a.id_identity = i.id_identity )"
+            + "    UNION ALL"
+            + "    SELECT id.id_identity, id.customer_id, id.is_deleted, id.is_merged, id.id_master_identity, id.date_create, id.last_update_date, id.date_merge, id.is_mon_paris_active, id.expiration_date, id.date_delete, id.unicity_hash_code, path || id.id_identity"
             + "    FROM identitystore_identity id" + "        INNER JOIN identity_tree mtree ON mtree.id_master_identity = id.id_identity and id.id_identity <> ALL(mtree.path) )" 
-            + "       select " + COLUMNS + " from identity_tree a where a.is_merged = 0";
+            + "       select " + COLUMNS + " from identity_tree a " + SQL_LEFT_JOIN_CURRENT_IDENTITY_ACCOUNT + " where a.is_merged = 0";
 
     private static final String SQL_QUERY_SELECT_ID_BY_CUSTOMER_ID = "SELECT id_identity, is_deleted, is_merged FROM identitystore_identity WHERE customer_id = ?";
-    private static final String SQL_QUERY_SELECT_BY_ATTRIBUTES_FOR_API_SEARCH = " SELECT " + COLUMNS + " FROM identitystore_identity a ${join_clause} LIMIT ${limit}";
+    private static final String SQL_QUERY_SELECT_BY_ATTRIBUTES_FOR_API_SEARCH = " SELECT " + COLUMNS + " FROM identitystore_identity a " + SQL_LEFT_JOIN_CURRENT_IDENTITY_ACCOUNT + " ${join_clause} LIMIT ${limit}";
     private static final String SQL_QUERY_WITH_CLAUSE_FOR_API_SEARCH = "WITH ${with_clause} ";
     private static final String SQL_QUERY_JOIN_CLAUSE_FOR_API_SEARCH = "JOIN ${tmp_table_name} on ${tmp_table_name}.id_identity = a.id_identity ";
     private static final String SQL_QUERY_TMP_TABLE_FOR_API_SEARCH = " AS (SELECT ${distinct} b.id_identity AS id_identity FROM identitystore_identity_attribute b JOIN identitystore_ref_attribute c ON b.id_attribute = c.id_attribute AND ${filter})";
@@ -145,8 +163,8 @@ public final class IdentityDAO implements IIdentityDAO
 
     private static final String SQL_QUERY_REFRESH_LAST_UPDATE_DATE = "UPDATE identitystore_identity SET last_update_date = now() WHERE id_identity = ?";
     private static final String SQL_QUERY_SELECT_EXPIRED_NOT_MERGED_AND_NOT_CONNECTED = "SELECT " + COLUMNS
-            + " FROM identitystore_identity a WHERE a.expiration_date < NOW() AND a.is_merged = 0 AND a.is_mon_paris_active = 0 ";
-    private static final String SQL_FILTER_WITH_GUID_ONLY = " and a.connection_id is not null ";
+            + " FROM identitystore_identity a " + SQL_LEFT_JOIN_CURRENT_IDENTITY_ACCOUNT + " WHERE a.expiration_date < NOW() AND a.is_merged = 0 AND a.is_mon_paris_active = 0 ";
+    private static final String SQL_FILTER_WITH_GUID_ONLY = " and ia.connection_id is not null ";
     private static final String SQL_ORDER_BY = " ORDER BY last_update_date ASC ";
     private static final String SQL_LIMIT = " LIMIT ?";
     
@@ -159,7 +177,7 @@ public final class IdentityDAO implements IIdentityDAO
             + " ORDER BY RANDOM( ) LIMIT ?";
 
     private static final String SQL_QUERY_SELECT_MERGED_TO = "SELECT " + COLUMNS
-            + " FROM identitystore_identity a WHERE a.is_merged = 1 AND a.id_master_identity = ?";
+            + " FROM identitystore_identity a " + SQL_LEFT_JOIN_CURRENT_IDENTITY_ACCOUNT + " WHERE a.is_merged = 1 AND a.id_master_identity = ?";
     private static final String SQL_QUERY_DELETE_ALL_ATTRIBUTE_HISTORY = "DELETE from identitystore_identity_attribute_history WHERE id_identity = ?";
     private static final String SQL_QUERY_SELECT_LAST_UPDATE_DATE_FROM_CUID = "SELECT last_update_date FROM identitystore_identity WHERE customer_id = ?";
     private static final String SQL_QUERY_SELECT_COUNT_IDENTITIES = "SELECT COUNT(*) FROM identitystore_identity";
@@ -200,7 +218,6 @@ public final class IdentityDAO implements IIdentityDAO
 
             int nIndex = 1;
             identity.setCustomerId( newCustomerIdKey( ) );
-            daoUtil.setString( nIndex++, identity.getConnectionId( ) );
             daoUtil.setString( nIndex++, identity.getCustomerId( ) );
             daoUtil.setTimestamp( nIndex++, identity.getCreationDate( ) );
             daoUtil.setTimestamp( nIndex++, identity.getLastUpdateDate( ) );
@@ -328,7 +345,6 @@ public final class IdentityDAO implements IIdentityDAO
 
             identity.setLastUpdateDate( new Timestamp( new Date( ).getTime( ) ) );
 
-            daoUtil.setString( nIndex++, identity.getConnectionId( ) );
             daoUtil.setString( nIndex++, identity.getCustomerId( ) );
             daoUtil.setTimestamp( nIndex++, identity.getLastUpdateDate( ) );
             daoUtil.setBoolean( nIndex++, identity.isMonParisActive( ) );
@@ -1266,6 +1282,84 @@ public final class IdentityDAO implements IIdentityDAO
         // where string_to_array(metadata ->> 'duplicate_rule_code',',') @> '{RG_GEN_SuspectDoublon_03}';
         return metadata.entrySet( ).stream( ).map( entry -> "string_to_array(metadata ->> '" + entry.getKey( ) + "',',') @>'{" + entry.getValue( ) + "}'" )
                 .collect( Collectors.joining( " AND " ) );
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public List<IdentityAccount> selectIdentityFullAccountHistory(final int identityId, final Plugin plugin)
+    {
+        try ( final DAOUtil daoUtil = new DAOUtil(SQL_QUERY_SELECT_ALL_IDENTITY_ACCOUNT_HISTORY, plugin ) )
+        {
+            daoUtil.setInt( 1, identityId );
+            daoUtil.executeQuery();
+            final List<IdentityAccount> accountHistoryList = new ArrayList<>( );
+            while ( daoUtil.next( ) )
+            {
+                int index = 1;
+                final IdentityAccount accountHistory = new IdentityAccount( );
+                accountHistory.setConnectionId( daoUtil.getString( index++ ) );
+                accountHistory.setIdIdentity( daoUtil.getInt( index++ ) );
+                accountHistory.setCurrent( daoUtil.getBoolean( index++ ) );
+                accountHistory.setCreationDate( daoUtil.getTimestamp( index ) );
+                accountHistoryList.add( accountHistory );
+            }
+            return accountHistoryList;
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void insertIdentityAccount(final String connectionId, final int identityId, final Plugin plugin)
+    {
+        updateIdentityAccountSetNoCurrent(identityId, plugin);
+
+        try ( final DAOUtil daoUtil = new DAOUtil( SQL_QUERY_INSERT_ACCOUNT, plugin ) )
+        {
+            final IdentityAccount accountHistory = new IdentityAccount();
+            final ZonedDateTime now = ZonedDateTime.now( ZoneId.systemDefault( ) );
+            accountHistory.setCreationDate( Timestamp.from( now.toInstant( ) ) );
+            accountHistory.setConnectionId( connectionId );
+            accountHistory.setIdIdentity( identityId );
+            accountHistory.setCurrent( true );
+
+            int nIndex = 1;
+            daoUtil.setString( nIndex++, accountHistory.getConnectionId( ) );
+            daoUtil.setInt( nIndex++, accountHistory.getIdIdentity( ) );
+            daoUtil.setBoolean( nIndex++, accountHistory.isCurrent( ) );
+            daoUtil.setTimestamp( nIndex, accountHistory.getCreationDate( ) );
+
+            daoUtil.executeUpdate( );
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void updateIdentityAccountSetNoCurrent(final int identityId, final Plugin plugin)
+    {
+        try ( final DAOUtil daoUtil = new DAOUtil( SQL_QUERY_UPDATE_ACCOUNT_NO_CURRENT, plugin ) )
+        {
+            daoUtil.setInt( 1, identityId );
+            daoUtil.executeUpdate( );
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void deleteIdentityAccounts(final int identityId, final Plugin plugin)
+    {
+        try ( final DAOUtil daoUtil = new DAOUtil( SQL_QUERY_DELETE_ACCOUNT, plugin ) )
+        {
+            daoUtil.setInt( 1, identityId );
+            daoUtil.executeUpdate( );
+        }
     }
 
 }

@@ -4,6 +4,7 @@
 
 
 DROP TABLE IF EXISTS identitystore_service_contract_attribute_certification CASCADE;
+DROP TABLE IF EXISTS identitystore_identity_account CASCADE;
 DROP TABLE IF EXISTS identitystore_identity CASCADE;
 DROP TABLE IF EXISTS identitystore_service_contract_attribute_requirement CASCADE;
 DROP TABLE IF EXISTS identitystore_service_contract_attribute_right CASCADE;
@@ -26,7 +27,6 @@ DROP TABLE IF EXISTS identitystore_index_action CASCADE;
 CREATE TABLE identitystore_identity
 (
     id_identity        int AUTO_INCREMENT,
-    connection_id      varchar(100) NULL UNIQUE,
     customer_id        varchar(50)  NOT NULL UNIQUE,
     date_create        timestamp(3) DEFAULT CURRENT_TIMESTAMP NOT NULL ,
     last_update_date   timestamp(3) DEFAULT CURRENT_TIMESTAMP,
@@ -41,7 +41,6 @@ CREATE TABLE identitystore_identity
     PRIMARY KEY (id_identity)
 );
 
-CREATE INDEX identitystore_identity_connection_id ON identitystore_identity (lower(connection_id::text));
 CREATE INDEX identitystore_identity_customer_id ON identitystore_identity (customer_id);
 CREATE INDEX identitystore_identity_master_id ON identitystore_identity (id_master_identity);
 CREATE INDEX identitystore_identity_expiration_date ON identitystore_identity (expiration_date);
@@ -420,3 +419,15 @@ CREATE TABLE identitystore_ref_attribute_values
 );
 ALTER TABLE identitystore_ref_attribute_values
     ADD CONSTRAINT fk_id_attribute FOREIGN KEY (id_attribute) REFERENCES identitystore_ref_attribute (id_attribute);
+
+--
+-- Structure for table identitystore_identity_account
+--
+CREATE TABLE identitystore_identity_account (
+  connection_id varchar(100) PRIMARY KEY,
+  id_identity   int NOT NULL REFERENCES identitystore_identity(id_identity),
+  current       smallint DEFAULT 0 NOT NULL,
+  creation_date timestamp(3) default CURRENT_TIMESTAMP NOT NULL
+);
+CREATE INDEX identitystore_identity_account_id_identity ON identitystore_identity_account (id_identity);
+CREATE INDEX identitystore_identity_account_connection_id ON identitystore_identity_account (lower(connection_id::text));

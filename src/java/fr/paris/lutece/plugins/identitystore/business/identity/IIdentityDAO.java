@@ -387,4 +387,34 @@ public interface IIdentityDAO
      * reset UnicityHashCode when necessary
      */
     void resetUnicityHashCode( Identity identity, Plugin plugin );
+
+    /**
+     * Get the identity account history
+     * @param identityId the identity ID
+     * @param plugin the plugin
+     */
+    List<IdentityAccount> selectIdentityFullAccountHistory(final int identityId, final Plugin plugin);
+
+    /**
+     * Insert a new record in the identitystore_identity_account table with current = true.
+     * Updates any existing account for this identityId to current = false beforehand.
+     * @param connectionId - the connectionId
+     * @param identityId - the identityId
+     * @param plugin - the plugin
+     */
+    void insertIdentityAccount(final String connectionId, final int identityId, final Plugin plugin);
+
+    /**
+     * deletes all identitystore_identity_account records associated with the identityId
+     * @param identityId the identity ID
+     * @param plugin the plugin
+     */
+    void deleteIdentityAccounts(final int identityId, final Plugin plugin);
+
+    /**
+     * update all identitystore_identity_account records associated with the identityId and set them with current = false
+     * @param identityId the identity ID
+     * @param plugin the plugin
+     */
+    void updateIdentityAccountSetNoCurrent(final int identityId, final Plugin plugin);
 }
