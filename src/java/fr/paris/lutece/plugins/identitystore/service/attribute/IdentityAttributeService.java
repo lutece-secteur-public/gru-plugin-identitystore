@@ -67,6 +67,7 @@ import java.util.stream.Collectors;
 public class IdentityAttributeService
 {
     private static final String UNCERTIFY_PROCESSUS = "identitystore.identity.uncertify.processus";
+    private static final String KEEP_CERTIFICATION_DATE_WHEN_NO_CHANGE = "identitystore.identity.update.keep.certification.date.when.no.changes";
 
     private final AttributeKeyCache _attributeKeyCache = SpringContextService.getBean( "identitystore.attributeKeyCache" );
     private final AttributeCertificationDefinitionService _attributeCertificationDefinitionService = AttributeCertificationDefinitionService.instance( );
@@ -278,16 +279,22 @@ public class IdentityAttributeService
         int existingAttributeLevelInt = _attributeCertificationDefinitionService.getLevelAsInteger( existingAttribute.getCertificate( ).getCertifierCode( ),
                 existingAttribute.getAttributeKey( ).getKeyName( ) );
         
-        // si l'attribut existe déjà avec la même valeur et le même niveau de certif : pas de mise à jour
-        if ( attributeToUpdateLevelInt == existingAttributeLevelInt && StringUtils.equals( attributeToUpdate.getValue( ), existingAttribute.getValue( ) )
-                && ( attributeToUpdate.getCertificationDate( ).equals( existingAttribute.getCertificate( ).getCertificateDate( ) )
-                        || attributeToUpdate.getCertificationDate( ).before( existingAttribute.getCertificate( ).getCertificateDate( ) ) ) )
+        // if the attribute already exists with the same value and the same certification level
+        if ( attributeToUpdateLevelInt == existingAttributeLevelInt && Objects.equals( attributeToUpdate.getValue( ), existingAttribute.getValue( ) ) )
         {
-            final AttributeStatus attributeStatus = new AttributeStatus( );
-            attributeStatus.setKey( attributeToUpdate.getKey( ) );
-            attributeStatus.setStatus( AttributeChangeStatus.NOT_UPDATED );
-            attributeStatus.setMessageKey( Constants.PROPERTY_ATTRIBUTE_STATUS_NOT_UPDATED );
-            return attributeStatus;
+            final boolean keepCertificationDateWhenNoChange = AppPropertiesService.getPropertyBoolean( KEEP_CERTIFICATION_DATE_WHEN_NO_CHANGE, true );
+            if ( keepCertificationDateWhenNoChange ||
+                 attributeToUpdate.getCertificationDate( ).equals( existingAttribute.getCertificate( ).getCertificateDate( ) ) ||
+                 attributeToUpdate.getCertificationDate( ).before( existingAttribute.getCertificate( ).getCertificateDate( ) ) )
+            {
+                // If the property to keep the certification date when no change is set to true, or if the new certification date is equal or before the
+                // existing one : no update
+                final AttributeStatus attributeStatus = new AttributeStatus();
+                attributeStatus.setKey(attributeToUpdate.getKey());
+                attributeStatus.setStatus(AttributeChangeStatus.NOT_UPDATED);
+                attributeStatus.setMessageKey(Constants.PROPERTY_ATTRIBUTE_STATUS_NOT_UPDATED);
+                return attributeStatus;
+            }
         }
         
         // le niveau de certification est supérieur ou égal au niveau existant : on met à jour
@@ -301,6 +308,7 @@ public class IdentityAttributeService
                         .filter( ar -> ar.getAttributeKey( ).getKeyName( ).equals( attributeToUpdate.getKey( ) ) ).findAny( );
                 if ( right.isPresent( ) && right.get( ).isMandatory( ) )
                 {
+                    // l'attribut est obligatoire : pas de suppression
                     final AttributeStatus attributeStatus = new AttributeStatus( );
                     attributeStatus.setKey( attributeToUpdate.getKey( ) );
                     attributeStatus.setStatus( AttributeChangeStatus.NOT_REMOVED );
@@ -352,6 +360,7 @@ public class IdentityAttributeService
             return attributeStatus;
         }
 
+        // le niveau de certification est inférieur au niveau existant : pas de mise à jour
         final AttributeStatus attributeStatus = new AttributeStatus( );
         attributeStatus.setKey( attributeToUpdate.getKey( ) );
         attributeStatus.setStatus( AttributeChangeStatus.INSUFFICIENT_CERTIFICATION_LEVEL );

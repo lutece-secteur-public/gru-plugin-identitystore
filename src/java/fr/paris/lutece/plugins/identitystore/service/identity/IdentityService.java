@@ -83,6 +83,7 @@ import fr.paris.lutece.util.http.SecurityUtil;
 import fr.paris.lutece.util.sql.TransactionManager;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.ArrayList;
@@ -92,7 +93,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -249,7 +249,7 @@ public class IdentityService
         try
         {
             final Map<String, String> metadata = new HashMap<>();
-            if ( !StringUtils.equalsIgnoreCase( identity.getConnectionId( ), request.getIdentity( ).getConnectionId( ) )
+            if ( !Strings.CI.equals( identity.getConnectionId( ), request.getIdentity( ).getConnectionId( ) )
                     && StringUtils.isNotEmpty( request.getIdentity( ).getConnectionId( ) ) )
             {
                 metadata.put(Constants.METADATA_NEW_GUID, request.getIdentity( ).getConnectionId( ) );
@@ -752,16 +752,17 @@ public class IdentityService
             identity.setMonParisActive( requestIdentity.isMonParisActive( ) );
         }
 
-        /* Compute new unicity hashcode based on existing, successfully created or updated attributes */
-        final String previousHashCode = identity.getUnicityHashCode();
-        // WARNING: identity attributes list is modified through _identityAttributeService, it won't match if the service is modified in another way
-        identity.setUnicityHashCode( _identityQualityService.computeUnicityHashCode( identity ) );
-        final boolean unicityHascodeHasChanged = !StringUtils.equals( previousHashCode, identity.getUnicityHashCode( ) );
-
         /* Check if the attribute list has changed */
-        final boolean attributeHasChanged = Collections.disjoint(AttributeChangeStatus.getSuccessStatuses(), attrStatusList.stream().map(AttributeStatus::getStatus).collect(Collectors.toList()));
+        final boolean attributeHasChanged =
+                !Collections.disjoint( AttributeChangeStatus.getSuccessStatuses( ),
+                                       attrStatusList.stream( ).map( AttributeStatus::getStatus ).collect( Collectors.toList( ) ) );
+        if ( attributeHasChanged ) {
+            /* Compute new unicity hashcode based on existing, successfully created or updated attributes */
+            // WARNING: identity attributes list is modified through _identityAttributeService, it won't match if the service is modified in another way
+            identity.setUnicityHashCode( _identityQualityService.computeUnicityHashCode( identity ) );
+        }
 
-        if ( identityUpdateRequested  || monParisUpdated  || !attributeHasChanged || unicityHascodeHasChanged )
+        if ( identityUpdateRequested  || monParisUpdated  || attributeHasChanged )
         {
             // If there was an update on the monParis flag or in the attributes, we update the identity
             IdentityHome.update( identity );
