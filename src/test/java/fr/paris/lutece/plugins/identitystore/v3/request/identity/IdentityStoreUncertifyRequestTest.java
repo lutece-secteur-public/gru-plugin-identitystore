@@ -19,7 +19,6 @@ import java.util.ArrayList;
 
 public class IdentityStoreUncertifyRequestTest extends AbstractIdentityRequestTest {
 
-    @Override
     public void test_1_RequestOK() throws Exception {
         final String strTestCase = "1.1. Uncertify identity request";
         final Identity mockIdentity = createMockIdentityInDB(IdentityMockUtils.NUM2);

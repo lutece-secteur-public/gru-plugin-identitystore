@@ -11,7 +11,6 @@ import fr.paris.lutece.plugins.identitystore.web.exception.ResourceNotFoundExcep
 
 public class ServiceContractListGetRequestTest extends AbstractIdentityStoreRequestTest {
 
-    @Override
     public void test_1_RequestOK() throws Exception {
         final String strTestCase = "1.1. Get all service contract list by client code";
         final String targetClientCode = H_CLIENT_CODE;

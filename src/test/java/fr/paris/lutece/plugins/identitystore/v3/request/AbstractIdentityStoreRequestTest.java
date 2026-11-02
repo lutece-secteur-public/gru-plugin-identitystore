@@ -1,5 +1,7 @@
 package fr.paris.lutece.plugins.identitystore.v3.request;
 
+import fr.paris.lutece.plugins.identitystore.util.ServiceContractMockUtils;
+import fr.paris.lutece.plugins.identitystore.util.TestPropertiesOverrideUtils;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.AbstractIdentityStoreRequest;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.ResponseDto;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.ResponseStatusType;
@@ -15,7 +17,15 @@ public abstract class AbstractIdentityStoreRequestTest extends LuteceTestCase {
     protected static final String H_AUTHOR_NAME = "test";
     protected static final String H_AUTHOR_TYPE = "admin";
 
-    public abstract void test_1_RequestOK() throws Exception;
+    /**
+     * Applies the test properties overrides and ensures the client application and the service contract used by the requests exist
+     */
+    @Override
+    protected void setUp() throws Exception {
+        super.setUp();
+        TestPropertiesOverrideUtils.applyTestOverrides();
+        ServiceContractMockUtils.ensureTestServiceContract(H_CLIENT_CODE, H_APP_CODE);
+    }
 
     public abstract void test_2_RequestKO() throws Exception;
 

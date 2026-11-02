@@ -8,7 +8,6 @@ import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreExceptio
 
 public class LevelListGetRequestTest extends AbstractIdentityStoreRequestTest {
 
-    @Override
     public void test_1_RequestOK() throws Exception {
         {
             final String strTestCase = "1.1. Get all certification level";

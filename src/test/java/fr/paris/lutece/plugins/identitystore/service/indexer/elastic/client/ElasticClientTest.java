@@ -35,6 +35,7 @@ package fr.paris.lutece.plugins.identitystore.service.indexer.elastic.client;
 
 import fr.paris.lutece.plugins.identitystore.AbstractIdentityStoreTestCase;
 import fr.paris.lutece.plugins.identitystore.IdentityStoreTestContext;
+import fr.paris.lutece.plugins.identitystore.util.TestEnvironmentUtils;
 import org.testcontainers.elasticsearch.ElasticsearchContainer;
 
 import java.io.BufferedReader;
@@ -51,6 +52,20 @@ public class ElasticClientTest extends AbstractIdentityStoreTestCase
     protected ElasticsearchContainer elasticsearchContainer;
     protected String esUrl;
     protected ElasticClient elasticClient;
+
+    /**
+     * Runs the test only when a Docker environment is available, as it requires an Elasticsearch container
+     */
+    @Override
+    public void runBare( ) throws Throwable
+    {
+        if ( !TestEnvironmentUtils.isDockerAvailable( ) )
+        {
+            TestEnvironmentUtils.printSkipped( this.getClass( ), this.getName( ), "Docker environment" );
+            return;
+        }
+        super.runBare( );
+    }
 
     @Override
     protected void setUp( ) throws Exception

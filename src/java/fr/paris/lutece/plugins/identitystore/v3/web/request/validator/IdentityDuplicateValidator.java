@@ -393,8 +393,8 @@ public class IdentityDuplicateValidator
     private boolean doesRequestContainsAttributeValueChangesImpactingRules( final IdentityChangeRequest request, final IdentityDto existingIdentityToUpdate,
             final String duplicateRulesProperty )
     {
-        final Set<String> checkedAttributeKeys = Arrays.stream( AppPropertiesService.getProperty( duplicateRulesProperty ).split( "," ) )
-                .map( DuplicateRuleHome::findByCode ).flatMap( rule -> rule.getCheckedAttributes( ).stream( ) ).map( AttributeKey::getKeyName )
+        final Set<String> checkedAttributeKeys = Arrays.stream( AppPropertiesService.getProperty( duplicateRulesProperty, "" ).split( "," ) )
+                .filter( StringUtils::isNotEmpty ).map( DuplicateRuleHome::findByCode ).flatMap( rule -> rule.getCheckedAttributes( ).stream( ) ).map( AttributeKey::getKeyName )
                 .collect( Collectors.toSet( ) );
         return request.getIdentity( ).getAttributes( ).stream( ).filter( reqAttr -> checkedAttributeKeys.contains( reqAttr.getKey( ) ) ).anyMatch( reqAttr -> {
             final AttributeDto existingAttr = existingIdentityToUpdate.getAttributes( ).stream( )

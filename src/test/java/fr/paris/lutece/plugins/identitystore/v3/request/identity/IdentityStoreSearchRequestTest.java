@@ -2,6 +2,7 @@ package fr.paris.lutece.plugins.identitystore.v3.request.identity;
 
 import fr.paris.lutece.plugins.identitystore.business.identity.Identity;
 import fr.paris.lutece.plugins.identitystore.service.identity.IdentityService;
+import fr.paris.lutece.plugins.identitystore.util.TestEnvironmentUtils;
 import fr.paris.lutece.plugins.identitystore.v3.web.request.identity.IdentityStoreSearchRequest;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.AttributeTreatmentType;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.ResponseStatusType;
@@ -20,7 +21,18 @@ import java.util.concurrent.TimeUnit;
 
 public class IdentityStoreSearchRequestTest extends AbstractIdentityRequestTest {
 
+    /**
+     * Runs the test only when the Elasticsearch server is available, as the search requests are executed against it
+     */
     @Override
+    protected void runTest() throws Throwable {
+        if (!TestEnvironmentUtils.isElasticsearchAvailable()) {
+            TestEnvironmentUtils.printSkipped(this.getClass(), this.getName(), "Elasticsearch server");
+            return;
+        }
+        super.runTest();
+    }
+
     public void test_1_RequestOK() throws Exception {
         final Identity mockIdentity = createMockIdentityInDB("IdentityStoreSearchRequestTest-connection-id");
         TimeUnit.SECONDS.sleep(3); // ES needs time to index the new identity
