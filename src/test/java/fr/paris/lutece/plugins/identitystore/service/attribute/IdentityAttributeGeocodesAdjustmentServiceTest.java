@@ -1,5 +1,6 @@
 package fr.paris.lutece.plugins.identitystore.service.attribute;
 
+import fr.paris.lutece.plugins.identitystore.util.MockGeoCodeProvider;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.AttributeDto;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.AttributeStatus;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.IdentityDto;
@@ -39,6 +40,16 @@ public class IdentityAttributeGeocodesAdjustmentServiceTest extends LuteceTestCa
     protected static final String RETURNED_STATUS_ERROR_UNKONWN_COUNTRY = "unknown_geocodes_label";
     protected static final String RETURNED_STATUS_ERROR_MULTIPLE_CITIES = "multiple_geocodes_results_for_code";
     protected static final String RETURNED_STATUS_ERROR_NOT_CREATED = "not_created";
+
+    /**
+     * Registers the in memory geocodes provider used to resolve the cities
+     */
+    @Override
+    protected void setUp( ) throws Exception
+    {
+        super.setUp( );
+        MockGeoCodeProvider.register( );
+    }
 
     // Test methods
     public void testCountryNameOnly() {

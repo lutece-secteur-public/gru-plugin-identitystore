@@ -13,7 +13,6 @@ import fr.paris.lutece.plugins.identitystore.web.exception.ResourceNotFoundExcep
 
 public class ServiceContractGetRequestTest extends AbstractIdentityStoreRequestTest {
 
-    @Override
     public void test_1_RequestOK() throws Exception {
         final String strTestCase = "1.1. Get service contract by ID";
         final ServiceContract serviceContract = ServiceContractService.instance().getActiveServiceContract(H_CLIENT_CODE);

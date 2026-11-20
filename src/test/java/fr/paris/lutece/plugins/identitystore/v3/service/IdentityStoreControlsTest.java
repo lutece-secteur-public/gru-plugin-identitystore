@@ -38,6 +38,7 @@ import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.AttributeDto;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.AttributeStatus;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.IdentityDto;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.crud.IdentityChangeResponse;
+import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
 import fr.paris.lutece.plugins.identitystore.web.exception.RequestFormatException;
 import fr.paris.lutece.test.LuteceTestCase;
@@ -45,6 +46,7 @@ import fr.paris.lutece.test.LuteceTestCase;
 import static fr.paris.lutece.plugins.identitystore.util.IdentityMockUtils.DEC;
 import static fr.paris.lutece.plugins.identitystore.util.IdentityMockUtils.NUM1;
 import static fr.paris.lutece.plugins.identitystore.util.IdentityMockUtils.ORIG1;
+import static fr.paris.lutece.plugins.identitystore.util.IdentityMockUtils.getMockAttribute;
 import static fr.paris.lutece.plugins.identitystore.util.IdentityMockUtils.getMockIdentityDto;
 // import static fr.paris.lutece.plugins.identitystore.web.rs.dto.MockIdentityChangeDto.createIdentityChangeDtoFor;
 
@@ -78,7 +80,8 @@ public class IdentityStoreControlsTest extends LuteceTestCase
         tryPivotAttributesIntegrity( null, newIdentity, "1.4. Create Identity with all attributes at level 400, but with empty date" );
 
         newIdentity = getMockIdentityDto( "1", NUM1, "Dupoon", NUM1, "Marcel", NUM1, "01/01/2000", NUM1, null, 0, "99109", NUM1 );
-        tryPivotAttributesIntegrity( null, newIdentity, "1.5. Create Identity with 5 attributes at level 400 and foreign birthcountry" );
+        newIdentity.getAttributes( ).add( getMockAttribute( Constants.PARAM_BIRTH_PLACE, "PEKIN", NUM1 ) );
+        tryPivotAttributesIntegrity( null, newIdentity, "1.5. Create Identity with 6 attributes at level 400 and foreign birthcountry (birthplace label instead of code)" );
     }
 
     /**
@@ -104,9 +107,11 @@ public class IdentityStoreControlsTest extends LuteceTestCase
         tryPivotAttributesIntegrity( existingIdentity_NUM1, udpatedIdentity, "2.3. Update  existing Identity (level 400)  with 6 attributes at level 100" );
 
         udpatedIdentity = getMockIdentityDto( null, 0, null, 0, null, 0, null, 0, "", NUM1, "99109", NUM1 );
+        udpatedIdentity.getAttributes( ).add( getMockAttribute( Constants.PARAM_BIRTH_PLACE, "PEKIN", NUM1 ) );
         tryPivotAttributesIntegrity( existingIdentity_NUM1, udpatedIdentity, "2.4. Update birthcountry of existing Identity with all attributes at level 400" );
 
         udpatedIdentity = getMockIdentityDto( null, 0, null, 0, null, 0, "01/01/2000", NUM1, "", NUM1, "99109", NUM1 );
+        udpatedIdentity.getAttributes( ).add( getMockAttribute( Constants.PARAM_BIRTH_PLACE, "PEKIN", NUM1 ) );
         tryPivotAttributesIntegrity( existingIncompleteIdentity_NUM1, udpatedIdentity,
                 "2.5. Update birthcountry of existing incomplete Identity with all attributes at level 400" );
 

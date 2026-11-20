@@ -17,7 +17,6 @@ import java.util.concurrent.TimeUnit;
 
 public class ClientUpdateRequestTest extends AbstractIdentityStoreRequestTest {
 
-    @Override
     public void test_1_RequestOK() throws Exception {
         final ClientApplicationDto mockClientApplication = createMockClientApplication();
 

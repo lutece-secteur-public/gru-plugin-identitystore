@@ -5,13 +5,12 @@ import fr.paris.lutece.plugins.identitystore.v3.web.request.contract.ActiveServi
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.ResponseStatusType;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.contract.ServiceContractSearchResponse;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
+import fr.paris.lutece.plugins.identitystore.web.exception.ClientAuthorizationException;
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
 import fr.paris.lutece.plugins.identitystore.web.exception.RequestFormatException;
-import fr.paris.lutece.plugins.identitystore.web.exception.ResourceNotFoundException;
 
 public class ActiveServiceContractGetRequestTest extends AbstractIdentityStoreRequestTest {
 
-    @Override
     public void test_1_RequestOK() throws Exception {
         final String strTestCase = "1.1. Get active service contract with existing client code";
         final String targetClientCode = H_CLIENT_CODE;
@@ -49,7 +48,7 @@ public class ActiveServiceContractGetRequestTest extends AbstractIdentityStoreRe
         targetClientCode = "unknownClientCode";
         try {
             final ActiveServiceContractGetRequest request = new ActiveServiceContractGetRequest(targetClientCode, H_CLIENT_CODE, H_APP_CODE, H_AUTHOR_NAME, H_AUTHOR_TYPE);
-            this.executeRequestKO(request, strTestCase, ResourceNotFoundException.class, Constants.PROPERTY_REST_ERROR_SERVICE_CONTRACT_NOT_FOUND);
+            this.executeRequestKO(request, strTestCase, ClientAuthorizationException.class, Constants.PROPERTY_REST_ERROR_SERVICE_CONTRACT_NOT_FOUND);
         } catch (final IdentityStoreException e) {
             fail(strTestCase + " : FAIL : " + e.getMessage());
         }

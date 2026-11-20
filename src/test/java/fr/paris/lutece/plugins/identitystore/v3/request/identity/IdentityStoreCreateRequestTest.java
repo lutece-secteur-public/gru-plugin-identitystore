@@ -17,7 +17,6 @@ import java.util.concurrent.TimeUnit;
 
 public class IdentityStoreCreateRequestTest extends AbstractIdentityRequestTest {
 
-    @Override
     public void test_1_RequestOK() throws Exception {
         final String strTestCase = "1.1. Create identity request";
         final IdentityChangeRequest identityChangeRequest = new IdentityChangeRequest();

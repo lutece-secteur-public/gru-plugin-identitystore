@@ -6,13 +6,13 @@ import fr.paris.lutece.plugins.identitystore.v3.web.request.identity.IdentitySto
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.ResponseStatusType;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.search.IdentitySearchResponse;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.util.Constants;
+import fr.paris.lutece.plugins.identitystore.web.exception.ClientAuthorizationException;
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
 import fr.paris.lutece.plugins.identitystore.web.exception.RequestFormatException;
 import fr.paris.lutece.plugins.identitystore.web.exception.ResourceNotFoundException;
 
 public class IdentityStoreGetRequestTest extends AbstractIdentityRequestTest {
 
-    @Override
     public void test_1_RequestOK() throws Exception {
         final String strTestCase = "1.1. Get identity by customer ID request";
         final Identity mockIdentity = createMockIdentityInDB();
@@ -53,7 +53,7 @@ public class IdentityStoreGetRequestTest extends AbstractIdentityRequestTest {
         final Identity mockIdentity = createMockIdentityInDB();
         try {
             final IdentityStoreGetRequest request = new IdentityStoreGetRequest(mockIdentity.getCustomerId(), "unknown-client-code", H_APP_CODE, H_AUTHOR_NAME, H_AUTHOR_TYPE);
-            this.executeRequestKO(request, strTestCase, ResourceNotFoundException.class, Constants.PROPERTY_REST_ERROR_SERVICE_CONTRACT_NOT_FOUND);
+            this.executeRequestKO(request, strTestCase, ClientAuthorizationException.class, Constants.PROPERTY_REST_ERROR_SERVICE_CONTRACT_NOT_FOUND);
         } catch (final IdentityStoreException e) {
             fail(strTestCase + " : FAIL : " + e.getMessage());
         } finally {

@@ -14,7 +14,6 @@ import fr.paris.lutece.plugins.identitystore.web.exception.ResourceNotFoundExcep
 
 public class IdentityStoreGetUpdatedIdentitiesRequestTest extends AbstractIdentityRequestTest {
 
-    @Override
     public void test_1_RequestOK() throws Exception {
         final String strTestCase = "1.1. Get updated identities request";
         final Identity mockIdentity = createMockIdentityInDB();

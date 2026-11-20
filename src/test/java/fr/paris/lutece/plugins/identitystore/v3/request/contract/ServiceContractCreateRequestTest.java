@@ -18,7 +18,6 @@ import java.util.concurrent.TimeUnit;
 
 public class ServiceContractCreateRequestTest extends AbstractIdentityStoreRequestTest {
 
-    @Override
     public void test_1_RequestOK() throws Exception {
         final String strTestCase = "1.1. Create service contract request";
         final ServiceContractDto contract = getServiceContractDtoForCreate();

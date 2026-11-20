@@ -11,11 +11,8 @@ import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreExceptio
 import fr.paris.lutece.plugins.identitystore.web.exception.RequestFormatException;
 import fr.paris.lutece.plugins.identitystore.web.exception.ResourceNotFoundException;
 
-import java.util.concurrent.TimeUnit;
-
 public class IdentityStoreDeleteRequestTest extends AbstractIdentityRequestTest {
 
-    @Override
     public void test_1_RequestOK() throws Exception {
         final String strTestCase = "1.1. Delete identity request";
         final Identity mockIdentity = createMockIdentityInDB();
@@ -24,9 +21,10 @@ public class IdentityStoreDeleteRequestTest extends AbstractIdentityRequestTest 
             final IdentityChangeResponse response = (IdentityChangeResponse) this.executeRequestOK(request, strTestCase, ResponseStatusType.SUCCESS);
             assertNotNull(strTestCase + " : customer id in response is null", response.getCustomerId());
 
-            TimeUnit.SECONDS.sleep(1);
+            // the delete request only expires the identity (date_delete), the physical deletion is done by the purge daemon
             final Identity dbIdentity = IdentityHome.findByCustomerId(response.getCustomerId());
-            assertTrue(strTestCase + " : identity is not marked deleted in DB after delete request", dbIdentity.isDeleted());
+            assertNotNull(strTestCase + " : identity has no delete date in DB after delete request", dbIdentity.getDeleteDate());
+            assertFalse(strTestCase + " : identity is still mon paris active in DB after delete request", dbIdentity.isMonParisActive());
         } catch (final IdentityStoreException e) {
             fail(strTestCase + " : FAIL : " + e.getMessage());
         } finally {

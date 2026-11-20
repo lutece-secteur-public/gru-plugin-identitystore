@@ -13,7 +13,6 @@ import fr.paris.lutece.plugins.identitystore.web.exception.ResourceNotFoundExcep
 
 public class IdentityStoreHistoryGetRequestTest extends AbstractIdentityRequestTest {
 
-    @Override
     public void test_1_RequestOK() throws Exception {
         final String strTestCase = "1.1. Get identity history from customer ID";
         final Identity mockIdentity = this.createMockIdentityInDB();
