@@ -6,6 +6,9 @@ import fr.paris.lutece.plugins.identitystore.v3.web.rs.AbstractIdentityStoreRequ
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.ResponseDto;
 import fr.paris.lutece.plugins.identitystore.v3.web.rs.dto.common.ResponseStatusType;
 import fr.paris.lutece.plugins.identitystore.web.exception.IdentityStoreException;
+import fr.paris.lutece.plugins.identitystore.service.IdentityStorePlugin;
+import fr.paris.lutece.portal.service.plugin.Plugin;
+import fr.paris.lutece.portal.service.plugin.PluginService;
 import fr.paris.lutece.test.LuteceTestCase;
 
 import static org.junit.Assert.assertThrows;
@@ -23,6 +26,11 @@ public abstract class AbstractIdentityStoreRequestTest extends LuteceTestCase {
     @Override
     protected void setUp() throws Exception {
         super.setUp();
+        // the plugin must be installed for its listeners (history, index...) to be loaded
+        final Plugin plugin = PluginService.getPlugin(IdentityStorePlugin.PLUGIN_NAME);
+        if (!plugin.isInstalled()) {
+            plugin.install();
+        }
         TestPropertiesOverrideUtils.applyTestOverrides();
         ServiceContractMockUtils.ensureTestServiceContract(H_CLIENT_CODE, H_APP_CODE);
     }

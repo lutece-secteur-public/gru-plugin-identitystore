@@ -48,6 +48,7 @@ import fr.paris.lutece.util.sql.DAOUtil;
 import org.apache.commons.lang3.StringUtils;
 
 import java.sql.Statement;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedHashMap;
@@ -78,7 +79,7 @@ public final class IdentityAttributeDAO implements IIdentityAttributeDAO
     // Historical
     private static final String SQL_QUERY_INSERT_HISTORY = "INSERT INTO identitystore_identity_attribute_history  "
             + "   (change_type, change_satus, change_message, author_type, author_name, client_code, id_identity, attribute_key, attribute_value, certification_process, certification_date, modification_date, metadata) "
-            + "   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, to_json(?::json))";
+            + "   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     private static final String SQL_QUERY_SELECT_ATTRIBUTE_HISTORY = "SELECT id_history, change_type, change_satus, change_message, author_type, author_name, client_code, id_identity, attribute_key, attribute_value, certification_process, certification_date, modification_date, CAST( metadata AS VARCHAR ) FROM identitystore_identity_attribute_history WHERE id_identity = ? ORDER BY modification_date DESC";
     private static final String SQL_QUERY_SELECT_ATTRIBUTE_HISTORY_BY_CUSTOMER_ID = "SELECT a.id_history, a.change_type, a.change_satus, a.change_message, a.author_type, a.author_name, a.client_code, a.id_identity, a.attribute_key, a.attribute_value, a.certification_process, a.certification_date, a.modification_date, CAST( a.metadata AS VARCHAR ) FROM identitystore_identity_attribute_history a JOIN identitystore_identity i ON a.id_identity = i.id_identity WHERE i.customer_id = ? ORDER BY a.modification_date DESC";
     private static final String SQL_QUERY_DELETE_ALL_HISTORY = "DELETE FROM identitystore_identity_attribute_history  WHERE id_identity = ?";
@@ -243,7 +244,7 @@ public final class IdentityAttributeDAO implements IIdentityAttributeDAO
             daoUtil.setString( nIndex++, attributeChange.getCertificationProcessus( ) );
             daoUtil.setTimestamp( nIndex++, attributeChange.getCertificationDate( ) );
             daoUtil.setTimestamp( nIndex++, attributeChange.getModificationDate( ) );
-            daoUtil.setString( nIndex, objectMapper.writeValueAsString( attributeChange.getMetadata( ) ) );
+            daoUtil.setObject( nIndex, objectMapper.writeValueAsString( attributeChange.getMetadata( ) ), Types.OTHER );
 
             daoUtil.executeUpdate( );
         }

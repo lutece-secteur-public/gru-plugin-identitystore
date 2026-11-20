@@ -25,6 +25,8 @@ INSERT INTO  identitystore_ref_attribute (id_attribute, name, key_name, descript
 (7, 'Libellé pays de naissance', 'birthcountry', 'Libellé du pays de naissance', 0, 3, 1, 0,  null , 0, '^[A-Z\\s]+$', 'uniquement caractères aplha en majuscule non accentué, et espace.', 'identitystore.attribute.status.validation.error.only.uppercase.space')
 ;
 
+UPDATE identitystore_ref_attribute SET alternative_pivot = 1 WHERE key_name IN ( 'birthcountry_code', 'gender', 'family_name', 'birthdate', 'first_name', 'birthplace' );
+
 --
 -- Data for Name: identitystore_ref_certification_level; Type: TABLE DATA; Schema: public; Owner: postgres
 --

@@ -54,6 +54,7 @@ import org.apache.commons.lang3.tuple.Pair;
 
 import java.sql.Statement;
 import java.sql.Timestamp;
+import java.sql.Types;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
@@ -107,8 +108,8 @@ public final class IdentityDAO implements IIdentityDAO
     private static final String SQL_QUERY_FILTER_NORMALIZED_ATTRIBUTE_FOR_API_SEARCH_PREPARED_ATTRIBUTEVALUE = "AND TRANSLATE(REPLACE(REPLACE(LOWER(b.attribute_value), 'œ', 'oe'), 'æ', 'ae'), 'àâäéèêëîïôöùûüÿçñ', 'aaaeeeeiioouuuycn') = ? ";
     
     private static final String SQL_QUERY_SOFT_DELETE = "UPDATE identitystore_identity SET  date_delete = now( ), is_mon_paris_active = 0, expiration_date=now( ), last_update_date=now( )  WHERE customer_id = ?";
-    private static final String SQL_QUERY_MERGE = "UPDATE identitystore_identity SET is_merged = 1, date_merge = now(), last_update_date = now(), id_master_identity = ?, is_mon_paris_active = ?, unicity_hash_code = gen_random_uuid() WHERE id_identity = ?";
-    private static final String SQL_QUERY_RESET_UNICITY_HASH_CODE = "UPDATE identitystore_identity SET unicity_hash_code = gen_random_uuid() WHERE customer_id = ?"; 
+    private static final String SQL_QUERY_MERGE = "UPDATE identitystore_identity SET is_merged = 1, date_merge = now(), last_update_date = now(), id_master_identity = ?, is_mon_paris_active = ?, unicity_hash_code = ? WHERE id_identity = ?";
+    private static final String SQL_QUERY_RESET_UNICITY_HASH_CODE = "UPDATE identitystore_identity SET unicity_hash_code = ? WHERE customer_id = ?"; 
     private static final String SQL_QUERY_CANCEL_MERGE = "UPDATE identitystore_identity SET is_merged = 0, date_merge = null, last_update_date = now(), id_master_identity = null WHERE id_identity = ?";
     private static final String SQL_QUERY_SELECT_BY_ATTRIBUTE_EXISTING = "SELECT a.customer_id FROM identitystore_identity a"
             + " JOIN identitystore_identity_attribute b ON a.id_identity = b.id_identity"
@@ -117,15 +118,8 @@ public final class IdentityDAO implements IIdentityDAO
     private static final String SQL_QUERY_FILTER_NOT_MERGED = "a.is_merged = 0 AND a.date_merge IS NULL";
     private static final String SQL_QUERY_FILTER_NOT_SUSPICIOUS = "NOT EXISTS (SELECT c.id_suspicious_identity FROM identitystore_quality_suspicious_identity c WHERE c.customer_id = a.customer_id)";
     private static final String SQL_QUERY_FILTER_LOWER_SUSPICIOUS = "NOT EXISTS (SELECT c.id_suspicious_identity FROM identitystore_quality_suspicious_identity c JOIN identitystore_duplicate_rule r on c.id_duplicate_rule = r.id_rule WHERE c.customer_id = a.customer_id AND r.priority <= ${rule_priority})";
-    private static final String SQL_QUERY_INSERT_HISTORY = "INSERT INTO identitystore_identity_history (change_type, change_status, change_message, author_type, author_name, client_code, customer_id, metadata) VALUES (?, ?, ?, ?, ?, ?, ?, to_json(?::json))";
-    private static final String SQL_QUERY_UPSERT_HISTORY = "WITH tmp AS ( "
-            + "    (SELECT ? AS change_type, ? AS change_status, ? AS change_message, ? AS author_type, ? AS author_name, ? AS client_code, ? AS customer_id, to_json(?::json) AS metadata) "
-            + ") "
-            + "INSERT INTO identitystore_identity_history (change_type, change_status, change_message, author_type, author_name, client_code, customer_id, metadata) "
-            + "SELECT change_type, change_status, change_message, author_type, author_name, client_code, customer_id, metadata FROM TMP " + "WHERE NOT EXISTS( "
-            + "    SELECT master.id_history FROM TMP "
-            + "    JOIN identitystore_identity_history master ON master.change_type = tmp.change_type AND  master.customer_id = tmp.customer_id AND master.author_name = tmp.author_name "
-            + "    WHERE date_trunc('day', master.modification_date) = date_trunc('day', CURRENT_TIMESTAMP)) ";
+    private static final String SQL_QUERY_INSERT_HISTORY = "INSERT INTO identitystore_identity_history (change_type, change_status, change_message, author_type, author_name, client_code, customer_id, metadata) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+    private static final String SQL_QUERY_SELECT_HISTORY_EXISTS_TODAY = "SELECT id_history FROM identitystore_identity_history WHERE change_type = ? AND customer_id = ? AND author_name = ? AND CAST( modification_date AS DATE ) = CURRENT_DATE";
     private static final String SQL_QUERY_SELECT_IDENTITY_HISTORY = "SELECT change_type, change_status, change_message, author_type, author_name, client_code, customer_id, modification_date, CAST( metadata AS VARCHAR ) FROM identitystore_identity_history WHERE customer_id = ?  ORDER BY modification_date DESC";
     private static final String SQL_QUERY_SEARCH_IDENTITY_HISTORY = "SELECT change_type, change_status, change_message, author_type, author_name, client_code, customer_id, modification_date, CAST( metadata AS VARCHAR ) FROM identitystore_identity_history WHERE ${client_code} AND ${customer_id} AND ${author_name} AND ${change_type} AND ${nbDaysFrom} AND ${metadata} AND ${change_status} AND ${author_type} AND ${modification_date} ORDER BY modification_date DESC LIMIT ${limit}";
 
@@ -295,7 +289,8 @@ public final class IdentityDAO implements IIdentityDAO
         {
             daoUtil.setInt( 1, identity.getMasterIdentityId( ) );
             daoUtil.setInt( 2, identity.isMonParisActive( )?1:0 );
-            daoUtil.setInt( 3, identity.getId( ) );
+            daoUtil.setString( 3, UUID.randomUUID( ).toString( ) );
+            daoUtil.setInt( 4, identity.getId( ) );
             daoUtil.executeUpdate( );
         }
         try ( final DAOUtil daoUtil = new DAOUtil( SQL_QUERY_REFRESH_LAST_UPDATE_DATE, plugin ) )
@@ -350,7 +345,8 @@ public final class IdentityDAO implements IIdentityDAO
     {
         try ( final DAOUtil daoUtil = new DAOUtil( SQL_QUERY_RESET_UNICITY_HASH_CODE, plugin ) )
         {
-            daoUtil.setString( 1, identity.getCustomerId( ) );
+            daoUtil.setString( 1, UUID.randomUUID( ).toString( ) );
+            daoUtil.setString( 2, identity.getCustomerId( ) );
 
             daoUtil.executeUpdate( );
         }
@@ -690,7 +686,7 @@ public final class IdentityDAO implements IIdentityDAO
             daoUtil.setString( nIndex++, identityChange.getAuthor( ).getName( ) );
             daoUtil.setString( nIndex++, identityChange.getClientCode( ) );
             daoUtil.setString( nIndex++, identityChange.getCustomerId( ) );
-            daoUtil.setString( nIndex, objectMapper.writeValueAsString( identityChange.getMetadata( ) ) );
+            daoUtil.setObject( nIndex, objectMapper.writeValueAsString( identityChange.getMetadata( ) ), Types.OTHER );
             daoUtil.executeUpdate( );
         }
         catch( JsonProcessingException e )
@@ -702,24 +698,18 @@ public final class IdentityDAO implements IIdentityDAO
     @Override
     public void addOrUpdateChangeHistory( IdentityChange identityChange, Plugin plugin ) throws IdentityStoreException
     {
-        try ( final DAOUtil daoUtil = new DAOUtil( SQL_QUERY_UPSERT_HISTORY, Statement.RETURN_GENERATED_KEYS, plugin ) )
+        try ( final DAOUtil daoUtil = new DAOUtil( SQL_QUERY_SELECT_HISTORY_EXISTS_TODAY, plugin ) )
         {
-            int nIndex = 1;
-
-            daoUtil.setInt( nIndex++, identityChange.getChangeType( ).getValue( ) );
-            daoUtil.setString( nIndex++, identityChange.getChangeStatus( ) );
-            daoUtil.setString( nIndex++, identityChange.getChangeMessage( ) );
-            daoUtil.setString( nIndex++, identityChange.getAuthor( ).getType( ).name( ) );
-            daoUtil.setString( nIndex++, identityChange.getAuthor( ).getName( ) );
-            daoUtil.setString( nIndex++, identityChange.getClientCode( ) );
-            daoUtil.setString( nIndex++, identityChange.getCustomerId( ) );
-            daoUtil.setString( nIndex, objectMapper.writeValueAsString( identityChange.getMetadata( ) ) );
-            daoUtil.executeUpdate( );
+            daoUtil.setInt( 1, identityChange.getChangeType( ).getValue( ) );
+            daoUtil.setString( 2, identityChange.getCustomerId( ) );
+            daoUtil.setString( 3, identityChange.getAuthor( ).getName( ) );
+            daoUtil.executeQuery( );
+            if ( daoUtil.next( ) )
+            {
+                return;
+            }
         }
-        catch( JsonProcessingException e )
-        {
-            throw new IdentityStoreException( e.getMessage( ), e );
-        }
+        addChangeHistory( identityChange, plugin );
     }
 
     /**
