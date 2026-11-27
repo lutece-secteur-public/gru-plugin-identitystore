@@ -14,7 +14,6 @@ import fr.paris.lutece.portal.service.util.AppPropertiesService;
 
 public class IdentityStoreExportRequestTest extends AbstractIdentityRequestTest {
 
-    @Override
     public void test_1_RequestOK() throws Exception {
         final String strTestCase = "1.1. Export request";
         final Identity mockIdentity = createMockIdentityInDB();
@@ -85,7 +84,7 @@ public class IdentityStoreExportRequestTest extends AbstractIdentityRequestTest 
             req.getAttributeKeyList().add("unknown-attribute-key");
             try {
                 final IdentityStoreExportRequest request = new IdentityStoreExportRequest(req, H_CLIENT_CODE, H_APP_CODE, H_AUTHOR_NAME, H_AUTHOR_TYPE);
-                this.executeRequestKO(request, strTestCase, RequestFormatException.class, Constants.PROPERTY_REST_ERROR_UNKNOWN_ATTRIBUTE_KEY);
+                this.executeRequestKO(request, strTestCase, RequestFormatException.class, Constants.PROPERTY_REST_ERROR_SERVICE_CONTRACT_VIOLATION);
             } catch (final IdentityStoreException e) {
                 fail(strTestCase + " : FAIL : " + e.getMessage());
             }

@@ -10,7 +10,6 @@ import fr.paris.lutece.plugins.identitystore.web.exception.ResourceNotFoundExcep
 
 public class ClientsGetRequestTest extends AbstractIdentityStoreRequestTest {
 
-    @Override
     public void test_1_RequestOK() throws Exception {
         String strTestCase = "1.1. Get client applications with existing application code";
         final String targetAppCode = H_APP_CODE;

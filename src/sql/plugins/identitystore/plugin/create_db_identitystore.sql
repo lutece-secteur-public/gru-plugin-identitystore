@@ -37,11 +37,11 @@ CREATE TABLE identitystore_identity
     id_master_identity int          NULL,
     is_mon_paris_active smallint DEFAULT 0 NOT NULL ,
     expiration_date timestamp(3) NOT NULL,
-    unicity_hash_code VARCHAR(36) NOT NULL UNIQUE DEFAULT gen_random_uuid(),
+    unicity_hash_code VARCHAR(36) NOT NULL UNIQUE,
     PRIMARY KEY (id_identity)
 );
 
-CREATE INDEX identitystore_identity_connection_id ON identitystore_identity (lower(connection_id::text));
+CREATE INDEX identitystore_identity_connection_id ON identitystore_identity (lower( CAST( connection_id AS text)));
 CREATE INDEX identitystore_identity_customer_id ON identitystore_identity (customer_id);
 CREATE INDEX identitystore_identity_master_id ON identitystore_identity (id_master_identity);
 CREATE INDEX identitystore_identity_expiration_date ON identitystore_identity (expiration_date);
@@ -117,7 +117,7 @@ CREATE TABLE identitystore_identity_attribute
     id_certification       int          default '0' NOT NULL ,
     id_file                int                   default '0',
     lastupdate_date        timestamp(3)    default CURRENT_TIMESTAMP NOT NULL ,
-    lastupdate_application VARCHAR(100) NULL,
+    lastupdate_client      VARCHAR(100) NULL,
     PRIMARY KEY (id_identity, id_attribute)
 );
 ALTER TABLE identitystore_identity_attribute

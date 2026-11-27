@@ -273,12 +273,12 @@ public final class ServiceContractDAO implements IServiceContractDAO
                             nbParamsAdded.getAndIncrement( );
                             break;
                         case QUERY_PARAM_START_DATE:
-                            sqlQuerySelectallId.append( " a.starting_date::VARCHAR LIKE '%" ).append( this.formatDateFormQuery( trimmedValue ) )
+                            sqlQuerySelectallId.append( " CAST( a.starting_date AS VARCHAR ) LIKE '%" ).append( this.formatDateFormQuery( trimmedValue ) )
                                     .append( "%' " );
                             nbParamsAdded.getAndIncrement( );
                             break;
                         case QUERY_PARAM_END_DATE:
-                            sqlQuerySelectallId.append( " a.ending_date::VARCHAR LIKE '%" ).append( this.formatDateFormQuery( trimmedValue ) ).append( "%' " );
+                            sqlQuerySelectallId.append( " CAST( a.ending_date AS VARCHAR ) LIKE '%" ).append( this.formatDateFormQuery( trimmedValue ) ).append( "%' " );
                             nbParamsAdded.getAndIncrement( );
                             break;
                         default:

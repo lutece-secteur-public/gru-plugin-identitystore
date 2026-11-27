@@ -16,7 +16,6 @@ import java.util.concurrent.TimeUnit;
 
 public class ClientCreateRequestTest extends AbstractIdentityStoreRequestTest {
 
-    @Override
     public void test_1_RequestOK() throws Exception {
         String strTestCase = "1.1. Create client application with all fields";
         final ClientApplicationDto clientApplicationDto = getClientApplicationDtoForCreate();

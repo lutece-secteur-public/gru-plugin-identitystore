@@ -25,7 +25,6 @@ import static org.junit.Assert.assertNotEquals;
 
 public class IdentityStoreUpdateRequestTest extends AbstractIdentityRequestTest {
 
-    @Override
     public void test_1_RequestOK() throws Exception {
         Identity mockIdentity = createMockIdentityInDB();
         try {

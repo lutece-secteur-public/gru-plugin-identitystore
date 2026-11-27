@@ -17,7 +17,6 @@ import java.text.SimpleDateFormat;
 
 public class IdentityStoreHistorySearchRequestTest extends AbstractIdentityRequestTest {
 
-    @Override
     public void test_1_RequestOK() throws Exception {
         final Identity mockIdentity = this.createMockIdentityInDB();
         try {
